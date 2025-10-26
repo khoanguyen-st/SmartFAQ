@@ -1,0 +1,12 @@
+{
+  "name": "greenwich-smartfaq",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "lint": "npm run lint --workspaces",
+    "build": "npm run build --workspaces"
+  }
+}

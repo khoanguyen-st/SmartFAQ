@@ -1,0 +1,23 @@
+repos:
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.5.7
+    hooks:
+      - id: ruff
+        args: ["--config", "apps/api/pyproject.toml", "apps/api"]
+  - repo: https://github.com/psf/black
+    rev: 24.8.0
+    hooks:
+      - id: black
+        additional_dependencies: ["click==8.1.7"]
+  - repo: local
+    hooks:
+      - id: eslint-web-student
+        name: eslint-web-student
+        entry: npm run lint --prefix apps/web-student
+        language: system
+        types: ["tsx", "ts", "js", "jsx"]
+      - id: eslint-web-admin
+        name: eslint-web-admin
+        entry: npm run lint --prefix apps/web-admin
+        language: system
+        types: ["tsx", "ts", "js", "jsx"]

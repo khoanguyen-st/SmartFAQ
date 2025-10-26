@@ -1,0 +1,149 @@
+openapi: 3.0.3
+info:
+  title: Greenwich SmartFAQ API
+  version: 0.1.0
+servers:
+  - url: https://smartfaq.university.local/api
+    description: Production
+  - url: http://localhost:8000
+    description: Local development
+paths:
+  /auth/login:
+    post:
+      summary: Admin login (FR-001)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Login'
+      responses:
+        '200':
+          description: JWT issued
+        '401':
+          description: Invalid credentials or lockout
+  /auth/me:
+    get:
+      summary: Get current user
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: OK
+  /docs/upload:
+    post:
+      summary: Upload document (FR-006)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Upload'
+      responses:
+        '202':
+          description: Accepted for processing
+  /docs:
+    get:
+      summary: List & filter documents (FR-009)
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: category
+          schema:
+            type: string
+        - in: query
+          name: format
+          schema:
+            type: string
+        - in: query
+          name: from
+          schema:
+            type: string
+            format: date-time
+        - in: query
+          name: to
+          schema:
+            type: string
+            format: date-time
+      responses:
+        '200':
+          description: OK
+  /chat/query:
+    post:
+      summary: Ask question (FR-013..019)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChatQuery'
+      responses:
+        '200':
+          description: Chatbot answer with sources & confidence
+  /fallback/trigger:
+    post:
+      summary: Trigger fallback (FR-020..024)
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Logged & notified
+  /admin/metrics:
+    get:
+      summary: Dashboard metrics (FR-033)
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: KPIs & trends
+  /admin/logs:
+    get:
+      summary: Query logs (FR-034)
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Log records
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    Login:
+      type: object
+      required:
+        - username
+        - password
+      properties:
+        username:
+          type: string
+        password:
+          type: string
+          format: password
+    Upload:
+      type: object
+      properties:
+        file:
+          type: string
+          format: binary
+        category:
+          type: string
+        tags:
+          type: array
+          items:
+            type: string
+    ChatQuery:
+      type: object
+      required:
+        - question
+      properties:
+        question:
+          type: string
+        lang:
+          type: string
+          default: en
