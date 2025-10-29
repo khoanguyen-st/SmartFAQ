@@ -23,12 +23,18 @@ dependencies = [
 
   # LangChain 1.0 + integrations
   "langchain>=1,<2",
-  "langchain-openai>=0.2,<1",
-  "langchain-chroma>=0.1.2",
+  "langchain-core>=1,<2",
+  "langchain-openai>=1,<2",
+  "langchain-google-genai>=2.0,<3.0",
+  "langchain-chroma>=1,<2",
+  "langchain-huggingface>=1.0.0,<2.0",
 
-  # Embeddings / LLM
-  "sentence-transformers~=3.0",
-  "openai>=1.40,<2.0",
+  # Embeddings / LLM,
+  "sentence-transformers~=5.1",
+
+  # Document processing
+  "pypdf>=6,<7",
+  "docx2txt>=0.8,<1",
 
   # Form, Task, Cache
   "python-multipart~=0.0.9",

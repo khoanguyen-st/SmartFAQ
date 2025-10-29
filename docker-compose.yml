@@ -1,5 +1,3 @@
-version: "3.9"
-
 services:
   api:
     build:
@@ -9,9 +7,10 @@ services:
     volumes:
       - ./apps/api:/app
     ports:
-      - "8000:8000"
+      - "${API_PORT_EXTERNAL:-8000}:8000"
     depends_on:
       - db
+      - redis
       - chroma
 
   web-student:
@@ -23,7 +22,7 @@ services:
       - ./apps/web-student/src:/workspace/apps/web-student/src
       - ./packages/ui/src:/workspace/packages/ui/src
     ports:
-      - "5173:5173"
+      - "${WEB_STUDENT_PORT_EXTERNAL:-5173}:5173"
     depends_on:
       - api
 
@@ -36,7 +35,7 @@ services:
       - ./apps/web-admin/src:/workspace/apps/web-admin/src
       - ./packages/ui/src:/workspace/packages/ui/src
     ports:
-      - "5174:5173"
+      - "${WEB_ADMIN_PORT_EXTERNAL:-5174}:5173"
     depends_on:
       - api
 
@@ -50,19 +49,27 @@ services:
     volumes:
       - smartfaq-db:/var/lib/postgresql/data
     ports:
-      - "5432:5432"
+      - "${POSTGRES_PORT_EXTERNAL:-5432}:5432"
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "${REDIS_PORT_EXTERNAL:-6379}:6379"
+    volumes:
+      - redis-data:/data
+    command: redis-server --appendonly yes
 
   chroma:
-    image: chromadb/chroma:1.1.1
-    env_file: ./.env
+    image: chromadb/chroma:latest
     environment:
       - IS_PERSISTENT=TRUE
-      - PERSIST_DIRECTORY=/chroma-data
+      - PERSIST_DIRECTORY=/chroma/chroma
     volumes:
-      - chroma-data:/chroma-data
+      - chroma-data:/chroma/chroma
     ports:
-      - "8001:8000"
+      - "${CHROMA_PORT_EXTERNAL:-8001}:8000"
 
 volumes:
   smartfaq-db:
+  redis-data:
   chroma-data:

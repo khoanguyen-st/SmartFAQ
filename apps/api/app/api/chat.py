@@ -3,7 +3,7 @@
 from fastapi import APIRouter
 from pydantic import BaseModel
 
-from ..rag.pipeline import answer
+from ..rag.orchestrator import RAGOrchestrator
 
 router = APIRouter()
 
@@ -15,5 +15,10 @@ class ChatQuery(BaseModel):
 
 @router.post("/query")
 async def query_chat(payload: ChatQuery) -> dict[str, object]:
-    response = await answer(payload.question, payload.lang)
+    orchestrator = RAGOrchestrator()
+    response = await orchestrator.query(
+        question=payload.question,
+        top_k=5,
+        return_top_sources=3
+    )
     return response
