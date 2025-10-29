@@ -1,6 +1,6 @@
 # 🛠️ Development Guide for Interns
 
-Hướng dẫn phát triển dành cho sinh viên thực tập làm việc với SmartFAQ RAG System.
+A development guide for interns working on the SmartFAQ RAG System.
 
 ## 📋 Table of Contents
 
@@ -20,20 +20,20 @@ Hướng dẫn phát triển dành cho sinh viên thực tập làm việc với
 
 ### Required Knowledge
 
-**Cần biết:**
+**Must know:**
 
 - ✅ Python basics (functions, classes, async/await)
 - ✅ REST API concepts (GET, POST, JSON)
 - ✅ Git basics (clone, commit, push, pull)
 
-**Sẽ học trong quá trình:**
+**Will learn during the internship:**
 
 - 📚 RAG (Retrieval-Augmented Generation)
 - 📚 Vector embeddings & similarity search
 - 📚 LangChain framework
 - 📚 FastAPI web framework
 
-### Setup Your Environment
+### Set Up Your Environment
 
 ```bash
 # 1. Clone & setup (follow README.md first)
@@ -43,7 +43,7 @@ source venv/bin/activate
 # 2. Install development tools
 pip install -e ".[dev]"
 
-# 3. Setup IDE (VS Code recommended)
+# 3. Set up your IDE (VS Code recommended)
 # Install extensions:
 # - Python (Microsoft)
 # - Pylance (Microsoft)
@@ -55,17 +55,17 @@ pip install -e ".[dev]"
 ```
 User Question
     ↓
-FastAPI (API endpoints) ← You will work here mostly
+FastAPI (API endpoints) ← You'll mostly work here
     ↓
 RAG Orchestrator (main logic) ← Learn this first
     ↓
 ├── Retriever (find relevant docs) ← Understand how search works
-│   └── Vector Store (Chroma) ← Just use it, don't modify
+│   └── Vector Store (Chroma) ← Use as-is, don’t modify
 │
 ├── LLM (Gemini) ← Generate answers
 │   └── Prompt templates ← You can customize these
 │
-└── Embedder (text → vectors) ← Just use it, don't modify
+└── Embedder (text → vectors) ← Use as-is, don’t modify
 ```
 
 ---
@@ -76,7 +76,7 @@ RAG Orchestrator (main logic) ← Learn this first
 
 #### 1. **Pick a Task**
 
-Ví dụ: "Add document list API"
+Example: “Add document list API”
 
 #### 2. **Understand Requirements**
 
@@ -147,7 +147,7 @@ uvicorn app.main:app --reload
 # Test with curl
 curl http://localhost:8000/api/docs
 
-# Or use test script
+# Or use a test script
 python scripts/test_api_endpoints.sh
 ```
 
@@ -261,7 +261,7 @@ async def get_document(
 # curl http://localhost:8000/api/docs/doc-123
 ```
 
-### Task 2: Modify RAG Prompt
+### Task 2: Modify the RAG Prompt
 
 **Requirement:** Make answers more friendly and informal
 
@@ -309,7 +309,7 @@ async def list_documents(
     skip: int = 0,
     limit: int = 10
 ):
-    """List documents with optional type filter."""
+    """List documents with an optional type filter."""
     query = db.query(Document)
 
     # Apply filter if provided
@@ -347,7 +347,7 @@ def log_query(
     user_id: str,
     db: Session
 ):
-    """Log a chat query to database."""
+    """Log a chat query to the database."""
     try:
         log_entry = QueryLog(
             question=question,
@@ -447,7 +447,7 @@ async def get_document(doc_id: str, db: Session):
             detail="Internal server error"
         )
 
-# ❌ Bad - catch all, no context
+# ❌ Bad - catch-all without context
 try:
     doc = db.query(Document).get(doc_id)
     return doc
@@ -514,10 +514,10 @@ f.close()  # Might forget this!
 
 ```
 Traditional chatbot:
-Question → LLM → Answer (might hallucinate)
+Question → LLM → Answer (may hallucinate)
 
 RAG system:
-Question → Search relevant docs → Give docs to LLM → Accurate answer
+Question → Retrieve relevant docs → Provide docs to LLM → Accurate answer
 ```
 
 ### Key Components Explained
@@ -530,7 +530,7 @@ text = "How to enroll?"
 embedding = embedder.embed(text)
 # → [0.12, -0.45, 0.78, ..., 0.33]  (384 numbers)
 
-# Why? Computers can compare numbers, not text directly
+# Why? Computers compare numbers, not text directly
 similarity = cosine_similarity(
     embed("How to enroll?"),
     embed("Enrollment process")
@@ -837,7 +837,7 @@ def get_embeddings():
     return HuggingFaceEmbeddings(model_name="random-model")
     # → Breaks vector store compatibility!
 
-# ✅ DO ask first or test in separate environment
+# ✅ DO ask first or test in a separate environment
 ```
 
 ### 2. Forgetting to Handle None/Empty Cases
@@ -861,7 +861,7 @@ async def get_document(doc_id: str, db: Session):
 ### 3. Hardcoding Values
 
 ```python
-# ❌ Bad - hardcoded, can't change easily
+# ❌ Bad - hardcoded, hard to change
 CONFIDENCE_THRESHOLD = 0.65
 TOP_K = 5
 
@@ -935,26 +935,26 @@ git commit -m "Update RAG prompt to be more friendly"
 
 ### Python
 
-- [Real Python](https://realpython.com) - Tutorials & guides
-- [Python Type Hints](https://docs.python.org/3/library/typing.html) - Official docs
-- [Async Python](https://realpython.com/async-io-python/) - Understanding async/await
+- [Real Python](https://realpython.com) — Tutorials & guides
+- [Python Type Hints](https://docs.python.org/3/library/typing.html) — Official docs
+- [Async Python](https://realpython.com/async-io-python/) — Understanding async/await
 
 ### RAG & LangChain
 
-- [LangChain Docs](https://python.langchain.com/docs/get_started/introduction) - Official documentation
-- [RAG Explained](https://www.pinecone.io/learn/retrieval-augmented-generation/) - Visual guide
-- [Vector Databases](https://www.pinecone.io/learn/vector-database/) - Understanding vector stores
+- [LangChain Docs](https://python.langchain.com/docs/get_started/introduction) — Official documentation
+- [RAG Explained](https://www.pinecone.io/learn/retrieval-augmented-generation/) — Visual guide
+- [Vector Databases](https://www.pinecone.io/learn/vector-database/) — Understanding vector stores
 
 ### FastAPI
 
-- [FastAPI Tutorial](https://fastapi.tiangolo.com/tutorial/) - Official tutorial
-- [FastAPI Best Practices](https://github.com/zhanymkanov/fastapi-best-practices) - Production tips
+- [FastAPI Tutorial](https://fastapi.tiangolo.com/tutorial/) — Official tutorial
+- [FastAPI Best Practices](https://github.com/zhanymkanov/fastapi-best-practices) — Production tips
 
 ### Tools
 
-- [VS Code Python](https://code.visualstudio.com/docs/python/python-tutorial) - Setup guide
-- [Git Basics](https://www.atlassian.com/git) - Version control
-- [Postman](https://www.postman.com/api-platform/api-testing/) - API testing
+- [VS Code Python](https://code.visualstudio.com/docs/python/python-tutorial) — Setup guide
+- [Git Basics](https://www.atlassian.com/git) — Version control
+- [Postman](https://www.postman.com/api-platform/api-testing/) — API testing
 
 ---
 
@@ -997,9 +997,9 @@ async def get_document_stats(db: Session = Depends(get_db)):
     }
 ```
 
-### Exercise 3: Customize Fallback Message
+### Exercise 3: Customize the Fallback Message
 
-**Goal:** Make fallback more helpful
+**Goal:** Make the fallback more helpful
 
 ```python
 # app/rag/orchestrator.py
@@ -1018,51 +1018,41 @@ def _generate_fallback_response(self, question: str) -> str:
 
 ---
 
-## 🚀 Next Steps
-
-1. **Week 1-2:** Setup environment, understand codebase
-2. **Week 3-4:** Start with small tasks (add endpoints, modify prompts)
-3. **Week 5-6:** Implement features (filtering, logging, metrics)
-4. **Week 7-8:** Optimize RAG (improve prompts, tune confidence)
-5. **Week 9-10:** Testing & documentation
-
----
-
 ## 💬 Getting Help
 
 ### When Stuck:
 
-1. **Read error message carefully** - Python errors are usually descriptive
-2. **Check logs** - `tail -f logs/app.log`
-3. **Google the error** - Someone probably solved it
-4. **Ask senior dev** - Better than guessing!
+1. **Read the error message carefully** — Python errors are usually descriptive
+2. **Check logs** — `tail -f logs/app.log`
+3. **Google the error** — Someone has likely solved it
+4. **Ask a senior dev** — Better than guessing!
 
 ### Before Asking:
 
 1. What did you try?
 2. What error did you get? (paste full traceback)
-3. What do you expect to happen?
+3. What did you expect to happen?
 
 ### Good Question Example:
 
-> "I'm trying to add pagination to `/api/docs` but getting `TypeError: 'int' object is not iterable` on line 45. I think `offset()` expects a list but I'm passing an int. Here's my code: [paste code]. Should I convert skip/limit to a list?"
+> “I’m trying to add pagination to `/api/docs` but getting `TypeError: 'int' object is not iterable` on line 45. I think `offset()` expects a list but I’m passing an int. Here’s my code: [paste code]. Should I convert skip/limit to a list?”
 
 ---
 
-## ✅ Checklist Before Submitting PR
+## ✅ Checklist Before Submitting a PR
 
 - [ ] Code runs without errors
 - [ ] Tests pass (`python scripts/test_setup.py`)
-- [ ] Added type hints to new functions
-- [ ] Added docstrings to new functions
+- [ ] Type hints added to new functions
+- [ ] Docstrings added to new functions
 - [ ] No hardcoded values (use config)
-- [ ] Error handling in place
-- [ ] Tested manually with curl/Postman
-- [ ] Git commit message is descriptive
+- [ ] Proper error handling in place
+- [ ] Manually tested with curl/Postman
+- [ ] Descriptive git commit message
 - [ ] No sensitive data (API keys, passwords) in code
 
 ---
 
-Good luck! Remember: **It's OK to make mistakes - that's how we learn!** 🚀
+Good luck! Remember: **It’s OK to make mistakes — that’s how we learn!** 🚀
 
-If you get stuck, don't spend more than 30 minutes - ask for help! 💪
+If you get stuck, don’t spend more than 30 minutes — ask for help! 💪
