@@ -8,6 +8,7 @@ export const useMetrics = () => {
 
   useEffect(() => {
     setLoading(true);
+    console.log("Fetching metrics...");
     fetchMetrics()
       .then(setData)
       .catch((error) => console.error(error))
