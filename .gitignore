@@ -2,7 +2,6 @@
 __pycache__/
 *.py[cod]
 *.pyo
-.env
 .venv/
 *.egg-info/
 
@@ -20,3 +19,12 @@ build/
 .idea/
 
 apps/api/venv
+
+# Environment files
+.env
+.env.local
+.env.docker
+.env.*.local
+
+# Keep only example
+!.env.example

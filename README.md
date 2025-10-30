@@ -99,12 +99,13 @@ cd SmartFAQ
 
 ```bash
 # Copy sample config
-cp .env.example .env
+cp .env.example .env (for local development)
+cp .env.docker.example .env.docker (for Docker Compose)
 
 # Edit environment variables
-nano .env
+nano .env (or .env.docker)
 # or
-vim .env
+vim .env (or .env.docker)
 ```
 
 **Important Variables in `.env`:**

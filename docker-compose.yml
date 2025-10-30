@@ -3,7 +3,7 @@ services:
     build:
       context: ./
       dockerfile: apps/api/Dockerfile
-    env_file: ./.env
+    env_file: ./.env.docker
     volumes:
       - ./apps/api:/app
     ports:
@@ -17,7 +17,7 @@ services:
     build:
       context: ./
       dockerfile: apps/web-student/Dockerfile
-    env_file: ./.env
+    env_file: ./.env.docker
     volumes:
       - ./apps/web-student/src:/workspace/apps/web-student/src
       - ./packages/ui/src:/workspace/packages/ui/src
@@ -30,7 +30,7 @@ services:
     build:
       context: ./
       dockerfile: apps/web-admin/Dockerfile
-    env_file: ./.env
+    env_file: ./.env.docker
     volumes:
       - ./apps/web-admin/src:/workspace/apps/web-admin/src
       - ./packages/ui/src:/workspace/packages/ui/src
@@ -41,7 +41,7 @@ services:
 
   db:
     image: postgres:17.6
-    env_file: ./.env
+    env_file: ./.env.docker
     environment:
       POSTGRES_DB: ${POSTGRES_DB}
       POSTGRES_USER: ${POSTGRES_USER}

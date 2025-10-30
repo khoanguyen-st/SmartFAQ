@@ -1,5 +1,4 @@
 from __future__ import annotations
-import os
 import warnings
 from typing import Optional, Dict
 from langchain_core.embeddings import Embeddings

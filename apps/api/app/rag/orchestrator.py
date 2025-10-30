@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import time
+import logging
 from typing import Optional, Dict, Any, List, Sequence
 
 from app.rag.retriever import Retriever
@@ -10,6 +11,8 @@ from app.core.config import settings
 from langchain_core.runnables import RunnablePassthrough
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.documents import Document
+
+logger = logging.getLogger(__name__)
 
 
 def _clip(text: str, max_chars: int = 8000) -> str:
@@ -62,7 +65,16 @@ class RAGOrchestrator:
             # medium/low confidence → vẫn gọi LLM nhưng báo “không chắc chắn”
             # (Nếu muốn strict: comment 2 dòng dưới và dùng fallback cứng)
             cautious_prefix = "Mình chưa chắc chắn lắm, nhưng dựa trên thông tin hiện có: "
-            raw = await self.llm_wrapper.generate_answer_async(question, contexts)
+            try:
+                raw = await self.llm_wrapper.generate_answer_async(question, contexts)
+            except Exception as e:
+                logger.error(f"LLM generation failed: {e}")
+                return {
+                    "answer": "Xin lỗi, hệ thống đang gặp sự cố. Vui lòng thử lại sau.",
+                    "confidence": 0.0,
+                    "fallback_triggered": True,
+                    "error": str(e)
+                }
             answer = cautious_prefix + raw
             # fallback mềm, vẫn set cờ để front-end biết hiển thị banner
             fallback_triggered = True

@@ -84,7 +84,7 @@ class DocumentService:
         final_path = (user_dir / f"{document_id}_{safe_name}").resolve()
 
         # hạn chế Path traversal
-        if not str(final_path).startswith(str(user_dir)):
+        if user_dir not in final_path.parents:
             raise HTTPException(status_code=400, detail="Invalid upload path")
 
         # ghi file async

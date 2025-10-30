@@ -1,7 +1,6 @@
 # vector_store.py
 from __future__ import annotations
 
-import os
 import hashlib
 from typing import Iterable, List, Dict, Any, Optional, Tuple
 from langchain_core.documents import Document
