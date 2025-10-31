@@ -114,11 +114,11 @@ vim .env (or .env.docker)
 # Database
 POSTGRES_USER=smartfaq
 POSTGRES_PASSWORD=your_secure_password
-POSTGRES_DB=smartfaq_db
+POSTGRES_DB=smartfaq
 
 # API
 API_SECRET_KEY=your_secret_key_here_min_32_chars
-API_CORS_ORIGINS=http://localhost:3000,http://localhost:3001
+API_CORS_ORIGINS=http://localhost:5173,http://localhost:5174
 
 # LLM Configuration
 GOOGLE_API_KEY=sk-your-google-api-key
@@ -145,8 +145,8 @@ docker compose exec api python scripts/seed_data.py  # Optional: seed sample dat
 
 #### 5. Access the Application
 
-- **Student Chat**: [http://localhost:3000](http://localhost:3000)
-- **Admin Dashboard**: [http://localhost:3001](http://localhost:3001)
+- **Student Chat**: [http://localhost:3000](http://localhost:5173)
+- **Admin Dashboard**: [http://localhost:3001](http://localhost:5174)
 - **API Docs**: [http://localhost:8000/docs](http://localhost:8000/docs)
 - **Health Check**: [http://localhost:8000/health](http://localhost:8000/health)
 
