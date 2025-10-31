@@ -20,19 +20,17 @@ cp .env.example apps/api/.env
 # Set GOOGLE_API_KEY=your-key-here
 ```
 
-### 3️⃣ Run Quick Start
+### 3️⃣ Install dependencies
 
 ```bash
-./scripts/quick-start.sh
-# Wait for services to start
-# Verify all tests pass ✅
+cd apps/api
+source venv/bin/activate
+pip install -e ".[dev]"
 ```
 
 ### 4️⃣ Start API Server
 
 ```bash
-cd apps/api
-source venv/bin/activate
 uvicorn app.main:app --reload
 ```
 

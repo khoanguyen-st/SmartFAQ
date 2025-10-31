@@ -4,6 +4,7 @@ import { SmartButton } from "@smartfaq/ui";
 
 import { useI18n, availableLanguages } from "../lib/i18n";
 import { useChat } from "../hooks/useChat";
+import { cn } from "@/lib/utils";
 
 const quickPrompts = [
   "Admission requirements",
@@ -40,17 +41,20 @@ const ChatPage = () => {
   const remaining = MAX_MESSAGE_LENGTH - input.length;
 
   return (
-    <div className="chat-page">
-      <header className="chat-header">
-        <div className="chat-header__title">
-          <h1>Greenwich SmartFAQ</h1>
-          <p>{t("prompt")}</p>
+    <div className="flex min-h-screen flex-col bg-gradient-to-b from-slate-50 to-indigo-50 px-6 pb-8">
+      <header className="mx-auto flex w-full max-w-4xl flex-col gap-4 pb-4 pt-8 md:flex-row md:items-center md:justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-primary-700">
+            Greenwich SmartFAQ
+          </h1>
+          <p className="mt-1 text-base text-slate-600">{t("prompt")}</p>
         </div>
         <select
           value={lang}
           onChange={(event) =>
             setLang(event.target.value as (typeof availableLanguages)[number])
           }
+          className="max-w-[160px] rounded-lg border border-indigo-200 bg-white px-2 py-2"
         >
           {availableLanguages.map((value) => (
             <option key={value} value={value}>
@@ -60,10 +64,10 @@ const ChatPage = () => {
         </select>
       </header>
 
-      <main className="chat-main">
-        <section className="chat-welcome">
-          <p>{t("welcome")}</p>
-          <div className="chat-welcome__quick-actions">
+      <main className="mx-auto flex w-full max-w-4xl flex-1 flex-col gap-4">
+        <section className="shadow-slate-900/8 rounded-2xl bg-white p-6 shadow-lg">
+          <p className="text-slate-600">{t("welcome")}</p>
+          <div className="mt-4 flex flex-wrap gap-3">
             {quickPrompts.map((prompt) => (
               <SmartButton
                 key={prompt}
@@ -77,29 +81,52 @@ const ChatPage = () => {
           </div>
         </section>
 
-        <section ref={listRef} className="chat-history">
+        <section
+          ref={listRef}
+          className="shadow-slate-900/8 relative flex max-h-[520px] min-h-[320px] flex-1 flex-col gap-4 overflow-y-auto rounded-2xl bg-white p-6 shadow-lg"
+        >
           {history.map((message) => (
             <div
               key={message.id}
-              className={`chat-message chat-message--${message.author}`}
+              className={cn(
+                "flex flex-col gap-1",
+                message.author === "user" ? "items-end" : "items-start"
+              )}
             >
-              <span className="chat-message__bubble">{message.content}</span>
-              <p className="chat-message__timestamp">{message.timestamp}</p>
+              <span
+                className={cn(
+                  "shadow-slate-900/12 max-w-[75%] rounded-2xl px-4 py-3 text-base shadow-md",
+                  message.author === "user"
+                    ? "bg-primary-600 text-white"
+                    : "bg-slate-100 text-slate-900"
+                )}
+              >
+                {message.content}
+              </span>
+              <p className="text-xs text-slate-400">{message.timestamp}</p>
             </div>
           ))}
-          {isLoading && <p className="chat-meta">Assistant is typing…</p>}
-          {typing && <p className="chat-meta">{t("feedback")}</p>}
+          {isLoading && (
+            <p className="text-sm text-primary-600">Assistant is typing…</p>
+          )}
+          {typing && (
+            <p className="text-sm text-primary-600">{t("feedback")}</p>
+          )}
         </section>
 
-        <form onSubmit={handleSubmit} className="chat-form">
+        <form
+          onSubmit={handleSubmit}
+          className="shadow-slate-900/8 flex flex-col gap-4 rounded-2xl bg-white p-6 shadow-lg"
+        >
           <textarea
             value={input}
             onChange={(event) => setInput(event.target.value)}
             maxLength={MAX_MESSAGE_LENGTH}
             rows={3}
             placeholder={t("prompt")}
+            className="min-h-[110px] w-full resize-y rounded-xl border border-indigo-200 px-4 py-4 text-base font-normal focus:border-primary-600 focus:outline-none focus:ring-2 focus:ring-primary-600/20"
           />
-          <div className="chat-form__footer">
+          <div className="flex items-center justify-between text-sm text-slate-500">
             <span>{remaining} characters remaining</span>
             <SmartButton type="submit" disabled={isLoading}>
               {isLoading ? "Sending…" : "Send"}
@@ -107,9 +134,9 @@ const ChatPage = () => {
           </div>
         </form>
 
-        <section className="chat-feedback">
-          <p>{t("feedback")}</p>
-          <div className="chat-feedback__actions">
+        <section className="shadow-slate-900/8 rounded-2xl bg-white p-6 shadow-lg">
+          <p className="mb-3 text-slate-600">{t("feedback")}</p>
+          <div className="flex flex-wrap gap-3">
             <SmartButton emphasis="secondary" type="button">
               👍
             </SmartButton>
