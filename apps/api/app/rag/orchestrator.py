@@ -11,6 +11,7 @@ from app.core.config import settings
 from langchain_core.runnables import RunnablePassthrough
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.documents import Document
+from app.rag.formatter import ResponseFormatter
 
 logger = logging.getLogger(__name__)
 
@@ -24,6 +25,7 @@ def _clip(text: str, max_chars: int = 8000) -> str:
 class RAGOrchestrator:
     def __init__(self, retriever: Optional[Retriever] = None, llm_wrapper: Optional[LLMWrapper] = None):
         self.retriever = retriever or Retriever()
+        self.formatter = ResponseFormatter()
         self.llm_wrapper = llm_wrapper or LLMWrapper()
 
     async def query(
@@ -91,7 +93,13 @@ class RAGOrchestrator:
                 "page": md.get("page"),
                 "score": c.get("score"),
             })
-
+            
+        formatted = self.formatter.format(
+            raw_answer=answer,
+            sources=sources,
+            fallback_triggered=fallback_triggered
+        )
+        
         latency_ms = int((time.time() - t0) * 1000)
         return {
             "answer": answer,
