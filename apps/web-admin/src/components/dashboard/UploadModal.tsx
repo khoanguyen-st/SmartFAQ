@@ -1,47 +1,21 @@
-import React, { useState, useRef } from "react";
+import { useState, useRef } from "react";
+import { MAX_FILES, MAX_SIZE, formatBytes, mapFiles, validateFiles } from "@/lib/files";
 
-const UploadModal = ({
-  isOpen,
-  onClose,
-}: {
-  isOpen: boolean;
-  onClose: () => void;
-}) => {
-  const [files, setFiles] = useState<
-    { id: string; name: string; size: number; progress: number }[]
-  >([]);
+const UploadModal = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) => {
+  const [files, setFiles] = useState<{ id: string; name: string; size: number; progress: number }[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-
-  const MAX_FILES = 20;
-  const MAX_SIZE = 25 * 1024 * 1024; // 25MB
-  const SUPPORTED_TYPES = ["application/pdf"];
 
   const handleFiles = (newFiles: FileList | null) => {
     if (!newFiles) return;
     setError(null);
 
     const arr = Array.from(newFiles);
-    if (files.length + arr.length > MAX_FILES) {
-      setError(`❌ You can upload up to ${MAX_FILES} files only.`);
-      return;
-    }
+    const { valid, error } = validateFiles(arr, files.length);
+    if (error) setError(error);
 
-    const validFiles = arr.filter(
-      (f) => SUPPORTED_TYPES.includes(f.type) && f.size <= MAX_SIZE
-    );
-    if (validFiles.length < arr.length) {
-      setError("❌ Some files were rejected (only PDF ≤ 25MB allowed).");
-    }
-
-    const mapped = validFiles.map((f) => ({
-      id: `${Date.now()}-${f.name}`,
-      name: f.name,
-      size: f.size,
-      progress: 100,
-    }));
-
+    const mapped = mapFiles(valid);
     setFiles((prev) => [...prev, ...mapped]);
   };
 
@@ -54,15 +28,13 @@ const UploadModal = ({
       fileInputRef.current.onchange = (e: any) => {
         const newFile = e.target.files[0];
         if (!newFile) return;
-        if (!SUPPORTED_TYPES.includes(newFile.type) || newFile.size > MAX_SIZE) {
-          setError("❌ Invalid file (PDF ≤ 25MB only).");
+        if (newFile.size > MAX_SIZE) {
+          setError("Invalid file (max 25MB).");
           return;
         }
         setFiles((prev) =>
           prev.map((f) =>
-            f.id === id
-              ? { ...f, name: newFile.name, size: newFile.size, progress: 100 }
-              : f
+            f.id === id ? { ...f, name: newFile.name, size: newFile.size, progress: 100 } : f
           )
         );
       };
@@ -72,7 +44,7 @@ const UploadModal = ({
 
   const handleSave = () => {
     if (files.length === 0) {
-      setError("❌ No files to process.");
+      setError("No files to process.");
       return;
     }
     setError(null);
@@ -85,12 +57,6 @@ const UploadModal = ({
 
   if (!isOpen) return null;
 
-  const formatBytes = (bytes: number) => {
-    const sizes = ["Bytes", "KB", "MB"];
-    const i = Math.floor(Math.log(bytes) / Math.log(1024));
-    return `${(bytes / Math.pow(1024, i)).toFixed(2)} ${sizes[i]}`;
-  };
-
   const handleDragOver = (e: React.DragEvent) => e.preventDefault();
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
@@ -99,15 +65,12 @@ const UploadModal = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-900 bg-opacity-70 backdrop-blur-sm">
-      <div
-        className="bg-white rounded-xl shadow-2xl w-full max-w-2xl overflow-hidden transform transition-all"
-        onClick={(e) => e.stopPropagation()}
-      >
+      <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl overflow-hidden transform transition-all">
         <div className="p-6 border-b border-gray-100 flex justify-between items-start">
           <div>
-            <h2 className="text-xl font-semibold text-gray-800">Upload Documents</h2>
+            <h2 className="text-xl font-semibold text-gray-800">Upload Files</h2>
             <p className="text-sm text-gray-500 mt-1">
-              Upload PDF documents to integrate into the chatbot knowledge base.
+              Upload documents, images, or archives to integrate into the system.
             </p>
           </div>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
@@ -124,13 +87,11 @@ const UploadModal = ({
           >
             <i className="fas fa-cloud-upload-alt text-4xl text-indigo-600 mb-3"></i>
             <p className="font-semibold text-gray-700">
-              Drag & drop PDF files here or{" "}
-              <span className="text-indigo-600 hover:underline">
-                choose file to uploaded.
-              </span>
+              Drag & drop files here or{" "}
+              <span className="text-indigo-600 hover:underline">choose files to upload.</span>
             </p>
             <p className="text-xs text-gray-500 mt-1">
-              Supported format: PDF | Max 20 files | Max 25MB each
+              Supported formats: All | Max 20 files | Max 25MB each
             </p>
 
             <div className="mt-3 w-1/2 mx-auto">
@@ -149,40 +110,29 @@ const UploadModal = ({
             <input
               type="file"
               ref={fileInputRef}
-              accept="application/pdf"
               multiple
               className="hidden"
+              accept="*/*"
               onChange={(e) => handleFiles(e.target.files)}
             />
           </div>
 
-          {error && (
-            <p className="text-sm text-red-500 text-center font-medium">{error}</p>
-          )}
+          {error && <p className="text-sm text-red-500 text-center font-medium">{error}</p>}
 
           <div>
             <h3 className="text-base font-semibold text-gray-700 mb-2">Uploaded Files</h3>
             <div className="border border-gray-200 rounded-lg p-4 space-y-3 bg-white max-h-60 overflow-y-auto">
               {files.map((file) => (
-                <div
-                  key={file.id}
-                  className="flex items-center justify-between py-2 border-b last:border-b-0"
-                >
+                <div key={file.id} className="flex items-center justify-between py-2 border-b last:border-b-0">
                   <div>
                     <p className="text-sm font-medium text-gray-800">{file.name}</p>
                     <p className="text-xs text-gray-500">{formatBytes(file.size)}</p>
                   </div>
                   <div className="flex space-x-3 text-sm">
-                    <button
-                      onClick={() => handleReplace(file.id)}
-                      className="text-indigo-600 hover:text-indigo-800 font-medium"
-                    >
+                    <button onClick={() => handleReplace(file.id)} className="text-indigo-600 hover:text-indigo-800 font-medium">
                       Replace
                     </button>
-                    <button
-                      onClick={() => handleRemove(file.id)}
-                      className="text-red-500 hover:text-red-700 font-medium"
-                    >
+                    <button onClick={() => handleRemove(file.id)} className="text-red-500 hover:text-red-700 font-medium">
                       Remove
                     </button>
                   </div>
@@ -198,7 +148,7 @@ const UploadModal = ({
         <div className="p-6 border-t border-gray-100 flex justify-between items-center">
           <p className="text-xs text-indigo-700 flex items-center space-x-1">
             <i className="fas fa-info-circle"></i>
-            <span>Uploaded files will be processed into the chatbot knowledge base.</span>
+            <span>Uploaded files will be processed and integrated into the system.</span>
           </p>
           <div className="flex space-x-3">
             <button
@@ -219,7 +169,7 @@ const UploadModal = ({
 
       {success && (
         <div className="fixed bottom-6 right-6 bg-green-500 text-white px-5 py-3 rounded-lg shadow-lg animate-bounce">
-          ✅ Uploaded documents have been processed successfully.
+          Uploaded files have been processed successfully.
         </div>
       )}
     </div>
