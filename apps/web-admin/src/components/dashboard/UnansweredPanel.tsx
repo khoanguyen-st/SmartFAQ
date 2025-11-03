@@ -1,15 +1,21 @@
-const items: Array<{ question: string; status: "In Progress" | "Resolved" }> = [];
+const items: Array<{ question: string; status: "In Progress" | "Resolved" }> =
+  [];
 
 const UnansweredPanel = () => {
   return (
-    <section className="dashboard-card">
-      <div className="dashboard-card__header">
-        <h2>Unanswered Questions</h2>
-        <button type="button" className="dashboard-link">
+    <section className="rounded-2xl bg-white p-6 shadow-lg shadow-slate-900/10">
+      <div className="mb-4 flex items-center justify-between gap-4">
+        <h2 className="text-xl font-semibold text-slate-900">
+          Unanswered Questions
+        </h2>
+        <button
+          type="button"
+          className="border-none bg-transparent font-semibold text-primary-600 hover:text-primary-700"
+        >
           Export CSV
         </button>
       </div>
-      <div className="dashboard-card__content">
+      <div className="text-base text-slate-600">
         {items.length === 0 && <p>No pending questions yet.</p>}
       </div>
     </section>

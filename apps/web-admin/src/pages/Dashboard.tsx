@@ -4,7 +4,7 @@ import UnansweredPanel from "../components/dashboard/UnansweredPanel";
 
 const DashboardPage = () => {
   return (
-    <div className="dashboard-page">
+    <div className="flex flex-col gap-6">
       <KPIGrid />
       <TrendsChart />
       <UnansweredPanel />

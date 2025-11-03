@@ -11,6 +11,21 @@ dist/
 build/
 .cache/
 
+# Yarn (keep these)
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/sdks
+!.yarn/versions
+.pnp.*
+.yarn/cache
+.yarn/install-state.gz
+
+# Lock files from other package managers (use yarn.lock only)
+package-lock.json
+pnpm-lock.yaml
+
 # Mac
 .DS_Store
 

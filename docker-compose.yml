@@ -1,17 +1,18 @@
 services:
   api:
     build:
-      context: ./
-      dockerfile: apps/api/Dockerfile
+      context: ./apps/api
+      dockerfile: Dockerfile
     env_file: ./.env.docker
     volumes:
-      - ./apps/api:/app
+      - ./apps/api/app:/app/app
     ports:
       - "${API_PORT_EXTERNAL:-8000}:8000"
     depends_on:
       - db
       - redis
       - chroma
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 
   web-student:
     build:

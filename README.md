@@ -78,9 +78,31 @@ SmartFAQ/
 - **Docker** ≥ 20.10
 - **Docker Compose** ≥ 2.0
 - **Node.js** ≥ 18.x (for frontend development)
+- **Yarn** ≥ 1.22.0 (required - this project uses Yarn for package management)
 - **Python** ≥ 3.11 (for backend development)
 - **RAM** ≥ 8GB recommended
 - **Disk Space** ≥ 10GB available
+
+---
+
+## Package Manager
+
+**⚠️ This project uses Yarn for package management.**
+
+Do NOT use npm or pnpm. The project is configured to enforce Yarn usage.
+
+### Installing Yarn
+
+```bash
+# Option 1: via npm (one-time)
+npm install -g yarn
+
+# Option 2: via corepack (recommended)
+corepack enable
+
+# Verify installation
+yarn --version
+```
 
 ---
 
@@ -93,6 +115,17 @@ SmartFAQ/
 ```bash
 git clone https://github.com/your-org/SmartFAQ.git
 cd SmartFAQ
+```
+
+#### 2. Install Dependencies (Frontend only)
+
+```bash
+# This project uses Yarn - DO NOT use npm or pnpm
+yarn install
+
+# Or use the setup script
+chmod +x scripts/setup.sh
+./scripts/setup.sh
 ```
 
 #### 2. Configure Environment
@@ -114,11 +147,11 @@ vim .env (or .env.docker)
 # Database
 POSTGRES_USER=smartfaq
 POSTGRES_PASSWORD=your_secure_password
-POSTGRES_DB=smartfaq_db
+POSTGRES_DB=smartfaq
 
 # API
 API_SECRET_KEY=your_secret_key_here_min_32_chars
-API_CORS_ORIGINS=http://localhost:3000,http://localhost:3001
+API_CORS_ORIGINS=http://localhost:5173,http://localhost:5174
 
 # LLM Configuration
 GOOGLE_API_KEY=sk-your-google-api-key
@@ -145,8 +178,8 @@ docker compose exec api python scripts/seed_data.py  # Optional: seed sample dat
 
 #### 5. Access the Application
 
-- **Student Chat**: [http://localhost:3000](http://localhost:3000)
-- **Admin Dashboard**: [http://localhost:3001](http://localhost:3001)
+- **Student Chat**: [http://localhost:3000](http://localhost:5173)
+- **Admin Dashboard**: [http://localhost:3001](http://localhost:5174)
 - **API Docs**: [http://localhost:8000/docs](http://localhost:8000/docs)
 - **Health Check**: [http://localhost:8000/health](http://localhost:8000/health)
 
@@ -192,19 +225,19 @@ uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 
 ```bash
 cd apps/web-student
-npm install
+yarn install  # Use Yarn, not npm
 cp .env.example .env.local
 # Edit VITE_API_URL=http://localhost:8000
-npm run dev
+yarn dev
 ```
 
 #### Frontend Setup – Admin Dashboard
 
 ```bash
 cd apps/web-admin
-npm install
+yarn install  # Use Yarn, not npm
 cp .env.example .env.local
-npm run dev
+yarn dev
 ```
 
 ---
@@ -227,18 +260,25 @@ docker compose down -v
 ## Development Commands
 
 ```bash
+# Frontend (from root)
+yarn install              # Install all dependencies
+yarn dev:admin           # Start admin dashboard
+yarn dev:student         # Start student chat
+yarn build               # Build all projects
+yarn lint                # Lint all projects
+
+# Frontend (in specific app)
+cd apps/web-student
+yarn test
+yarn build
+yarn lint
+
 # Backend
 cd apps/api
 pytest
 black app/
 isort app/
 flake8 app/
-
-# Frontend
-cd apps/web-student
-npm test
-npm run build
-npm run lint
 ```
 
 ---
@@ -247,7 +287,6 @@ npm run lint
 
 - **Authentication:** JWT with bcrypt password hashing
 - **Authorization:** Role-Based Access Control (RBAC)
-
   - **Student:** Access chat and FAQ
   - **Staff:** Manage and moderate documents
   - **Admin:** Full system access
@@ -304,7 +343,6 @@ curl http://localhost:8000/health
    ```
 
 2. **Develop and test locally**
-
    - Backend: add tests under `apps/api/tests/`
    - Frontend: use React Testing Library for component tests
 
@@ -315,7 +353,6 @@ curl http://localhost:8000/health
    ```
 
 4. **Push and create a Pull Request**
-
    - CI/CD will automatically run tests and linting
    - Code review required before merge
 
