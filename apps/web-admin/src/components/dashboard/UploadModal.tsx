@@ -126,7 +126,7 @@ const UploadModal = ({
             <p className="font-semibold text-gray-700">
               Drag & drop PDF files here or{" "}
               <span className="text-indigo-600 hover:underline">
-                choose file to upload
+                choose file to uploaded.
               </span>
             </p>
             <p className="text-xs text-gray-500 mt-1">
