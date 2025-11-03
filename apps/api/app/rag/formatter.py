@@ -82,7 +82,6 @@ class ResponseFormatter:
     def _add_source_attribution(self, text: str, sources: List[Dict[str, Any]]) -> str:
         if not sources:
             return text
-        # Gom các trang của cùng một tài liệu
         source_pages = {}
         for source in sources:
             source_name = source.get("source") or "Unknown"
