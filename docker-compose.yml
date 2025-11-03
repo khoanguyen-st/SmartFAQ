@@ -32,13 +32,21 @@ services:
       context: ./
       dockerfile: apps/web-admin/Dockerfile
     env_file: ./.env.docker
-    volumes:
-      - ./apps/web-admin/src:/workspace/apps/web-admin/src
-      - ./packages/ui/src:/workspace/packages/ui/src
     ports:
       - "${WEB_ADMIN_PORT_EXTERNAL:-5174}:5173"
     depends_on:
       - api
+    develop:
+      watch:
+        - path: ./apps/web-admin/src
+          action: sync
+          target: /workspace/apps/web-admin/src
+        - path: ./packages/ui/src
+          action: sync
+          target: /workspace/packages/ui/src
+        - path: ./apps/web-admin/package.json
+          action: rebuild
+
 
   db:
     image: postgres:17.6
