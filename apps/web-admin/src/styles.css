@@ -1,12 +1,19 @@
+@import "tailwindcss";
 :root {
   color-scheme: light;
   font-family: "Inter", system-ui, sans-serif;
+  --color-white: #fff;
+  --color-dark: #111827;
+  --color-gray-3: #E5E7EB;
+  --color-dark-5: #6B7280;
+  --color-blue: #003087;
 }
 
 body {
   margin: 0;
   background-color: #f8fafc;
 }
+
 
 a {
   color: inherit;
@@ -66,7 +73,7 @@ a {
 
 .admin-shell__content {
   flex: 1;
-  padding: 2rem;
+  /* padding: 2rem; */
   display: flex;
   flex-direction: column;
   gap: 2rem;
@@ -77,6 +84,8 @@ a {
   justify-content: space-between;
   align-items: baseline;
   gap: 1rem;
+  width:100%;
+  border-bottom: 1px solid #E5E7EB;
 }
 
 .admin-shell__header h1 {
