@@ -1,0 +1,335 @@
+{
+  "info": {
+    "_postman_id": "7f744965-e86c-4a8f-bb26-96c0a87632e9",
+    "name": "Greenwich SmartFAQ - Chat API",
+    "description": "Collection to exercise /chat endpoints for Greenwich SmartFAQ.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Chat / New Session",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"userAgent\": \"Postman Runner\",\n  \"language\": \"en\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/chat/new-session",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "chat",
+            "new-session"
+          ]
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status is 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "const sessionPayload = pm.response.json();",
+              "pm.test(\"sessionId is returned\", function () {",
+              "    pm.expect(sessionPayload.sessionId, \"sessionId\").to.be.a(\"string\").and.not.empty;",
+              "});",
+              "",
+              "pm.collectionVariables.set(\"sessionId\", sessionPayload.sessionId);",
+              "pm.collectionVariables.set(\"language\", sessionPayload.message ? \"en\" : pm.collectionVariables.get(\"language\") || \"en\");",
+              "pm.collectionVariables.set(\"chatId\", \"\");"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Chat / Query",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"question\": \"What programs are available?\",\n  \"sessionId\": \"{{sessionId}}\",\n  \"language\": \"{{language}}\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/chat/query",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "chat",
+            "query"
+          ]
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status is 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "const queryPayload = pm.response.json();",
+              "pm.test(\"Answer present\", function () {",
+              "    pm.expect(queryPayload.answer, \"answer\").to.be.a(\"string\").and.not.empty;",
+              "});",
+              "pm.test(\"Chat ID returned\", function () {",
+              "    pm.expect(queryPayload.chatId, \"chatId\").to.be.a(\"string\").and.not.empty;",
+              "});",
+              "",
+              "pm.collectionVariables.set(\"chatId\", queryPayload.chatId);",
+              "pm.collectionVariables.set(\"confidence\", queryPayload.confidence);"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Chat / History",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/chat/history?sessionId={{sessionId}}&limit={{historyLimit}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "chat",
+            "history"
+          ],
+          "query": [
+            {
+              "key": "sessionId",
+              "value": "{{sessionId}}"
+            },
+            {
+              "key": "limit",
+              "value": "{{historyLimit}}"
+            }
+          ]
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status is 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "const historyPayload = pm.response.json();",
+              "pm.test(\"History matches session\", function () {",
+              "    pm.expect(historyPayload.sessionId).to.eql(pm.collectionVariables.get(\"sessionId\"));",
+              "});",
+              "pm.test(\"Has messages\", function () {",
+              "    pm.expect(historyPayload.messages).to.be.an(\"array\");",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Chat / Feedback",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"chatId\": \"{{chatId}}\",\n  \"sessionId\": \"{{sessionId}}\",\n  \"feedback\": \"{{feedback}}\",\n  \"comment\": \"Accurate answer\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/chat/feedback",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "chat",
+            "feedback"
+          ]
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status is 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "const feedbackPayload = pm.response.json();",
+              "pm.test(\"Feedback recorded\", function () {",
+              "    pm.expect(feedbackPayload.status).to.eql(\"success\");",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Chat / Sources",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/chat/sources/{{chatId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "chat",
+            "sources",
+            "{{chatId}}"
+          ]
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status is 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "const sourcesPayload = pm.response.json();",
+              "pm.test(\"Sources array\", function () {",
+              "    pm.expect(sourcesPayload.sources).to.be.an(\"array\");",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Chat / Confidence",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/chat/confidence/{{chatId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "chat",
+            "confidence",
+            "{{chatId}}"
+          ]
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status is 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "const confidencePayload = pm.response.json();",
+              "pm.test(\"Has confidence\", function () {",
+              "    pm.expect(confidencePayload.confidence).to.be.a(\"number\");",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8000"
+    },
+    {
+      "key": "sessionId",
+      "value": ""
+    },
+    {
+      "key": "chatId",
+      "value": ""
+    },
+    {
+      "key": "language",
+      "value": "en"
+    },
+    {
+      "key": "feedback",
+      "value": "up"
+    },
+    {
+      "key": "historyLimit",
+      "value": "50"
+    },
+    {
+      "key": "confidence",
+      "value": ""
+    }
+  ]
+}
