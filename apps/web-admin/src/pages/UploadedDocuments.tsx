@@ -3,8 +3,9 @@ import DocumentCard from "../components/uploaded/DocumentCard";
 import UploadCard from "../components/uploaded/UploadCard";
 import PlusIcon from "../assets/icon/plus.svg?react";
 import { ArrowRight, ArrowLeft } from 'lucide-react';
+import DeleteConfirmationModal from "../components/uploaded/DeleteConfirmationModal"; 
 
-// Dữ liệu và hàm hỗ trợ (Giữ nguyên)
+
 interface IDocument {
     id: number;
     title: string;
@@ -39,12 +40,15 @@ const sortDocuments = (docs: IDocument[]): IDocument[] => {
 
 const getMaxDocsPerPage = () => {
     if (typeof window === 'undefined') return 3; 
-    if (window.innerWidth >= 1024) { 
-        return 11;
+    if (window.innerWidth >= 1280) { 
+        return 10; 
+    } else if (window.innerWidth >= 1024) { 
+        return 8; 
     } else {
         return 3; 
     }
 };
+
 
 const UploadedPage = () => {
     const [documents, setDocuments] = useState<IDocument[]>(MOCK_DOCUMENTS);
@@ -98,7 +102,6 @@ const UploadedPage = () => {
         return sortDocuments(documents); 
     }, [documents]);
     
-
     const totalPages = Math.ceil(sortedDocuments.length / docsPerPage); 
     const startIndex = (currentPage - 1) * docsPerPage;
     
@@ -108,9 +111,18 @@ const UploadedPage = () => {
     const isLastPage = currentPage === totalPages;
     
     if (isLastPage && sortedDocuments.length > 0) {
-        const totalSlots = currentPage === 1 ? docsPerPage + 1 : docsPerPage;
+        const DOCUMENTS_PER_ROW = 
+            window.innerWidth >= 1280 ? 5 : 
+            window.innerWidth >= 1024 ? 4 : 
+            window.innerWidth >= 640 ? 2 : 1;
+            
+        const MAX_ROWS = 3; 
+        const maxItemsOnGrid = MAX_ROWS * DOCUMENTS_PER_ROW; 
+        
         const itemsOnPage = currentPage === 1 ? currentDocuments.length + 1 : currentDocuments.length;
-        const emptySlots = totalSlots - itemsOnPage; 
+        
+        const emptySlots = maxItemsOnGrid - itemsOnPage;
+        
         if (emptySlots > 0) {
             placeholders = Array.from({ length: emptySlots }, (_, i) => -(i + 1));
         }
@@ -123,6 +135,19 @@ const UploadedPage = () => {
     }, [totalPages]);
     
     const isDocumentEmpty = sortedDocuments.length === 0;
+
+    const modalProps = useMemo(() => {
+        if (documentToDelete) {
+            return {
+                isOpen: true,
+                documentTitle: documentToDelete.title,
+                onCancel: handleCloseDeleteModal,
+                onConfirm: handleConfirmDelete, 
+            };
+        }
+        return { isOpen: false, documentTitle: '' } as const;
+    }, [documentToDelete, handleCloseDeleteModal, handleConfirmDelete]);
+
 
     const content = isDocumentEmpty ? (
         <div className="flex flex-col items-center justify-center p-10 border-2 border-dashed border-gray-300 rounded-xl bg-gray-50 h-64">
@@ -150,7 +175,7 @@ const UploadedPage = () => {
                 ))}
                 
                 {placeholders.map(key => (
-                    <div key={key} className="invisible">
+                    <div key={key} className="opacity-0 pointer-events-none">
                         <DocumentCard
                             doc={{ id: key, title: "Placeholder", date: "", sources: 0 } as IDocument}
                             onDelete={() => {}} 
@@ -221,6 +246,14 @@ const UploadedPage = () => {
                 {content}
             </div>
             
+            {modalProps.isOpen && (
+                <DeleteConfirmationModal 
+                    isOpen={modalProps.isOpen}
+                    documentTitle={modalProps.documentTitle}
+                    onCancel={modalProps.onCancel}
+                    onConfirm={modalProps.onConfirm}
+                />
+            )}
         </div>
     );
 };
