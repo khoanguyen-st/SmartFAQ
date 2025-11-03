@@ -4,7 +4,6 @@ import re
 import logging
 from typing import Dict, Any, List, Optional
 from urllib.parse import quote
-from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
@@ -52,30 +51,36 @@ class ResponseFormatter:
     def _clean_text(self, text: str) -> str:
         if not text:
             return ""
-        text = " ".join(text.split())
-        
-        text = re.sub(r'([a-zA-ZÀ-ỹ\d])\s+([A-ZÀ-ỹ])', r'\1. \2', text)
-        
-        text = re.sub(r'^\s*[-•]\s+', '- ', text, flags=re.MULTILINE)
-        text = re.sub(r'^\s*(\d+)\.\s+', r'\1. ', text, flags=re.MULTILINE)
+
+        bullet_point_pattern = r'^\s*[-•]\s+'
+        numbered_list_pattern = r'^\s*(\d+)\.\s+'
+
+        text = re.sub(bullet_point_pattern, '- ', text, flags=re.MULTILINE)
+        text = re.sub(numbered_list_pattern, r'\1. ', text, flags=re.MULTILINE)
+
+        leading_ws_re = re.compile(r'^[ \t]+', flags=re.MULTILINE)
+        trailing_ws_re = re.compile(r'[ \t]+$', flags=re.MULTILINE)
+        multi_space_re = re.compile(r'[ \t]{2,}')
+        text = leading_ws_re.sub('', text)
+        text = trailing_ws_re.sub('', text)
+        text = multi_space_re.sub(' ', text)
+
+        year_pattern = (r'\b(\d{4})\b', r'**\1**')
+        date_pattern = (r'\b(\d{1,2}/\d{1,2}/\d{4})\b', r'**\1**')
+        program_pattern = (r'\b(Khoa|Ngành|Chương trình|Đại học|Cao đẳng)\b', r'**\1**')
+        academic_pattern = (r'\b(học kỳ|kỳ thi|tín chỉ|học phí)\b', r'**\1**')
+        document_pattern = (r'\b(giấy tờ|hồ sơ|đơn|bằng|chứng chỉ)\b', r'**\1**')
 
         highlight_patterns = [
-            
-            (r'\b(\d{4})\b', r'**\1**'),  
-            (r'\b(\d{1,2}/\d{1,2}/\d{4})\b', r'**\1**'), 
-            
-            
-            (r'\b(Khoa|Ngành|Chương trình|Đại học|Cao đẳng)\b', r'**\1**'),
-            
-            (r'\b(học kỳ|kỳ thi|tín chỉ|học phí)\b', r'**\1**'),
-            
-           
-            (r'\b(giấy tờ|hồ sơ|đơn|bằng|chứng chỉ)\b', r'**\1**')
+            year_pattern,
+            date_pattern,
+            program_pattern,
+            academic_pattern,
+            document_pattern
         ]
-        
         for pattern, replacement in highlight_patterns:
             text = re.sub(pattern, replacement, text, flags=re.IGNORECASE)
-        
+
         return text.strip()
     
     def _add_source_attribution(self, text: str, sources: List[Dict[str, Any]]) -> str:
@@ -135,7 +140,6 @@ class ResponseFormatter:
     def _clean_source_name(self, source: str) -> str:
         if not source:
             return "Unknown"
-            
         parts = source.replace("\\", "/").split("/")
         filename = parts[-1] if parts else source
         filename = filename.replace("uploads/", "").replace("../", "")
@@ -156,31 +160,5 @@ class ResponseFormatter:
             "fallback_triggered": True
         }
 
-    def _clean_text(self, text: str) -> str:
-        """
-        Clean and normalize text, highlight important terms.
-        """
-        if not text:
-            return ""
-        
-        
-        text = " ".join(text.split())
-        
-        
-        text = re.sub(r'([a-zA-ZÀ-ỹ\d])\s+([A-ZÀ-ỹ])', r'\1. \2', text)
-        
-        
-        text = re.sub(r'^\s*[-•]\s+', '- ', text, flags=re.MULTILINE)
-        text = re.sub(r'^\s*(\d+)\.\s+', r'\1. ', text, flags=re.MULTILINE)
-        
-       
-        patterns = [
-            (r'(\d{4})', r'**\1**'), 
-            (r'\b(Khoa|Ngành|Chương trình)\b', r'**\1**'),  
-        ]
-        for pattern, replacement in patterns:
-            text = re.sub(pattern, replacement, text)
-        
-        return text.strip()
 
 default_formatter = ResponseFormatter()
