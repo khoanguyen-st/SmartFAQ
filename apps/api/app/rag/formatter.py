@@ -21,6 +21,21 @@ class ResponseFormatter:
     
     def __init__(self, document_preview_url: Optional[str] = None):
         self.document_preview_url = document_preview_url
+        
+        self.bullet_point_re = re.compile(r'^\s*[-•]\s+', flags=re.MULTILINE)
+        self.numbered_list_re = re.compile(r'^\s*(\d+)\.\s+', flags=re.MULTILINE)
+        
+        self.leading_ws_re = re.compile(r'^[ \t]+', flags=re.MULTILINE)
+        self.trailing_ws_re = re.compile(r'[ \t]+$', flags=re.MULTILINE)
+        self.multi_space_re = re.compile(r'[ \t]{2,}')
+        
+        self.highlight_patterns = [
+            (re.compile(r'\b(\d{4})\b', flags=re.IGNORECASE), r'**\1**'),
+            (re.compile(r'\b(\d{1,2}/\d{1,2}/\d{4})\b', flags=re.IGNORECASE), r'**\1**'),
+            (re.compile(r'\b(Khoa|Ngành|Chương trình|Đại học|Cao đẳng)\b', flags=re.IGNORECASE), r'**\1**'),
+            (re.compile(r'\b(học kỳ|kỳ thi|tín chỉ|học phí)\b', flags=re.IGNORECASE), r'**\1**'),
+            (re.compile(r'\b(giấy tờ|hồ sơ|đơn|bằng|chứng chỉ)\b', flags=re.IGNORECASE), r'**\1**'),
+        ]
     
     def format(
         self, 
@@ -52,34 +67,15 @@ class ResponseFormatter:
         if not text:
             return ""
 
-        bullet_point_pattern = r'^\s*[-•]\s+'
-        numbered_list_pattern = r'^\s*(\d+)\.\s+'
+        text = self.bullet_point_re.sub('- ', text)
+        text = self.numbered_list_re.sub(r'\1. ', text)
 
-        text = re.sub(bullet_point_pattern, '- ', text, flags=re.MULTILINE)
-        text = re.sub(numbered_list_pattern, r'\1. ', text, flags=re.MULTILINE)
+        text = self.leading_ws_re.sub('', text)
+        text = self.trailing_ws_re.sub('', text)
+        text = self.multi_space_re.sub(' ', text)
 
-        leading_ws_re = re.compile(r'^[ \t]+', flags=re.MULTILINE)
-        trailing_ws_re = re.compile(r'[ \t]+$', flags=re.MULTILINE)
-        multi_space_re = re.compile(r'[ \t]{2,}')
-        text = leading_ws_re.sub('', text)
-        text = trailing_ws_re.sub('', text)
-        text = multi_space_re.sub(' ', text)
-
-        year_pattern = (r'\b(\d{4})\b', r'**\1**')
-        date_pattern = (r'\b(\d{1,2}/\d{1,2}/\d{4})\b', r'**\1**')
-        program_pattern = (r'\b(Khoa|Ngành|Chương trình|Đại học|Cao đẳng)\b', r'**\1**')
-        academic_pattern = (r'\b(học kỳ|kỳ thi|tín chỉ|học phí)\b', r'**\1**')
-        document_pattern = (r'\b(giấy tờ|hồ sơ|đơn|bằng|chứng chỉ)\b', r'**\1**')
-
-        highlight_patterns = [
-            year_pattern,
-            date_pattern,
-            program_pattern,
-            academic_pattern,
-            document_pattern
-        ]
-        for pattern, replacement in highlight_patterns:
-            text = re.sub(pattern, replacement, text, flags=re.IGNORECASE)
+        for pattern, replacement in self.highlight_patterns:
+            text = pattern.sub(replacement, text)
 
         return text.strip()
     
