@@ -1,5 +1,15 @@
 export const MAX_FILES = 20;
-export const MAX_SIZE = 25 * 1024 * 1024;
+export const MAX_SIZE = 10 * 1024 * 1024;
+
+const allowedExtensions = [".pdf", ".docx", ".txt", ".md"];
+
+export const SUPPORTED_TYPES = [
+  "application/pdf",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document", // docx
+  "text/plain",
+  "text/markdown",
+  "text/x-markdown",
+];
 
 export const formatBytes = (bytes: number) => {
   const sizes = ["Bytes", "KB", "MB"];
@@ -24,10 +34,25 @@ export const validateFiles = (
     return { valid: [], error: `You can upload up to ${MAX_FILES} files only.` };
   }
 
-  const valid = files.filter((f) => f.size <= MAX_SIZE);
-  if (valid.length < files.length) {
-    return { valid, error: "Some files were rejected (max 25MB each)." };
+ 
+  const sizeValid = files.filter((f) => f.size <= MAX_SIZE);
+  if (sizeValid.length < files.length) {
+    return { valid: sizeValid, error: "Some files were rejected (max 10MB each)." };
   }
 
-  return { valid, error: null };
+
+  const typeValid = sizeValid.filter((f) => {
+    const mimeOk = SUPPORTED_TYPES.includes(f.type);
+    const ext = f.name.substring(f.name.lastIndexOf(".")).toLowerCase();
+    const extOk = allowedExtensions.includes(ext);
+    return mimeOk || extOk;
+  });
+
+  if (typeValid.length < sizeValid.length) {
+    return { valid: typeValid, error: "Some files were rejected (unsupported file type)." };
+  }
+
+  return { valid: typeValid, error: null };
 };
+
+
