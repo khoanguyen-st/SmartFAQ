@@ -1,9 +1,16 @@
 """FastAPI application bootstrap."""
 
 from fastapi import FastAPI
+from pydantic import BaseModel, Field
 
 from .api import admin, auth, chat, docs, fallback
 from .core.config import settings
+
+
+class HealthResponse(BaseModel):
+    """Response model for health check endpoint."""
+    status: str = Field(..., description="Service status")
+    environment: str = Field(..., description="Current environment")
 
 
 def create_app() -> FastAPI:
@@ -20,9 +27,9 @@ def create_app() -> FastAPI:
     app.include_router(fallback.router, prefix="/fallback", tags=["fallback"])
     app.include_router(admin.router, prefix="/admin", tags=["admin"])
 
-    @app.get("/health", tags=["system"])
-    def health_check() -> dict[str, str]:
-        return {"status": "ok", "environment": settings.env}
+    @app.get("/health", tags=["system"], response_model=HealthResponse)
+    def health_check() -> HealthResponse:
+        return HealthResponse(status="ok", environment=settings.env)
 
     return app
 

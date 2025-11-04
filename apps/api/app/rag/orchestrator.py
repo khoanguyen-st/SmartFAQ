@@ -22,9 +22,10 @@ def _clip(text: str, max_chars: int = 8000) -> str:
 
 
 class RAGOrchestrator:
-    def __init__(self, retriever: Optional[Retriever] = None, llm_wrapper: Optional[LLMWrapper] = None):
+    def __init__(self, retriever: Optional[Retriever] = None, llm_wrapper: Optional[LLMWrapper] = None, language: str = "vi"):
         self.retriever = retriever or Retriever()
-        self.llm_wrapper = llm_wrapper or LLMWrapper()
+        self.llm_wrapper = llm_wrapper or LLMWrapper(language=language)
+        self.language = language.lower()
 
     async def query(
         self,
@@ -35,6 +36,7 @@ class RAGOrchestrator:
         where: Optional[Dict[str, Any]] = None,
         search_type: str = "similarity",  # or "mmr"
         return_top_sources: int = 3,
+        language: Optional[str] = None,
     ) -> Dict[str, Any]:
         """
         Main RAG pipeline:
@@ -53,24 +55,40 @@ class RAGOrchestrator:
         # 2) Confidence
         confidence = self.retriever.calculate_confidence(contexts)
 
+        # Update language if provided
+        if language:
+            self.language = language.lower()
+            if self.llm_wrapper._language != language.lower():
+                # Recreate LLM wrapper with new language
+                self.llm_wrapper = LLMWrapper(language=language.lower())
+
         # 3) Decision policy
         fallback_triggered = False
         if not contexts:
-            answer = "Tôi không tìm thấy thông tin về vấn đề này"
+            if self.language in ["en", "english"]:
+                answer = "I could not find information about this topic"
+            else:
+                answer = "Tôi không tìm thấy thông tin về vấn đề này"
             fallback_triggered = True
         elif confidence >= settings.CONFIDENCE_THRESHOLD:
             # confident → trả lời bình thường
             answer = await self.llm_wrapper.generate_answer_async(question, contexts)
         else:
-            # medium/low confidence → vẫn gọi LLM nhưng báo “không chắc chắn”
+            # medium/low confidence → vẫn gọi LLM nhưng báo "không chắc chắn"
             # (Nếu muốn strict: comment 2 dòng dưới và dùng fallback cứng)
-            cautious_prefix = "Mình chưa chắc chắn lắm, nhưng dựa trên thông tin hiện có: "
+            if self.language in ["en", "english"]:
+                cautious_prefix = "I'm not entirely sure, but based on the available information: "
+                error_msg = "Sorry, the system is experiencing issues. Please try again later."
+            else:
+                cautious_prefix = "Mình chưa chắc chắn lắm, nhưng dựa trên thông tin hiện có: "
+                error_msg = "Xin lỗi, hệ thống đang gặp sự cố. Vui lòng thử lại sau."
+            
             try:
                 raw = await self.llm_wrapper.generate_answer_async(question, contexts)
             except Exception as e:
                 logger.error(f"LLM generation failed: {e}")
                 return {
-                    "answer": "Xin lỗi, hệ thống đang gặp sự cố. Vui lòng thử lại sau.",
+                    "answer": error_msg,
                     "confidence": 0.0,
                     "fallback_triggered": True,
                     "error": str(e)
