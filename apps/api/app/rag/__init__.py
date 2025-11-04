@@ -7,6 +7,18 @@ from .vector_store import get_vectorstore
 from .llm import LLMWrapper
 from .retriever import Retriever
 from .orchestrator import RAGOrchestrator
+from .question_understanding import (
+    QuestionUnderstanding,
+    Intent,
+    Entity,
+    NormalizedQuestion,
+    IntentDetector,
+    EntityExtractor,
+    QuestionNormalizer,
+)
+from .intent_detector import RuleBasedIntentDetector
+from .normalizer import RuleBasedNormalizer
+from .entity_extractor import RuleBasedEntityExtractor
 
 __all__ = [
     "get_embeddings",
@@ -14,4 +26,14 @@ __all__ = [
     "LLMWrapper",
     "Retriever",
     "RAGOrchestrator",
+    "QuestionUnderstanding",
+    "Intent",
+    "Entity",
+    "NormalizedQuestion",
+    "IntentDetector",
+    "EntityExtractor",
+    "QuestionNormalizer",
+    "RuleBasedIntentDetector",
+    "RuleBasedNormalizer",
+    "RuleBasedEntityExtractor",
 ]
