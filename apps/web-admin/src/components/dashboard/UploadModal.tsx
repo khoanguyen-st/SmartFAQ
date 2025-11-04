@@ -8,6 +8,7 @@ import {
 } from "@/lib/files";
 import { getFileIcon } from "../../lib/icons";
 import uploadIcon from "../../assets/icons/upload.svg";
+import infoIcon from "../../assets/icons/i.svg";
 
 interface FileItem {
   id: string;
@@ -107,6 +108,14 @@ const UploadModal = ({ isOpen, onClose }: UploadModalProps) => {
 
   if (!isOpen) return null;
 
+  // Function to get Tailwind background class based on file extension
+  const getFileBgClass = (fileName: string) => {
+    if (fileName.endsWith(".pdf")) return "bg-red-100";
+    if (fileName.endsWith(".docx")) return "bg-green-100";
+    if (fileName.endsWith(".txt")) return "bg-blue-100";
+    return "bg-violet-100"; // For .md or other supported types
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-900 bg-opacity-70 backdrop-blur-sm">
       <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl overflow-hidden transform transition-all">
@@ -116,13 +125,15 @@ const UploadModal = ({ isOpen, onClose }: UploadModalProps) => {
               Upload Documents
             </h2>
             <p className="text-sm text-gray-500 mt-1">
-             Upload reference materials to enhance chatbot responses for students.
+              Upload reference materials to enhance chatbot responses for
+              students.
             </p>
           </div>
           <button
             onClick={onClose}
             className="text-gray-400 hover:text-gray-600"
           >
+            {/* Assuming you have font awesome or similar icons */}
             <i className="fas fa-times text-lg"></i>
           </button>
         </div>
@@ -131,31 +142,19 @@ const UploadModal = ({ isOpen, onClose }: UploadModalProps) => {
           <div
             onDragOver={handleDragOver}
             onDrop={handleDrop}
-            className="border-2 border-dashed border-indigo-200 rounded-lg p-10 text-center cursor-pointer hover:border-indigo-400 transition"
-            style={{ backgroundColor: "#F1F5F9" }}
+            // Converted inline style to Tailwind classes
+            className="border-2 border-dashed border-indigo-200 rounded-lg p-10 text-center cursor-pointer hover:border-indigo-400 transition bg-slate-50" // bg-slate-50 for #F1F5F9
             onClick={() => fileInputRef.current?.click()}
           >
             <div
-              className="mx-auto mb-3 flex items-center justify-center"
-              style={{
-                width: "64px", 
-                height: "64px", 
-                marginTop: "2px",
-                borderRadius: "50%", 
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                backgroundColor: "#E0E7FF",
-              }}
+              // Converted inline style to Tailwind classes: w-16 h-16 rounded-full bg-indigo-100 flex items-center justify-center
+              className="mx-auto mb-3 flex items-center justify-center w-16 h-16 rounded-full bg-indigo-100" // bg-indigo-100 for #E0E7FF
             >
               <img
                 src={uploadIcon}
                 alt="upload icon"
-                style={{
-                  width: "30px", 
-                  height: "21px", 
-                  display: "block",
-                }}
+                // Converted inline style to Tailwind classes: w-[30px] h-[21px]
+                className="w-[30px] h-[21px] block"
               />
             </div>
             <p className="font-semibold text-gray-700">
@@ -200,15 +199,13 @@ const UploadModal = ({ isOpen, onClose }: UploadModalProps) => {
           )}
 
           <div>
-            
             <div
-              className="border border-gray-200 rounded-lg p-4 space-y-3 max-h-60 overflow-y-auto"
-              style={{ backgroundColor: "#F9FAFB" }}
+              // Converted inline style to Tailwind classes: bg-gray-50 for #F9FAFB
+              className="border border-gray-200 rounded-lg p-4 space-y-3 max-h-60 overflow-y-auto bg-gray-50"
             >
-              
-            <h3 className="text-base font-semibold text-gray-700 mb-2">
-              Uploaded Files
-            </h3>
+              <h3 className="text-base font-semibold text-gray-700 mb-2">
+                Uploaded Files
+              </h3>
               {files.length === 0 ? (
                 <p className="text-center text-gray-400 py-3">
                   No files uploaded yet.
@@ -221,33 +218,16 @@ const UploadModal = ({ isOpen, onClose }: UploadModalProps) => {
                   >
                     <div className="flex items-center space-x-3">
                       <div
-                        className="flex items-center justify-center"
-                        style={{
-                          width: "32px",
-                          height: "32px",
-                          marginTop: "2px",
-                          borderRadius: "8px",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          backgroundColor:
-                            file.name.endsWith(".pdf")
-                              ? "#FEE2E2"
-                              : file.name.endsWith(".docx")
-                              ? "#DCFCE7"
-                              : file.name.endsWith(".txt")
-                              ? "#DBEAFE"
-                              : "#EDE9FE",
-                        }}
+                        // Converted inline style to Tailwind classes for size and dynamic background color
+                        className={`flex items-center justify-center w-8 h-8 rounded-lg ${getFileBgClass(
+                          file.name
+                        )}`}
                       >
                         <img
                           src={getFileIcon(file.name)}
                           alt="file icon"
-                          style={{
-                            width: "15px",
-                            height: "15px",
-                            display: "block",
-                          }}
+                          // Converted inline style to Tailwind classes: w-[15px] h-[15px]
+                          className="w-[15px] h-[15px] block"
                         />
                       </div>
                       <div>
@@ -282,12 +262,13 @@ const UploadModal = ({ isOpen, onClose }: UploadModalProps) => {
         </div>
 
         <div className="p-6 border-t border-gray-100 flex justify-between items-center">
-          <p className="text-xs text-indigo-700 flex items-center space-x-1">
-            <i className="fas fa-info-circle"></i>
-            <span>
-              Uploaded documents will be automatically processed into chatbot knowledge base
-            </span>
-          </p>
+        <p className="text-xs text-indigo-700 flex items-start space-x-1">
+        <img src={infoIcon} alt="info" className="w-[14px] h-[14px] mt-1" />
+         <span className="block max-w-[360px]">
+              Uploaded documents will be automatically processed into chatbot<br />
+             knowledge base
+         </span>
+        </p>
           <div className="flex space-x-3">
             <button
               onClick={onClose}
