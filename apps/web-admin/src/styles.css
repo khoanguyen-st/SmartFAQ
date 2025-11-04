@@ -21,12 +21,13 @@
   font-family: "Inter", system-ui, sans-serif;
   --color-white: #fff;
   --color-black: #000;
+  --color-blue: #003087;
   --color-dark: #111827;
   --color-dark-1: #1F2937;
   --color-dark-2: #6B7280;
+  --color-gray-1: #f3f4f6;
   --color-gray-2: #F9FAFB;
   --color-gray-3: #e5e7eb;
-  --color-blue: #003087;
 }
 
 .chat {
@@ -56,11 +57,11 @@
   padding: 16px 0;
   overflow: auto;
   scrollbar-width: thin;
-  scrollbar-color: var(--color-blue) var(--color-white);
+  scrollbar-color: var(--color-dark-2) var(--color-white);
 }
 
 .message {
-  max-width: 70%;
+  max-width: 500px;
   text-align: start;
   padding: 16px;
   margin-bottom: 16px;
@@ -77,13 +78,15 @@
 .message--sender {
   align-self: flex-start;
   border-radius: 0 8px 8px 8px;
-  background: var(--color-gray-3);
-  color: var(--color-black);
+  background: #f3f4f6;
+  color: #1F2937;
+  font-weight: 400;
 }
 
-.message__reference {
+.message__source {
   font-size: 12px;
   color: var(--color-dark-2);
+  border-top: 1px solid var(--color-gray-3);
 }
 
 
