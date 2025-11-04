@@ -113,10 +113,10 @@ const UploadModal = ({ isOpen, onClose }: UploadModalProps) => {
         <div className="p-6 border-b border-gray-100 flex justify-between items-start">
           <div>
             <h2 className="text-xl font-semibold text-gray-800">
-              Upload Files
+              Upload Documents
             </h2>
             <p className="text-sm text-gray-500 mt-1">
-              Upload PDF, DOCX, TXT, or MD files to integrate into the system.
+             Upload reference materials to enhance chatbot responses for students.
             </p>
           </div>
           <button
@@ -131,14 +131,33 @@ const UploadModal = ({ isOpen, onClose }: UploadModalProps) => {
           <div
             onDragOver={handleDragOver}
             onDrop={handleDrop}
-            className="border-2 border-dashed border-indigo-200 bg-indigo-50 rounded-lg p-10 text-center cursor-pointer hover:border-indigo-400 transition"
+            className="border-2 border-dashed border-indigo-200 rounded-lg p-10 text-center cursor-pointer hover:border-indigo-400 transition"
+            style={{ backgroundColor: "#F1F5F9" }}
             onClick={() => fileInputRef.current?.click()}
           >
-            <img
-              src={uploadIcon}
-              alt="upload icon"
-              className="w-16 h-16 mx-auto mb-3"
-            />
+            <div
+              className="mx-auto mb-3 flex items-center justify-center"
+              style={{
+                width: "64px", 
+                height: "64px", 
+                marginTop: "2px",
+                borderRadius: "50%", 
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                backgroundColor: "#E0E7FF",
+              }}
+            >
+              <img
+                src={uploadIcon}
+                alt="upload icon"
+                style={{
+                  width: "30px", 
+                  height: "21px", 
+                  display: "block",
+                }}
+              />
+            </div>
             <p className="font-semibold text-gray-700">
               Drag & drop files here or{" "}
               <span className="text-indigo-600 hover:underline">
@@ -181,10 +200,15 @@ const UploadModal = ({ isOpen, onClose }: UploadModalProps) => {
           )}
 
           <div>
+            
+            <div
+              className="border border-gray-200 rounded-lg p-4 space-y-3 max-h-60 overflow-y-auto"
+              style={{ backgroundColor: "#F9FAFB" }}
+            >
+              
             <h3 className="text-base font-semibold text-gray-700 mb-2">
               Uploaded Files
             </h3>
-            <div className="border border-gray-200 rounded-lg p-4 space-y-3 bg-white max-h-60 overflow-y-auto">
               {files.length === 0 ? (
                 <p className="text-center text-gray-400 py-3">
                   No files uploaded yet.
@@ -193,14 +217,39 @@ const UploadModal = ({ isOpen, onClose }: UploadModalProps) => {
                 files.map((file) => (
                   <div
                     key={file.id}
-                    className="flex items-center justify-between py-2 border-b last:border-b-0"
+                    className="flex items-center justify-between p-3 border border-gray-200 rounded-lg bg-white"
                   >
                     <div className="flex items-center space-x-3">
-                      <img
-                        src={getFileIcon(file.name)}
-                        alt="file icon"
-                        className="w-6 h-6"
-                      />
+                      <div
+                        className="flex items-center justify-center"
+                        style={{
+                          width: "32px",
+                          height: "32px",
+                          marginTop: "2px",
+                          borderRadius: "8px",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          backgroundColor:
+                            file.name.endsWith(".pdf")
+                              ? "#FEE2E2"
+                              : file.name.endsWith(".docx")
+                              ? "#DCFCE7"
+                              : file.name.endsWith(".txt")
+                              ? "#DBEAFE"
+                              : "#EDE9FE",
+                        }}
+                      >
+                        <img
+                          src={getFileIcon(file.name)}
+                          alt="file icon"
+                          style={{
+                            width: "15px",
+                            height: "15px",
+                            display: "block",
+                          }}
+                        />
+                      </div>
                       <div>
                         <p className="text-sm font-medium text-gray-800">
                           {file.name}
@@ -236,7 +285,7 @@ const UploadModal = ({ isOpen, onClose }: UploadModalProps) => {
           <p className="text-xs text-indigo-700 flex items-center space-x-1">
             <i className="fas fa-info-circle"></i>
             <span>
-              Uploaded files will be processed and integrated into the system.
+              Uploaded documents will be automatically processed into chatbot knowledge base
             </span>
           </p>
           <div className="flex space-x-3">
