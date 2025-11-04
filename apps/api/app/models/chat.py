@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from datetime import datetime
+from enum import Enum
 from typing import TYPE_CHECKING
 
 from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, JSON, Numeric, String, Text
@@ -12,6 +13,11 @@ from .config import Base
 
 if TYPE_CHECKING:  # pragma: no cover - for type checkers only
     from .query_log import QueryLog
+
+
+class ChatRole(str, Enum):
+    USER = "user"
+    ASSISTANT = "assistant"
 
 
 class ChatSession(Base):
@@ -52,4 +58,4 @@ class ChatMessage(Base):
     query_log: Mapped["QueryLog | None"] = relationship("QueryLog")
 
 
-__all__ = ["ChatSession", "ChatMessage"]
+__all__ = ["ChatRole", "ChatSession", "ChatMessage"]
