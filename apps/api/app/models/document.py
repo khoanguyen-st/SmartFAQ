@@ -28,5 +28,16 @@ class Document(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
     versions: Mapped[list["DocumentVersion"]] = relationship(
-        "DocumentVersion", back_populates="document", cascade="all, delete-orphan"
+        "DocumentVersion",
+        back_populates="document",
+        cascade="all, delete-orphan",
+        primaryjoin="Document.id == DocumentVersion.document_id",
+        foreign_keys="DocumentVersion.document_id",
+    )
+
+    current_version: Mapped["DocumentVersion | None"] = relationship(
+        "DocumentVersion",
+        uselist=False,
+        foreign_keys=[current_version_id],
+        post_update=True,
     )
