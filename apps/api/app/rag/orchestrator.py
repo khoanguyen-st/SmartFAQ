@@ -82,7 +82,7 @@ class RAGOrchestrator:
             else:
                 cautious_prefix = "Mình chưa chắc chắn lắm, nhưng dựa trên thông tin hiện có: "
                 error_msg = "Xin lỗi, hệ thống đang gặp sự cố. Vui lòng thử lại sau."
-            
+
             try:
                 raw = await self.llm_wrapper.generate_answer_async(question, contexts)
             except Exception as e:

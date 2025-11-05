@@ -15,7 +15,7 @@ COPY pyproject.toml ./
 COPY app ./app
 COPY alembic ./alembic
 COPY alembic.ini ./
-
+COPY scripts ./scripts
 # Upgrade pip and install dependencies
 RUN pip install --upgrade pip setuptools wheel && \
     pip install -e .

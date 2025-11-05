@@ -79,20 +79,20 @@ async def query_chat_debug(payload: ChatQuery) -> ChatDebugResponse:
     """
     retriever = Retriever()
     llm_wrapper = LLMWrapper(language=payload.lang)
-    
+
     # 1. Retrieve
     contexts = retriever.retrieve(
         query=payload.question,
         top_k=5,
         with_score=True,
     )
-    
+
     # 2. Confidence
     confidence = retriever.calculate_confidence(contexts)
-    
+
     # 3. Format context
     context_text = llm_wrapper.format_contexts(contexts, max_sources=8)
-    
+
     # 4. Generate answer
     answer = "N/A"
     if contexts:
@@ -100,7 +100,7 @@ async def query_chat_debug(payload: ChatQuery) -> ChatDebugResponse:
             answer = await llm_wrapper.generate_answer_async(payload.question, contexts)
         except Exception as e:
             answer = f"Error: {str(e)}"
-    
+
     # 5. Return debug info
     return ChatDebugResponse(
         question=payload.question,

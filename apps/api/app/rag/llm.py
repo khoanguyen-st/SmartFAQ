@@ -61,7 +61,7 @@ class LLMWrapper:
         # ---- Language configuration ----
         self.language = language.lower()
         self.system_prompt = self._build_system_prompt(language)
-        
+
         # Store language for fallback messages
         self._language = language
 
@@ -83,7 +83,7 @@ class LLMWrapper:
     def _build_system_prompt(self, language: str) -> str:
         """Build system prompt based on language."""
         lang = language.lower()
-        
+
         if lang == "en" or lang == "english":
             return (
                 "You are an AI assistant for Greenwich Vietnam University.\n"
