@@ -36,8 +36,16 @@ if config.config_file_name is not None:
 # add your model's MetaData object here
 # for 'autogenerate' support
 # from myapp import mymodel
-# For autogenerate support
-target_metadata = Base.metadata
+# target_metadata = mymodel.Base.metadata
+# Try to import the project's SQLAlchemy Base to provide metadata for autogenerate
+try:
+    # import the declarative base from the app models package
+    from app.models import Base  # type: ignore
+
+    target_metadata = Base.metadata
+except Exception:
+    # If import fails (e.g., environment not configured), fall back to None.
+    target_metadata = None
 
 # other values from the config, defined by the needs of env.py,
 # can be acquired:
