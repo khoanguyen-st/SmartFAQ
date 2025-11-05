@@ -75,6 +75,8 @@
   color: var(--color-white);
 }
 
+
+
 .message--sender {
   align-self: flex-start;
   border-radius: 0 8px 8px 8px;
@@ -87,6 +89,19 @@
   font-size: 12px;
   color: var(--color-dark-2);
   border-top: 1px solid var(--color-gray-3);
+}
+
+.welcome-message {
+  align-self: center;
+  position: absolute;
+  bottom: 50%;
+  font-weight: 700;
+  font-size: 18px;
+  color: var(--color-blue);
+  border-radius: 16px;
+  background: var(--color-gray-1);
+  padding: 20px;
+  box-shadow: 3px 4px 6px rgba(0, 0, 0, 0.1);
 }
 
 

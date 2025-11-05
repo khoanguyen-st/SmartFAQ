@@ -1,4 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
+import { startNewChatSession, sendChatMessage, ChatSource } from '@/services/chat.services'
+
 import MessIcon from '@/assets/messager.svg?react'
 import SendIcon from '@/assets/send.svg?react'
 import InforIcon from '@/assets/i-icon.svg?react'
@@ -7,81 +9,40 @@ import PdfNoFill from '@/assets/pdf-no-fill.svg?react'
 import ImageNofill from '@/assets/image-no-fill.svg?react'
 import TxtNoFill from '@/assets/txt-no-fill.svg?react'
 
-const initialMessage = {
+type DisplayMessage = {
+  id: string | number
+  type: 'system' | 'sender' | 'receiver' | 'error'
+  content: string[]
+  sources?: ChatSource[]
+  chatId?: string
+}
+
+const initialMessage: DisplayMessage = {
   id: Date.now(),
-  type: 'system', // Use a 'system' type for the welcome message
-  content: ['Welcome to AI Smart FAQ.']
+  type: 'system',
+  content: ['Welcome to Smart FAQ.']
 }
 
-const mockAiResponse = (userText: string) => {
-  const lowerText = userText.toLowerCase()
-
-  if (lowerText.includes('admission') || lowerText.includes('requirements')) {
-    return {
-      id: Date.now() + 1,
-      type: 'sender', // AI/Bot response
-      content: [
-        'Based on the admission guidelines, undergraduate programs require:',
-        'High school diploma or equivalent',
-        'Minimum GPA of 3.0',
-        'SAT score of 1200+ or ACT score of 26+',
-        'Two letters of recommendation',
-        'Personal statement essay'
-      ],
-      source: {
-        file: 'admission_guidelines.pdf',
-        pages: 'Page 3-4'
-      }
-    }
-  } else if (lowerText.includes('photo') || lowerText.includes('photos')) {
-    return {
-      id: Date.now() + 1,
-      type: 'sender', // AI/Bot response
-      content: [
-        '**********************I',
-        '*****            *****I',
-        '*****            *****I',
-        '*****            *****I',
-        '*****            *****I',
-        '*****            *****I',
-        '*****            *****I',
-        '*****            *****I',
-        '*****            *****I',
-        '**********************I'
-      ],
-      source: {
-        file: 'image.jpg'
-      }
-    }
-  }
-
-  return {
-    id: Date.now() + 1,
-    type: 'sender',
-    content: ['I am a mock response. I received your message:', `"${userText}"`],
-    source: {
-      file: 'mock_source.pdf',
-      pages: 'Page 1'
-    }
-  }
-}
-
-// Add type annotation for message prop
+// --- Updated ChatMessage Component ---
 type ChatMessageProps = {
-  message: {
-    type: string
-    content: string[]
-    source?: {
-      file: string
-      pages?: string
-    }
-  }
+  message: DisplayMessage
 }
 
 const ChatMessage = ({ message }: ChatMessageProps) => {
   if (message.type === 'system') {
     return (
-      <div className="self-center text-center text-sm text-[#6B7280]">
+      <div className="welcome-message">
+        {message.content.map((line: string, i: number) => (
+          <p key={i}>{line}</p>
+        ))}
+      </div>
+    )
+  }
+
+  if (message.type === 'error') {
+    return (
+      <div className="message message--sender bg-red-100 py-3 text-red-700">
+        <p className="font-bold">Error:</p>
         {message.content.map((line: string, i: number) => (
           <p key={i}>{line}</p>
         ))}
@@ -95,29 +56,30 @@ const ChatMessage = ({ message }: ChatMessageProps) => {
         {message.content.map((line: string, i: number) => (
           <p key={i}>{line}</p>
         ))}
-        {message.source && (
-          <div className="message__reference mt-2 flex items-center border-t border-gray-300 pt-2">
-            {/* Render icon based on file extension.
-              This block implements the logic from your query, using lucide-react icons
-              as the custom SVGs are not available in this environment.
-            */}
-            {(() => {
-              const filename = message.source.file.toLowerCase()
+        {/* Updated Source Rendering Logic */}
+        {message.sources && message.sources.length > 0 && (
+          <div className="message__reference mt-2 border-t border-gray-300 pt-2">
+            <h4 className="mb-1 text-xs font-semibold">Sources:</h4>
+            {message.sources.map((source, index) => {
+              const filename = source.title.toLowerCase()
+              let IconComponent = TxtNoFill // Default
               if (filename.endsWith('.pdf')) {
-                return <PdfNoFill className="mr-2 h-3 w-3 shrink-0" />
+                IconComponent = PdfNoFill
               } else if (filename.endsWith('.jpg') || filename.endsWith('.gif') || filename.endsWith('.png')) {
-                return <ImageNofill className="mr-2 h-3 w-3 shrink-0" />
-              } else if (filename.endsWith('.txt')) {
-                return <TxtNoFill className="mr-2 h-3 w-3 shrink-0" />
+                IconComponent = ImageNofill
               }
-              // Default fallback icon
-              return <TxtNoFill className="mr-2 h-3 w-3 shrink-0" />
-            })()}
-            <p className="truncate">
-              Source: {message.source.file}
-              {/* Only show pages if they exist */}
-              {message.source.pages && ` (${message.source.pages})`}
-            </p>
+
+              return (
+                <div key={index} className="mt-1 flex items-center">
+                  <IconComponent className="mr-2 h-3 w-3 shrink-0" />
+                  <p className="truncate text-sm">
+                    {source.title}
+                    {/* API doesn't provide pages, but you could show relevance or chunkId */}
+                    {/* {source.relevance && ` (${(source.relevance * 100).toFixed(0)}%)`} */}
+                  </p>
+                </div>
+              )
+            })}
           </div>
         )}
       </div>
@@ -136,43 +98,113 @@ const ChatMessage = ({ message }: ChatMessageProps) => {
   return null
 }
 
+// --- Updated ViewChatPage Component ---
 const ViewChatPage = () => {
-  const [messages, setMessages] = useState([initialMessage])
+  const [messages, setMessages] = useState<DisplayMessage[]>([initialMessage])
   const [userText, setUserText] = useState('')
+  const [sessionId, setSessionId] = useState<string | null>(null)
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
-  const chatContentRef = useRef(null)
+  const chatContentRef = useRef<HTMLDivElement>(null)
 
+  // Effect to get session ID on mount
   useEffect(() => {
-    const el = chatContentRef.current as HTMLDivElement | null
+    const initSession = async () => {
+      try {
+        setError(null)
+        setMessages([initialMessage]) // Start with welcome
+        const sessionResponse = await startNewChatSession()
+        setSessionId(sessionResponse.sessionId)
+      } catch (err) {
+        console.error(err)
+        setError('Failed to start chat session.')
+        setMessages([
+          {
+            id: 'error-session',
+            type: 'error',
+            content: ['Failed to connect to chat service. Please refresh the page.']
+          }
+        ])
+      }
+    }
+    initSession()
+  }, [])
+
+  // Effect to scroll to bottom on new message
+  useEffect(() => {
+    const el = chatContentRef.current
     if (el) {
       el.scrollTop = el.scrollHeight
     }
   }, [messages])
 
-  const handleClearChat = () => {
-    setMessages([initialMessage])
+  // Handle clearing chat (start a new session)
+  const handleClearChat = async () => {
+    setIsLoading(true)
+    try {
+      setError(null)
+      const sessionResponse = await startNewChatSession()
+      setSessionId(sessionResponse.sessionId)
+      setMessages([initialMessage]) // Reset to welcome
+    } catch (err) {
+      console.error(err)
+      setError('Failed to start a new chat session.')
+      setMessages([
+        {
+          id: 'error-session-clear',
+          type: 'error',
+          content: ['Failed to start new session. Please refresh.']
+        }
+      ])
+    } finally {
+      setIsLoading(false)
+    }
   }
 
-  const handleSend = (e: React.FormEvent<HTMLFormElement>) => {
+  // Handle sending a message
+  const handleSend = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     const trimmedInput = userText.trim()
 
-    if (!trimmedInput) return
+    if (!trimmedInput || !sessionId || isLoading) return
 
-    const newUserMessage = {
+    const newUserMessage: DisplayMessage = {
       id: Date.now(),
-      type: 'receiver', //
+      type: 'receiver',
       content: [trimmedInput]
     }
 
-    const aiResponse = mockAiResponse(trimmedInput)
-    setMessages(prevMessages => [...prevMessages.filter(m => m.type !== 'system'), newUserMessage])
-
-    setTimeout(() => {
-      setMessages(prevMessages => [...prevMessages, aiResponse])
-    }, 500)
-
+    setMessages(prev => [...prev.filter(m => m.type !== 'system'), newUserMessage])
+    setIsLoading(true)
     setUserText('')
+    setError(null)
+
+    try {
+      // --- Real API Call ---
+      const response = await sendChatMessage(sessionId, trimmedInput)
+
+      // Format API response to DisplayMessage
+      const aiMessage: DisplayMessage = {
+        id: response.chatId,
+        type: 'sender',
+        content: response.answer.split('\n'), // Split answer by newlines
+        sources: response.sources,
+        chatId: response.chatId
+      }
+
+      setMessages(prev => [...prev, aiMessage])
+    } catch (err) {
+      console.error(err)
+      const errorMessage: DisplayMessage = {
+        id: Date.now() + 1,
+        type: 'error',
+        content: ['Sorry, I encountered an error trying to get a response.']
+      }
+      setMessages(prev => [...prev, errorMessage])
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   return (
@@ -190,53 +222,35 @@ const ViewChatPage = () => {
           <button
             type="button"
             onClick={handleClearChat}
-            className="chat__clear-button group flex w-[90px] items-center hover:text-red-500"
+            disabled={isLoading}
+            className="chat__clear-button group flex w-[90px] items-center hover:text-red-500 disabled:opacity-50"
           >
             <TrashIcon className="TrashIcon mr-1.5 h-[14px] w-[12px] shrink-0 text-[#6B7280] group-hover:text-red-500" />
             <p className="text-[14px] text-[#6B7280] group-hover:text-red-500">Clear Chat</p>
           </button>
         </div>
 
-        <div ref={chatContentRef} className="chat__content flex h-full flex-col overflow-y-auto">
+        <div ref={chatContentRef} className="chat__content relative flex h-full flex-col overflow-y-auto">
           {messages.map(msg => (
             <ChatMessage key={msg.id} message={msg} />
           ))}
+          {/* Show typing indicator */}
+          {isLoading && (
+            <div className="message message--sender">
+              <p className="animate-pulse">Typing...</p>
+            </div>
+          )}
+          {/* Show general error */}
+          {error && !messages.some(m => m.type === 'error') && (
+            <div className="message message--sender bg-red-100 py-3 text-red-700">
+              <p className="font-bold">Error:</p>
+              <p>{error}</p>
+            </div>
+          )}
         </div>
 
-        {/* <div className="chat__content relative flex h-full flex-col">
-          <div className="message message--receiver">
-            <p>"On Thursday:</p>
-            <p>- Finished refine and clean up code for the team project.</p>
-            <p>- Explored Smart-FAQ repository</p>
-            <p>- Researched about vector data and how it store in database</p>
-            <p>Today:</p>
-            <p>- Completing setup of local environment and docker for SmartFAQ project.</p>
-            <p>- Read and try to understand the requirements of the task to be done.</p>
-            <p>Issue:</p>
-            <p>- Still don't understand what I need to do and where to start. A bit confused"</p>
-          </div>
-
-          <div className="message message--sender">
-            <p>Based on the admission guidelines, undergraduate programs require:</p>
-            <p>High school diploma or equivalent</p>
-            <p>Minimum GPA of 3.0</p>
-            <p>SAT score of 1200+ or ACT score of 26+</p>
-            <p>Two letters of recommendation</p>
-            <p>Personal statement essay</p>
-            <div className="message__source flex items-center">
-              <PdfNoFill className="mr-2 h-3 w-3 shrink-0" />
-              <p>Source: admission_guidelines.pdf (Page 3-4)</p>
-            </div>
-          </div>
-
-          <div className="message message--receiver"></div>
-
-          <div className="message message--sender"></div>
-
-          <div className="message message--receiver"></div>
-
-          <div className="message message--sender"></div>
-        </div> */}
+        {/* Commented out static content */}
+        {/* <div className="chat__content ..."> ... </div> */}
 
         <div className="chat__footer flex h-[96px] flex-col px-6 py-4">
           <form
@@ -252,12 +266,14 @@ const ViewChatPage = () => {
               id="user-input"
               value={userText}
               onChange={e => setUserText(e.target.value)}
-              placeholder="Ask a question about your uploaded documents..."
-              className="chat__input mr-3 h-[40px] w-full rounded-[8px] border border-[#D1D5DB] p-4 placeholder:text-[14px] placeholder:leading-[20px]"
+              placeholder={!sessionId ? 'Connecting to chat...' : 'Ask a question about your uploaded documents...'}
+              disabled={!sessionId || isLoading}
+              className="chat__input mr-3 h-[40px] w-full rounded-[8px] border border-[#D1D5DB] p-4 placeholder:text-[14px] placeholder:leading-[20px] disabled:bg-gray-100"
             />
             <button
               type="submit"
-              className="chat__submit flex h-[40px] w-[48px] items-center justify-center rounded-[8px] bg-[#003087] hover:cursor-pointer"
+              disabled={!sessionId || isLoading || userText.trim().length === 0}
+              className="chat__submit flex h-[40px] w-[48px] items-center justify-center rounded-[8px] bg-[#003087] hover:cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
             >
               <SendIcon className="h-[16px] w-[16px]" />
             </button>

@@ -1,10 +1,9 @@
 """FastAPI application bootstrap."""
 
 from fastapi import FastAPI
-
+from fastapi.middleware.cors import CORSMiddleware
 from .api import admin, auth, chat, docs, fallback
 from .core.config import settings
-
 
 def create_app() -> FastAPI:
     app = FastAPI(
@@ -14,9 +13,22 @@ def create_app() -> FastAPI:
         redoc_url="/docs/redoc",
     )
 
+    origins = [
+        "http://localhost:5174",  # Your Vite/React dev server
+        "http://localhost:5173",
+    ]
+
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=origins,       # Specifies the allowed origins
+        allow_credentials=True,    # Allows cookies (if you use them)
+        allow_methods=["*"],         # Allows all methods (GET, POST, OPTIONS, etc.)
+        allow_headers=["*"],         # Allows all headers
+    )
+
     app.include_router(auth.router, prefix="/auth", tags=["auth"])
     app.include_router(docs.router, prefix="/docs", tags=["documents"])
-    app.include_router(chat.router, prefix="/chat", tags=["chat"])
+    app.include_router(chat.router, prefix="/api/chat", tags=["chat"])
     app.include_router(fallback.router, prefix="/fallback", tags=["fallback"])
     app.include_router(admin.router, prefix="/admin", tags=["admin"])
 
