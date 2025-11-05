@@ -1,7 +1,7 @@
 """make category nullable
 
 Revision ID: 709c209cad81
-Revises: f7d5b5e3db99
+Revises: 03fd80152102
 Create Date: 2025-11-05 11:17:51.074313
 
 """
@@ -13,7 +13,7 @@ import sqlalchemy as sa
 
 # revision identifiers, used by Alembic.
 revision: str = '709c209cad81'
-down_revision: Union[str, Sequence[str], None] = 'f7d5b5e3db99'
+down_revision: Union[str, Sequence[str], None] = '03fd80152102'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
