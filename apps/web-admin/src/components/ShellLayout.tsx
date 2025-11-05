@@ -1,5 +1,4 @@
-import { NavLink } from "react-router-dom";
-import type { ReactNode } from "react";
+import { NavLink, Outlet } from "react-router-dom";
 import { cn } from "@/lib/utils";
 
 const navItems = [
@@ -8,7 +7,7 @@ const navItems = [
   { path: "settings", label: "Settings" },
 ];
 
-const ShellLayout = ({ children }: { children: ReactNode }) => {
+const ShellLayout = () => {
   return (
     <div className="flex min-h-screen bg-[#eff3fb] text-slate-900">
       <aside className="flex w-60 flex-col bg-slate-900 px-4 py-6 text-slate-50">
@@ -39,7 +38,9 @@ const ShellLayout = ({ children }: { children: ReactNode }) => {
             Version {__APP_VERSION__}
           </span>
         </header>
-        <div className="flex flex-col gap-6">{children}</div>
+        <div className="flex flex-col gap-6">
+          <Outlet />
+        </div>
       </main>
     </div>
   );
