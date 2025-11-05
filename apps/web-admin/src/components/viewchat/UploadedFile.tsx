@@ -1,7 +1,7 @@
-import PDFIcon from '../../../assets/pdf.svg?react';
-import TXTIcon from '../../../assets/txt.svg?react';
-import TrashIcon from '../../../assets/trash.svg?react';
-import FileIcon from '../../../assets/file.svg?react';
+import PDFIcon from '@/assets/pdf.svg?react';
+import TXTIcon from '@/assets/txt.svg?react';
+import TrashIcon from '@/assets/trash.svg?react';
+import FileIcon from '@/assets/file.svg?react';
 import { IUploadedFile } from '../../lib/knowledge-api'; // Import interface từ tệp mới
 
 interface UploadedFileProps {
