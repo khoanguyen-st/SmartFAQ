@@ -4,7 +4,7 @@ import { useRef } from 'react';
 
 interface UploadProps {
   onFilesUpload: (files: File[]) => void;
-  error: string | null; // Thêm prop error
+  error: string | null;
 }
 
 const Upload = ({ onFilesUpload, error }: UploadProps) => {
@@ -75,7 +75,6 @@ const Upload = ({ onFilesUpload, error }: UploadProps) => {
               accept=".pdf,.txt,.png,.jpg,.jpeg"
               className="hidden" 
             />
-            {/* AC 2: Hiển thị lỗi upload */}
             {error && (
               <p className="text-sm text-red-600 mt-4 text-center">{error}</p>
             )}

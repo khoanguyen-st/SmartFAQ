@@ -4,6 +4,7 @@ import { IUploadedFile, fetchKnowledgeFiles, uploadKnowledgeFile, deleteKnowledg
 export const useKnowledgeFiles = () => {
   const [files, setFiles] = useState<IUploadedFile[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
   
@@ -16,16 +17,40 @@ export const useKnowledgeFiles = () => {
   }, []);
 
   const handleFileUpload = useCallback(async (filesToUpload: File[]) => {
-    setUploadError(null); 
-    
-    const file = filesToUpload[0];
-    if (!file) return;
+    setUploadError(null);
+    if (!filesToUpload || filesToUpload.length === 0) return;
+
+    setIsUploading(true);
+
+    const uploadPromises = filesToUpload.map(file => uploadKnowledgeFile(file));
 
     try {
-      const newFile = await uploadKnowledgeFile(file);
-      setFiles(prev => [newFile, ...prev]);
+      const results = await Promise.allSettled(uploadPromises);
+      
+      const successfulFiles: IUploadedFile[] = [];
+      const failedFiles: string[] = [];
+
+      results.forEach((result, index) => {
+        if (result.status === 'fulfilled') {
+          successfulFiles.push(result.value);
+        } else {
+          console.error(`Failed to upload ${filesToUpload[index].name}:`, result.reason);
+          failedFiles.push(filesToUpload[index].name);
+        }
+      });
+
+      if (successfulFiles.length > 0) {
+        setFiles(prev => [...successfulFiles, ...prev]);
+      }
+
+      if (failedFiles.length > 0) {
+        setUploadError(`Failed to upload: ${failedFiles.join(', ')}`);
+      }
+
     } catch (err) {
       setUploadError((err as Error).message);
+    } finally {
+      setIsUploading(false); // Kết thúc loading
     }
   }, []);
 
@@ -43,6 +68,7 @@ export const useKnowledgeFiles = () => {
     files,
     loading,
     error,
+    isUploading,
     uploadError,
     handleFileUpload,
     handleDeleteFile
