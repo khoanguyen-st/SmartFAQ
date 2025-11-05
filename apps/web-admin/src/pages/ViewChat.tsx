@@ -14,6 +14,10 @@ import TrashIcon from '@/assets/trash-icon.svg?react'
 import PdfNoFill from '@/assets/pdf-no-fill.svg?react'
 import ImageNofill from '@/assets/image-no-fill.svg?react'
 import TxtNoFill from '@/assets/txt-no-fill.svg?react'
+import KnowledgeIcon from '@/assets/knowledge.svg?react'
+import UploadedFile from '@/components/viewchat/UploadedFile'
+import { useKnowledgeFiles } from '@/hooks/useKnowledgeFiles'
+import Upload from '@/components/viewchat/Upload'
 
 type DisplayMessage = {
   id: string | number
@@ -119,6 +123,8 @@ const ChatMessage = ({ message }: ChatMessageProps) => {
 
 // --- Updated ViewChatPage Component ---
 const ViewChatPage = () => {
+  const { files, loading, error, uploadError, handleFileUpload, handleDeleteFile } = useKnowledgeFiles()
+
   const [messages, setMessages] = useState<DisplayMessage[]>(() => {
     const storedMessages = localStorage.getItem('chatMessages')
     return storedMessages ? JSON.parse(storedMessages) : [initialMessage]
@@ -131,7 +137,7 @@ const ViewChatPage = () => {
   })
 
   const [isLoading, setIsLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const [errorState, setErrorState] = useState<string | null>(null)
 
   const chatContentRef = useRef<HTMLDivElement>(null)
 
@@ -142,7 +148,7 @@ const ViewChatPage = () => {
       const storedSessionId = localStorage.getItem('chatSessionId')
 
       if (storedSessionId) {
-        // Session found, validate it and fetch history 
+        // Session found, validate it and fetch history
         setSessionId(storedSessionId)
         setIsLoading(true)
         try {
@@ -153,7 +159,7 @@ const ViewChatPage = () => {
             // Session was valid but empty, or history was cleared
             setMessages([initialMessage])
           }
-          setError(null)
+          // setErrorState(null)
         } catch (err) {
           console.error('Failed to fetch history, starting new session.', err)
           // The stored session might be invalid/expired. Start a new one.
@@ -170,13 +176,13 @@ const ViewChatPage = () => {
     const startNewSession = async () => {
       setIsLoading(true)
       try {
-        setError(null)
+        // setErrorState(null)
         const sessionResponse = await startNewChatSession()
         setSessionId(sessionResponse.sessionId)
         setMessages([initialMessage])
       } catch (err) {
         console.error(err)
-        setError('Failed to start chat session.')
+        // setErrorState('Failed to start chat session.')
         setMessages([
           {
             id: 'error-session',
@@ -221,7 +227,7 @@ const ViewChatPage = () => {
   const handleClearChat = async () => {
     setIsLoading(true)
     try {
-      setError(null)
+      // setErrorState(null)
       // Clear local storage
       localStorage.removeItem('chatSessionId')
       localStorage.removeItem('chatMessages')
@@ -232,7 +238,7 @@ const ViewChatPage = () => {
       setMessages([initialMessage]) // Reset to welcome
     } catch (err) {
       console.error(err)
-      setError('Failed to start a new chat session.')
+      // setErrorState('Failed to start a new chat session.')
       // ... error handling ...
     } finally {
       setIsLoading(false)
@@ -255,7 +261,7 @@ const ViewChatPage = () => {
     setMessages(prev => [...prev.filter(m => m.type !== 'system'), newUserMessage])
     setIsLoading(true)
     setUserText('')
-    setError(null)
+    // setErrorState(null)
 
     try {
       // --- Real API Call ---
@@ -285,9 +291,21 @@ const ViewChatPage = () => {
   }
 
   return (
-    <div className="flex h-full w-full bg-white">
-      <div className="details w-[50%]"></div>
-      <div className="chat relative flex h-[calc(100vh-100px)] w-[50%] flex-col">
+    <div className="flex h-full w-full border border-[#e5e7eb] bg-white">
+      <div className="] flex h-[calc(100vh-100px)] w-1/2 flex-col">
+        <div className="detail__header flex flex-col items-center px-6 py-4">
+          <div className="title-header flex">
+            <KnowledgeIcon className="mr-2 h-6 w-6 shrink-0" />
+            <h1 className="text-[18px] leading-7 font-semibold">Knowledge Sources</h1>
+          </div>
+          <p className="text-sm text-gray-500">Upload and manage documents for chatbot training</p>
+        </div>
+
+        <Upload onFilesUpload={handleFileUpload} error={uploadError} />
+
+        <UploadedFile files={files} onDeleteFile={handleDeleteFile} isLoading={loading} loadError={error} />
+      </div>
+      <div className="chat flex h-[calc(100vh-100px)] w-1/2 flex-col">
         <div className="chat__header flex items-center justify-between px-6 py-4">
           <div className="chat__title flex w-[300px] flex-col overflow-hidden text-nowrap text-ellipsis">
             <div className="title-header flex">
