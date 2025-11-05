@@ -229,9 +229,25 @@ async def query_chat(
     if not session.user_agent:
         session.user_agent = request.headers.get("user-agent")
 
+    history_stmt = (
+        select(ChatMessage)
+        .where(ChatMessage.session_id == session.id)
+        .order_by(ChatMessage.created_at.desc())
+        .limit(10)
+    )
+    history_result = await db.execute(history_stmt)
+    history_records = list(history_result.scalars())
+    history_records.reverse()
+    history_messages = [
+        {"role": message.role, "content": message.text} for message in history_records
+    ]
+
     try:
         t0 = time.perf_counter()
-        answer = await llm_wrapper.generate_direct_answer_async(payload.question)
+        answer = await llm_wrapper.generate_direct_answer_async(
+            payload.question,
+            history=history_messages,
+        )
         latency_ms = int((time.perf_counter() - t0) * 1000)
     except Exception as exc:  # noqa: BLE001 - surface LLM errors cleanly
         raise HTTPException(

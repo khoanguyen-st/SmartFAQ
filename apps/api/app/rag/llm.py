@@ -1,10 +1,11 @@
 from __future__ import annotations
 
 from typing import List, Dict, Any, Optional, Sequence, Union
-from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.documents import Document
-from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
 from langchain_core.output_parsers import StrOutputParser
+from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
+from langchain_google_genai import ChatGoogleGenerativeAI
 from app.core.config import settings
 
 
@@ -85,6 +86,7 @@ class LLMWrapper:
                 "Nếu câu hỏi chỉ là lời chào hoặc xã giao, hãy đáp lại phù hợp và hỏi xem bạn có thể hỗ trợ gì thêm. "
                 "Chỉ cung cấp thông tin về Greenwich khi câu hỏi liên quan."
             ),
+            MessagesPlaceholder(variable_name="history"),
             ("human", "{question}"),
         ])
 
@@ -148,7 +150,11 @@ class LLMWrapper:
             "question": question.strip(),
         })
 
-    async def generate_direct_answer_async(self, question: str) -> str:
+    async def generate_direct_answer_async(
+        self,
+        question: str,
+        history: Optional[Sequence[BaseMessage | Dict[str, Any] | str]] = None,
+    ) -> str:
         """
         Invoke the underlying Gemini chat model without any retrieval context.
         """
@@ -156,4 +162,25 @@ class LLMWrapper:
         if not clean_question:
             return self._fallback_no_context()
 
-        return await self.direct_chain.ainvoke({"question": clean_question})
+        formatted_history: list[BaseMessage] = []
+        if history:
+            for item in history:
+                message: BaseMessage | None = None
+                if isinstance(item, BaseMessage):
+                    message = item
+                elif isinstance(item, dict):
+                    role = str(item.get("role", "")).lower()
+                    content = item.get("content") or item.get("text") or ""
+                    if not content:
+                        continue
+                    if role == "assistant":
+                        message = AIMessage(content=content)
+                    else:
+                        message = HumanMessage(content=content)
+                elif isinstance(item, str):
+                    # treat plain strings as prior user turns
+                    message = HumanMessage(content=item)
+                if message is not None:
+                    formatted_history.append(message)
+
+        return await self.direct_chain.ainvoke({"history": formatted_history, "question": clean_question})
