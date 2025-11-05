@@ -142,8 +142,7 @@ const ViewChatPage = () => {
       const storedSessionId = localStorage.getItem('chatSessionId')
 
       if (storedSessionId) {
-        // Session found, validate it and fetch history
-        console.log('Found existing session:', storedSessionId)
+        // Session found, validate it and fetch history 
         setSessionId(storedSessionId)
         setIsLoading(true)
         try {
@@ -169,7 +168,6 @@ const ViewChatPage = () => {
     }
 
     const startNewSession = async () => {
-      console.log('Starting new session...')
       setIsLoading(true)
       try {
         setError(null)
