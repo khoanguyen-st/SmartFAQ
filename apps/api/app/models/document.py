@@ -19,14 +19,29 @@ class Document(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
     title: Mapped[str] = mapped_column(String(255), nullable=False)
-    category: Mapped[str] = mapped_column(String(120), nullable=False)
+    category: Mapped[str | None] = mapped_column(String(120), nullable=True)
     tags: Mapped[str | None] = mapped_column(String(255), nullable=True)
     language: Mapped[str] = mapped_column(String(10), default="en")
     status: Mapped[str] = mapped_column(String(50), default="ACTIVE")
-    current_version_id: Mapped[int | None] = mapped_column(ForeignKey("document_versions.id"), nullable=True)
+
+    current_version_id: Mapped[int | None] = mapped_column(
+        ForeignKey("document_versions.id"),
+        nullable=True
+    )
+
     created_by: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
     versions: Mapped[list["DocumentVersion"]] = relationship(
-        "DocumentVersion", back_populates="document", cascade="all, delete-orphan"
+        "DocumentVersion",
+        back_populates="document",
+        cascade="all, delete-orphan",
+        foreign_keys="DocumentVersion.document_id"
+    )
+
+    current_version = relationship(
+        "DocumentVersion",
+        foreign_keys=[current_version_id],
+        uselist=False,
+        post_update=True
     )
