@@ -18,7 +18,10 @@ class DocumentVersion(Base):
     __tablename__ = "document_versions"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
-    document_id: Mapped[int] = mapped_column(ForeignKey("documents.id"), nullable=False)
+    document_id: Mapped[int] = mapped_column(
+        ForeignKey("documents.id"),
+        nullable=False
+    )
     version_no: Mapped[int] = mapped_column(Integer, nullable=False)
     file_path: Mapped[str] = mapped_column(String(255), nullable=False)
     file_size: Mapped[int | None] = mapped_column(Integer, nullable=True)
@@ -29,5 +32,5 @@ class DocumentVersion(Base):
     document: Mapped["Document"] = relationship(
         "Document",
         back_populates="versions",
-        foreign_keys=[document_id],
+        foreign_keys=[document_id]
     )
