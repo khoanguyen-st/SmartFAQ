@@ -15,4 +15,4 @@ async def get_metrics(current_user=Depends(get_current_user)) -> dict[str, objec
 
 @router.get("/logs")
 async def get_logs(current_user=Depends(get_current_user)) -> dict[str, list]:
-    return {"items": await metrics.get_query_logs()
+    return {"items": await metrics.get_query_logs(),}
