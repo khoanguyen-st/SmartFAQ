@@ -18,15 +18,15 @@
 
 :root {
   color-scheme: light;
-  font-family: "Inter", system-ui, sans-serif;
+  font-family: 'Inter', system-ui, sans-serif;
   --color-white: #fff;
   --color-black: #000;
   --color-blue: #003087;
   --color-dark: #111827;
-  --color-dark-1: #1F2937;
-  --color-dark-2: #6B7280;
+  --color-dark-1: #1f2937;
+  --color-dark-2: #6b7280;
   --color-gray-1: #f3f4f6;
-  --color-gray-2: #F9FAFB;
+  --color-gray-2: #f9fafb;
   --color-gray-3: #e5e7eb;
 }
 
@@ -34,8 +34,6 @@
   position: relative;
   border: 1px solid var(--color-gray-3);
 }
-
-
 
 .chat__header {
   border-bottom: 1px solid var(--color-gray-3);
@@ -48,9 +46,6 @@
   outline: none;
   border: none;
 }
-
-
-
 
 .chat__content {
   flex-grow: 1;
@@ -75,13 +70,11 @@
   color: var(--color-white);
 }
 
-
-
 .message--sender {
   align-self: flex-start;
   border-radius: 0 8px 8px 8px;
   background: #f3f4f6;
-  color: #1F2937;
+  color: #1f2937;
   font-weight: 400;
 }
 
@@ -94,6 +87,8 @@
 .welcome-message {
   align-self: center;
   position: absolute;
+  text-align: center;
+  margin: 10px;
   bottom: 50%;
   font-weight: 700;
   font-size: 18px;
@@ -104,13 +99,12 @@
   box-shadow: 3px 4px 6px rgba(0, 0, 0, 0.1);
 }
 
-
-
 .chat__footer {
   border-top: 1px solid var(--color-gray-3);
 }
 
-.chat__input:focus , .chat__submit:focus {
+.chat__input:focus,
+.chat__submit:focus {
   border: 2px solid var(--color-blue);
   outline: none;
 }
@@ -128,4 +122,30 @@
     @apply no-underline;
     color: inherit;
   }
+}
+
+@media (max-width: 1229px) {
+  .chat__clear-button {
+    @apply w-auto justify-center p-2 rounded-md;
+  }
+  .chat__clear-button p {
+    @apply hidden;
+  }
+  .chat__clear-button .TrashIcon {
+    @apply mr-0 absolute right-5 w-5;
+  }
+  
+  .chat__title .MessIcon {
+    @apply mr-2;
+  }
+
+
+  .chat__title h1,
+  .chat__title p {
+    @apply w-fit whitespace-nowrap overflow-hidden text-ellipsis;
+  }
+
+  .chat__note p {
+ @apply whitespace-nowrap overflow-hidden text-ellipsis;
+ }
 }

@@ -1,5 +1,11 @@
 import { useState, useEffect, useRef } from 'react'
-import { startNewChatSession, sendChatMessage, ChatSource } from '@/services/chat.services'
+import {
+  startNewChatSession,
+  sendChatMessage,
+  ChatSource,
+  getChatHistory,
+  ChatHistoryMessage
+} from '@/services/chat.services'
 
 import MessIcon from '@/assets/messager.svg?react'
 import SendIcon from '@/assets/send.svg?react'
@@ -21,6 +27,19 @@ const initialMessage: DisplayMessage = {
   id: Date.now(),
   type: 'system',
   content: ['Welcome to Smart FAQ.']
+}
+
+// --- Helper function to format API history ---
+function formatHistoryMessage(msg: ChatHistoryMessage): DisplayMessage {
+  return {
+    id: msg.chatId || msg.timestamp,
+    type: msg.role === 'user' ? 'receiver' : 'sender',
+    content: msg.text.split('\n'),
+    chatId: msg.chatId || undefined,
+    // Note: Your /history endpoint doesn't return sources for old messages.
+    // Sources will only appear for new messages in this session.
+    sources: undefined
+  }
 }
 
 // --- Updated ChatMessage Component ---
@@ -100,22 +119,63 @@ const ChatMessage = ({ message }: ChatMessageProps) => {
 
 // --- Updated ViewChatPage Component ---
 const ViewChatPage = () => {
-  const [messages, setMessages] = useState<DisplayMessage[]>([initialMessage])
+  const [messages, setMessages] = useState<DisplayMessage[]>(() => {
+    const storedMessages = localStorage.getItem('chatMessages')
+    return storedMessages ? JSON.parse(storedMessages) : [initialMessage]
+  })
+
   const [userText, setUserText] = useState('')
-  const [sessionId, setSessionId] = useState<string | null>(null)
+
+  const [sessionId, setSessionId] = useState<string | null>(() => {
+    return localStorage.getItem('chatSessionId')
+  })
+
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   const chatContentRef = useRef<HTMLDivElement>(null)
 
   // Effect to get session ID on mount
+  // --- MODIFIED EFFECT: Load session or start new one ---
   useEffect(() => {
     const initSession = async () => {
+      const storedSessionId = localStorage.getItem('chatSessionId')
+
+      if (storedSessionId) {
+        // Session found, validate it and fetch history
+        console.log('Found existing session:', storedSessionId)
+        setSessionId(storedSessionId)
+        setIsLoading(true)
+        try {
+          const historyResponse = await getChatHistory(storedSessionId)
+          if (historyResponse.messages.length > 0) {
+            setMessages(historyResponse.messages.map(formatHistoryMessage))
+          } else {
+            // Session was valid but empty, or history was cleared
+            setMessages([initialMessage])
+          }
+          setError(null)
+        } catch (err) {
+          console.error('Failed to fetch history, starting new session.', err)
+          // The stored session might be invalid/expired. Start a new one.
+          await startNewSession()
+        } finally {
+          setIsLoading(false)
+        }
+      } else {
+        // No session found, start a new one
+        await startNewSession()
+      }
+    }
+
+    const startNewSession = async () => {
+      console.log('Starting new session...')
+      setIsLoading(true)
       try {
         setError(null)
-        setMessages([initialMessage]) // Start with welcome
         const sessionResponse = await startNewChatSession()
         setSessionId(sessionResponse.sessionId)
+        setMessages([initialMessage])
       } catch (err) {
         console.error(err)
         setError('Failed to start chat session.')
@@ -126,10 +186,30 @@ const ViewChatPage = () => {
             content: ['Failed to connect to chat service. Please refresh the page.']
           }
         ])
+      } finally {
+        setIsLoading(false)
       }
     }
-    initSession()
-  }, [])
+
+    // We only want this to run once on initial load.
+    // The `sessionId` state is already initialized from localStorage.
+    if (!sessionId) {
+      initSession()
+    }
+  }, []) // Empty dependency array ensures this runs only once on mount
+
+  useEffect(() => {
+    if (sessionId) {
+      localStorage.setItem('chatSessionId', sessionId)
+    }
+  }, [sessionId])
+
+  useEffect(() => {
+    if (sessionId && messages.length > 0) {
+      // Only save messages if a session is active
+      localStorage.setItem('chatMessages', JSON.stringify(messages))
+    }
+  }, [messages, sessionId])
 
   // Effect to scroll to bottom on new message
   useEffect(() => {
@@ -144,19 +224,18 @@ const ViewChatPage = () => {
     setIsLoading(true)
     try {
       setError(null)
+      // Clear local storage
+      localStorage.removeItem('chatSessionId')
+      localStorage.removeItem('chatMessages')
+
+      // Start a new session
       const sessionResponse = await startNewChatSession()
       setSessionId(sessionResponse.sessionId)
       setMessages([initialMessage]) // Reset to welcome
     } catch (err) {
       console.error(err)
       setError('Failed to start a new chat session.')
-      setMessages([
-        {
-          id: 'error-session-clear',
-          type: 'error',
-          content: ['Failed to start new session. Please refresh.']
-        }
-      ])
+      // ... error handling ...
     } finally {
       setIsLoading(false)
     }
@@ -210,11 +289,11 @@ const ViewChatPage = () => {
   return (
     <div className="flex h-full w-full bg-white">
       <div className="details w-[50%]"></div>
-      <div className="chat flex h-[calc(100vh-100px)] w-[50%] flex-col">
+      <div className="chat relative flex h-[calc(100vh-100px)] w-[50%] flex-col">
         <div className="chat__header flex items-center justify-between px-6 py-4">
-          <div className="chat__title flex flex-col">
+          <div className="chat__title flex w-[300px] flex-col overflow-hidden text-nowrap text-ellipsis">
             <div className="title-header flex">
-              <MessIcon className="mr-2 h-[24px] w-[24px] shrink-0" />
+              <MessIcon className="mr-2 h-6 w-6 shrink-0" />
               <h1 className="text-[18px] leading-7 font-semibold">Chat with Your Knowledge Base</h1>
             </div>
             <p className="text-[14px] text-[#6B7280]">Test chatbot responses based on uploaded documents</p>
@@ -223,9 +302,9 @@ const ViewChatPage = () => {
             type="button"
             onClick={handleClearChat}
             disabled={isLoading}
-            className="chat__clear-button group flex w-[90px] items-center hover:text-red-500 disabled:opacity-50"
+            className="chat__clear-button group flex items-center hover:text-red-500 disabled:opacity-50"
           >
-            <TrashIcon className="TrashIcon mr-1.5 h-[14px] w-[12px] shrink-0 text-[#6B7280] group-hover:text-red-500" />
+            <TrashIcon className="TrashIcon mr-1 h-[14px] w-[12px] shrink-0 text-[#6B7280] group-hover:text-red-500" />
             <p className="text-[14px] text-[#6B7280] group-hover:text-red-500">Clear Chat</p>
           </button>
         </div>
@@ -267,7 +346,7 @@ const ViewChatPage = () => {
               value={userText}
               onChange={e => setUserText(e.target.value)}
               placeholder={!sessionId ? 'Connecting to chat...' : 'Ask a question about your uploaded documents...'}
-              disabled={!sessionId || isLoading}
+              disabled={!sessionId}
               className="chat__input mr-3 h-[40px] w-full rounded-[8px] border border-[#D1D5DB] p-4 placeholder:text-[14px] placeholder:leading-[20px] disabled:bg-gray-100"
             />
             <button
@@ -275,12 +354,12 @@ const ViewChatPage = () => {
               disabled={!sessionId || isLoading || userText.trim().length === 0}
               className="chat__submit flex h-[40px] w-[48px] items-center justify-center rounded-[8px] bg-[#003087] hover:cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
             >
-              <SendIcon className="h-[16px] w-[16px]" />
+              <SendIcon className="h-4 w-4 shrink-0" />
             </button>
           </form>
-          <div className="chat__note mt-3 flex h-[16px] items-center">
-            <InforIcon />
-            <p className="px-[5px] py-[10px] text-[12px] font-normal text-[#6B7280]">
+          <div className="chat__note mt-3 flex h-4 items-center">
+            <InforIcon className="mr-1 h-3 w-3 shrink-0" />
+            <p className="py-2.5 text-[12px] font-normal text-[#6B7280]">
               Responses are generated based on uploaded documents only
             </p>
           </div>
