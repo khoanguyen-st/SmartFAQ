@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import time
 from datetime import datetime, timezone
 from decimal import Decimal
 from typing import Any, Literal
@@ -19,10 +20,10 @@ from ..core.input_validation import UnsafeInputError, ensure_safe_text
 from ..core.rate_limiter import RateLimiter
 from ..models.chat import ChatMessage, ChatRole, ChatSession
 from ..models.query_log import QueryLog
-from ..rag.orchestrator import RAGOrchestrator
+from ..rag.llm import LLMWrapper
 
 router = APIRouter()
-orchestrator = RAGOrchestrator()
+llm_wrapper = LLMWrapper()
 
 _FEEDBACK_MESSAGES: dict[str, str] = {
     "en": "Feedback recorded. Thank you!",
@@ -229,22 +230,18 @@ async def query_chat(
         session.user_agent = request.headers.get("user-agent")
 
     try:
-        rag_response = await orchestrator.query(
-            question=payload.question,
-            top_k=settings.TOP_K_RETRIEVAL,
-            return_top_sources=3,
-        )
-    except Exception as exc:  # noqa: BLE001 - surface orchestrator errors cleanly
+        t0 = time.perf_counter()
+        answer = await llm_wrapper.generate_direct_answer_async(payload.question)
+        latency_ms = int((time.perf_counter() - t0) * 1000)
+    except Exception as exc:  # noqa: BLE001 - surface LLM errors cleanly
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to generate answer.",
         ) from exc
 
-    answer = str(rag_response.get("answer") or "")
-    fallback_triggered = bool(rag_response.get("fallback_triggered"))
-    confidence_raw = rag_response.get("confidence")
-    sources = rag_response.get("sources") or []
-    latency_ms = rag_response.get("latency_ms")
+    confidence_raw = 1.0
+    fallback_triggered = False
+    sources: list[dict[str, Any]] = []
 
     question_message = ChatMessage(
         id=str(uuid4()),
