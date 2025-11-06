@@ -1,10 +1,7 @@
-"""FastAPI application bootstrap."""
-
 from fastapi import FastAPI
-
+from fastapi.middleware.cors import CORSMiddleware
 from .api import admin, auth, chat, docs, fallback
 from .core.config import settings
-
 
 def create_app() -> FastAPI:
     app = FastAPI(
@@ -13,12 +10,22 @@ def create_app() -> FastAPI:
         docs_url="/docs/openapi",
         redoc_url="/docs/redoc",
     )
+    
+    origins = settings.cors_allow_origins
 
-    app.include_router(auth.router, prefix="/auth", tags=["auth"])
-    app.include_router(docs.router, prefix="/docs", tags=["documents"])
-    app.include_router(chat.router, prefix="/chat", tags=["chat"])
-    app.include_router(fallback.router, prefix="/fallback", tags=["fallback"])
-    app.include_router(admin.router, prefix="/admin", tags=["admin"])
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=origins,       # Specifies the allowed origins
+        allow_credentials=True,    # Allows cookies (if you use them)
+        allow_methods=["*"],         # Allows all methods (GET, POST, OPTIONS, etc.)
+        allow_headers=["*"],         # Allows all headers
+    )
+
+    app.include_router(auth.router, prefix="/api/auth", tags=["auth"])
+    app.include_router(docs.router, prefix="/api/docs", tags=["documents"])
+    app.include_router(chat.router, prefix="/api/chat", tags=["chat"])
+    app.include_router(fallback.router, prefix="/api/fallback", tags=["fallback"])
+    app.include_router(admin.router, prefix="/api/admin", tags=["admin"])
 
     @app.get("/health", tags=["system"])
     def health_check() -> dict[str, str]:
