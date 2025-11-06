@@ -12,8 +12,9 @@ import uploadIcon from "../../assets/icons/upload.svg";
 import infoIcon from "../../assets/icons/i.svg";
 import recycleBinIcon from "../../assets/icons/recycle-bin.svg";
 import InformationModal from "./InformationModal";
+import { uploadKnowledgeFiles } from "../../lib/knowledge-api";
 
-interface FileItem {
+export interface FileItem {
   id: string;
   name: string;
   size: number;
@@ -27,6 +28,8 @@ interface UploadModalProps {
 
 const UploadModal = ({ isOpen, onClose }: UploadModalProps) => {
   const [files, setFiles] = useState<FileItem[]>([]);
+  const [fileObjects, setFileObjects] = useState<Map<string, File>>(new Map());
+  const [fileInfo, setFileInfo] = useState<Record<string, { category?: string; tags?: string[] }>>({});
   const [selectedFiles, setSelectedFiles] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
@@ -36,6 +39,7 @@ const UploadModal = ({ isOpen, onClose }: UploadModalProps) => {
   useEffect(() => {
     if (!isOpen) {
       setFiles([]);
+      setFileObjects(new Map());
       setSelectedFiles([]);
       setError(null);
       setSuccess(false);
@@ -49,9 +53,7 @@ const UploadModal = ({ isOpen, onClose }: UploadModalProps) => {
     }
   }, [error]);
 
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-  };
+  const handleDragOver = (e: React.DragEvent) => e.preventDefault();
 
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
@@ -76,6 +78,15 @@ const UploadModal = ({ isOpen, onClose }: UploadModalProps) => {
 
     const mapped = mapFiles(valid);
     setFiles((prev) => [...prev, ...mapped]);
+
+    setFileObjects((prev) => {
+      const newMap = new Map(prev);
+      valid.forEach((file) => {
+        const fileItem = mapped.find((f) => f.name === file.name);
+        if (fileItem) newMap.set(fileItem.id, file);
+      });
+      return newMap;
+    });
   };
 
   const handleRemoveSelected = () => {
@@ -83,7 +94,20 @@ const UploadModal = ({ isOpen, onClose }: UploadModalProps) => {
       setError("No files selected to remove.");
       return;
     }
+
     setFiles((prev) => prev.filter((f) => !selectedFiles.includes(f.id)));
+    setFileObjects((prev) => {
+      const newMap = new Map(prev);
+      selectedFiles.forEach((id) => newMap.delete(id));
+      return newMap;
+    });
+
+    setFileInfo((prev) => {
+      const updated = { ...prev };
+      selectedFiles.forEach((id) => delete updated[id]);
+      return updated;
+    });
+
     setSelectedFiles([]);
   };
 
@@ -118,28 +142,49 @@ const UploadModal = ({ isOpen, onClose }: UploadModalProps) => {
             : f
         )
       );
+      setFileObjects((prev) => {
+        const newMap = new Map(prev);
+        newMap.set(id, newFile);
+        return newMap;
+      });
     };
     input.click();
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (files.length === 0) {
       setError("No files to process.");
       return;
     }
+
     setError(null);
-    setSuccess(true);
-    setTimeout(() => {
-      setSuccess(false);
-      onClose();
-    }, 1800);
+    setSuccess(false);
+
+    try {
+      const filesToUpload: File[] = [];
+      files.forEach((fileItem) => {
+        const fileObj = fileObjects.get(fileItem.id);
+        if (fileObj) filesToUpload.push(fileObj);
+      });
+
+      if (filesToUpload.length === 0) throw new Error("No valid files to upload");
+
+      await uploadKnowledgeFiles(filesToUpload);
+
+      setSuccess(true);
+      setTimeout(() => {
+        setSuccess(false);
+        onClose();
+      }, 1800);
+    } catch (error) {
+      console.error("Upload error:", error);
+      setError(error instanceof Error ? error.message : "Failed to upload files");
+    }
   };
 
   const toggleSelect = (id: string) => {
     setSelectedFiles((prev) =>
-      prev.includes(id)
-        ? prev.filter((fileId) => fileId !== id)
-        : [...prev, id]
+      prev.includes(id) ? prev.filter((fileId) => fileId !== id) : [...prev, id]
     );
   };
 
@@ -158,18 +203,12 @@ const UploadModal = ({ isOpen, onClose }: UploadModalProps) => {
         {/* Header */}
         <div className="p-6 border-b border-gray-100 flex justify-between items-start">
           <div>
-            <h2 className="text-xl font-semibold text-gray-800">
-              Upload Documents
-            </h2>
+            <h2 className="text-xl font-semibold text-gray-800">Upload Documents</h2>
             <p className="text-sm text-gray-500 mt-1">
-              Upload reference materials to enhance chatbot responses for
-              students.
+              Upload reference materials to enhance chatbot responses for students.
             </p>
           </div>
-          <button
-            onClick={onClose}
-            className="text-gray-400 hover:text-gray-600"
-          >
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
             <i className="fas fa-times text-lg"></i>
           </button>
         </div>
@@ -187,9 +226,7 @@ const UploadModal = ({ isOpen, onClose }: UploadModalProps) => {
             </div>
             <p className="font-semibold text-gray-700">
               Drag & drop files here or{" "}
-              <span className="text-indigo-600 hover:underline">
-                choose files to upload.
-              </span>
+              <span className="text-indigo-600 hover:underline">choose files to upload.</span>
             </p>
             <p className="text-xs text-gray-500 mt-1">
               Supported formats: PDF, DOCX, TXT, MD <br />
@@ -223,23 +260,23 @@ const UploadModal = ({ isOpen, onClose }: UploadModalProps) => {
           </div>
 
           {/* Error */}
-          {error && (
-            <p className="text-sm text-red-500 text-center font-medium">
-              {error}
-            </p>
-          )}
+          {error && <p className="text-sm text-red-500 text-center font-medium">{error}</p>}
 
           {/* Uploaded Files */}
           <div>
             <div className="border border-gray-200 rounded-lg p-4 space-y-3 max-h-60 overflow-y-auto bg-gray-50">
               <div className="flex justify-between items-center mb-2">
-                <h3 className="text-base font-semibold text-gray-700">
-                  Uploaded Files
-                </h3>
+                <h3 className="text-base font-semibold text-gray-700">Uploaded Files</h3>
 
                 <div className="flex items-center space-x-2">
                   <button
-                    onClick={() => setShowInfoModal(true)}
+                    onClick={() => {
+                      if (selectedFiles.length === 0) {
+                        setError("Please select at least one file to update.")
+                        return
+                      }
+                      setShowInfoModal(true)
+                    }}
                     className="rounded-lg bg-indigo-600 px-3 py-1.5 text-sm font-medium text-white shadow-md hover:bg-indigo-700"
                   >
                     <img src={iconSvg} className="w-[18px] h-[18px]" />
@@ -254,9 +291,7 @@ const UploadModal = ({ isOpen, onClose }: UploadModalProps) => {
               </div>
 
               {files.length === 0 ? (
-                <p className="text-center text-gray-400 py-3">
-                  No files uploaded yet.
-                </p>
+                <p className="text-center text-gray-400 py-3">No files uploaded yet.</p>
               ) : (
                 files.map((file) => (
                   <div
@@ -271,34 +306,33 @@ const UploadModal = ({ isOpen, onClose }: UploadModalProps) => {
                         className="accent-indigo-600 cursor-pointer w-4 h-4"
                       />
                       <div
-                        className={`flex items-center justify-center w-8 h-8 rounded-lg ${getFileBgClass(
-                          file.name
-                        )}`}
+                        className={`flex items-center justify-center w-8 h-8 rounded-lg ${getFileBgClass(file.name)}`}
                       >
-                        <img
-                          src={getFileIcon(file.name)}
-                          alt="file icon"
-                          className="w-[15px] h-[15px]"
-                        />
+                        <img src={getFileIcon(file.name)} alt="file icon" className="w-[15px] h-[15px]" />
                       </div>
                       <div>
-                        <p className="text-sm font-medium text-gray-800">
-                          {file.name}
-                        </p>
-                        <p className="text-xs text-gray-500">
-                          {formatBytes(file.size)}
-                        </p>
+                        <p className="text-sm font-medium text-gray-800">{file.name}</p>
+                        <p className="text-xs text-gray-500">{formatBytes(file.size)}</p>
+                        {(() => {
+                          const info = fileInfo[file.id];
+                          if (!info) return null;
+                          return (
+                            <p className="text-xs text-gray-600 mt-1 italic">
+                              {info.category ? ` ${info.category}` : ""}{" "}
+                              {Array.isArray(info.tags) && info.tags.length > 0
+                                ? ` ${info.tags.join(", ")}`
+                                : ""}
+                            </p>
+                          );
+                        })()}
                       </div>
                     </div>
-
-                    <div className="flex space-x-3 text-sm">
-                      <button
-                        onClick={() => handleReplace(file.id)}
-                        className="text-indigo-600 hover:text-indigo-800 font-medium"
-                      >
-                        Replace
-                      </button>
-                    </div>
+                    <button
+                      onClick={() => handleReplace(file.id)}
+                      className="text-indigo-600 hover:text-indigo-800 font-medium text-sm"
+                    >
+                      Replace
+                    </button>
                   </div>
                 ))
               )}
@@ -343,6 +377,8 @@ const UploadModal = ({ isOpen, onClose }: UploadModalProps) => {
         <InformationModal
           onClose={() => setShowInfoModal(false)}
           selectedFiles={files.filter((f) => selectedFiles.includes(f.id))}
+          existingInfo={fileInfo}
+          onSave={(updated) => setFileInfo(updated)}
         />
       )}
     </div>
