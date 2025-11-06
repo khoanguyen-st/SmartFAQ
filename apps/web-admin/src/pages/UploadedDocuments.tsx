@@ -22,11 +22,6 @@ const MOCK_DOCUMENTS: IDocument[] = [
     { id: 6, title: "Student Code of Conduct", date: "Oct 24, 2024", sources: 6 },
     { id: 7, title: "Exam Schedule Spring 2025", date: "Oct 23, 2024", sources: 2 },
     { id: 8, title: "IT Service Guide", date: "Oct 22, 2024", sources: 7 },
-    { id: 9, title: "Campus Map & Facilities", date: "Oct 21, 2024", sources: 3 },
-    { id: 10, title: "Course Module", date: "Oct 24, 2024", sources: 6 },
-    { id: 11, title: "Exam Schedule Spring 2025", date: "Oct 23, 2024", sources: 2 },
-    { id: 12, title: "IT Service Guide", date: "Oct 22, 2024", sources: 7 },
-    { id: 13, title: "Campus Map & Facilities", date: "Oct 21, 2024", sources: 3 },
 ];
 
 const sortDocuments = (docs: IDocument[]): IDocument[] => {
@@ -67,7 +62,7 @@ const UploadedPage = () => {
     }, []);
 
     const onUploadClick = () => {
-        console.log("Mở modal upload document");
+        
     };
 
     const handleOpenDeleteModal = useCallback((doc: IDocument) => {
@@ -224,7 +219,7 @@ const UploadedPage = () => {
     );
     
     return (
-        <div className="mx-5">
+        <div className="mx-5 mt-6">
             <div className="px-4 flex justify-between items-center">
                 <div className= "hidden sm:block">
                     <h2 className="text-2xl font-semibold mb-2">Uploaded Documents</h2>

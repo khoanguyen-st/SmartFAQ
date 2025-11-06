@@ -45,11 +45,9 @@ const DocumentCard = ({ doc, onDelete, onView, onReupload }: DocumentCardProps) 
         switch (actionType) {
             case 'View':
                 onView(doc);
-                console.log(`[Action] View document: ${doc.id}`);
                 break;
             case 'Re-upload':
                 onReupload(doc);
-                console.log(`[Action] Re-upload document: ${doc.id}`);
                 break;
             case 'Delete':
                 onDelete(doc);
