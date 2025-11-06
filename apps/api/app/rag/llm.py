@@ -63,11 +63,12 @@ class LLMWrapper:
             "Bạn là trợ lý AI của Đại học Greenwich Việt Nam.\n"
             "Nhiệm vụ: Trả lời câu hỏi của sinh viên dựa trên thông tin được cung cấp.\n\n"
             "Quy tắc:\n"
-            "1. LUÔN trả lời bằng tiếng Việt.\n"
-            "2. CHỈ sử dụng thông tin từ context được cung cấp.\n"
-            "3. Nếu không tìm thấy thông tin, trả lời: \"Tôi không tìm thấy thông tin về vấn đề này\".\n"
+            "1. Trả lời bằng cùng ngôn ngữ với câu hỏi của người dùng.\n"
+            "2. CHỈ sử dụng thông tin từ context được cung cấp để trả lời nội dung chính.\n"
+            "3. Nếu context không chứa thông tin phù hợp, trả lời: \"Tôi không tìm thấy thông tin về vấn đề này\" bằng ngôn ngữ của người dùng.\n"
             "4. Trả lời ngắn gọn, rõ ràng, thân thiện.\n"
             "5. Nếu có link/email/số điện thoại trong context, hãy đưa vào câu trả lời.\n"
+            "6. Nếu câu hỏi mang tính chào hỏi hoặc xã giao, hãy đáp lại lịch sự và đề nghị hỗ trợ thêm.\n"
         )
 
         self.prompt = ChatPromptTemplate.from_messages([
@@ -75,10 +76,22 @@ class LLMWrapper:
             ("system", "Context:\n{context}"),
             ("human", "{question}"),
         ])
+        self.direct_prompt = ChatPromptTemplate.from_messages([
+            (
+                "system",
+                "Bạn là trợ lý AI thân thiện của Đại học Greenwich Việt Nam. "
+                "Luôn trả lời ngắn gọn, rõ ràng, thân thiện. "
+                "Trả lời bằng cùng ngôn ngữ với câu hỏi của người dùng. "
+                "Nếu câu hỏi chỉ là lời chào hoặc xã giao, hãy đáp lại phù hợp và hỏi xem bạn có thể hỗ trợ gì thêm. "
+                "Chỉ cung cấp thông tin về Greenwich khi câu hỏi liên quan."
+            ),
+            ("human", "{question}"),
+        ])
 
         # ---- Chain ----
         self.parser = StrOutputParser()
         self.chain = self.prompt | self.llm | self.parser
+        self.direct_chain = self.direct_prompt | self.llm | self.parser
 
         # ---- Params ----
         self.max_context_chars = max_context_chars
@@ -134,3 +147,13 @@ class LLMWrapper:
             "context": context_text,
             "question": question.strip(),
         })
+
+    async def generate_direct_answer_async(self, question: str) -> str:
+        """
+        Invoke the underlying Gemini chat model without any retrieval context.
+        """
+        clean_question = question.strip()
+        if not clean_question:
+            return self._fallback_no_context()
+
+        return await self.direct_chain.ainvoke({"question": clean_question})
