@@ -10,6 +10,7 @@ from langchain_core.output_parsers import StrOutputParser
 from google.api_core import exceptions as google_exceptions
 from app.rag.question_understanding import QuestionNormalizer
 from app.core.config import settings
+from app.rag.prompts import get_normalization_prompt
 logger = logging.getLogger(__name__)
 
 class RuleBasedNormalizer(QuestionNormalizer):
@@ -126,38 +127,7 @@ class RuleBasedNormalizer(QuestionNormalizer):
 
     def _build_normalization_prompt(self) -> str:
         """Build prompt for AI-based normalization."""
-        return """Đây là hệ thống FAQ của trường Greenwich University Việt Nam.
-
-This is the FAQ system of Greenwich University Vietnam.
-
-Nhiệm vụ / Task: Normalize câu hỏi của người dùng bằng cách:
-- Sửa lỗi chính tả (spell correction)
-- Mở rộng từ viết tắt (expand abbreviations)
-- Chuẩn hóa từ đồng nghĩa (normalize synonyms)
-- Giữ nguyên ý nghĩa và ngôn ngữ gốc
-
-QUAN TRỌNG / IMPORTANT:
-- Tự động detect ngôn ngữ của user input (tiếng Việt có dấu, không dấu, hoặc tiếng Anh)
-- Automatically detect the language of user input (Vietnamese with/without diacritics, or English)
-- Nếu user input là tiếng Việt (có dấu hoặc không dấu) → normalize và trả về bằng tiếng Việt (có dấu)
-- If user input is Vietnamese (with or without diacritics) → normalize and return in Vietnamese (with diacritics)
-- Nếu user input là tiếng Anh → normalize và trả về bằng tiếng Anh
-- If user input is English → normalize and return in English
-- Giữ nguyên capitalization và punctuation
-- Preserve capitalization and punctuation
-
-Ví dụ / Examples:
-- Input: "admision process" → Output: "admission process"
-- Input: "ielts req" → Output: "IELTS requirement"
-- Input: "Lam sao de dang ky?" (không dấu) → Output: "Làm sao để đăng ký?" (có dấu)
-- Input: "hoc phi bao nhieu?" (không dấu) → Output: "Học phí bao nhiêu?" (có dấu)
-
-Hãy trả về response theo đúng chuẩn JSON sau, KHÔNG trả thêm bất kì text nào khác / Return response in the following JSON format exactly, DO NOT add any other text:
-
-{
-  "normalized_text": "normalized question here",
-  "language": "vi" (nếu tiếng Việt) hoặc "en" (nếu tiếng Anh)
-}"""
+        return get_normalization_prompt()
     
     def get_spell_corrections(self) -> Dict[str, str]:
         """Return empty dictionary as AI now handles spell correction."""

@@ -98,7 +98,6 @@ class QuestionUnderstanding:
             "warnings": [], 
         }
         
-        # Step 1: Normalize question
         normalized_question = question.strip()
         normalization_failed = False
         if self.normalizer:
@@ -125,12 +124,9 @@ class QuestionUnderstanding:
             normalized_question = question.strip()
             metadata["processing_steps"].append("basic_normalization")
         metadata["normalized_length"] = len(normalized_question)
-        
-        # Step 2: Detect intent (AI-based, includes language detection)
         intent: Optional[Intent] = None
         intent_detection_failed = False
-        detected_language = "en"  # Default fallback
-        
+        detected_language = "en"  
         if self.intent_detector:
             try:
                 intent = self.intent_detector.detect(normalized_question, context)
@@ -143,15 +139,10 @@ class QuestionUnderstanding:
                     metadata["warnings"].append("Intent detector returned empty label")
                 else:
                     metadata["processing_steps"].append("intent_detection")
-                    
-                    # Get language from intent metadata (AI-detected)
                     detected_language = intent.metadata.get("language", "en")
-                    
-                    # Add language_detection step when language is detected from intent
                     if "language" in intent.metadata:
                         metadata["processing_steps"].append("language_detection")
                         metadata["language_detection_method"] = "intent_metadata"
-                    
                     if intent.confidence < 0.4:
                         logger.debug(f"Low confidence intent detected: {intent.label} (confidence: {intent.confidence})")
                         metadata["warnings"].append(f"Low confidence intent: {intent.label} ({intent.confidence})")
@@ -176,8 +167,6 @@ class QuestionUnderstanding:
         else:
             intent = Intent(label="other", confidence=0.5, metadata={"fallback": True})
             metadata["processing_steps"].append("intent_detection_fallback")
-        
-        # Step 3: Extract entities
         entities: List[Entity] = []
         entity_extraction_failed = False
         if self.entity_extractor:
@@ -213,25 +202,14 @@ class QuestionUnderstanding:
             entities = []
             metadata["processing_steps"].append("entity_extraction_fallback")
         metadata["entities_count"] = len(entities)
-        
-        # Step 4: Determine final language
-        # Use detected language from intent (AI-detected, handles Vietnamese with/without diacritics)
-        # Hoàn toàn dựa vào AI, không dùng regex pattern fallback
         language = detected_language
-        
-        # Chỉ fallback về "en" nếu intent detection failed hoàn toàn
         if intent_detection_failed and intent.confidence == 0.0:
-            # Nếu AI detection fail hoàn toàn, mặc định là "en"
-            # (Không dùng regex pattern vì không detect được Vietnamese không dấu)
             language = "en"
             if "language_detection" not in metadata["processing_steps"]:
                 metadata["processing_steps"].append("language_detection_fallback")
                 metadata["language_detection_method"] = "fallback_default"
-        
         metadata["detected_language"] = language
         metadata["language_source"] = "intent_metadata" if not intent_detection_failed else "fallback"
-        
-        # Step 5: Determine if clarification is needed
         critical_failures = sum([
             intent_detection_failed and (intent.confidence == 0.0 if intent else True),
             entity_extraction_failed and len(entities) == 0,
@@ -242,7 +220,6 @@ class QuestionUnderstanding:
             metadata["suggestion"] = "I'm not sure what you mean. Could you please clarify?"
         else:
             metadata["clarification_needed"] = False
-        
         return NormalizedQuestion(
             original_question=question,
             normalized_question=normalized_question,
