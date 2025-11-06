@@ -1,11 +1,20 @@
 from logging.config import fileConfig
 import os
 from dotenv import load_dotenv
+from pathlib import Path
+import sys
 
 from sqlalchemy import engine_from_config
 from sqlalchemy import pool
 
 from alembic import context
+
+# Ensure the application package is importable
+BASE_DIR = Path(__file__).resolve().parents[1]
+if str(BASE_DIR) not in sys.path:
+    sys.path.insert(0, str(BASE_DIR))
+
+from app.models import Base  # noqa: E402
 
 # Load environment variables from .env file
 load_dotenv()

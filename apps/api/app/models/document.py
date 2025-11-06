@@ -36,12 +36,13 @@ class Document(Base):
         "DocumentVersion",
         back_populates="document",
         cascade="all, delete-orphan",
-        foreign_keys="DocumentVersion.document_id"
+        primaryjoin="Document.id == DocumentVersion.document_id",
+        foreign_keys="DocumentVersion.document_id",
     )
 
-    current_version = relationship(
+    current_version: Mapped["DocumentVersion | None"] = relationship(
         "DocumentVersion",
-        foreign_keys=[current_version_id],
         uselist=False,
-        post_update=True
+        foreign_keys=[current_version_id],
+        post_update=True,
     )
