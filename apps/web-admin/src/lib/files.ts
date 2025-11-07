@@ -12,6 +12,7 @@ export const SUPPORTED_TYPES = [
 ];
 
 export const formatBytes = (bytes: number) => {
+  if (bytes === 0) return "0 Bytes";
   const sizes = ["Bytes", "KB", "MB"];
   const i = Math.floor(Math.log(bytes) / Math.log(1024));
   return `${(bytes / Math.pow(1024, i)).toFixed(2)} ${sizes[i]}`;
@@ -34,12 +35,10 @@ export const validateFiles = (
     return { valid: [], error: `You can upload up to ${MAX_FILES} files only.` };
   }
 
- 
   const sizeValid = files.filter((f) => f.size <= MAX_SIZE);
   if (sizeValid.length < files.length) {
     return { valid: sizeValid, error: "Some files were rejected (max 10MB each)." };
   }
-
 
   const typeValid = sizeValid.filter((f) => {
     const mimeOk = SUPPORTED_TYPES.includes(f.type);
@@ -54,5 +53,4 @@ export const validateFiles = (
 
   return { valid: typeValid, error: null };
 };
-
 

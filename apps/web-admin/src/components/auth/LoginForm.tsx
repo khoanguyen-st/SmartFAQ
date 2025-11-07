@@ -35,14 +35,28 @@ const LoginForm = ({ onSubmit, error }: LoginFormProps) => {
           <input
             id="email"
             type="email"
+            placeholder="Enter your email"
             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-blue-600 outline-none pr-10"
-            placeholder="Enter your email here"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
           />
+          {/* Mail icon */}
           <span className="absolute inset-y-0 right-3 flex items-center text-gray-400">
-            ✉️
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="w-5 h-5"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={1.6}
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M3 8l9 6 9-6M3 8v8a2 2 0 002 2h14a2 2 0 002-2V8M3 8l9 6 9-6"
+              />
+            </svg>
           </span>
         </div>
       </div>
@@ -59,8 +73,8 @@ const LoginForm = ({ onSubmit, error }: LoginFormProps) => {
           <input
             id="password"
             type={showPassword ? "text" : "password"}
+            placeholder="Enter your password"
             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-blue-600 outline-none pr-12"
-            placeholder="••••••••"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
@@ -69,7 +83,7 @@ const LoginForm = ({ onSubmit, error }: LoginFormProps) => {
           <button
             type="button"
             onClick={() => setShowPassword(!showPassword)}
-            className="absolute inset-y-0 right-3 flex items-center justify-center text-gray-400 hover:text-gray-700"
+            className="absolute inset-y-0 right-3 flex items-center justify-center text-gray-400 hover:text-gray-600"
           >
             {showPassword ? (
               <svg
@@ -100,17 +114,19 @@ const LoginForm = ({ onSubmit, error }: LoginFormProps) => {
                   strokeLinejoin="round"
                   d="M2.458 12C3.732 7.943 7.523 5 12 5s8.268 2.943 9.542 7c-1.274 4.057-5.065 7-9.542 7s-8.268-2.943-9.542-7z"
                 />
-                <circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth={1.8} />
+                <circle cx="12" cy="12" r="3" stroke="currentColor" />
               </svg>
             )}
           </button>
         </div>
       </div>
 
+      {/* Error message */}
       {error && (
         <p className="text-sm text-red-600 bg-red-50 p-2 rounded">{error}</p>
       )}
 
+      {/* Submit button */}
       <button
         type="submit"
         disabled={isLoading}
@@ -121,5 +137,6 @@ const LoginForm = ({ onSubmit, error }: LoginFormProps) => {
     </form>
   );
 };
+
 
 export default LoginForm;
