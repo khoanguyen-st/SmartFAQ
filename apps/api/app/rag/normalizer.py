@@ -1,16 +1,17 @@
 from __future__ import annotations
-import json
-import re
+
 import logging
-import time
+import re
 from typing import Dict, Optional
+
 from langchain_google_genai import ChatGoogleGenerativeAI
-from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 from google.api_core import exceptions as google_exceptions
-from app.rag.question_understanding import QuestionNormalizer
+
 from app.core.config import settings
 from app.rag.prompts import get_normalization_prompt
+from app.rag.question_understanding import QuestionNormalizer
+from app.rag.utils.llm_json import invoke_json_llm
 logger = logging.getLogger(__name__)
 
 class RuleBasedNormalizer(QuestionNormalizer):
@@ -37,71 +38,40 @@ class RuleBasedNormalizer(QuestionNormalizer):
         if len(question) > MAX_QUESTION_LENGTH:
             logger.debug(f"Truncating question from {len(question)} to {MAX_QUESTION_LENGTH} chars")
             question = question[:MAX_QUESTION_LENGTH]
+        ai_normalized: Optional[str] = None
         try:
             ai_normalized = self._normalize_with_ai(question)
-            if ai_normalized:
-                return ai_normalized
-        except google_exceptions.ResourceExhausted as e:
-            logger.warning(f"Quota exhausted in normalization: {e}. Using basic cleaning fallback.")
-        except Exception as e:
-            logger.warning(f"AI-based normalization failed: {e}. Using basic cleaning fallback.")
+        except google_exceptions.ResourceExhausted as exc:
+            logger.warning("Quota exhausted in normalization: %s. Using basic cleaning fallback.", exc)
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("AI-based normalization failed: %s. Using basic cleaning fallback.", exc)
+        if ai_normalized:
+            return ai_normalized
+        logger.warning("AI-based normalization failed. Using basic cleaning fallback.")
         return self._normalize_basic_cleaning(question)
     
     def _normalize_with_ai(self, question: str) -> Optional[str]:
         """Normalize question using Gemini AI with retry logic."""
-        if not self.ai_llm or not self.ai_parser:
+        prompt = self._build_normalization_prompt()
+        result = invoke_json_llm(
+            self.ai_llm,
+            self.ai_parser,
+            system_prompt=prompt,
+            question=question,
+            logger=logger,
+            log_ctx="Normalization",
+        )
+        if not result:
             return None
-        max_retries = 3
-        base_delay = 1.0
-        for attempt in range(max_retries):
-            try:
-                prompt = self._build_normalization_prompt()
-                prompt_template = ChatPromptTemplate.from_messages([
-                    ("system", prompt),
-                    ("human", "{question}"),
-                ])
-                chain = prompt_template | self.ai_llm | self.ai_parser
-                response = chain.invoke({"question": question})
-                response = response.strip()
-                if response.startswith("```json"):
-                    response = response[7:]
-                if response.startswith("```"):
-                    response = response[3:]
-                if response.endswith("```"):
-                    response = response[:-3]
-                response = response.strip()
-                try:
-                    result = json.loads(response)
-                except json.JSONDecodeError as e:
-                    logger.warning(f"Failed to parse JSON response: {response[:200]}. Error: {e}")
-                    # Try to extract JSON from response
-                    json_match = re.search(r'\{[^{}]*\}', response, re.DOTALL)
-                    if json_match:
-                        result = json.loads(json_match.group())
-                    else:
-                        raise
-                normalized_text = result.get("normalized_text", "").strip()
-                if not normalized_text:
-                    return None
-                return normalized_text
-            except google_exceptions.ResourceExhausted as e:
-                if attempt < max_retries - 1:
-                    delay = base_delay * (2 ** attempt)
-                    logger.warning(f"Quota exhausted, retrying in {delay}s (attempt {attempt + 1}/{max_retries})")
-                    time.sleep(delay)
-                    continue
-                else:
-                    logger.error(f"Quota exhausted after {max_retries} attempts: {e}")
-                    return None
-            except Exception as e:
-                logger.error(f"AI normalization error (attempt {attempt + 1}/{max_retries}): {e}", exc_info=True)
-                if attempt < max_retries - 1:
-                    delay = base_delay * (2 ** attempt)
-                    time.sleep(delay)
-                    continue
-                else:
-                    return None
-        return None
+
+        normalized_text = result.get("normalized_text", "")
+        if not isinstance(normalized_text, str):
+            logger.debug("Invalid normalized_text type: %s", type(normalized_text))
+            return None
+        normalized_text = normalized_text.strip()
+        if not normalized_text:
+            return None
+        return normalized_text
     
     def _normalize_basic_cleaning(self, question: str) -> str:
         """Minimal fallback: chỉ làm basic text cleaning khi AI fails."""
