@@ -9,15 +9,8 @@ import {
   DialogDescription,
   DialogFooter,
 } from "../ui";
-import type { User, CreateUserRequest, UpdateUserRequest, UserRole } from "../../types/user";
-
-interface UserDialogProps {
-  open: boolean;
-  onClose: () => void;
-  onSubmit: (data: CreateUserRequest | UpdateUserRequest) => Promise<void>;
-  user?: User | null;
-  mode: "create" | "update";
-}
+import type { CreateUserRequest, UpdateUserRequest, UserRole } from "../../types/user";
+import type { UserDialogProps } from "../../interfaces/UserDialogProps";
 
 const ROLES: UserRole[] = ["Super Admin", "Admin"];
 

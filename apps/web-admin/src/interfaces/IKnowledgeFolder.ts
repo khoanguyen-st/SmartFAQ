@@ -8,4 +8,6 @@ export interface IKnowledgeFolder {
   updatedAt?: string;
   sources?: number[];
   // Add more fields as needed
+  
 }
+
