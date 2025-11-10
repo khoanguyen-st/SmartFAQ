@@ -16,7 +16,6 @@ from ..models.user import User
 
 
 def hash_password(password: str) -> str:
-    """Hash a password using bcrypt (AC 4.1)."""
     password_bytes = password.encode("utf-8")
     salt = bcrypt.gensalt(rounds=12)
     hashed = bcrypt.hashpw(password_bytes, salt)
@@ -24,7 +23,6 @@ def hash_password(password: str) -> str:
 
 
 def verify_password(password: str, hashed_password: str) -> bool:
-    """Verify a password against a hash using bcrypt (AC 4.1)."""
     try:
         password_bytes = password.encode("utf-8")
         hashed_bytes = hashed_password.encode("utf-8")
@@ -35,12 +33,10 @@ def verify_password(password: str, hashed_password: str) -> bool:
 
 @lru_cache(maxsize=1)
 def get_admin_hash() -> str:
-    """Temporary helper until real DB lookup is implemented."""
     return hash_password("admin")
 
 
 async def authenticate_user(username: str, password: str) -> Optional[User]:
-    """Stub authentication helper. To be replaced with real DB lookup."""
     admin_hash = get_admin_hash()
     if username == "admin" and verify_password(password, admin_hash):
         return User(username="admin", password_hash=admin_hash, role="SUPER_ADMIN", is_active=True)
@@ -48,9 +44,8 @@ async def authenticate_user(username: str, password: str) -> Optional[User]:
 
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
-    """Create a JWT access token (AC 5.1, AC 5.2)."""
     if expires_delta is None:
-        expires_delta = timedelta(seconds=28800)  # 8 hours
+        expires_delta = timedelta(seconds=28800) 
 
     now_ts = int(time.time())
     expire_ts = now_ts + int(expires_delta.total_seconds())
@@ -82,7 +77,6 @@ def _extract_token_expiration(token: str) -> datetime:
 
 
 def add_token_to_blacklist(token: str, db: Session | None = None) -> None:
-    """Add token to blacklist để logout (AC 6)."""
     expires_at = _extract_token_expiration(token)
 
     if db:
@@ -99,7 +93,6 @@ def add_token_to_blacklist(token: str, db: Session | None = None) -> None:
 
 
 def is_token_blacklisted(token: str, db: Session | None = None) -> bool:
-    """Check if token is blacklisted (AC 6)."""
     if db:
         token_hash = _hash_token(token)
         record = db.query(TokenBlacklist).filter(TokenBlacklist.token_hash == token_hash).first()
@@ -114,7 +107,6 @@ def is_token_blacklisted(token: str, db: Session | None = None) -> bool:
 
 
 def clear_token_blacklist(db: Session | None = None) -> None:
-    """Clear all blacklisted tokens (for testing or cleanup)."""
     if db:
         db.query(TokenBlacklist).delete()
         db.commit()
@@ -122,7 +114,6 @@ def clear_token_blacklist(db: Session | None = None) -> None:
 
 
 def create_reset_token(user_id: int, email: str, expires_delta: Optional[timedelta] = None) -> str:
-    """Create JWT reset token for password reset (AC 7.2)."""
     if expires_delta is None:
         expires_delta = timedelta(hours=1)
 
@@ -140,7 +131,6 @@ def create_reset_token(user_id: int, email: str, expires_delta: Optional[timedel
 
 
 def verify_reset_token(token: str) -> dict | None:
-    """Verify and decode reset token (AC 7.4)."""
     try:
         payload = jwt.decode(token, settings.jwt_secret, algorithms=["HS256"])
         if payload.get("type") != "password_reset":
