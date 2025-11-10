@@ -2,31 +2,12 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 import logging
 from typing import Any, Dict, List, Optional
-from pydantic import BaseModel, Field
+
+from app.rag.validations import Entity, Intent, NormalizedQuestion
 
 logger = logging.getLogger(__name__)
 
-MAX_QUESTION_LENGTH = 1000
-
-class Intent(BaseModel):
-    label: str = Field(..., description="Intent label (e.g., 'ask_admission_process')")
-    confidence: float = Field(..., ge=0.0, le=1.0, description="Confidence score [0.0, 1.0]")
-    metadata: Dict[str, Any] = Field(default_factory=dict, description="Additional metadata")
-
-class Entity(BaseModel):
-    type: str = Field(..., description="Entity type (e.g., 'program', 'semester')")
-    value: str = Field(..., description="Extracted entity value")
-    confidence: float = Field(..., ge=0.0, le=1.0, description="Confidence score [0.0, 1.0]")
-    start_pos: Optional[int] = Field(None, description="Start position in original text")
-    end_pos: Optional[int] = Field(None, description="End position in original text")
-
-class NormalizedQuestion(BaseModel):
-    original_question: str = Field(..., description="Original user question")
-    normalized_question: str = Field(..., description="Normalized question after processing")
-    intent: Optional[Intent] = Field(None, description="Detected intent")
-    entities: List[Entity] = Field(default_factory=list, description="Extracted entities")
-    language: str = Field(default="en", description="Detected language (e.g., 'en', 'vi')")
-    metadata: Dict[str, Any] = Field(default_factory=dict, description="Processing metadata")
+MAX_QUESTION_LENGTH = 1000  
 
 class IntentDetector(ABC):
     @abstractmethod

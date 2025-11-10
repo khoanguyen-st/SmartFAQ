@@ -9,13 +9,11 @@ from .retriever import Retriever
 from .orchestrator import RAGOrchestrator
 from .question_understanding import (
     QuestionUnderstanding,
-    Intent,
-    Entity,
-    NormalizedQuestion,
     IntentDetector,
     EntityExtractor,
     QuestionNormalizer,
 )
+from .validations import Intent, Entity, NormalizedQuestion
 from .intent_detector import RuleBasedIntentDetector
 from .normalizer import RuleBasedNormalizer
 from .entity_extractor import RuleBasedEntityExtractor

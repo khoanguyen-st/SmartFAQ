@@ -9,7 +9,8 @@ from langchain_core.output_parsers import StrOutputParser
 from app.core.config import settings
 from app.rag.constants import SUPPORTED_INTENTS
 from app.rag.prompts import get_intent_detection_prompt
-from app.rag.question_understanding import Intent, IntentDetector
+from app.rag.question_understanding import IntentDetector
+from app.rag.validations import Intent
 from app.rag.utils.llm_json import invoke_json_llm
 logger = logging.getLogger(__name__)
 

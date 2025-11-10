@@ -11,7 +11,8 @@ from google.api_core import exceptions as google_exceptions
 from app.core.config import settings
 from app.rag.constants import SUPPORTED_ENTITY_TYPES
 from app.rag.prompts import get_entity_extraction_prompt
-from app.rag.question_understanding import Entity, EntityExtractor, Intent
+from app.rag.question_understanding import EntityExtractor
+from app.rag.validations import Entity, Intent
 from app.rag.utils.llm_json import invoke_json_llm
 
 logger = logging.getLogger(__name__)
