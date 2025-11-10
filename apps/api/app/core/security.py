@@ -3,6 +3,7 @@
 from datetime import timedelta
 from functools import lru_cache
 from typing import Optional
+import re
 import time
 
 from jose import jwt
@@ -167,3 +168,13 @@ def verify_reset_token(token: str) -> dict | None:
         return None
     except jwt.JWTError:
         return None
+
+
+def validate_password_strength(password: str) -> bool:
+    """
+    Validate password complexity rules (AC 7.5).
+    """
+    pattern = re.compile(
+        r"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_\-+=\[{\]};:'\",<.>/?\\|`~]).{8,}$"
+    )
+    return bool(pattern.match(password))
