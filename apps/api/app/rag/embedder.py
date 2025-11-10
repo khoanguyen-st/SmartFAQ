@@ -1,12 +1,15 @@
 from __future__ import annotations
+
 import warnings
-from typing import Optional, Dict
+from typing import Dict, Optional
+
 from langchain_core.embeddings import Embeddings
 from langchain_huggingface import HuggingFaceEmbeddings
+
 from app.core.config import settings
 
-
 _EMBED_CACHE: Dict[str, Embeddings] = {}
+
 
 def get_embeddings(model: Optional[str] = None) -> Embeddings:
     """
@@ -21,11 +24,12 @@ def get_embeddings(model: Optional[str] = None) -> Embeddings:
     # Prepare model_kwargs for device configuration
     model_kwargs = {}
     device = settings.EMBED_DEVICE
-    
+
     if device:
         if device == "cuda":
             try:
                 import torch
+
                 if not torch.cuda.is_available():
                     warnings.warn("No CUDA detected! Falling back to CPU.")
                     model_kwargs["device"] = "cpu"
