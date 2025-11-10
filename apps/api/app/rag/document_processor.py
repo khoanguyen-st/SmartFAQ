@@ -2,12 +2,12 @@ from __future__ import annotations
 
 import hashlib
 from pathlib import Path
-from typing import List, Dict, Any, Optional
+from typing import Any, Dict, List, Optional
 
+import docx2txt
+import pypdf
 from langchain_core.documents import Document
 from langchain_text_splitters import RecursiveCharacterTextSplitter
-import pypdf
-import docx2txt
 
 
 def _clean_text(s: Optional[str]) -> str:
@@ -26,6 +26,7 @@ def _hash_id(*parts: str) -> str:
 
 class PDFLoader:
     """Custom PDF loader using pypdf"""
+
     def __init__(self, file_path: str):
         self.file_path = file_path
 
@@ -52,6 +53,7 @@ class PDFLoader:
 
 class DocxLoader:
     """Custom DOCX loader using docx2txt"""
+
     def __init__(self, file_path: str):
         self.file_path = file_path
 

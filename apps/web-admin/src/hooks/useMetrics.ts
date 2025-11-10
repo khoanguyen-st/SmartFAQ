@@ -1,18 +1,18 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState } from 'react'
 
-import { fetchMetrics } from "../lib/api";
+import { fetchMetrics } from '../lib/api'
 
 export const useMetrics = () => {
-  const [data, setData] = useState<Record<string, unknown> | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [data, setData] = useState<Record<string, unknown> | null>(null)
+  const [loading, setLoading] = useState(false)
 
   useEffect(() => {
-    setLoading(true);
+    setLoading(true)
     fetchMetrics()
       .then(setData)
-      .catch((error) => console.error(error))
-      .finally(() => setLoading(false));
-  }, []);
+      .catch(error => console.error(error))
+      .finally(() => setLoading(false))
+  }, [])
 
-  return { data, loading };
-};
+  return { data, loading }
+}
