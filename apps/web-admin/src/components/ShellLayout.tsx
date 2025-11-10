@@ -4,6 +4,7 @@ import { cn } from "@/lib/utils";
 
 const navItems = [
   { path: "dashboard", label: "Dashboard" },
+  { path: "users", label: "Users" },
   { path: "logs", label: "Logs" },
   { path: "settings", label: "Settings" },
 ];
@@ -11,7 +12,8 @@ const navItems = [
 const ShellLayout = ({ children }: { children: ReactNode }) => {
   return (
     <div className="flex min-h-screen bg-[#eff3fb] text-slate-900">
-      <aside className="flex w-60 flex-col bg-slate-900 px-4 py-6 text-slate-50">
+      {/* Sidebar */}
+      <aside className="hidden lg:flex w-60 bg-slate-900 px-4 py-6 text-slate-50 h-screen flex-col">
         <div className="mb-6 text-lg font-semibold">SmartFAQ Admin</div>
         <nav className="flex flex-col gap-2">
           {navItems.map((item) => (
@@ -32,14 +34,15 @@ const ShellLayout = ({ children }: { children: ReactNode }) => {
           ))}
         </nav>
       </aside>
-      <main className="flex flex-1 flex-col gap-8 p-8">
-        <header className="flex items-baseline justify-between gap-4">
-          <h1 className="text-3xl font-bold">Greenwich SmartFAQ</h1>
+
+      <main className="flex flex-1 flex-col gap-4 md:gap-8 p-4 md:p-8 w-full min-h-screen max-w-[1920px] mx-auto">
+        <header className="flex flex-col sm:flex-row items-start sm:items-baseline justify-between gap-2 sm:gap-4">
+          <h1 className="text-xl md:text-3xl font-bold">Greenwich SmartFAQ</h1>
           <span className="text-xs uppercase tracking-wider text-slate-500">
             Version {__APP_VERSION__}
           </span>
         </header>
-        <div className="flex flex-col gap-6">{children}</div>
+        <div className="flex flex-col gap-4 md:gap-6 flex-1">{children}</div>
       </main>
     </div>
   );

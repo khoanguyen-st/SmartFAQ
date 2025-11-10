@@ -1,9 +1,12 @@
 """Application configuration."""
 
 from functools import lru_cache
+from typing import Generator
 
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker, Session
 
 
 class Settings(BaseSettings):
@@ -67,3 +70,16 @@ def get_settings() -> Settings:
 
 
 settings = get_settings()
+
+# Database session
+engine = create_engine(settings.database_url)
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
+
+def get_db() -> Generator[Session, None, None]:
+    """Get database session."""
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()

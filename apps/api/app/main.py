@@ -18,7 +18,7 @@ def create_app() -> FastAPI:
     app.include_router(docs.router, prefix="/docs", tags=["documents"])
     app.include_router(chat.router, prefix="/chat", tags=["chat"])
     app.include_router(fallback.router, prefix="/fallback", tags=["fallback"])
-    app.include_router(admin.router, prefix="/admin", tags=["admin"])
+    app.include_router(admin.router, prefix="/api/admin", tags=["admin"])
 
     @app.get("/health", tags=["system"])
     def health_check() -> dict[str, str]:
