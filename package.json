@@ -1,5 +1,9 @@
 {
   "devDependencies": {
     "vite-plugin-svgr": "^4.5.0"
+  },
+  "dependencies": {
+    "@types/react-i18next": "^8.1.0",
+    "react-i18next": "^16.2.4"
   }
 }
