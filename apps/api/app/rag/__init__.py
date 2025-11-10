@@ -10,7 +10,7 @@ from .orchestrator import RAGOrchestrator
 
 __all__ = [
     "get_embeddings",
-    "get_vectorstore", 
+    "get_vectorstore",
     "LLMWrapper",
     "Retriever",
     "RAGOrchestrator",

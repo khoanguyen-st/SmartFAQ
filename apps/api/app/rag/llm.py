@@ -39,8 +39,7 @@ class LLMWrapper:
         model: Optional[str] = None,
         temperature: Optional[float] = None,
         max_context_chars: int = 8000,
-        max_tokens: Optional[int] = None,
-        language: str = "vi"
+        max_tokens: Optional[int] = None
     ):
         # ---- Model init (Gemini via langchain-google-genai) ----
         llm_model = model or settings.LLM_MODEL
@@ -58,15 +57,19 @@ class LLMWrapper:
             # timeout=30,
         )
 
-        # ---- Language configuration ----
-        self.language = language.lower()
-        self.system_prompt = self._build_system_prompt(language)
-
-        # Store language for fallback messages
-        self._language = language
-
         # ---- Prompt ----
         # Để context ở một message riêng -> dễ kiểm soát và thay thế
+        self.system_prompt = (
+            "Bạn là trợ lý AI của Đại học Greenwich Việt Nam.\n"
+            "Nhiệm vụ: Trả lời câu hỏi của sinh viên dựa trên thông tin được cung cấp.\n\n"
+            "Quy tắc:\n"
+            "1. LUÔN trả lời bằng tiếng Việt.\n"
+            "2. CHỈ sử dụng thông tin từ context được cung cấp.\n"
+            "3. Nếu không tìm thấy thông tin, trả lời: \"Tôi không tìm thấy thông tin về vấn đề này\".\n"
+            "4. Trả lời ngắn gọn, rõ ràng, thân thiện.\n"
+            "5. Nếu có link/email/số điện thoại trong context, hãy đưa vào câu trả lời.\n"
+        )
+
         self.prompt = ChatPromptTemplate.from_messages([
             ("system", self.system_prompt),
             ("system", "Context:\n{context}"),
@@ -79,33 +82,6 @@ class LLMWrapper:
 
         # ---- Params ----
         self.max_context_chars = max_context_chars
-
-    def _build_system_prompt(self, language: str) -> str:
-        """Build system prompt based on language."""
-        lang = language.lower()
-
-        if lang == "en" or lang == "english":
-            return (
-                "You are an AI assistant for Greenwich Vietnam University.\n"
-                "Task: Answer students' questions based on the provided information.\n\n"
-                "Rules:\n"
-                "1. ALWAYS respond in English.\n"
-                "2. ONLY use information from the provided context.\n"
-                "3. If information is not found, respond: \"I could not find information about this topic\".\n"
-                "4. Respond concisely, clearly, and friendly.\n"
-                "5. If there are links/emails/phone numbers in the context, include them in your answer.\n"
-            )
-        else:  # Default to Vietnamese
-            return (
-                "Bạn là trợ lý AI của Đại học Greenwich Việt Nam.\n"
-                "Nhiệm vụ: Trả lời câu hỏi của sinh viên dựa trên thông tin được cung cấp.\n\n"
-                "Quy tắc:\n"
-                "1. LUÔN trả lời bằng tiếng Việt.\n"
-                "2. CHỈ sử dụng thông tin từ context được cung cấp.\n"
-                "3. Nếu không tìm thấy thông tin, trả lời: \"Tôi không tìm thấy thông tin về vấn đề này\".\n"
-                "4. Trả lời ngắn gọn, rõ ràng, thân thiện.\n"
-                "5. Nếu có link/email/số điện thoại trong context, hãy đưa vào câu trả lời.\n"
-            )
 
     def format_contexts(
         self,
@@ -123,11 +99,7 @@ class LLMWrapper:
         return _clip(joined, self.max_context_chars)
 
     def _fallback_no_context(self) -> str:
-        """Return fallback message based on language."""
-        if self._language.lower() in ["en", "english"]:
-            return "I could not find information about this topic"
-        else:
-            return "Tôi không tìm thấy thông tin về vấn đề này"
+        return "Tôi không tìm thấy thông tin về vấn đề này"
 
     def generate_answer(
         self,
