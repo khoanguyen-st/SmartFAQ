@@ -20,15 +20,13 @@
     "lint-staged": "^15.2.11"
   },
   "lint-staged": {
-    "apps/web-*/**/*.{ts,tsx,js,jsx}": [
-      "yarn lint:web --fix --max-warnings=0"
-    ],
-    "apps/web-*/**/*.{ts,tsx,js,jsx,json,css,md}": [
+    "apps/web-{student,admin}/src/**/*.{ts,tsx}": [
+      "yarn lint:web --fix --max-warnings=0",
       "yarn format:prettier"
     ],
-    "apps/api/**/*.py": [
-      "ruff check --fix --extend-exclude=scripts --extend-exclude=tests --extend-exclude=alembic",
-      "black --extend-exclude='(scripts|tests|alembic)'"
+    "apps/api/app/**/*.py": [
+      "ruff check --fix",
+      "black"
     ]
   }
 }
