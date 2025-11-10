@@ -291,9 +291,9 @@ const ViewChatPage = () => {
   }
 
   return (
-    <div className="flex h-[calc(100vh-100px)] w-full border border-[#e5e7eb] bg-white">
+    <div className="flex h-[calc(100vh-81px)] w-full border border-[#e5e7eb] bg-white">
       <div className="flex h-full w-1/2 flex-col">
-        <div className="detail__header flex flex-col  justify-center p-6">
+        <div className="detail__header flex flex-col justify-center p-6">
           <div className="title-header flex">
             <KnowledgeIcon className="mr-2 h-6 w-6 shrink-0" />
             <h1 className="text-[18px] leading-7 font-semibold">Knowledge Sources</h1>
