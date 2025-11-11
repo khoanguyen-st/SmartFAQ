@@ -64,7 +64,20 @@ packages = ["app"]
 [tool.ruff]
 target-version = "py311"
 line-length = 100
+extend-exclude = ["scripts", "tests", "alembic", "venv"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I"]
+ignore = ["E501"]  # line too long (handled by formatter)
 
 [tool.black]
 target-version = ["py311"]
 line-length = 100
+extend-exclude = '''
+/(
+    scripts
+  | tests
+  | alembic
+  | venv
+)/
+'''
