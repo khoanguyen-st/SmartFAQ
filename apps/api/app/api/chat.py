@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-import asyncio # Thêm thư viện asyncio cho hàm sleep
+import asyncio  # Thêm thư viện asyncio cho hàm sleep
 import time
 from datetime import datetime, timezone
 from decimal import Decimal
@@ -207,6 +207,7 @@ async def create_session(
 
     return NewSessionResponse(sessionId=session_id, message="New chat session started.")
 
+
 @router.post("/query", response_model=ChatQueryResponse)
 async def query_chat(
     payload: ChatQuery,
@@ -250,7 +251,6 @@ async def query_chat(
     answer = None
     latency_ms = None
 
-    # Logic tái thử (Retry Logic) với Exponential Backoff
     for attempt in range(MAX_RETRIES):
         try:
             t0 = time.perf_counter()
@@ -259,19 +259,19 @@ async def query_chat(
                 history=history_messages,
             )
             latency_ms = int((time.perf_counter() - t0) * 1000)
-            break  # Thành công, thoát khỏi vòng lặp
-
+            break
         except Exception as exc:
             if attempt == MAX_RETRIES - 1:
-                # Lần thử cuối cùng thất bại, raise lỗi 500
                 raise HTTPException(
                     status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                     detail="Failed to generate answer after multiple retries. The LLM API may be at full capacity.",
                 ) from exc
 
             # Tính toán độ trễ tăng dần
-            delay = INITIAL_DELAY_SECONDS * (2 ** attempt)
-            print(f"LLM call failed (Attempt {attempt + 1}/{MAX_RETRIES}). Retrying in {delay} seconds...")
+            delay = INITIAL_DELAY_SECONDS * (2**attempt)
+            print(
+                f"LLM call failed (Attempt {attempt + 1}/{MAX_RETRIES}). Retrying in {delay} seconds..."
+            )
             await asyncio.sleep(delay)
 
     if answer is None:
@@ -366,7 +366,9 @@ async def get_history(
     messages: list[ChatHistoryMessage] = []
     for message in records:
         timestamp = message.created_at.replace(tzinfo=None).isoformat(timespec="seconds") + "Z"
-        confidence = _confidence_to_percent(message.confidence) if message.confidence is not None else None
+        confidence = (
+            _confidence_to_percent(message.confidence) if message.confidence is not None else None
+        )
         fallback = message.fallback if message.role == ASSISTANT_ROLE else None
         entry = ChatHistoryMessage(
             role=message.role,
@@ -379,6 +381,7 @@ async def get_history(
         messages.append(entry)
 
     return ChatHistoryResponse(sessionId=session.id, messages=messages)
+
 
 @router.post("/feedback", response_model=FeedbackResponse)
 async def submit_feedback(

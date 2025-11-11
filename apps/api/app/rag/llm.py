@@ -1,14 +1,14 @@
 from __future__ import annotations
 
-from typing import List, Dict, Any, Optional, Sequence, Union
+from typing import Any, Dict, Optional, Sequence, Union
+
 from langchain_core.documents import Document
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_google_genai import ChatGoogleGenerativeAI
-from app.core.config import settings
 
-import asyncio
+from app.core.config import settings
 
 
 def _clip(text: str, max_chars: int) -> str:
@@ -37,12 +37,13 @@ class LLMWrapper:
     Wrapper for Google Gemini LLM using LangChain v1.
     Uses langchain-google-genai for Gemini API integration.
     """
+
     def __init__(
         self,
         model: Optional[str] = None,
         temperature: Optional[float] = None,
         max_context_chars: int = 8000,
-        max_tokens: Optional[int] = None
+        max_tokens: Optional[int] = None,
     ):
         # ---- Model init (Gemini via langchain-google-genai) ----
         llm_model = model or settings.LLM_MODEL
@@ -61,8 +62,9 @@ class LLMWrapper:
         )
 
         # ---- Prompt ----
+        # Để context ở một message riêng -> dễ kiểm soát và thay thế
         self.system_prompt = (
-            # "Bạn là trợ lý AI của Đại học Greenwich Việt Nam.\n"
+            "Bạn là trợ lý AI của Đại học Greenwich Việt Nam.\n"
             # "Nhiệm vụ: Trả lời câu hỏi của sinh viên dựa trên thông tin được cung cấp.\n\n"
             # "Quy tắc:\n"
             # "1. Trả lời bằng cùng ngôn ngữ với câu hỏi của người dùng.\n"
@@ -73,24 +75,28 @@ class LLMWrapper:
             # "6. Nếu câu hỏi mang tính chào hỏi hoặc xã giao, hãy đáp lại lịch sự và đề nghị hỗ trợ thêm.\n"
         )
 
-        # Logic xây dựng prompt RAG
+        # SỬA LỖI: Tạo danh sách messages RAG (self.prompt)
+        # Chỉ thêm system prompt nếu nó có nội dung (khắc phục lỗi ValueError: Invalid template: ())
         rag_messages = []
-        if self.system_prompt:
+        if self.system_prompt.strip():
             rag_messages.append(("system", self.system_prompt))
 
-        rag_messages.extend([
-            ("system", "Context:\n{context}"),
-            ("human", "{question}"),
-        ])
+        rag_messages.extend(
+            [
+                ("system", "Context:\n{context}"),
+                ("human", "{question}"),
+            ]
+        )
 
         self.prompt = ChatPromptTemplate.from_messages(rag_messages)
 
-        # Logic xây dựng prompt Direct Chat (đã sửa lỗi tuple rỗng)
-        self.direct_prompt = ChatPromptTemplate.from_messages([
-            # Phần system prompt đã bị loại bỏ/comment
-            MessagesPlaceholder(variable_name="history"),
-            ("human", "{question}"),
-        ])
+        # SỬA LỖI: Thêm direct_prompt (đã bị thiếu) và tránh lỗi cú pháp
+        self.direct_prompt = ChatPromptTemplate.from_messages(
+            [
+                MessagesPlaceholder(variable_name="history"),
+                ("human", "{question}"),
+            ]
+        )
 
         # ---- Chain ----
         self.parser = StrOutputParser()
@@ -130,10 +136,12 @@ class LLMWrapper:
         if not context_text.strip():
             return self._fallback_no_context()
 
-        return self.chain.invoke({
-            "context": context_text,
-            "question": question.strip(),
-        })
+        return self.chain.invoke(
+            {
+                "context": context_text,
+                "question": question.strip(),
+            }
+        )
 
     async def generate_answer_async(
         self,
@@ -147,10 +155,12 @@ class LLMWrapper:
         if not context_text.strip():
             return self._fallback_no_context()
 
-        return await self.chain.ainvoke({
-            "context": context_text,
-            "question": question.strip(),
-        })
+        return await self.chain.ainvoke(
+            {
+                "context": context_text,
+                "question": question.strip(),
+            }
+        )
 
     async def generate_direct_answer_async(
         self,
@@ -185,4 +195,6 @@ class LLMWrapper:
                 if message is not None:
                     formatted_history.append(message)
 
-        return await self.direct_chain.ainvoke({"history": formatted_history, "question": clean_question})
+        return await self.direct_chain.ainvoke(
+            {"history": formatted_history, "question": clean_question}
+        )
