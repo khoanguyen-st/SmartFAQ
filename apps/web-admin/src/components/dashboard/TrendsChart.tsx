@@ -1,19 +1,12 @@
-import {
-  Line,
-  LineChart,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from "recharts";
+import { Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 
 const data = [
-  { period: "Mon", questions: 0 },
-  { period: "Tue", questions: 0 },
-  { period: "Wed", questions: 0 },
-  { period: "Thu", questions: 0 },
-  { period: "Fri", questions: 0 },
-];
+  { period: 'Mon', questions: 0 },
+  { period: 'Tue', questions: 0 },
+  { period: 'Wed', questions: 0 },
+  { period: 'Thu', questions: 0 },
+  { period: 'Fri', questions: 0 }
+]
 
 const TrendsChart = () => {
   return (
@@ -25,17 +18,12 @@ const TrendsChart = () => {
             <XAxis dataKey="period" stroke="#94a3b8" />
             <YAxis stroke="#94a3b8" />
             <Tooltip cursor={false} />
-            <Line
-              type="monotone"
-              dataKey="questions"
-              stroke="#059669"
-              strokeWidth={2}
-            />
+            <Line type="monotone" dataKey="questions" stroke="#059669" strokeWidth={2} />
           </LineChart>
         </ResponsiveContainer>
       </div>
     </section>
-  );
-};
+  )
+}
 
-export default TrendsChart;
+export default TrendsChart

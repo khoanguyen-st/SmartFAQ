@@ -2,12 +2,14 @@
 from __future__ import annotations
 
 import hashlib
-from typing import Iterable, List, Dict, Any, Optional, Tuple
-from langchain_core.documents import Document
-from langchain_chroma import Chroma
+from typing import Any, Dict, Iterable, List, Optional, Tuple
+
 from chromadb.config import Settings as ChromaSettings
-from app.rag.embedder import get_embeddings
+from langchain_chroma import Chroma
+from langchain_core.documents import Document
+
 from app.core.config import settings
+from app.rag.embedder import get_embeddings
 
 
 # Optional auth headers if behind gateway
@@ -36,7 +38,7 @@ def get_vectorstore() -> Chroma:
     global __VECTORSTORE
     if __VECTORSTORE is None:
         embeddings = get_embeddings()
-        
+
         # Parse URL
         chroma_url = settings.CHROMA_URL.replace("http://", "").replace("https://", "")
         if ":" in chroma_url:
@@ -45,14 +47,14 @@ def get_vectorstore() -> Chroma:
         else:
             host = chroma_url
             port = 8000
-        
+
         # Create Chroma Settings object
         chroma_settings = ChromaSettings(
             chroma_api_impl="chromadb.api.fastapi.FastAPI",
             chroma_server_host=host,
             chroma_server_http_port=port,
         )
-        
+
         # Initialize Chroma with Settings object
         __VECTORSTORE = Chroma(
             client_settings=chroma_settings,
@@ -106,7 +108,9 @@ def upsert_documents(docs: Iterable[Document], ids: Optional[List[str]] = None) 
 
 
 # -------- Search --------
-def similarity_search(query: str, k: int = 5, where: Optional[Dict[str, Any]] = None) -> List[Document]:
+def similarity_search(
+    query: str, k: int = 5, where: Optional[Dict[str, Any]] = None
+) -> List[Document]:
     vs = get_vectorstore()
     if where:
         retriever = vs.as_retriever(search_kwargs={"k": k, "filter": where})
@@ -138,27 +142,32 @@ def delete_by_metadata(where: Dict[str, Any]) -> None:
 # -------- VectorStore wrapper class --------
 class VectorStore:
     """Wrapper class for backwards compatibility"""
-    
+
     def __init__(self):
         self._vs = get_vectorstore()
-    
-    def similarity_search(self, query: str, k: int = 5, where: Optional[Dict[str, Any]] = None) -> List:
+
+    def similarity_search(
+        self, query: str, k: int = 5, where: Optional[Dict[str, Any]] = None
+    ) -> List:
         return similarity_search(query, k, where)
-    
-    def similarity_search_with_score(self, query: str, k: int = 5, where: Optional[Dict[str, Any]] = None):
+
+    def similarity_search_with_score(
+        self, query: str, k: int = 5, where: Optional[Dict[str, Any]] = None
+    ):
         return similarity_search_with_score(query, k, where)
-    
+
     def add_documents(self, documents, ids: Optional[List[str]] = None):
         return upsert_documents(documents, ids)
-    
+
     def delete_by_metadata(self, where: Dict[str, Any]):
         return delete_by_metadata(where)
-    
-    def get_retriever(self, search_type: str = "similarity", search_kwargs: Optional[Dict[str, Any]] = None, **kwargs):
+
+    def get_retriever(
+        self,
+        search_type: str = "similarity",
+        search_kwargs: Optional[Dict[str, Any]] = None,
+        **kwargs,
+    ):
         """Get LangChain retriever interface"""
         search_kwargs = search_kwargs or {}
-        return self._vs.as_retriever(
-            search_type=search_type,
-            search_kwargs=search_kwargs,
-            **kwargs
-        )
+        return self._vs.as_retriever(search_type=search_type, search_kwargs=search_kwargs, **kwargs)

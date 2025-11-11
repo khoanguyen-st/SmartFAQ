@@ -1,11 +1,13 @@
 from __future__ import annotations
 
-from typing import List, Dict, Any, Optional, Sequence, Union
+from typing import Any, Dict, Optional, Sequence, Union
+
 from langchain_core.documents import Document
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_google_genai import ChatGoogleGenerativeAI
+
 from app.core.config import settings
 
 
@@ -35,18 +37,19 @@ class LLMWrapper:
     Wrapper for Google Gemini LLM using LangChain v1.
     Uses langchain-google-genai for Gemini API integration.
     """
+
     def __init__(
         self,
         model: Optional[str] = None,
         temperature: Optional[float] = None,
         max_context_chars: int = 8000,
-        max_tokens: Optional[int] = None
+        max_tokens: Optional[int] = None,
     ):
         # ---- Model init (Gemini via langchain-google-genai) ----
         llm_model = model or settings.LLM_MODEL
         llm_temperature = temperature if temperature is not None else settings.LLM_TEMPERATURE
         llm_max_tokens = max_tokens or settings.LLM_MAX_TOKENS
-        
+
         # Initialize Gemini model
         # Make sure GOOGLE_API_KEY is set in environment
         self.llm = ChatGoogleGenerativeAI(
@@ -128,10 +131,12 @@ class LLMWrapper:
         if not context_text.strip():
             return self._fallback_no_context()
 
-        return self.chain.invoke({
-            "context": context_text,
-            "question": question.strip(),
-        })
+        return self.chain.invoke(
+            {
+                "context": context_text,
+                "question": question.strip(),
+            }
+        )
 
     async def generate_answer_async(
         self,
