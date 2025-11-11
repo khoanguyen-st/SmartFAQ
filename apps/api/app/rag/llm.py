@@ -1,13 +1,11 @@
 from __future__ import annotations
 
-from typing import Any, Dict, Optional, Sequence, Union
-
+from typing import List, Dict, Any, Optional, Sequence, Union
 from langchain_core.documents import Document
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
 from langchain_core.output_parsers import StrOutputParser
-from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_google_genai import ChatGoogleGenerativeAI
-
 from app.core.config import settings
 
 
@@ -69,19 +67,29 @@ class LLMWrapper:
             "Quy tắc:\n"
             "1. Trả lời bằng cùng ngôn ngữ với câu hỏi của người dùng.\n"
             "2. CHỈ sử dụng thông tin từ context được cung cấp để trả lời nội dung chính.\n"
-            '3. Nếu context không chứa thông tin phù hợp, trả lời: "Tôi không tìm thấy thông tin về vấn đề này" bằng ngôn ngữ của người dùng.\n'
+            "3. Nếu context không chứa thông tin phù hợp, trả lời: \"Tôi không tìm thấy thông tin về vấn đề này\" bằng ngôn ngữ của người dùng.\n"
             "4. Trả lời ngắn gọn, rõ ràng, thân thiện.\n"
             "5. Nếu có link/email/số điện thoại trong context, hãy đưa vào câu trả lời.\n"
             "6. Nếu câu hỏi mang tính chào hỏi hoặc xã giao, hãy đáp lại lịch sự và đề nghị hỗ trợ thêm.\n"
         )
 
-        self.prompt = ChatPromptTemplate.from_messages(
-            [
-                ("system", self.system_prompt),
-                ("system", "Context:\n{context}"),
-                ("human", "{question}"),
-            ]
-        )
+        self.prompt = ChatPromptTemplate.from_messages([
+            ("system", self.system_prompt),
+            ("system", "Context:\n{context}"),
+            ("human", "{question}"),
+        ])
+        self.direct_prompt = ChatPromptTemplate.from_messages([
+            (
+                "system",
+                "Bạn là trợ lý AI thân thiện của Đại học Greenwich Việt Nam. "
+                "Luôn trả lời ngắn gọn, rõ ràng, thân thiện. "
+                "Trả lời bằng cùng ngôn ngữ với câu hỏi của người dùng. "
+                "Nếu câu hỏi chỉ là lời chào hoặc xã giao, hãy đáp lại phù hợp và hỏi xem bạn có thể hỗ trợ gì thêm. "
+                "Chỉ cung cấp thông tin về Greenwich khi câu hỏi liên quan."
+            ),
+            MessagesPlaceholder(variable_name="history"),
+            ("human", "{question}"),
+        ])
 
         # ---- Chain ----
         self.parser = StrOutputParser()
@@ -140,12 +148,10 @@ class LLMWrapper:
         if not context_text.strip():
             return self._fallback_no_context()
 
-        return await self.chain.ainvoke(
-            {
-                "context": context_text,
-                "question": question.strip(),
-            }
-        )
+        return await self.chain.ainvoke({
+            "context": context_text,
+            "question": question.strip(),
+        })
 
     async def generate_direct_answer_async(
         self,
@@ -180,6 +186,4 @@ class LLMWrapper:
                 if message is not None:
                     formatted_history.append(message)
 
-        return await self.direct_chain.ainvoke(
-            {"history": formatted_history, "question": clean_question}
-        )
+        return await self.direct_chain.ainvoke({"history": formatted_history, "question": clean_question})

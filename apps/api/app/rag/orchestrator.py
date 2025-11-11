@@ -88,17 +88,21 @@ class RAGOrchestrator:
         sources = []
         for c in contexts[:return_top_sources]:
             md = c.get("metadata", {})
-            sources.append(
-                {
-                    "document_id": md.get("document_id"),
-                    "chunk_id": md.get("chunk_id"),
-                    "chunk_index": md.get("chunk_index"),
-                    "source": md.get("source"),
-                    "page": md.get("page"),
-                    "score": c.get("score"),
-                }
-            )
-
+            sources.append({
+                "document_id": md.get("document_id"),
+                "chunk_id": md.get("chunk_id"),
+                "chunk_index": md.get("chunk_index"),
+                "source": md.get("source"),
+                "page": md.get("page"),
+                "score": c.get("score"),
+            })
+            
+        formatted = self.formatter.format(
+            raw_answer=answer,
+            sources=sources,
+            fallback_triggered=fallback_triggered
+        )
+        
         latency_ms = int((time.time() - t0) * 1000)
         return {
             "answer": answer,

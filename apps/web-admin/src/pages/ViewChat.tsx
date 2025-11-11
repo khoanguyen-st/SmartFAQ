@@ -291,9 +291,9 @@ const ViewChatPage = () => {
   }
 
   return (
-    <div className="flex h-full w-full border border-[#e5e7eb] bg-white">
-      <div className="] flex h-[calc(100vh-100px)] w-1/2 flex-col">
-        <div className="detail__header flex flex-col items-center px-6 py-4">
+    <div className="flex h-[calc(100vh-81px)] w-full border border-[#e5e7eb] bg-white">
+      <div className="flex h-full w-1/2 flex-col">
+        <div className="detail__header flex flex-col justify-center p-6">
           <div className="title-header flex">
             <KnowledgeIcon className="mr-2 h-6 w-6 shrink-0" />
             <h1 className="text-[18px] leading-7 font-semibold">Knowledge Sources</h1>
@@ -305,8 +305,8 @@ const ViewChatPage = () => {
 
         <UploadedFile files={files} onDeleteFile={handleDeleteFile} isLoading={loading} loadError={error} />
       </div>
-      <div className="chat flex h-[calc(100vh-100px)] w-1/2 flex-col">
-        <div className="chat__header flex items-center justify-between px-6 py-4">
+      <div className="chat flex h-full w-1/2 flex-col">
+        <div className="chat__header flex items-center justify-between p-6">
           <div className="chat__title flex w-[300px] flex-col overflow-hidden text-nowrap text-ellipsis">
             <div className="title-header flex">
               <MessIcon className="mr-2 h-6 w-6 shrink-0" />
@@ -347,7 +347,7 @@ const ViewChatPage = () => {
         {/* Commented out static content */}
         {/* <div className="chat__content ..."> ... </div> */}
 
-        <div className="chat__footer flex h-[96px] flex-col px-6 py-4">
+        <div className="chat__footer flex h-24 flex-col px-6 py-4">
           <form
             onSubmit={handleSend}
             action=""

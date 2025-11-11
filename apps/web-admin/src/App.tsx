@@ -1,11 +1,11 @@
-import { Navigate, Route, Routes } from 'react-router-dom'
+import { Navigate, Route, Routes } from "react-router-dom";
+import UploadedPage from "./pages/UploadedDocuments";
+import DashboardPage from "./pages/Dashboard";
+import LogsPage from "./pages/Logs";
+import SettingsPage from "./pages/Settings";
+import ViewChatPage from "./pages/ViewChat";
+import ShellLayout from "./components/ShellLayout";
 
-import UploadedPage from './pages/UploadedDocuments'
-import DashboardPage from './pages/Dashboard'
-import LogsPage from './pages/Logs'
-import SettingsPage from './pages/Settings'
-import ViewChatPage from './pages/ViewChat'
-import ShellLayout from './components/ShellLayout'
 
 const App = () => (
   <ShellLayout>
