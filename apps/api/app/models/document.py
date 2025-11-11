@@ -29,7 +29,6 @@ class Document(Base):
     created_by: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
-    # khai báo rõ foreign_keys để tránh nhầm lẫn với current_version_id <-> document_versions.id
     versions: Mapped[list["DocumentVersion"]] = relationship(
         "DocumentVersion",
         back_populates="document",
@@ -38,7 +37,6 @@ class Document(Base):
         order_by="DocumentVersion.version_no",
     )
 
-    # relationship tới phiên bản hiện tại (nếu muốn truy cập dễ hơn); uselist=False vì chỉ 1 row
     current_version: Mapped["DocumentVersion | None"] = relationship(
         "DocumentVersion",
         foreign_keys=[current_version_id],

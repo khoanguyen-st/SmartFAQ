@@ -18,7 +18,6 @@ class User(Base):
 
     password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
 
-    # Mặc định là STAFF, Super Admin sẽ tạo tài khoản có role="Admin"
     role: Mapped[str] = mapped_column(String(50), nullable=False, default="STAFF")
 
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
