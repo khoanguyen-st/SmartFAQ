@@ -8,6 +8,8 @@ from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_google_genai import ChatGoogleGenerativeAI
 from app.core.config import settings
 
+import asyncio
+
 
 def _clip(text: str, max_chars: int) -> str:
     if len(text) <= max_chars:
@@ -59,33 +61,33 @@ class LLMWrapper:
         )
 
         # ---- Prompt ----
-        # Để context ở một message riêng -> dễ kiểm soát và thay thế
         self.system_prompt = (
-            "Bạn là trợ lý AI của Đại học Greenwich Việt Nam.\n"
-            "Nhiệm vụ: Trả lời câu hỏi của sinh viên dựa trên thông tin được cung cấp.\n\n"
-            "Quy tắc:\n"
-            "1. Trả lời bằng cùng ngôn ngữ với câu hỏi của người dùng.\n"
-            "2. CHỈ sử dụng thông tin từ context được cung cấp để trả lời nội dung chính.\n"
-            "3. Nếu context không chứa thông tin phù hợp, trả lời: \"Tôi không tìm thấy thông tin về vấn đề này\" bằng ngôn ngữ của người dùng.\n"
-            "4. Trả lời ngắn gọn, rõ ràng, thân thiện.\n"
-            "5. Nếu có link/email/số điện thoại trong context, hãy đưa vào câu trả lời.\n"
-            "6. Nếu câu hỏi mang tính chào hỏi hoặc xã giao, hãy đáp lại lịch sự và đề nghị hỗ trợ thêm.\n"
+            # "Bạn là trợ lý AI của Đại học Greenwich Việt Nam.\n"
+            # "Nhiệm vụ: Trả lời câu hỏi của sinh viên dựa trên thông tin được cung cấp.\n\n"
+            # "Quy tắc:\n"
+            # "1. Trả lời bằng cùng ngôn ngữ với câu hỏi của người dùng.\n"
+            # "2. CHỈ sử dụng thông tin từ context được cung cấp để trả lời nội dung chính.\n"
+            # "3. Nếu context không chứa thông tin phù hợp, trả lời: \"Tôi không tìm thấy thông tin về vấn đề này\" bằng ngôn ngữ của người dùng.\n"
+            # "4. Trả lời ngắn gọn, rõ ràng, thân thiện.\n"
+            # "5. Nếu có link/email/số điện thoại trong context, hãy đưa vào câu trả lời.\n"
+            # "6. Nếu câu hỏi mang tính chào hỏi hoặc xã giao, hãy đáp lại lịch sự và đề nghị hỗ trợ thêm.\n"
         )
 
-        self.prompt = ChatPromptTemplate.from_messages([
-            ("system", self.system_prompt),
+        # Logic xây dựng prompt RAG
+        rag_messages = []
+        if self.system_prompt:
+            rag_messages.append(("system", self.system_prompt))
+
+        rag_messages.extend([
             ("system", "Context:\n{context}"),
             ("human", "{question}"),
         ])
+
+        self.prompt = ChatPromptTemplate.from_messages(rag_messages)
+
+        # Logic xây dựng prompt Direct Chat (đã sửa lỗi tuple rỗng)
         self.direct_prompt = ChatPromptTemplate.from_messages([
-            (
-                "system",
-                "Bạn là trợ lý AI thân thiện của Đại học Greenwich Việt Nam. "
-                "Luôn trả lời ngắn gọn, rõ ràng, thân thiện. "
-                "Trả lời bằng cùng ngôn ngữ với câu hỏi của người dùng. "
-                "Nếu câu hỏi chỉ là lời chào hoặc xã giao, hãy đáp lại phù hợp và hỏi xem bạn có thể hỗ trợ gì thêm. "
-                "Chỉ cung cấp thông tin về Greenwich khi câu hỏi liên quan."
-            ),
+            # Phần system prompt đã bị loại bỏ/comment
             MessagesPlaceholder(variable_name="history"),
             ("human", "{question}"),
         ])

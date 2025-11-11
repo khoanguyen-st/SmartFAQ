@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio # Thêm thư viện asyncio cho hàm sleep
 import time
 from datetime import datetime, timezone
 from decimal import Decimal
@@ -43,6 +44,10 @@ READ_RATE_LIMITER = RateLimiter(
     window_seconds=60,
     error_detail="Too many chat requests. Try again shortly.",
 )
+
+# Cấu hình cho logic tái thử LLM
+MAX_RETRIES = 3
+INITIAL_DELAY_SECONDS = 2
 
 
 def _now() -> datetime:
@@ -233,7 +238,7 @@ async def query_chat(
         select(ChatMessage)
         .where(ChatMessage.session_id == session.id)
         .order_by(ChatMessage.created_at.desc())
-        .limit(10)
+        .limit(1)
     )
     history_result = await db.execute(history_stmt)
     history_records = list(history_result.scalars())
@@ -242,18 +247,39 @@ async def query_chat(
         {"role": message.role, "content": message.text} for message in history_records
     ]
 
-    try:
-        t0 = time.perf_counter()
-        answer = await llm_wrapper.generate_direct_answer_async(
-            payload.question,
-            history=history_messages,
-        )
-        latency_ms = int((time.perf_counter() - t0) * 1000)
-    except Exception as exc:  # noqa: BLE001 - surface LLM errors cleanly
+    answer = None
+    latency_ms = None
+
+    # Logic tái thử (Retry Logic) với Exponential Backoff
+    for attempt in range(MAX_RETRIES):
+        try:
+            t0 = time.perf_counter()
+            answer = await llm_wrapper.generate_direct_answer_async(
+                payload.question,
+                history=history_messages,
+            )
+            latency_ms = int((time.perf_counter() - t0) * 1000)
+            break  # Thành công, thoát khỏi vòng lặp
+
+        except Exception as exc:
+            if attempt == MAX_RETRIES - 1:
+                # Lần thử cuối cùng thất bại, raise lỗi 500
+                raise HTTPException(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    detail="Failed to generate answer after multiple retries. The LLM API may be at full capacity.",
+                ) from exc
+
+            # Tính toán độ trễ tăng dần
+            delay = INITIAL_DELAY_SECONDS * (2 ** attempt)
+            print(f"LLM call failed (Attempt {attempt + 1}/{MAX_RETRIES}). Retrying in {delay} seconds...")
+            await asyncio.sleep(delay)
+
+    if answer is None:
+        # Lỗi nội bộ nếu answer vẫn là None
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to generate answer.",
-        ) from exc
+            detail="Internal error: Answer generation failed unexpectedly.",
+        )
 
     confidence_raw = 1.0
     fallback_triggered = False
