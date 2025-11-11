@@ -67,4 +67,4 @@ const TrendsChart = () => {
   );
 };
 
-export default TrendsChart;
+export default TrendsChart
