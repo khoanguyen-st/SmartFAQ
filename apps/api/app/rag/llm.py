@@ -69,7 +69,7 @@ class LLMWrapper:
             "Quy tắc:\n"
             "1. Trả lời bằng cùng ngôn ngữ với câu hỏi của người dùng.\n"
             "2. CHỈ sử dụng thông tin từ context được cung cấp để trả lời nội dung chính.\n"
-            '3. Nếu context không chứa thông tin phù hợp, trả lời: "Tôi không tìm thấy thông tin về vấn đề này" bằng ngôn ngữ của người dùng.\n'
+            "3. Nếu context không chứa thông tin phù hợp, trả lời: \"Tôi không tìm thấy thông tin về vấn đề này\" bằng ngôn ngữ của người dùng.\n"
             "4. Trả lời ngắn gọn, rõ ràng, thân thiện.\n"
             "5. Nếu có link/email/số điện thoại trong context, hãy đưa vào câu trả lời.\n"
             "6. Nếu câu hỏi mang tính chào hỏi hoặc xã giao, hãy đáp lại lịch sự và đề nghị hỗ trợ thêm.\n"
