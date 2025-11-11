@@ -8,8 +8,8 @@ import time
 from jose import jwt
 import bcrypt
 
-from .config import settings
 from ..models.user import User
+from .config import settings
 
 
 def hash_password(password: str) -> str:
@@ -45,6 +45,7 @@ def verify_password(password: str, hashed_password: str) -> bool:
         return bcrypt.checkpw(password_bytes, hashed_bytes)
     except Exception:
         return False
+
 
 
 @lru_cache(maxsize=1)
