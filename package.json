@@ -1,9 +1,37 @@
 {
+  "name": "smartfaq-monorepo",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "prepare": "husky",
+    "lint": "yarn workspaces foreach -pt run lint",
+    "format": "yarn workspaces foreach -pt run format",
+    "format:check": "yarn workspaces foreach -pt run format:check",
+    "lint:web": "eslint --config packages/config/eslint.config.js",
+    "format:prettier": "prettier --write"
+  },
   "devDependencies": {
+    "husky": "^9.1.7",
+    "lint-staged": "^15.2.11",
     "vite-plugin-svgr": "^4.5.0"
   },
   "dependencies": {
     "@types/react-i18next": "^8.1.0",
     "react-i18next": "^16.2.4"
+  },
+  "lint-staged": {
+    "apps/web-{student,admin}/src/**/*.{ts,tsx}": [
+      "yarn lint:web --fix --max-warnings=0",
+      "yarn format:prettier"
+    ],
+    "apps/api/app/**/*.py": [
+      "ruff check --fix",
+      "black"
+    ]
   }
 }
