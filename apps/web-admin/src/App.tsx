@@ -6,13 +6,14 @@ import SettingsPage from "./pages/Settings";
 import ViewChatPage from "./pages/ViewChat";
 import ShellLayout from "./components/ShellLayout";
 
+
 const App = () => (
   <ShellLayout>
     <Routes>
       <Route path="dashboard" element={<DashboardPage />} />
       <Route path="logs" element={<LogsPage />} />
       <Route path="settings" element={<SettingsPage />} />
-      <Route path="viewchat" element={<ViewChatPage />} />
+      <Route path="view-chat" element={<ViewChatPage />} />
       <Route path="*" element={<Navigate to="dashboard" replace />} />
     </Routes>
   </ShellLayout>
