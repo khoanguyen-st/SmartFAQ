@@ -1,7 +1,7 @@
-import { Navigate, Route, Routes } from "react-router-dom";
+import { Navigate, Route, Routes } from 'react-router-dom'
 
-import ChatPage from "./pages/Chat";
-import { I18nProvider } from "./lib/i18n";
+import ChatPage from './pages/Chat'
+import { I18nProvider } from './lib/i18n'
 
 const App = () => {
   return (
@@ -11,7 +11,7 @@ const App = () => {
         <Route path="*" element={<Navigate to="chat" replace />} />
       </Routes>
     </I18nProvider>
-  );
-};
+  )
+}
 
-export default App;
+export default App
