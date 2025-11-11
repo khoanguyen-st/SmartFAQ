@@ -26,4 +26,9 @@ class DocumentVersion(Base):
     uploaded_by: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
-    document: Mapped["Document"] = relationship("Document", back_populates="versions")
+    # rõ ràng chỉ định document_id là FK dùng cho relationship này
+    document: Mapped["Document"] = relationship(
+        "Document",
+        back_populates="versions",
+        foreign_keys=[document_id],
+    )
