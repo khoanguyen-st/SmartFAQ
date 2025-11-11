@@ -307,12 +307,12 @@ const ViewChatPage = () => {
       </div>
       <div className="chat flex h-full w-1/2 flex-col">
         <div className="chat__header flex items-center justify-between p-6">
-          <div className="chat__title flex w-[300px] flex-col overflow-hidden text-nowrap text-ellipsis">
+          <div className="chat__title flex w-fit flex-col overflow-hidden text-nowrap text-ellipsis">
             <div className="title-header flex">
               <MessIcon className="mr-2 h-6 w-6 shrink-0" />
               <h1 className="text-[18px] leading-7 font-semibold">Chat with Your Knowledge Base</h1>
             </div>
-            <p className="text-[14px] text-[#6B7280]">Test chatbot responses based on uploaded documents</p>
+            <p className="w-full text-[14px] text-[#6B7280]">Test chatbot responses based on uploaded documents</p>
           </div>
           <button
             type="button"
