@@ -10,6 +10,7 @@ from google.api_core import exceptions as google_exceptions
 
 from app.core.config import settings
 from app.rag.prompts import get_normalization_prompt
+from app.rag.constants import MAX_NORMALIZER_INPUT_LENGTH
 from app.rag.question_understanding import QuestionNormalizer
 from app.rag.utils.llm_json import invoke_json_llm
 logger = logging.getLogger(__name__)
@@ -34,10 +35,13 @@ class RuleBasedNormalizer(QuestionNormalizer):
             return ""
         if not question.strip():
             return ""
-        MAX_QUESTION_LENGTH = 500
-        if len(question) > MAX_QUESTION_LENGTH:
-            logger.debug(f"Truncating question from {len(question)} to {MAX_QUESTION_LENGTH} chars")
-            question = question[:MAX_QUESTION_LENGTH]
+        if len(question) > MAX_NORMALIZER_INPUT_LENGTH:
+            logger.debug(
+                "Truncating question from %s to %s chars",
+                len(question),
+                MAX_NORMALIZER_INPUT_LENGTH,
+            )
+            question = question[:MAX_NORMALIZER_INPUT_LENGTH]
         ai_normalized: Optional[str] = None
         try:
             ai_normalized = self._normalize_with_ai(question)
@@ -63,7 +67,6 @@ class RuleBasedNormalizer(QuestionNormalizer):
         )
         if not result:
             return None
-
         normalized_text = result.get("normalized_text", "")
         if not isinstance(normalized_text, str):
             logger.debug("Invalid normalized_text type: %s", type(normalized_text))
