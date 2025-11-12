@@ -54,7 +54,7 @@ def get_admin_hash() -> str:
 
 
 async def authenticate_user(username: str, password: str) -> Optional[User]:
-    # TODO: 
+    # TODO:     
     admin_hash = get_admin_hash()
     if username == "admin" and verify_password(password, admin_hash):
         return User(username="admin", password_hash=admin_hash, role="SUPER_ADMIN", is_active=True)
@@ -178,3 +178,4 @@ def validate_password_strength(password: str) -> bool:
         r"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_\-+=\[{\]};:'\",<.>/?\\|`~]).{8,}$"
     )
     return bool(pattern.match(password))
+    
