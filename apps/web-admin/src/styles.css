@@ -47,15 +47,9 @@
   border: none;
 }
 
-<<<<<<< HEAD
-.chat__content, .uploaded__content {
-  flex-grow: 1;
-  padding: 24px;
-=======
 .chat__content {
   flex-grow: 1;
   padding: 16px 0;
->>>>>>> 76eda153c25b6e04782f9aff0c446b36e5c222d1
   overflow: auto;
   scrollbar-width: thin;
   scrollbar-color: var(--color-dark-2) var(--color-white);
@@ -66,10 +60,7 @@
   text-align: start;
   padding: 16px;
   margin-bottom: 16px;
-<<<<<<< HEAD
-=======
   margin-inline: 24px;
->>>>>>> 76eda153c25b6e04782f9aff0c446b36e5c222d1
 }
 
 .message--receiver {
