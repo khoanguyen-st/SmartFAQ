@@ -15,9 +15,11 @@ import PdfNoFill from '@/assets/pdf-no-fill.svg?react'
 import ImageNofill from '@/assets/image-no-fill.svg?react'
 import TxtNoFill from '@/assets/txt-no-fill.svg?react'
 import KnowledgeIcon from '@/assets/knowledge.svg?react'
+import PlusIcon from '@/assets/plus.svg?react'
+import SidebarIcon from '@/assets/sidebar.svg?react'
 import UploadedFile from '@/components/viewchat/UploadedFile'
 import { useKnowledgeFiles } from '@/hooks/useKnowledgeFiles'
-import Upload from '@/components/viewchat/Upload'
+
 
 type DisplayMessage = {
   id: string | number
@@ -139,7 +141,22 @@ const ViewChatPage = () => {
   const [isLoading, setIsLoading] = useState(false)
   const [errorState, setErrorState] = useState<string | null>(null)
 
+  const fileInputRef = useRef<HTMLInputElement>(null)
   const chatContentRef = useRef<HTMLDivElement>(null)
+
+  const handleSelectFileClick = () => {
+    fileInputRef.current?.click()
+  }
+
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedFiles = event.target.files
+    if (selectedFiles && selectedFiles.length > 0) {
+      handleFileUpload(Array.from(selectedFiles))
+      if (fileInputRef.current) {
+        fileInputRef.current.value = ''
+      }
+    }
+  }
 
   // Effect to get session ID on mount
   // --- MODIFIED EFFECT: Load session or start new one ---
@@ -293,18 +310,55 @@ const ViewChatPage = () => {
   return (
     <div className="flex h-[calc(100vh-100px)] w-full border border-[#e5e7eb] bg-white">
       <div className="flex h-full w-1/2 flex-col">
-        <div className="detail__header flex flex-col  justify-center p-6">
-          <div className="title-header flex">
-            <KnowledgeIcon className="mr-2 h-6 w-6 shrink-0" />
-            <h1 className="text-[18px] leading-7 font-semibold">Knowledge Sources</h1>
+        <div className="detail__header flex items-center justify-between p-6 border-b border-[#F3F4F6]">
+          <div className="flex flex-col overflow-hidden text-nowrap text-ellipsis">
+            <div className="title-header flex items-center">
+              <KnowledgeIcon className="mr-2 h-6 w-6 shrink-0 text-[#003087]" />
+              <h1 className="text-[18px] font-semibold leading-7 text-[#111827]">Knowledge Sources</h1>
+            </div>
+            {/* Đã bỏ mt-1 để khớp với text-[14px] bên phải */}
+            <p className="text-[14px] text-[#6B7280]">Upload and manage documents for chatbot training</p>
           </div>
-          <p className="text-sm text-gray-500">Upload and manage documents for chatbot training</p>
+          
+          <div className="flex items-center gap-4">
+            {/* Nút Select Files */}
+            <button
+              onClick={handleSelectFileClick}
+              className="flex h-[36px] cursor-pointer items-center gap-2 rounded-[8px] bg-[#003087] px-4 transition-colors hover:bg-[#00205a]"
+            >
+              <div className="flex h-3.5 w-3 items-center justify-center">
+                 <PlusIcon className="h-3.5 w-3 text-white" />
+              </div>
+              <span className="text-sm font-medium text-white">Select Files</span>
+            </button>
+            
+            {/* Sidebar Icon */}
+            <SidebarIcon className="h-6 w-6 text-gray-400" />
+          </div>
+          
+          {/* Hidden Input */}
+          <input
+            type="file"
+            ref={fileInputRef}
+            onChange={handleFileChange}
+            multiple
+            accept=".pdf,.txt,.png,.jpg,.jpeg"
+            className="hidden"
+          />
         </div>
 
-        <Upload onFilesUpload={handleFileUpload} error={uploadError} />
+        {/* Error Area */}
+        {uploadError && (
+          <div className="px-6 pt-4">
+            <div className="rounded-md bg-red-50 p-3 text-sm text-red-600 border border-red-200">
+              {uploadError}
+            </div>
+          </div>
+        )}
 
         <UploadedFile files={files} onDeleteFile={handleDeleteFile} isLoading={loading} loadError={error} />
       </div>
+
       <div className="chat flex h-full w-1/2 flex-col">
         <div className="chat__header flex items-center justify-between p-6">
           <div className="chat__title flex w-[300px] flex-col overflow-hidden text-nowrap text-ellipsis">

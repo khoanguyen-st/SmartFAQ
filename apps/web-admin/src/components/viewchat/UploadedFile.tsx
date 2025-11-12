@@ -1,11 +1,12 @@
-import { useState } from 'react'; // <-- Thêm useState
+import { useState } from 'react'; 
 import PDFIcon from '@/assets/pdf.svg?react'
 import TXTIcon from '@/assets/txt.svg?react'
+import DocIcon from '@/assets/doc.svg?react'
 import TrashIcon from '@/assets/trash.svg?react'
 import FileIcon from '@/assets/file.svg?react'
 import ImageIcon from '@/assets/image-icon.svg?react'
 import { IUploadedFile } from '../../lib/knowledge-api'
-import DeleteConfirmationModal from './DeleteConfirmationModal'; // <-- Import modal
+import DeleteConfirmationModal from './DeleteConfirmationModal'; 
 
 interface UploadedFileProps {
   files: IUploadedFile[]
@@ -33,9 +34,16 @@ const UploadedFile = ({ files, onDeleteFile, isLoading, loadError }: UploadedFil
         return <PDFIcon className="h-[18px] w-[18px]" />
       case 'txt':
         return <TXTIcon className="h-[18px] w-[18px]" />
+      case 'doc':
+        return <DocIcon className="h-[18px] w-[18px]" />
+      case 'docx':
+        return <DocIcon className="h-[18px] w-[18px]" />
       case 'jpg':
-      case 'gif':
+        return <ImageIcon className="h-[18px] w-[18px]" />
+      case 'jpeg':
+        return <ImageIcon className="h-[18px] w-[18px]" />
       case 'png':
+        return <ImageIcon className="h-[18px] w-[18px]" />
       case 'svg':
         return <ImageIcon className="h-[18px] w-[18px]" />
       default:
@@ -98,7 +106,6 @@ const UploadedFile = ({ files, onDeleteFile, isLoading, loadError }: UploadedFil
   return (
     <> {/* Bọc bằng Fragment */}
       <div className="uploaded__content flex h-full flex-col overflow-y-auto">
-        <h3 className="mb-8 text-sm font-semibold text-[#1f2937]">Uploaded Files</h3>
 
         <div className="space-y-3">
           {files.map(file => (

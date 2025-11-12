@@ -9,7 +9,7 @@ export interface IUploadedFile {
 
 const mapBackendDocToFrontend = (doc: any): IUploadedFile => {
   return {
-    id: String(doc.id), // Chuyển int sang string
+    id: String(doc.id), 
     name: doc.title,
     size: doc.size || 0,
     type: doc.type || 'unknown',
@@ -17,9 +17,8 @@ const mapBackendDocToFrontend = (doc: any): IUploadedFile => {
   };
 };
 
-// API: Get the list of files
 export const fetchKnowledgeFiles = async (): Promise<IUploadedFile[]> => {
-  const res = await fetch(`${API_BASE_URL}/docs/`);
+  const res = await fetch(`${API_BASE_URL}/api/docs/`);
 
   if (!res.ok) {
     console.error("Failed to fetch files", res);
@@ -29,20 +28,43 @@ export const fetchKnowledgeFiles = async (): Promise<IUploadedFile[]> => {
   const data = await res.json();
 
   if (data && data.items) {
-    return data.items.map(mapBackendDocToFrontend);
+    const detailedFilesPromises = data.items.map(async (doc: any) => {
+      try {
+        const detailRes = await fetch(`${API_BASE_URL}/api/docs/${doc.id}`);
+        if (detailRes.ok) {
+          const detailData = await detailRes.json();
+          
+          const currentVersion = detailData.versions?.find((v: any) => v.id === detailData.current_version_id) 
+                                 || detailData.versions?.[0];
+          
+          if (currentVersion) {
+            return {
+              ...doc,
+              size: currentVersion.file_size, 
+              type: currentVersion.format     
+            };
+          }
+        }
+      } catch (err) {
+        console.warn(`Could not fetch details for doc ${doc.id}`, err);
+      }
+      return doc; 
+    });
+
+    const detailedFiles = await Promise.all(detailedFilesPromises);
+    
+    return detailedFiles.map(mapBackendDocToFrontend);
   }
   return [];
 };
 
-// API: Upload file
 export const uploadKnowledgeFile = async (file: File): Promise<IUploadedFile> => {
   const formData = new FormData();
-  formData.append('files', file); // 'files' khớp với tên tham số 'files' trong docs.py
+  formData.append('files', file); 
 
-  const res = await fetch(`${API_BASE_URL}/docs/`, {
+  const res = await fetch(`${API_BASE_URL}/api/docs/`, {
     method: 'POST',
     body: formData,
-    // Không set 'Content-Type', trình duyệt sẽ tự làm đúng cho FormData
   });
 
   if (!res.ok) {
@@ -51,16 +73,13 @@ export const uploadKnowledgeFile = async (file: File): Promise<IUploadedFile> =>
   }
 
   const data = await res.json();
-  
-  // API trả về {"status": "accepted", "items": [{"document_id": ..., "file_path": ...}]}
+
   if (data.items && data.items.length > 0) {
     const newItem = data.items[0];
     if (newItem.error) {
       throw new Error(newItem.error);
     }
-    
-    // Tạo một đối tượng tạm thời để hiển thị ngay lập tức trên UI
-    // Dữ liệu đầy đủ sẽ được lấy khi tải lại trang
+
     return {
       id: String(newItem.document_id),
       name: file.name,
@@ -73,9 +92,8 @@ export const uploadKnowledgeFile = async (file: File): Promise<IUploadedFile> =>
   throw new Error('Upload completed but no item returned from API');
 };
 
-// API: Delete file
 export const deleteKnowledgeFile = async (fileId: string): Promise<{ id: string }> => {
-  const res = await fetch(`${API_BASE_URL}/docs/${fileId}`, {
+  const res = await fetch(`${API_BASE_URL}/api/docs/${fileId}`, {
     method: 'DELETE',
   });
 
@@ -84,6 +102,5 @@ export const deleteKnowledgeFile = async (fileId: string): Promise<{ id: string 
     throw new Error(err.detail || "File not found or could not be deleted");
   }
   
-  // API trả về {"status": "deleted"}
   return { id: fileId };
 };
