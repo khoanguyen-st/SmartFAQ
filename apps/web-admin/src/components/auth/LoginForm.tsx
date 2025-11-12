@@ -1,14 +1,14 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
-import emailIcon from "../../assets/icons/email.svg";
+import userIcon from "../../assets/icons/email.svg"; 
 
 interface LoginFormProps {
-  onSubmit: (email: string, password: string) => Promise<void>;
+  onSubmit: (username: string, password: string) => Promise<void>;
   error: string | null;
 }
 
 const LoginForm = ({ onSubmit, error }: LoginFormProps) => {
-  const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -17,7 +17,7 @@ const LoginForm = ({ onSubmit, error }: LoginFormProps) => {
     e.preventDefault();
     setIsLoading(true);
     try {
-      await onSubmit(email, password);
+      await onSubmit(username, password);
     } finally {
       setIsLoading(false);
     }
@@ -25,26 +25,26 @@ const LoginForm = ({ onSubmit, error }: LoginFormProps) => {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      {/* Email */}
+      {/* Username */}
       <div>
         <label
-          htmlFor="email"
+          htmlFor="username"
           className="block text-sm font-medium text-gray-700 mb-1"
         >
-          Email *
+          Username *
         </label>
         <div className="relative">
           <input
-            id="email"
-            type="email"
-            placeholder="Enter your email"
+            id="username"
+            type="text"
+            placeholder="Enter your username"
             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-blue-600 outline-none pr-10"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
             required
           />
           <span className="absolute inset-y-0 right-3 flex items-center text-gray-400">
-            <img src={emailIcon} alt="Email" className="w-5 h-5" />
+            <img src={userIcon} alt="User" className="w-5 h-5" />
           </span>
         </div>
       </div>
@@ -73,7 +73,6 @@ const LoginForm = ({ onSubmit, error }: LoginFormProps) => {
             className="absolute inset-y-0 right-3 flex items-center justify-center text-gray-400 hover:text-gray-700"
           >
             {showPassword ? (
-
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 className="w-5 h-5"
@@ -89,7 +88,6 @@ const LoginForm = ({ onSubmit, error }: LoginFormProps) => {
                 />
               </svg>
             ) : (
-
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 className="w-5 h-5"
@@ -103,12 +101,17 @@ const LoginForm = ({ onSubmit, error }: LoginFormProps) => {
                   strokeLinejoin="round"
                   d="M2.458 12C3.732 7.943 7.523 5 12 5s8.268 2.943 9.542 7c-1.274 4.057-5.065 7-9.542 7s-8.268-2.943-9.542-7z"
                 />
-                <circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth={1.8} />
+                <circle
+                  cx="12"
+                  cy="12"
+                  r="3"
+                  stroke="currentColor"
+                  strokeWidth={1.8}
+                />
               </svg>
             )}
           </button>
         </div>
-
 
         <div className="flex justify-end mt-1">
           <Link
@@ -120,11 +123,9 @@ const LoginForm = ({ onSubmit, error }: LoginFormProps) => {
         </div>
       </div>
 
-
       {error && (
         <p className="text-sm text-red-600 bg-red-50 p-2 rounded">{error}</p>
       )}
-
 
       <button
         type="submit"
