@@ -2,12 +2,10 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 import logging
 from typing import Any, Dict, List, Optional
-
+from app.rag.constants import MAX_QUESTION_LENGTH
 from app.rag.validations import Entity, Intent, NormalizedQuestion
 
 logger = logging.getLogger(__name__)
-
-MAX_QUESTION_LENGTH = 1000  
 
 class IntentDetector(ABC):
     @abstractmethod
