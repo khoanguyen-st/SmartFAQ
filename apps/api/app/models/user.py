@@ -13,10 +13,23 @@ class User(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
     username: Mapped[str] = mapped_column(String(150), unique=True, nullable=False)
+<<<<<<< HEAD
     email: Mapped[str] = mapped_column(String(255), unique=True, nullable=False)
+=======
+
+    email: Mapped[str] = mapped_column(String(255), unique=True, nullable=False)
+
+>>>>>>> 7371fa5a88317c378b5571eabb14371419729538
     password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
+
     role: Mapped[str] = mapped_column(String(50), nullable=False, default="STAFF")
+
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+
+    phoneNumber: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    address: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    image: Mapped[str | None] = mapped_column(String(255), nullable=True)
+
     failed_attempts: Mapped[int] = mapped_column(Integer, default=0)
     locked_until: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     is_locked: Mapped[bool] = mapped_column(Boolean, default=False)

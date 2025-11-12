@@ -15,6 +15,7 @@ from sqlalchemy.orm import Session
 from .config import settings
 from ..models.token_blacklist import TokenBlacklist
 from ..models.user import User
+from .config import settings
 
 
 def hash_password(password: str) -> str:
@@ -59,6 +60,8 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -
     }
     return jwt.encode(payload, settings.jwt_secret, algorithm="HS256")
 
+    payload = {**data, "exp": expire_ts, "iat": now_ts}
+    return jwt.encode(payload, settings.jwt_secret, algorithm="HS256")
 
 _token_blacklist: set[str] = set()
 

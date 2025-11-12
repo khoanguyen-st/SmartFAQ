@@ -1,11 +1,11 @@
 """Pydantic schemas package."""
 
 from .user import (
+    ForgotPasswordRequest,
+    LogoutResponse,
+    ResetPasswordRequest,
     Token,
     UserLogin,
-    ForgotPasswordRequest,
-    ResetPasswordRequest,
-    LogoutResponse,
 )
 
 __all__ = [
@@ -15,5 +15,3 @@ __all__ = [
     "ResetPasswordRequest",
     "LogoutResponse",
 ]
-
-
