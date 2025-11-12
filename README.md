@@ -5,6 +5,25 @@ The system integrates **document management**, a **RAG (Retrieval-Augmented Gene
 
 ---
 
+## 🚀 Quick Start for Teammates
+
+**Just pulled latest changes?** Run this one command:
+
+```bash
+./scripts/update.sh
+# or
+make update
+```
+
+This will automatically:
+- ✅ Install/update dependencies
+- ✅ Setup Husky pre-commit hooks
+- ✅ Configure git hooks
+
+See [UPDATE_GUIDE.md](UPDATE_GUIDE.md) for detailed instructions.
+
+---
+
 ## Objectives
 
 - **Intelligent FAQ System**: Provides verified answers with **role-based access control (RBAC)**
