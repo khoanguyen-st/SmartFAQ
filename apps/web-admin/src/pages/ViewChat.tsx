@@ -15,10 +15,12 @@ import PdfNoFill from '@/assets/pdf-no-fill.svg?react'
 import ImageNofill from '@/assets/image-no-fill.svg?react'
 import TxtNoFill from '@/assets/txt-no-fill.svg?react'
 import KnowledgeIcon from '@/assets/knowledge.svg?react'
+import UploadModal from '@/components/dashboard/UploadModal'
 import PlusIcon from '@/assets/plus.svg?react'
 import SidebarIcon from '@/assets/sidebar.svg?react'
 import UploadedFile from '@/components/viewchat/UploadedFile'
 import { useKnowledgeFiles } from '@/hooks/useKnowledgeFiles'
+import { cn } from '@/lib/utils'
 
 
 type DisplayMessage = {
@@ -125,7 +127,10 @@ const ChatMessage = ({ message }: ChatMessageProps) => {
 
 // --- Updated ViewChatPage Component ---
 const ViewChatPage = () => {
-  const { files, loading, error, uploadError, handleFileUpload, handleDeleteFile } = useKnowledgeFiles()
+  const { files, loading, error, uploadError, refreshFiles, handleDeleteFile } = useKnowledgeFiles()
+
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true)
+  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false)
 
   const [messages, setMessages] = useState<DisplayMessage[]>(() => {
     const storedMessages = localStorage.getItem('chatMessages')
@@ -141,21 +146,17 @@ const ViewChatPage = () => {
   const [isLoading, setIsLoading] = useState(false)
   const [errorState, setErrorState] = useState<string | null>(null)
 
-  const fileInputRef = useRef<HTMLInputElement>(null)
   const chatContentRef = useRef<HTMLDivElement>(null)
 
+  // Mở Modal thay vì click input file
   const handleSelectFileClick = () => {
-    fileInputRef.current?.click()
+    setIsUploadModalOpen(true)
   }
 
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const selectedFiles = event.target.files
-    if (selectedFiles && selectedFiles.length > 0) {
-      handleFileUpload(Array.from(selectedFiles))
-      if (fileInputRef.current) {
-        fileInputRef.current.value = ''
-      }
-    }
+  // Khi đóng modal thì refresh lại danh sách file
+  const handleModalClose = () => {
+    setIsUploadModalOpen(false)
+    refreshFiles() 
   }
 
   // Effect to get session ID on mount
@@ -309,65 +310,107 @@ const ViewChatPage = () => {
 
   return (
     <div className="flex h-[calc(100vh-100px)] w-full border border-[#e5e7eb] bg-white">
-      <div className="flex h-full w-1/2 flex-col">
-        <div className="detail__header flex items-center justify-between p-6 border-b border-[#F3F4F6]">
-          <div className="flex flex-col overflow-hidden text-nowrap text-ellipsis">
-            <div className="title-header flex items-center">
-              <KnowledgeIcon className="mr-2 h-6 w-6 shrink-0 text-[#003087]" />
-              <h1 className="text-[18px] font-semibold leading-7 text-[#111827]">Knowledge Sources</h1>
-            </div>
-            {/* Đã bỏ mt-1 để khớp với text-[14px] bên phải */}
-            <p className="text-[14px] text-[#6B7280]">Upload and manage documents for chatbot training</p>
-          </div>
+      {/* --- Left Panel (Knowledge) --- */}
+      <div 
+        className={cn(
+          "flex h-full flex-col transition-all duration-300 ease-in-out border-r border-[#F3F4F6] bg-white z-10",
+          isSidebarOpen ? "w-1/2 min-w-[400px]" : "w-[118px]" 
+        )}
+      >
+        {/* Header Area */}
+        <div className={cn(
+            "flex items-center border-b border-[#F3F4F6] transition-all duration-300 shrink-0",
+            isSidebarOpen 
+              ? "justify-between p-6 h-[92px]" 
+              : "justify-center h-[92px]"
+        )}>
           
-          <div className="flex items-center gap-4">
-            {/* Nút Select Files */}
-            <button
-              onClick={handleSelectFileClick}
-              className="flex h-[36px] cursor-pointer items-center gap-2 rounded-[8px] bg-[#003087] px-4 transition-colors hover:bg-[#00205a]"
-            >
-              <div className="flex h-3.5 w-3 items-center justify-center">
-                 <PlusIcon className="h-3.5 w-3 text-white" />
+          {/* Title & Icon (Chỉ hiện khi MỞ) */}
+          {isSidebarOpen && (
+            <div className="flex flex-col overflow-hidden text-nowrap text-ellipsis">
+              <div className="title-header flex items-center">
+                <KnowledgeIcon className="mr-2 h-6 w-6 shrink-0 text-[#003087]" />
+                <h1 className="text-[18px] font-semibold leading-7 text-[#111827]">Knowledge Sources</h1>
               </div>
-              <span className="text-sm font-medium text-white">Select Files</span>
-            </button>
-            
-            {/* Sidebar Icon */}
-            <SidebarIcon className="h-6 w-6 text-gray-400" />
-          </div>
+              <p className="text-[14px] text-[#6B7280]">Upload and manage documents</p>
+            </div>
+          )}
           
-          {/* Hidden Input */}
-          <input
-            type="file"
-            ref={fileInputRef}
-            onChange={handleFileChange}
-            multiple
-            accept=".pdf,.txt,.png,.jpg,.jpeg"
-            className="hidden"
-          />
+          <div className={cn("flex items-center", isSidebarOpen && "gap-4")}>
+            {/* Nút Upload (Chỉ hiện trong header khi MỞ) */}
+            {isSidebarOpen && (
+              <button
+                onClick={handleSelectFileClick}
+                className="flex items-center justify-center h-[36px] gap-2 px-4 rounded-[8px] bg-[#003087] transition-all hover:bg-[#00205a]"
+                title="Upload Files"
+              >
+                <div className="flex items-center justify-center">
+                   <PlusIcon className="h-3.5 w-3 text-white" />
+                </div>
+                <span className="text-sm font-medium text-white">Select Files</span>
+              </button>
+            )}
+            
+            {/* Nút Sidebar Toggle */}
+            <button 
+              onClick={() => setIsSidebarOpen(!isSidebarOpen)} 
+              className={cn(
+                "cursor-pointer p-1 hover:bg-gray-100 rounded group transition-colors",
+                !isSidebarOpen && "p-2"
+              )}
+              title={isSidebarOpen ? "Collapse sidebar" : "Expand sidebar"}
+            >
+                <SidebarIcon className={cn("h-6 w-6 text-gray-400 transition-transform group-hover:text-[#003087]", !isSidebarOpen && "rotate-180")} />
+            </button>
+          </div>
         </div>
 
-        {/* Error Area */}
-        {uploadError && (
-          <div className="px-6 pt-4">
-            <div className="rounded-md bg-red-50 p-3 text-sm text-red-600 border border-red-200">
-              {uploadError}
-            </div>
-          </div>
-        )}
+        {/* Content Area */}
+        <div className="flex-1 flex flex-col overflow-hidden relative">
+            {/* Nút Upload Compact (Chỉ hiện khi sidebar ĐÓNG) */}
+            {!isSidebarOpen && (
+                <div className="w-full flex justify-center py-4 shrink-0">
+                    <button
+                        onClick={handleSelectFileClick}
+                        className="flex items-center justify-center w-[48px] h-[36px] rounded-[8px] bg-[#003087] hover:bg-[#00205a] transition-colors shadow-sm"
+                        title="Upload Files"
+                    >
+                        <PlusIcon className="h-3.5 w-3 text-white" />
+                    </button>
+                </div>
+            )}
 
-        <UploadedFile files={files} onDeleteFile={handleDeleteFile} isLoading={loading} loadError={error} />
+            {/* Error Notification */}
+            {uploadError && isSidebarOpen && (
+                <div className="px-6 pt-4 shrink-0">
+                    <div className="rounded-md bg-red-50 p-3 text-sm text-red-600 border border-red-200">{uploadError}</div>
+                </div>
+            )}
+
+            {/* File List Content */}
+            <div className={cn("flex-1 overflow-hidden", !isSidebarOpen && "w-full px-[22px]")}>
+                <UploadedFile 
+                    files={files} 
+                    onDeleteFile={handleDeleteFile} 
+                    isLoading={loading} 
+                    loadError={error} 
+                    isCompact={!isSidebarOpen} 
+                />
+            </div>
+        </div>
       </div>
 
-      <div className="chat flex h-full w-1/2 flex-col">
-        <div className="chat__header flex items-center justify-between p-6">
+      {/* --- Right Panel (Chat) --- */}
+      <div className="flex-1 flex flex-col h-[calc(100vh-100px)] overflow-hidden relative">
+        <div className="chat__header flex items-center justify-between px-6 py-4 bg-white shrink-0">
           <div className="chat__title flex w-[300px] flex-col overflow-hidden text-nowrap text-ellipsis">
-            <div className="title-header flex">
-              <MessIcon className="mr-2 h-6 w-6 shrink-0" />
+            <div className="title-header flex items-center gap-2">
+              <MessIcon className="h-6 w-6 shrink-0" />
               <h1 className="text-[18px] leading-7 font-semibold">Chat with Your Knowledge Base</h1>
             </div>
             <p className="text-[14px] text-[#6B7280]">Test chatbot responses based on uploaded documents</p>
           </div>
+          
           <button
             type="button"
             onClick={handleClearChat}
@@ -379,62 +422,39 @@ const ViewChatPage = () => {
           </button>
         </div>
 
-        <div ref={chatContentRef} className="chat__content relative flex h-full flex-col overflow-y-auto">
-          {messages.map(msg => (
-            <ChatMessage key={msg.id} message={msg} />
-          ))}
-          {/* Show typing indicator */}
-          {isLoading && (
-            <div className="message message--sender">
-              <p className="animate-pulse">Typing...</p>
-            </div>
-          )}
-          {/* Show general error */}
-          {error && !messages.some(m => m.type === 'error') && (
-            <div className="message message--sender bg-red-100 py-3 text-red-700">
-              <p className="font-bold">Error:</p>
-              <p>{error}</p>
-            </div>
-          )}
+        <div ref={chatContentRef} className="chat__content relative flex-1 flex flex-col overflow-y-auto p-6 bg-white">
+          {messages.map(msg => <ChatMessage key={msg.id} message={msg} />)}
+          {isLoading && <div className="message message--sender"><p className="animate-pulse">Typing...</p></div>}
         </div>
 
-        {/* Commented out static content */}
-        {/* <div className="chat__content ..."> ... </div> */}
-
-        <div className="chat__footer flex h-24 flex-col px-6 py-4">
-          <form
-            onSubmit={handleSend}
-            action=""
-            method="post"
-            className="chat__form flex items-center justify-between"
-            autoComplete="off"
-          >
+        <div className="chat__footer h-24 flex-col px-6 py-4 bg-white border-t border-gray-200 shrink-0">
+          <form onSubmit={handleSend} className="chat__form flex items-center justify-between h-full">
             <input
               type="text"
               name="user-input"
-              id="user-input"
               value={userText}
               onChange={e => setUserText(e.target.value)}
-              placeholder={!sessionId ? 'Connecting to chat...' : 'Ask a question about your uploaded documents...'}
+              placeholder={!sessionId ? 'Connecting...' : 'Ask a question about your uploaded documents...'}
               disabled={!sessionId}
-              className="chat__input mr-3 h-[40px] w-full rounded-[8px] border border-[#D1D5DB] p-4 placeholder:text-[14px] placeholder:leading-[20px] disabled:bg-gray-100"
+              className="chat__input flex-1 mr-3 h-[40px] rounded-[8px] border border-[#D1D5DB] p-4 placeholder:text-[14px] disabled:bg-gray-100 focus:border-[#003087] outline-none"
             />
             <button
               type="submit"
               disabled={!sessionId || isLoading || userText.trim().length === 0}
-              className="chat__submit flex h-[40px] w-[48px] items-center justify-center rounded-[8px] bg-[#003087] hover:cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
+              className="chat__submit flex h-[40px] w-[48px] items-center justify-center rounded-[8px] bg-[#003087] hover:bg-[#00205a] disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <SendIcon className="h-4 w-4 shrink-0" />
             </button>
           </form>
           <div className="chat__note mt-3 flex h-4 items-center">
             <InforIcon className="mr-1 h-3 w-3 shrink-0" />
-            <p className="py-2.5 text-[12px] font-normal text-[#6B7280]">
-              Responses are generated based on uploaded documents only
-            </p>
+            <p className="text-[12px] text-[#6B7280]">Responses are generated based on uploaded documents only</p>
           </div>
         </div>
       </div>
+
+      {/* Upload Modal Component */}
+      <UploadModal isOpen={isUploadModalOpen} onClose={handleModalClose} />
     </div>
   )
 }

@@ -50,7 +50,7 @@ services:
     volumes:
       - smartfaq-db:/var/lib/postgresql/data
     ports:
-      - "${POSTGRES_PORT_EXTERNAL:-5432}:5432"
+      - "5432:5432"
 
   redis:
     image: redis:7-alpine

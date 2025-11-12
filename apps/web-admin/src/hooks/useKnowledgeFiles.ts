@@ -8,7 +8,8 @@ export const useKnowledgeFiles = () => {
   const [error, setError] = useState<string | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
   
-  useEffect(() => {
+  // Tách logic fetch thành hàm riêng để có thể tái sử dụng (refresh)
+  const loadFiles = useCallback(() => {
     setLoading(true);
     fetchKnowledgeFiles()
       .then(setFiles)
@@ -16,17 +17,19 @@ export const useKnowledgeFiles = () => {
       .finally(() => setLoading(false));
   }, []);
 
+  useEffect(() => {
+    loadFiles();
+  }, [loadFiles]);
+
   const handleFileUpload = useCallback(async (filesToUpload: File[]) => {
     setUploadError(null);
     if (!filesToUpload || filesToUpload.length === 0) return;
 
     setIsUploading(true);
-
     const uploadPromises = filesToUpload.map(file => uploadKnowledgeFile(file));
 
     try {
       const results = await Promise.allSettled(uploadPromises);
-      
       const successfulFiles: IUploadedFile[] = [];
       const failedFiles: string[] = [];
 
@@ -50,7 +53,7 @@ export const useKnowledgeFiles = () => {
     } catch (err) {
       setUploadError((err as Error).message);
     } finally {
-      setIsUploading(false); // Kết thúc loading
+      setIsUploading(false);
     }
   }, []);
 
@@ -71,6 +74,7 @@ export const useKnowledgeFiles = () => {
     isUploading,
     uploadError,
     handleFileUpload,
-    handleDeleteFile
+    handleDeleteFile,
+    refreshFiles: loadFiles // Export hàm refresh
   };
 };
