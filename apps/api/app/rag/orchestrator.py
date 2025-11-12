@@ -13,6 +13,7 @@ from app.core.config import settings
 from app.rag.formatter import ResponseFormatter
 from app.rag.llm import LLMWrapper
 from app.rag.retriever import Retriever
+from app.rag.formatter import ResponseFormatter
 
 logger = logging.getLogger(__name__)
 

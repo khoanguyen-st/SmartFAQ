@@ -26,6 +26,11 @@ interface UploadModalProps {
   onClose: () => void;
 }
 
+const BRAND = {
+  base: "#003087",
+  hover: "#002366",
+};
+
 const UploadModal = ({ isOpen, onClose }: UploadModalProps) => {
   const [files, setFiles] = useState<FileItem[]>([]);
   const [fileObjects, setFileObjects] = useState<Map<string, File>>(new Map());
@@ -272,12 +277,15 @@ const UploadModal = ({ isOpen, onClose }: UploadModalProps) => {
                   <button
                     onClick={() => {
                       if (selectedFiles.length === 0) {
-                        setError("Please select at least one file to update.")
-                        return
+                        setError("Please select at least one file to update.");
+                        return;
                       }
-                      setShowInfoModal(true)
+                      setShowInfoModal(true);
                     }}
-                    className="rounded-lg bg-indigo-600 px-3 py-1.5 text-sm font-medium text-white shadow-md hover:bg-indigo-700"
+                    className="rounded-lg px-3 py-1.5 text-sm font-medium text-white shadow-md transition"
+                    style={{ backgroundColor: BRAND.base }}
+                    onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = BRAND.hover)}
+                    onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = BRAND.base)}
                   >
                     <img src={iconSvg} className="w-[18px] h-[18px]" />
                   </button>
@@ -359,7 +367,10 @@ const UploadModal = ({ isOpen, onClose }: UploadModalProps) => {
             </button>
             <button
               onClick={handleSave}
-              className="px-6 py-2 rounded-lg bg-indigo-600 text-white font-medium hover:bg-indigo-700 transition shadow-md"
+              className="px-6 py-2 rounded-lg text-white font-medium transition shadow-md"
+              style={{ backgroundColor: BRAND.base }}
+              onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = BRAND.hover)}
+              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = BRAND.base)}
             >
               Save & Process
             </button>

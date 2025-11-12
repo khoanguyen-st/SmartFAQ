@@ -1,18 +1,19 @@
 """Document management service (clean version)."""
 
-import os
 import logging
+import os
 from typing import Any
 from uuid import uuid4
 
 from fastapi import UploadFile
 from sqlalchemy.orm import Session
 
-from ..core.db import session_scope, get_session
+from ..core.config import settings
+from ..core.db import session_scope
 from ..models.document import Document
 from ..models.document_version import DocumentVersion
-from ..models.user import User
-from ..core.config import settings
+from ..rag.document_processor import DocumentProcessor
+from ..rag.vector_store import upsert_documents
 
 
 class UploadTooLarge(Exception):
@@ -114,6 +115,55 @@ def create_document_record(
 async def enqueue_single_document(file: UploadFile, uploaded_by=None) -> dict:
     """Upload a single file and create document record."""
     file_path, size, fmt = await save_uploaded_file(file)
+    # # If configured, upload the saved file to Google Cloud Storage and use the
+    # # GCS URI as the stored file_path. We perform this before creating the DB
+    # # record so the database stores the cloud location.
+    # if settings.GCS_ENABLED:
+    #     if not settings.GCS_BUCKET:
+    #         # misconfiguration
+    #         try:
+    #             os.remove(file_path)
+    #         except Exception:
+    #             pass
+    #         raise RuntimeError("GCS_ENABLED is True but GCS_BUCKET is not configured")
+
+    #     try:
+    #         try:
+    #             from google.cloud import storage
+    #         except Exception as imp_err:  # pragma: no cover - environment dependent
+    #             # remove local file to avoid orphaned files
+    #             try:
+    #                 os.remove(file_path)
+    #             except Exception:
+    #                 pass
+    #             raise RuntimeError(
+    #                 "google-cloud-storage package is required for GCS uploads: pip install google-cloud-storage"
+    #             ) from imp_err
+
+    #         client = storage.Client()
+    #         bucket = client.bucket(settings.GCS_BUCKET)
+    #         basename = os.path.basename(file_path)
+    #         blob_name = f"documents/{basename}"
+    #         blob = bucket.blob(blob_name)
+    #         blob.upload_from_filename(file_path)
+    #         cloud_uri = f"gs://{settings.GCS_BUCKET}/{blob_name}"
+    #         # remove local file after successful upload
+    #         try:
+    #             os.remove(file_path)
+    #         except Exception:
+    #             logging.warning("failed to remove local temp file after GCS upload: %s", file_path)
+
+    #         file_path = cloud_uri
+    #         logging.info("uploaded file to GCS: %s", cloud_uri)
+    #     except Exception:
+    #         # ensure local file cleaned up on failure and re-raise
+    #         try:
+    #             if os.path.exists(file_path):
+    #                 os.remove(file_path)
+    #         except Exception:
+    #             logging.exception("failed to cleanup local file after GCS upload error: %s", file_path)
+    #         logging.exception("GCS upload failed for %s", file.filename)
+    #         raise
 
     with session_scope() as db:
         doc_id = create_document_record(
@@ -124,6 +174,14 @@ async def enqueue_single_document(file: UploadFile, uploaded_by=None) -> dict:
             file_size=size,
             format=fmt,
         )
+
+        # Process and upsert to vector DB
+        processor = DocumentProcessor()
+        split_docs = processor.process_document(
+            file_path, str(doc_id), metadata={"title": file.filename}
+        )
+        upsert_documents(split_docs)
+
         return {"document_id": doc_id, "file_path": file_path}
 
 
@@ -159,6 +217,8 @@ def list_documents(db: Session) -> list[dict[str, Any]]:
             "status": d.status,
             "current_version_id": d.current_version_id,
             "created_at": d.created_at.isoformat() if d.created_at else None,
+            "current_file_size": d.current_version.file_size if d.current_version else None,
+            "current_format": d.current_version.format if d.current_version else None,
         }
         for d in rows
     ]
@@ -189,6 +249,8 @@ def get_document(doc_id: int, db: Session):
         "language": d.language,
         "status": d.status,
         "current_version_id": d.current_version_id,
+        "current_file_size": d.current_version.file_size if d.current_version else None,
+        "current_format": d.current_version.format if d.current_version else None,
         "versions": versions,
     }
 

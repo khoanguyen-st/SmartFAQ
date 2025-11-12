@@ -114,7 +114,8 @@ export const uploadKnowledgeFiles = async (files: File[]): Promise<IUploadedFile
   files.forEach(file => {
     formData.append("files", file);
   });
-
+    console.log("API_BASE_URL =", API_BASE_URL);
+    console.log("Uploading to:", `${API_BASE_URL}/api/docs/`);
   try {
     const response = await fetch(`${API_BASE_URL}/api/docs/`, {
       method: "POST",
