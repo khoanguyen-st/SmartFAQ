@@ -1,0 +1,16 @@
+{
+  "moreOptions": "More options",
+  "reUpload": "Re-upload",
+  "deleteFolder": "Delete Folder",
+  "sources": "Sources",
+  "lastUpdated": "Last updated",
+  "viewFolder": "View Folder",
+  "uploadNewDocuments": "Upload New Documents",
+  "knowledgeFolders": "Knowledge Folders",
+  "manageAndReview": "Manage and review the folders you have uploaded to the SmartFAQ system.",
+  "uploadNewFolder": "Upload New Folder",
+  "noFoldersUploaded": "No Knowledge Folders uploaded yet.",
+  "startUploading": "Start by uploading your first folder to train the SmartFAQ system.",
+  "title": "Upload new Documents",
+  "subtitle": "Add files"
+}

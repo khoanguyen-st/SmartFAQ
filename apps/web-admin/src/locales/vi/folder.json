@@ -1,0 +1,16 @@
+{
+  "moreOptions": "Tùy chọn khác",
+  "reUpload": "Tải lại",
+  "deleteFolder": "Xóa thư mục",
+  "sources": "Nguồn",
+  "lastUpdated": "Cập nhật lần cuối",
+  "viewFolder": "Xem thư mục",
+  "uploadNewDocuments": "Tải lên tài liệu mới",
+  "knowledgeFolders": "Thư Mục Kiến Thức",
+  "manageAndReview": "Quản lý và xem xét các thư mục bạn đã tải lên hệ thống SmartFAQ.",
+  "uploadNewFolder": "Tải Lên Thư Mục Mới",
+  "noFoldersUploaded": "Chưa có thư mục kiến thức nào được tải lên.",
+  "startUploading": "Bắt đầu bằng cách tải lên thư mục đầu tiên để huấn luyện hệ thống SmartFAQ.",
+  "title": "Tải lên tài liệu mới",
+  "subtitle": "Thêm tệp"
+}
