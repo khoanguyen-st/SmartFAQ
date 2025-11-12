@@ -1,4 +1,3 @@
-# orchestrator.py
 from __future__ import annotations
 
 import logging
@@ -36,7 +35,6 @@ class RAGOrchestrator:
         *,
         top_k: int = 5,
         where: Optional[Dict[str, Any]] = None,
-        search_type: str = "similarity",  # or "mmr"
         return_top_sources: int = 3,
     ) -> Dict[str, Any]:
         """
@@ -52,21 +50,15 @@ class RAGOrchestrator:
             where=where,
             with_score=True,
         )
-
-        # 2) Confidence
         confidence = self.retriever.calculate_confidence(contexts)
 
-        # 3) Decision policy
         fallback_triggered = False
         if not contexts:
             answer = "Tôi không tìm thấy thông tin về vấn đề này"
             fallback_triggered = True
         elif confidence >= settings.CONFIDENCE_THRESHOLD:
-            # confident → trả lời bình thường
             answer = await self.llm_wrapper.generate_answer_async(question, contexts)
         else:
-            # medium/low confidence → vẫn gọi LLM nhưng báo “không chắc chắn”
-            # (Nếu muốn strict: comment 2 dòng dưới và dùng fallback cứng)
             cautious_prefix = "Mình chưa chắc chắn lắm, nhưng dựa trên thông tin hiện có: "
             try:
                 raw = await self.llm_wrapper.generate_answer_async(question, contexts)
