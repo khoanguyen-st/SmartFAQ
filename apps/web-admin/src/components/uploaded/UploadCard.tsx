@@ -17,7 +17,7 @@ const UploadCard = ({ onClick }: UploadCardProps) => (
             Upload new document
         </p>
         <p className="text-xs text-gray-500 mt-1">
-            Add PDF files
+            Add PDF filess
         </p>
     </div>
 );
