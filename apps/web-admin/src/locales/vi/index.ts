@@ -1,5 +1,5 @@
-import folder from './folder.json';
+import folder from './folder.json'
 
 export default {
   folder
-};
+}
