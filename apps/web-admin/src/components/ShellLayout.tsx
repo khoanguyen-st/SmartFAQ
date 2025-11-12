@@ -2,8 +2,8 @@ import { NavLink } from "react-router-dom";
 import { useState, useCallback, useMemo } from "react";
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
-import Education from "../assets/icon/education.svg?react";
-import UserIcon from "../assets/icon/user.svg?react";
+import {Education} from"@/assets/icon";
+import {UserIcon} from"@/assets/icon";
 import { Menu, X } from 'lucide-react';
 
 const navItems = [

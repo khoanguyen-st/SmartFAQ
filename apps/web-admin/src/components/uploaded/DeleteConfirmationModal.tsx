@@ -1,5 +1,6 @@
 import React from 'react';
-import { AlertTriangle } from "@/assets/icon";
+import { AlertTriangle } from '@/assets/icon';
+import { useTranslation } from "react-i18next"; // 🌟 Import useTranslation
 
 interface DeleteConfirmationModalProps {
     isOpen: boolean;
@@ -14,46 +15,49 @@ const DeleteConfirmationModal: React.FC<DeleteConfirmationModalProps> = ({
     onCancel,
     onConfirm
 }) => {
+    const { t } = useTranslation();
+
     if (!isOpen) return null;
 
     return (
-        <div 
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4" 
-            onClick={onCancel} 
+        <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4"
+            onClick={onCancel}
         >
-            <div 
+            <div
                 className="bg-white rounded-lg shadow-xl w-full max-w-md p-6"
-                onClick={(e) => e.stopPropagation()} 
+                onClick={(e) => e.stopPropagation()}
             >
-                
+
                 <div className="flex flex-col items-center mb-6">
                     <div className="bg-red-100 p-3 rounded-full mb-4">
                         <AlertTriangle className="h-6 w-6 text-red-500" />
                     </div>
-                    <h2 className="text-xl font-semibold text-gray-800">Delete Document?</h2>
+                    <h2 className="text-xl font-semibold text-gray-800">{t('deleteModal.title')}</h2>
                 </div>
+                
                 <div className="text-center mb-8">
                     <p className="text-gray-600">
-                        You are about to delete 1 document named: "{documentTitle}". 
+                        {t('deleteModal.message', { folderName: documentTitle })}          
                         <span className="font-semibold text-red-600 block mt-1">
-                            This action cannot be undone. Do you want to continue?
+                            {t('deleteModal.warning')}
                         </span>
                     </p>
                 </div>
-                
+
                 {/* Actions */}
                 <div className="flex justify-center gap-4">
-                    <button 
+                    <button
                         onClick={onCancel}
                         className="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer"
                     >
-                        Cancel
+                        {t('common.cancel')}
                     </button>
-                    <button 
+                    <button
                         onClick={onConfirm}
                         className="px-6 py-2 bg-red-600 text-white rounded-lg font-semibold hover:bg-red-700 transition-colors cursor-pointer"
                     >
-                        Delete Document
+                        {t('common.delete')}
                     </button>
                 </div>
             </div>
