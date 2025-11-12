@@ -1,5 +1,5 @@
 import React from 'react';
-import AleartTriangle from "../../assets/icon/warning.svg?react";
+import { AlertTriangle } from "@/assets/icon";
 
 interface DeleteConfirmationModalProps {
     isOpen: boolean;
@@ -28,7 +28,7 @@ const DeleteConfirmationModal: React.FC<DeleteConfirmationModalProps> = ({
                 
                 <div className="flex flex-col items-center mb-6">
                     <div className="bg-red-100 p-3 rounded-full mb-4">
-                        <AleartTriangle className="h-6 w-6 text-red-500" />
+                        <AlertTriangle className="h-6 w-6 text-red-500" />
                     </div>
                     <h2 className="text-xl font-semibold text-gray-800">Delete Document?</h2>
                 </div>
