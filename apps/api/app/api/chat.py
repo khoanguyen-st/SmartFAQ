@@ -249,6 +249,17 @@ async def query_chat(
             history=history_messages,
         )
         latency_ms = int((time.perf_counter() - t0) * 1000)
+    except RuntimeError as exc:
+        # Handle quota exceeded or other runtime errors with user-friendly message
+        if "quota exceeded" in str(exc).lower():
+            raise HTTPException(
+                status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+                detail="Service is temporarily unavailable due to high demand. Please try again in a few moments.",
+            ) from exc
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to generate answer.",
+        ) from exc
     except Exception as exc:  # noqa: BLE001 - surface LLM errors cleanly
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
