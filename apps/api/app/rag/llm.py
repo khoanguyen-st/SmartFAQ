@@ -5,7 +5,7 @@ from typing import Any, Dict, Optional, Sequence, Union
 from langchain_core.documents import Document
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
 from langchain_core.output_parsers import StrOutputParser
-from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_google_genai import ChatGoogleGenerativeAI
 
 from app.core.config import settings
@@ -79,6 +79,20 @@ class LLMWrapper:
             [
                 ("system", self.system_prompt),
                 ("system", "Context:\n{context}"),
+                ("human", "{question}"),
+            ]
+        )
+        self.direct_prompt = ChatPromptTemplate.from_messages(
+            [
+                (
+                    "system",
+                    "Bạn là trợ lý AI thân thiện của Đại học Greenwich Việt Nam. "
+                    "Luôn trả lời ngắn gọn, rõ ràng, thân thiện. "
+                    "Trả lời bằng cùng ngôn ngữ với câu hỏi của người dùng. "
+                    "Nếu câu hỏi chỉ là lời chào hoặc xã giao, hãy đáp lại phù hợp và hỏi xem bạn có thể hỗ trợ gì thêm. "
+                    "Chỉ cung cấp thông tin về Greenwich khi câu hỏi liên quan.",
+                ),
+                MessagesPlaceholder(variable_name="history"),
                 ("human", "{question}"),
             ]
         )

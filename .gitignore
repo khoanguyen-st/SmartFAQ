@@ -36,6 +36,8 @@ pnpm-lock.yaml
 
 apps/api/venv
 
+Storage-document.json
+
 # Environment files
 .env
 .env.local
