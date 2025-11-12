@@ -99,6 +99,12 @@ class RAGOrchestrator:
                 }
             )
 
+        formatted = self.formatter.format(
+            raw_answer=answer,
+            sources=sources,
+            fallback_triggered=fallback_triggered,
+        )
+
         latency_ms = int((time.time() - t0) * 1000)
         return {
             "answer": answer,
@@ -106,6 +112,7 @@ class RAGOrchestrator:
             "sources": sources,
             "fallback_triggered": fallback_triggered,
             "latency_ms": latency_ms,
+            "formatted": formatted,
         }
 
     def build_rag_chain(
