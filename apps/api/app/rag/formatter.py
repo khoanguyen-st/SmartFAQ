@@ -84,8 +84,8 @@ class ResponseFormatter:
             return text
         source_pages = {}
         for source in sources:
-            source_name = source.get("source") or "Unknown"
-            page = source.get("page")
+            source_name = source.get("source", DEFAULT_SOURCE_NAME)
+            page = source.get("page", DEFAULT_PAGE)
             if source_name not in source_pages:
                 source_pages[source_name] = set()
             if page is not None:
@@ -112,9 +112,9 @@ class ResponseFormatter:
     def _enhance_sources(self, sources: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         enhanced = []
         for source in sources:
-            doc_id = source.get("document_id")
-            source_name = source.get("source") or "Unknown"
-            page = source.get("page")
+            doc_id = source.get("document_id", DEFAULT_DOCUMENT_ID)
+            source_name = source.get("source", DEFAULT_SOURCE_NAME)
+            page = source.get("page", DEFAULT_PAGE)
             
             preview_url = None
             if self.document_preview_url and doc_id:
