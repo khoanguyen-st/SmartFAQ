@@ -1,39 +1,39 @@
-import { useCallback, useState } from "react";
+import { useCallback, useState } from 'react'
 
 interface Message {
-  id: string;
-  author: "user" | "assistant";
-  content: string;
-  timestamp: string;
+  id: string
+  author: 'user' | 'assistant'
+  content: string
+  timestamp: string
 }
 
 export const useChat = () => {
-  const [history, setHistory] = useState<Message[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [history, setHistory] = useState<Message[]>([])
+  const [isLoading, setIsLoading] = useState(false)
 
   const sendMessage = useCallback(async (content: string) => {
-    const timestamp = new Date().toLocaleTimeString();
+    const timestamp = new Date().toLocaleTimeString()
     const userMessage: Message = {
       id: crypto.randomUUID(),
-      author: "user",
+      author: 'user',
       content,
-      timestamp,
-    };
-    setHistory((prev) => [...prev, userMessage]);
-    setIsLoading(true);
+      timestamp
+    }
+    setHistory(prev => [...prev, userMessage])
+    setIsLoading(true)
 
     // TODO: call SmartFAQ API once available
-    await new Promise((resolve) => setTimeout(resolve, 600));
+    await new Promise(resolve => setTimeout(resolve, 600))
 
     const response: Message = {
       id: crypto.randomUUID(),
-      author: "assistant",
-      content: "This is a placeholder response while the API is under development.",
-      timestamp: new Date().toLocaleTimeString(),
-    };
-    setHistory((prev) => [...prev, response]);
-    setIsLoading(false);
-  }, []);
+      author: 'assistant',
+      content: 'This is a placeholder response while the API is under development.',
+      timestamp: new Date().toLocaleTimeString()
+    }
+    setHistory(prev => [...prev, response])
+    setIsLoading(false)
+  }, [])
 
-  return { history, sendMessage, isLoading };
-};
+  return { history, sendMessage, isLoading }
+}

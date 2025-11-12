@@ -1,4 +1,4 @@
-import { Navigate, Route, Routes } from "react-router-dom";
+import { Navigate, Route, Routes } from 'react-router-dom'
 
 import DashboardPage from "./pages/Dashboard";
 import LogsPage from "./pages/Logs";
@@ -17,6 +17,6 @@ const App = () => (
       <Route path="*" element={<Navigate to="dashboard" replace />} />
     </Routes>
   </ShellLayout>
-);
+)
 
-export default App;
+export default App
