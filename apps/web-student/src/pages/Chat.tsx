@@ -5,39 +5,40 @@ import { SmartButton } from '@smartfaq/ui'
 import { useI18n, availableLanguages } from '../lib/i18n'
 import { useChat } from '../hooks/useChat'
 import { cn } from '@/lib/utils'
+import ChatWidget from '@/components/Chatbot/ChatWidget'
 
 const quickPrompts = ['Admission requirements', 'Tuition fees', 'Academic calendar', 'Student services']
 
 const MAX_MESSAGE_LENGTH = 500
 
 const ChatPage = () => {
-  const { t, lang, setLang } = useI18n()
-  const [input, setInput] = useState('')
-  const [typing, setTyping] = useState(false)
-  const { history, sendMessage, isLoading } = useChat()
-  const listRef = useRef<HTMLDivElement | null>(null)
+  // const { t, lang, setLang } = useI18n()
+  // const [input, setInput] = useState('')
+  // const [typing, setTyping] = useState(false)
+  // const { history, sendMessage, isLoading } = useChat()
+  // const listRef = useRef<HTMLDivElement | null>(null)
 
-  useEffect(() => {
-    listRef.current?.scrollTo({
-      top: listRef.current.scrollHeight,
-      behavior: 'smooth'
-    })
-  }, [history])
+  // useEffect(() => {
+  //   listRef.current?.scrollTo({
+  //     top: listRef.current.scrollHeight,
+  //     behavior: 'smooth'
+  //   })
+  // }, [history])
 
-  const handleSubmit = async (event: FormEvent) => {
-    event.preventDefault()
-    if (!input.trim() || input.length > MAX_MESSAGE_LENGTH) return
-    setTyping(true)
-    await sendMessage(input.trim())
-    setInput('')
-    setTyping(false)
-  }
+  // const handleSubmit = async (event: FormEvent) => {
+  //   event.preventDefault()
+  //   if (!input.trim() || input.length > MAX_MESSAGE_LENGTH) return
+  //   setTyping(true)
+  //   await sendMessage(input.trim())
+  //   setInput('')
+  //   setTyping(false)
+  // }
 
-  const remaining = MAX_MESSAGE_LENGTH - input.length
+  // const remaining = MAX_MESSAGE_LENGTH - input.length
 
   return (
     <div className="flex min-h-screen flex-col bg-gradient-to-b from-slate-50 to-indigo-50 px-6 pb-8">
-      <header className="mx-auto flex w-full max-w-4xl flex-col gap-4 pt-8 pb-4 md:flex-row md:items-center md:justify-between">
+      {/* <header className="mx-auto flex w-full max-w-4xl flex-col gap-4 pt-8 pb-4 md:flex-row md:items-center md:justify-between">
         <div>
           <h1 className="text-primary-700 text-3xl font-bold">Greenwich SmartFAQ</h1>
           <p className="mt-1 text-base text-slate-600">{t('prompt')}</p>
@@ -123,7 +124,9 @@ const ChatPage = () => {
             <SmartButton type="button">{t('getHelp')}</SmartButton>
           </div>
         </section>
-      </main>
+      </main> */}
+
+      <ChatWidget />
     </div>
   )
 }
