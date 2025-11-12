@@ -6,6 +6,7 @@ from .document import Document
 from .document_version import DocumentVersion
 from .fallback_log import FallbackLog
 from .query_log import QueryLog
+from .token_blacklist import TokenBlacklist
 from .user import User
 
 __all__ = [
@@ -16,4 +17,5 @@ __all__ = [
     "QueryLog",
     "FallbackLog",
     "ConfigEntry",
+    "TokenBlacklist",
 ]

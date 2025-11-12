@@ -1,48 +1,33 @@
 """Security helpers for authentication and authorization."""
 
-from datetime import timedelta
+import hashlib
+import time
+from datetime import datetime, timedelta
 from functools import lru_cache
 from typing import Optional
 import re
 import time
 
-from jose import jwt
 import bcrypt
+from jose import jwt
+from sqlalchemy.orm import Session
 
 from .config import settings
+from ..models.token_blacklist import TokenBlacklist
 from ..models.user import User
 
 
 def hash_password(password: str) -> str:
-    """
-    Hash a password using bcrypt (AC 4.1).
-    
-    Args:
-        password: Plain text password to hash
-        
-    Returns:
-        Hashed password string (bcrypt format)
-    """
-    password_bytes = password.encode('utf-8')
+    password_bytes = password.encode("utf-8")
     salt = bcrypt.gensalt(rounds=12)
     hashed = bcrypt.hashpw(password_bytes, salt)
-    return hashed.decode('utf-8')
+    return hashed.decode("utf-8")
 
 
 def verify_password(password: str, hashed_password: str) -> bool:
-    """
-    Verify a password against a hash using bcrypt (AC 4.1).
-    
-    Args:
-        password: Plain text password to verify
-        hashed_password: Hashed password to compare against
-        
-    Returns:
-        True if password matches, False otherwise
-    """
     try:
-        password_bytes = password.encode('utf-8')
-        hashed_bytes = hashed_password.encode('utf-8')
+        password_bytes = password.encode("utf-8")
+        hashed_bytes = hashed_password.encode("utf-8")
         return bcrypt.checkpw(password_bytes, hashed_bytes)
     except Exception:
         return False
@@ -62,103 +47,93 @@ async def authenticate_user(username: str, password: str) -> Optional[User]:
 
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
-    """
-    Create a JWT access token (AC 5.1, AC 5.2).
-    
-    Args:
-        data: Dictionary containing user_id, username, role to include in token
-        expires_delta: Optional timedelta for token expiration. Defaults to 8 hours (28800 seconds).
-        
-    Returns:
-        Encoded JWT token string with user_id, username, role, iat, exp
-    """
     if expires_delta is None:
-        expires_delta = timedelta(seconds=28800)
-    
-   
+        expires_delta = timedelta(seconds=28800) 
+
     now_ts = int(time.time())
     expire_ts = now_ts + int(expires_delta.total_seconds())
-    
+
     payload = {
-        **data, 
-        "exp": expire_ts,  
-        "iat": now_ts  
+        **data,
+        "exp": expire_ts,
+        "iat": now_ts,
     }
     return jwt.encode(payload, settings.jwt_secret, algorithm="HS256")
-
 
 
 _token_blacklist: set[str] = set()
 
 
-def add_token_to_blacklist(token: str) -> None:
-    """
-    Add token to blacklist để logout (AC 6).
-    
-    Args:
-        token: JWT token to blacklist
-    """
+def _hash_token(token: str) -> str:
+    return hashlib.sha256(token.encode("utf-8")).hexdigest()
+
+
+def _extract_token_expiration(token: str) -> datetime:
+    try:
+        claims = jwt.get_unverified_claims(token)
+        exp = claims.get("exp")
+        if exp is not None:
+            return datetime.utcfromtimestamp(int(exp))
+    except Exception:
+        pass
+    return datetime.utcnow()
+
+
+def add_token_to_blacklist(token: str, db: Session | None = None) -> None:
+    expires_at = _extract_token_expiration(token)
+
+    if db:
+        token_hash = _hash_token(token)
+        record = db.query(TokenBlacklist).filter(TokenBlacklist.token_hash == token_hash).first()
+        if record:
+            record.revoked_at = datetime.utcnow()
+            record.expires_at = expires_at
+        else:
+            db.add(TokenBlacklist(token_hash=token_hash, expires_at=expires_at))
+        db.commit()
+
     _token_blacklist.add(token)
 
 
-def is_token_blacklisted(token: str) -> bool:
-    """
-    Check if token is blacklisted (AC 6).
-    
-    Args:
-        token: JWT token to check
-        
-    Returns:
-        True if token is blacklisted, False otherwise
-    """
+def is_token_blacklisted(token: str, db: Session | None = None) -> bool:
+    if db:
+        token_hash = _hash_token(token)
+        record = db.query(TokenBlacklist).filter(TokenBlacklist.token_hash == token_hash).first()
+        if record:
+            if record.expires_at <= datetime.utcnow():
+                db.delete(record)
+                db.commit()
+            else:
+                return True
+
     return token in _token_blacklist
 
 
-def clear_token_blacklist() -> None:
-    """
-    Clear all blacklisted tokens (for testing or cleanup).
-    """
+def clear_token_blacklist(db: Session | None = None) -> None:
+    if db:
+        db.query(TokenBlacklist).delete()
+        db.commit()
     _token_blacklist.clear()
 
 
 def create_reset_token(user_id: int, email: str, expires_delta: Optional[timedelta] = None) -> str:
-    """
-    Create JWT reset token for password reset (AC 7.2).
-    
-    Args:
-        user_id: User ID
-        email: User email
-        expires_delta: Optional timedelta for token expiration. Defaults to 1 hour.
-        
-    Returns:
-        Encoded JWT reset token
-    """
     if expires_delta is None:
-        expires_delta = timedelta(hours=1)  # Default 1 hour
-    
+        expires_delta = timedelta(hours=1)
+
     now_ts = int(time.time())
     expire_ts = now_ts + int(expires_delta.total_seconds())
-    
+
     payload = {
         "user_id": user_id,
         "email": email,
         "type": "password_reset",
         "exp": expire_ts,
-        "iat": now_ts
+        "iat": now_ts,
     }
     return jwt.encode(payload, settings.jwt_secret, algorithm="HS256")
 
 
 def verify_reset_token(token: str) -> dict | None:
-    """
-    Verify and decode reset token (AC 7.4).
-    
-    Args:
-        token: Reset token to verify
-        
-    Returns:
-        Decoded payload if valid, None otherwise
-    """
     try:
         payload = jwt.decode(token, settings.jwt_secret, algorithms=["HS256"])
         if payload.get("type") != "password_reset":
@@ -178,4 +153,3 @@ def validate_password_strength(password: str) -> bool:
         r"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_\-+=\[{\]};:'\",<.>/?\\|`~]).{8,}$"
     )
     return bool(pattern.match(password))
-    
