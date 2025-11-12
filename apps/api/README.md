@@ -122,7 +122,7 @@ uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```bash
 # Google Gemini LLM
 GOOGLE_API_KEY=your-key-here
-LLM_MODEL=gemini-2.0-flash-exp
+LLM_MODEL=gemini-2.5-flash
 LLM_TEMPERATURE=0.3
 LLM_MAX_TOKENS=2048
 
@@ -367,7 +367,7 @@ EMBED_MODEL=sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2
 
 ```bash
 # Use faster model
-LLM_MODEL=gemini-1.5-flash
+LLM_MODEL=gemini-2.5-flash
 
 # Reduce max tokens
 LLM_MAX_TOKENS=1024
