@@ -5,8 +5,9 @@ from __future__ import annotations
 import re
 from typing import Iterable
 
-
-_HTML_PATTERN = re.compile(r"<\/?script|<\/?iframe|javascript:\s*|onerror\s*=|onload\s*=|onfocus\s*=", re.IGNORECASE)
+_HTML_PATTERN = re.compile(
+    r"<\/?script|<\/?iframe|javascript:\s*|onerror\s*=|onload\s*=|onfocus\s*=", re.IGNORECASE
+)
 _PROMPT_INJECTION_PHRASES: tuple[str, ...] = (
     "ignore all previous instructions",
     "disregard the above",
@@ -53,4 +54,3 @@ def ensure_safe_text(value: str, *, field_name: str = "input", max_length: int =
         raise UnsafeInputError(f"{field_name} contains disallowed content.")
 
     return trimmed
-

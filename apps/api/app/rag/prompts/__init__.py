@@ -7,9 +7,9 @@ This package contains system prompts for:
 All prompts are designed to handle both Vietnamese (with/without diacritics) and English.
 """
 
-from .prompts_normalizer import get_normalization_prompt
-from .prompts_intent_detector import get_intent_detection_prompt
 from .prompts_entity_extractor import get_entity_extraction_prompt
+from .prompts_intent_detector import get_intent_detection_prompt
+from .prompts_normalizer import get_normalization_prompt
 
 __all__ = [
     "get_normalization_prompt",

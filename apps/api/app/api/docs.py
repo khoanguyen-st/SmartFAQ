@@ -1,13 +1,14 @@
 """Document management endpoints (clean version)."""
 
-from fastapi import APIRouter, Depends, UploadFile, HTTPException, status, Form
-from fastapi.responses import FileResponse
-from sqlalchemy.orm import Session
 import os
 
+from fastapi import APIRouter, Depends, Form, HTTPException, UploadFile
+from fastapi.responses import FileResponse
+from sqlalchemy.orm import Session
+
+from ..api import schemas
 from ..core.db import get_session
 from ..services import dms
-from ..api import schemas
 
 router = APIRouter()
 
@@ -80,7 +81,9 @@ def download_document(doc_id: int, db: Session = Depends(get_session)):
 
 
 @router.put("/{doc_id}")
-def update_document(doc_id: int, payload: schemas.DocumentUpdate, db: Session = Depends(get_session)):
+def update_document(
+    doc_id: int, payload: schemas.DocumentUpdate, db: Session = Depends(get_session)
+):
     ok = dms.update_document(doc_id, payload.dict(exclude_none=True), db)
     if not ok:
         raise HTTPException(404, "Document not found")

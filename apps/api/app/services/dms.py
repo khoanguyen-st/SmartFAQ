@@ -1,18 +1,17 @@
 """Document management service (clean version)."""
 
-import os
 import logging
+import os
 from typing import Any
 from uuid import uuid4
 
 from fastapi import UploadFile
 from sqlalchemy.orm import Session
 
-from ..core.db import session_scope, get_session
+from ..core.config import settings
+from ..core.db import session_scope
 from ..models.document import Document
 from ..models.document_version import DocumentVersion
-from ..models.user import User
-from ..core.config import settings
 
 
 class UploadTooLarge(Exception):

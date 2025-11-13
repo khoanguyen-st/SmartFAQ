@@ -1,8 +1,8 @@
 """Database models package."""
 
+from .chat import ChatMessage, ChatRole, ChatSession
 from .config import Base
 from .config_entry import ConfigEntry
-from .chat import ChatMessage, ChatRole, ChatSession
 from .document import Document
 from .document_version import DocumentVersion
 from .fallback_log import FallbackLog

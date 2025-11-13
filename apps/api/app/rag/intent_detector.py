@@ -3,23 +3,25 @@ from __future__ import annotations
 import logging
 from typing import Any, Dict, List, Optional
 
-from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.output_parsers import StrOutputParser
+from langchain_google_genai import ChatGoogleGenerativeAI
 
 from app.core.config import settings
 from app.rag.constants import SUPPORTED_INTENTS
 from app.rag.prompts import get_intent_detection_prompt
 from app.rag.question_understanding import IntentDetector
-from app.rag.validations import Intent
 from app.rag.utils.llm_json import invoke_json_llm
+from app.rag.validations import Intent
+
 logger = logging.getLogger(__name__)
+
 
 class RuleBasedIntentDetector(IntentDetector):
     def __init__(self):
         try:
             self.ai_llm = ChatGoogleGenerativeAI(
                 model=settings.LLM_MODEL,
-                temperature=0.1, 
+                temperature=0.1,
                 max_output_tokens=512,
                 google_api_key=settings.GOOGLE_API_KEY,
             )
@@ -28,7 +30,7 @@ class RuleBasedIntentDetector(IntentDetector):
             logger.warning(f"Failed to initialize AI components: {e}. Will use fallback only.")
             self.ai_llm = None
             self.ai_parser = None
-    
+
     def detect(self, question: str, context: Optional[Dict[str, Any]] = None) -> Intent:
         if not question or not question.strip():
             logger.debug("Empty question received in intent detector")
@@ -53,7 +55,7 @@ class RuleBasedIntentDetector(IntentDetector):
                 "method": "fallback",
             },
         )
-    
+
     def _detect_with_ai(self, question: str) -> Optional[Intent]:
         """Detect intent using Gemini AI with retry logic."""
         prompt = self._build_unified_prompt()
@@ -91,10 +93,10 @@ class RuleBasedIntentDetector(IntentDetector):
             confidence=round(confidence, 3),
             metadata=metadata,
         )
-    
+
     def _build_unified_prompt(self) -> str:
         """Build unified system prompt that handles both Vietnamese and English."""
         return get_intent_detection_prompt()
-    
+
     def get_available_intents(self) -> List[str]:
         return SUPPORTED_INTENTS

@@ -15,5 +15,3 @@ class NormalizedQuestion(BaseModel):
     entities: List[Entity] = Field(default_factory=list, description="Extracted entities")
     language: str = Field(default="en", description="Detected language (e.g., 'en', 'vi')")
     metadata: Dict[str, Any] = Field(default_factory=dict, description="Processing metadata")
-
-

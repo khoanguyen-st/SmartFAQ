@@ -202,6 +202,7 @@ async def create_session(
 
     return NewSessionResponse(sessionId=session_id, message="New chat session started.")
 
+
 @router.post("/query", response_model=ChatQueryResponse)
 async def query_chat(
     payload: ChatQuery,
@@ -340,7 +341,9 @@ async def get_history(
     messages: list[ChatHistoryMessage] = []
     for message in records:
         timestamp = message.created_at.replace(tzinfo=None).isoformat(timespec="seconds") + "Z"
-        confidence = _confidence_to_percent(message.confidence) if message.confidence is not None else None
+        confidence = (
+            _confidence_to_percent(message.confidence) if message.confidence is not None else None
+        )
         fallback = message.fallback if message.role == ASSISTANT_ROLE else None
         entry = ChatHistoryMessage(
             role=message.role,
@@ -353,6 +356,7 @@ async def get_history(
         messages.append(entry)
 
     return ChatHistoryResponse(sessionId=session.id, messages=messages)
+
 
 @router.post("/feedback", response_model=FeedbackResponse)
 async def submit_feedback(

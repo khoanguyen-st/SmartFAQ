@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import {
   startNewChatSession,
   sendChatMessage,
@@ -7,14 +7,14 @@ import {
   ChatHistoryMessage
 } from '@/services/chat.services'
 
-import MessIcon from '@/assets/messager.svg?react'
-import SendIcon from '@/assets/send.svg?react'
-import InforIcon from '@/assets/i-icon.svg?react'
-import TrashIcon from '@/assets/trash-icon.svg?react'
-import PdfNoFill from '@/assets/pdf-no-fill.svg?react'
-import ImageNofill from '@/assets/image-no-fill.svg?react'
-import TxtNoFill from '@/assets/txt-no-fill.svg?react'
-import KnowledgeIcon from '@/assets/knowledge.svg?react'
+import MessIcon from '@/assets/messager.svg'
+import SendIcon from '@/assets/send.svg'
+import InforIcon from '@/assets/i-icon.svg'
+import TrashIcon from '@/assets/trash-icon.svg'
+import PdfNoFill from '@/assets/pdf-no-fill.svg'
+import ImageNofill from '@/assets/image-no-fill.svg'
+import TxtNoFill from '@/assets/txt-no-fill.svg'
+import KnowledgeIcon from '@/assets/knowledge.svg'
 import UploadedFile from '@/components/viewchat/UploadedFile'
 import { useKnowledgeFiles } from '@/hooks/useKnowledgeFiles'
 import Upload from '@/components/viewchat/Upload'
@@ -137,7 +137,6 @@ const ViewChatPage = () => {
   })
 
   const [isLoading, setIsLoading] = useState(false)
-  const [errorState, setErrorState] = useState<string | null>(null)
 
   const chatContentRef = useRef<HTMLDivElement>(null)
 
@@ -200,6 +199,7 @@ const ViewChatPage = () => {
     if (!sessionId) {
       initSession()
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []) // Empty dependency array ensures this runs only once on mount
 
   useEffect(() => {

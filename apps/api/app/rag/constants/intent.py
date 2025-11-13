@@ -8,4 +8,3 @@ SUPPORTED_INTENTS = [
     "out_of_scope",
     "other",
 ]
-

@@ -1,13 +1,16 @@
 import { NavLink } from 'react-router-dom'
 import { useState, useCallback, useMemo } from 'react'
 import type { ReactNode } from 'react'
-import { cn } from '@/lib/utils'
-import Education from '../assets/icon/education.svg?react'
-import UserIcon from '../assets/icon/user.svg?react'
 import { Menu, X } from 'lucide-react'
+
+import { cn } from '@/lib/utils'
+
+import Education from '../assets/icon/education.svg'
+import UserIcon from '../assets/icon/user.svg'
 
 const navItems = [
   { path: 'dashboard', label: 'Dashboard' },
+  { path: 'users', label: 'Users' },
   { path: 'logs', label: 'Logs' },
   { path: 'settings', label: 'Settings' },
   { path: 'uploaded', label: 'Uploaded Documents' },
@@ -16,6 +19,7 @@ const navItems = [
 
 const ShellLayout = ({ children }: { children: ReactNode }) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
+
   const toggleSidebar = useCallback(() => setIsSidebarOpen(prev => !prev), [])
   const handleNavigation = useCallback(() => {
     if (isSidebarOpen) {
@@ -23,21 +27,21 @@ const ShellLayout = ({ children }: { children: ReactNode }) => {
     }
   }, [isSidebarOpen])
 
-  const Sidebar = useMemo(
+  const sidebar = useMemo(
     () => (
       <aside
         className={cn(
-          'z-50 flex w-60 flex-col bg-slate-900 px-4 py-6 text-slate-50 transition-transform duration-300',
-          'fixed inset-y-0 left-0 shadow-2xl',
-          isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
+          'fixed inset-y-0 left-0 z-50 flex w-60 flex-col bg-slate-900 px-4 py-6 text-slate-50 shadow-2xl transition-transform duration-300',
+          isSidebarOpen ? 'translate-x-0' : '-translate-x-full',
+          'lg:static lg:translate-x-0'
         )}
       >
         <div className="mb-6 flex items-center justify-between">
           <div className="text-lg font-semibold">SmartFAQ Admin</div>
           <button
             onClick={toggleSidebar}
-            className="rounded-full p-1 text-slate-300 transition-colors hover:bg-slate-700 hover:text-white"
-            aria-label="Đóng Sidebar"
+            className="rounded-full p-1 text-slate-300 transition-colors hover:bg-slate-700 hover:text-white lg:hidden"
+            aria-label="Close sidebar"
           >
             <X className="h-6 w-6" />
           </button>
@@ -62,22 +66,22 @@ const ShellLayout = ({ children }: { children: ReactNode }) => {
         </nav>
       </aside>
     ),
-    [isSidebarOpen, toggleSidebar, handleNavigation]
+    [handleNavigation, isSidebarOpen, toggleSidebar]
   )
 
   return (
     <div className="flex min-h-screen bg-[#eff3fb] text-slate-900">
-      {isSidebarOpen && <div className="fixed inset-0 z-40 bg-black/50" onClick={toggleSidebar} />}
-      {Sidebar}
+      {isSidebarOpen && <div className="fixed inset-0 z-40 bg-black/50 lg:hidden" onClick={toggleSidebar} />}
+      {sidebar}
 
-      <main className="w-full flex-1 overflow-y-auto">
-        <header className="sticky top-0 z-20 border-b border-gray-200 bg-white px-6 py-4">
+      <main className="flex w-full flex-1 flex-col overflow-y-auto">
+        <header className="sticky top-0 z-20 border-b border-gray-200 bg-white px-4 py-4 sm:px-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <button
                 onClick={toggleSidebar}
-                className="p-1 text-gray-600 transition-colors hover:text-gray-800"
-                aria-label={isSidebarOpen ? 'Đóng menu' : 'Mở menu'}
+                className="p-1 text-gray-600 transition-colors hover:text-gray-800 lg:hidden"
+                aria-label={isSidebarOpen ? 'Close menu' : 'Open menu'}
               >
                 {isSidebarOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
               </button>
@@ -95,7 +99,8 @@ const ShellLayout = ({ children }: { children: ReactNode }) => {
             </div>
           </div>
         </header>
-        <div className="flex flex-col gap-6">{children}</div>
+
+        <div className="flex flex-1 flex-col gap-4 p-4 sm:gap-6 sm:p-6">{children}</div>
       </main>
     </div>
   )
