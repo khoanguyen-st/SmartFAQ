@@ -1,5 +1,6 @@
 {
-    "title": "Xác nhận xóa",
-    "message": "Bạn có chắc chắn muốn xóa thư mục \"{{folderName}}\" không?",
-    "warning": "Hành động này không thể hoàn tác."
+  "title": "Xác nhận xóa",
+  "message": "Bạn có chắc chắn muốn xóa thư mục \"{{folderName}}\" không?",
+  "warning": "Hành động này không thể hoàn tác."
 }
+
