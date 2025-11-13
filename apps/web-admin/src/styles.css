@@ -47,9 +47,9 @@
   border: none;
 }
 
-.chat__content {
+.chat__content, .uploaded__content {
   flex-grow: 1;
-  padding: 16px 0;
+  padding: 24px;
   overflow: auto;
   scrollbar-width: thin;
   scrollbar-color: var(--color-dark-2) var(--color-white);
@@ -60,7 +60,6 @@
   text-align: start;
   padding: 16px;
   margin-bottom: 16px;
-  margin-inline: 24px;
 }
 
 .message--receiver {
