@@ -1,6 +1,5 @@
 import { NavLink } from 'react-router-dom'
-import { useState, useCallback, useMemo } from 'react'
-import type { ReactNode } from 'react'
+import { useState, useCallback, useMemo, type ReactNode } from 'react'
 import { cn } from '@/lib/utils'
 import { Education, UserIcon } from '@/assets/icon'
 import { Menu, X } from 'lucide-react'

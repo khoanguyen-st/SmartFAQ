@@ -1,5 +1,5 @@
 import React from 'react'
-import { ArrowRight, ArrowLeft } from 'lucide-react'
+import { ArrowRight, ArrowLeft } from '@/assets/icon'
 import { PaginationControlsProps } from '@/interfaces/FolderInterface'
 
 const PaginationControls: React.FC<PaginationControlsProps> = ({

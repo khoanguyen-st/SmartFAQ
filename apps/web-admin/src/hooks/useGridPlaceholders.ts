@@ -15,8 +15,6 @@ const getGridConfig = (): GridConfig => {
 }
 
 /**
- * Custom hook to calculate placeholder slots for grid layout
- * Ensures the last page grid looks complete with empty slots
  *
  * @param totalItems - Total number of items in the list
  * @param currentPageItems - Number of items on current page
