@@ -22,8 +22,14 @@ from ..models.chat import ChatMessage, ChatRole, ChatSession
 from ..models.query_log import QueryLog
 from ..rag.llm import LLMWrapper
 
+
+from ..rag.question_understanding import QuestionUnderstanding
+from ..rag.validations import NormalizedQuestion
+
+
 router = APIRouter()
 llm_wrapper = LLMWrapper()
+question_understanding = QuestionUnderstanding()
 
 _FEEDBACK_MESSAGES: dict[str, str] = {
     "en": "Feedback recorded. Thank you!",
@@ -243,9 +249,33 @@ async def query_chat(
     ]
 
     try:
+        normalized: NormalizedQuestion = question_understanding.understand(
+            payload.question,
+            context={
+                "session_language": session.language,
+                "history": history_messages,
+            },
+        )
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(exc),
+        ) from exc
+
+    normalized_question = normalized.normalized_question
+    detected_language = normalized.language or session.language or "en"
+
+    if payload.language:
+        stripped_lang = payload.language.strip()
+        if stripped_lang:
+            session.language = stripped_lang
+    else:
+        session.language = detected_language
+
+    try:
         t0 = time.perf_counter()
         answer = await llm_wrapper.generate_direct_answer_async(
-            payload.question,
+            normalized_question,
             history=history_messages,
         )
         latency_ms = int((time.perf_counter() - t0) * 1000)
