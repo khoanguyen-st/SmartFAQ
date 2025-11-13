@@ -2,10 +2,10 @@
   "extends": "../../packages/config/tsconfig.base.json",
   "compilerOptions": {
     "types": ["vite/client"],
-    "baseUrl": "./src",
+    "baseUrl": ".",
     "paths": {
       "@smartfaq/ui": ["../../packages/ui/src"],
-      "@/*": ["./*"]
+      "@/*": ["src/*"]
     }
   },
   "include": ["src", "vite.config.ts"],

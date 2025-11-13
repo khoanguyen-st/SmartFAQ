@@ -1,4 +1,5 @@
 import { NavLink } from "react-router-dom";
+
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
@@ -6,6 +7,7 @@ const navItems = [
   { path: "dashboard", label: "Dashboard" },
   { path: "logs", label: "Logs" },
   { path: "settings", label: "Settings" },
+  { path: "profile", label: "Profile" },
 ];
 
 const ShellLayout = ({ children }: { children: ReactNode }) => {
