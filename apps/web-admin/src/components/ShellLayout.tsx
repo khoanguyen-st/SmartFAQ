@@ -2,9 +2,9 @@ import { NavLink } from 'react-router-dom'
 import { useState, useCallback, useMemo } from 'react'
 import type { ReactNode } from 'react'
 import { cn } from '@/lib/utils'
-import { Education } from '@/assets/icon'
-import { UserIcon } from '@/assets/icon'
+import { Education, UserIcon } from '@/assets/icon'
 import { Menu, X } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 
 const navItems = [
   { path: 'dashboard', label: 'Dashboard' },
@@ -15,6 +15,7 @@ const navItems = [
 ]
 
 const ShellLayout = ({ children }: { children: ReactNode }) => {
+  const { t } = useTranslation()
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
   const toggleSidebar = useCallback(() => setIsSidebarOpen(prev => !prev), [])
   const handleNavigation = useCallback(() => {
@@ -33,11 +34,11 @@ const ShellLayout = ({ children }: { children: ReactNode }) => {
         )}
       >
         <div className="mb-6 flex items-center justify-between">
-          <div className="text-lg font-semibold">SmartFAQ Admin</div>
+          <div className="text-lg font-semibold"></div>
           <button
             onClick={toggleSidebar}
             className="rounded-full p-1 text-slate-300 transition-colors hover:bg-slate-700 hover:text-white"
-            aria-label="Đóng Sidebar"
+            aria-label={t('sidebar.closeSidebar')}
           >
             <X className="h-6 w-6" />
           </button>
@@ -62,7 +63,7 @@ const ShellLayout = ({ children }: { children: ReactNode }) => {
         </nav>
       </aside>
     ),
-    [isSidebarOpen, toggleSidebar, handleNavigation]
+    [isSidebarOpen, toggleSidebar, handleNavigation, t]
   )
 
   return (
@@ -77,7 +78,7 @@ const ShellLayout = ({ children }: { children: ReactNode }) => {
               <button
                 onClick={toggleSidebar}
                 className="p-1 text-gray-600 transition-colors hover:text-gray-800"
-                aria-label={isSidebarOpen ? 'Đóng menu' : 'Mở menu'}
+                aria-label={isSidebarOpen ? t('sidebar.closeMenu') : t('sidebar.openMenu')}
               >
                 {isSidebarOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
               </button>
@@ -85,13 +86,13 @@ const ShellLayout = ({ children }: { children: ReactNode }) => {
                 <Education />
               </div>
               <div className="hidden sm:block">
-                <h1 className="text-xl font-semibold text-gray-900">Greenwich SmartFAQ</h1>
-                <p className="text-sm text-gray-500">Document-based chatbot training system</p>
+                <h1 className="text-xl font-semibold text-gray-900">{t('header.title')}</h1>
+                <p className="text-sm text-gray-500">{t('header.description')}</p>
               </div>
             </div>
             <div className="flex items-center gap-2 text-gray-700">
               <UserIcon />
-              <span className="text-sm font-medium">BO User</span>
+              <span className="text-sm font-medium">{t('header.boUser')}</span>
             </div>
           </div>
         </header>

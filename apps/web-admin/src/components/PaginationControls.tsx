@@ -1,15 +1,6 @@
 import React from 'react'
 import { ArrowRight, ArrowLeft } from 'lucide-react'
-
-interface PaginationControlsProps {
-  currentPage: number
-  totalPages: number
-  goToPage: (page: number) => void
-  goToNextPage: () => void
-  goToPreviousPage: () => void
-  hasNextPage: boolean
-  hasPreviousPage: boolean
-}
+import { PaginationControlsProps } from '@/interfaces/FolderInterface'
 
 const PaginationControls: React.FC<PaginationControlsProps> = ({
   currentPage,

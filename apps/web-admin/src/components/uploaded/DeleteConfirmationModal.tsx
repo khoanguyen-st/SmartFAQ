@@ -1,6 +1,6 @@
 import React from 'react'
 import { AlertTriangle } from '@/assets/icon'
-import { useTranslation } from 'react-i18next' // 🌟 Import useTranslation
+import { useTranslation } from 'react-i18next'
 
 interface DeleteConfirmationModalProps {
   isOpen: boolean

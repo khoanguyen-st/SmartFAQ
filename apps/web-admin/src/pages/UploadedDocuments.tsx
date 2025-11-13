@@ -116,7 +116,7 @@ const UploadedPage = () => {
         {placeholders.map(key => (
           <div key={key} className="pointer-events-none opacity-0">
             <FolderCard
-              doc={{ id: key, title: 'Placeholder', date: '', sources: 0 } as IKnowledgeFolder} // Đã loại bỏ 'as any'
+              doc={{ id: key, title: 'Placeholder', date: '', sources: 0 } as IKnowledgeFolder}
               onDelete={() => {}}
               onView={() => {}}
               onReupload={() => {}}

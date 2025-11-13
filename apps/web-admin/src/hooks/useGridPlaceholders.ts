@@ -1,30 +1,13 @@
 import { useMemo, useState, useEffect } from 'react'
+import { GridConfig, UseGridPlaceholdersOptions } from '@/interfaces/FolderInterface'
 
-interface UseGridPlaceholdersOptions {
-  totalItems: number
-  currentPageItems: number
-  currentPage: number
-  totalPages: number
-  hasUploadCard?: boolean
-}
-
-interface GridConfig {
-  itemsPerRow: number
-  maxRows: number
-}
-
-/**
- * Get grid configuration based on screen width
- */
 const getGridConfig = (): GridConfig => {
   if (typeof window === 'undefined') {
     return { itemsPerRow: 1, maxRows: 2 }
   }
 
   const width = window.innerWidth
-
   const itemsPerRow = width >= 1280 ? 5 : width >= 1024 ? 4 : width >= 640 ? 2 : 1
-
   return {
     itemsPerRow,
     maxRows: 2
@@ -70,7 +53,6 @@ const useGridPlaceholders = ({
     const { itemsPerRow, maxRows } = gridConfig
     const maxItemsOnGrid = maxRows * itemsPerRow
     const itemsOnPage = currentPage === 1 && hasUploadCard ? currentPageItems + 1 : currentPageItems
-
     const emptySlots = maxItemsOnGrid - itemsOnPage
 
     return emptySlots > 0 ? Array.from({ length: emptySlots }, (_, i) => -(i + 1)) : []
@@ -81,17 +63,10 @@ const useGridPlaceholders = ({
 
 export default useGridPlaceholders
 
-/**
- * Helper function to get grid columns class based on screen width
- * Useful for applying correct Tailwind classes
- */
 export const getGridColumnsClass = () => {
   return 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5'
 }
 
-/**
- * Type for placeholder render props
- */
 export interface PlaceholderRenderProps {
   key: number
   className?: string

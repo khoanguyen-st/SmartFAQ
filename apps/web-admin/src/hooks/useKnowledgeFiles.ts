@@ -49,7 +49,7 @@ export const useKnowledgeFiles = () => {
     } catch (err) {
       setUploadError((err as Error).message)
     } finally {
-      setIsUploading(false) // Kết thúc loading
+      setIsUploading(false)
     }
   }, [])
 

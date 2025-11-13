@@ -1,9 +1,5 @@
 import { Navigate, Route, Routes } from 'react-router-dom'
-import UploadedPage from './pages/UploadedDocuments'
-import DashboardPage from './pages/Dashboard'
-import LogsPage from './pages/Logs'
-import SettingsPage from './pages/Settings'
-import ViewChatPage from './pages/ViewChat'
+import { UploadedPage, DashboardPage, LogsPage, SettingsPage, ViewChatPage } from './pages'
 import ShellLayout from './components/ShellLayout'
 
 const App = () => (

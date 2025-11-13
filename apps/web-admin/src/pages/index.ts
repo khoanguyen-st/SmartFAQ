@@ -1,0 +1,5 @@
+export { default as UploadedPage } from './UploadedDocuments'
+export { default as DashboardPage } from './Dashboard'
+export { default as LogsPage } from './Logs'
+export { default as SettingsPage } from './Settings'
+export { default as ViewChatPage } from './ViewChat'

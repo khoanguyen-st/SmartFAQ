@@ -1,29 +1,7 @@
 import { useState, useMemo, useCallback } from 'react'
-
-interface UsePaginationOptions<T> {
-  items: T[]
-  itemsPerPage: number
-  onPageChange?: (page: number) => void
-}
-
-interface UsePaginationReturn<T> {
-  currentPage: number
-  totalPages: number
-  currentItems: T[]
-  startIndex: number
-  endIndex: number
-  hasNextPage: boolean
-  hasPreviousPage: boolean
-  goToPage: (page: number) => void
-  goToNextPage: () => void
-  goToPreviousPage: () => void
-  goToFirstPage: () => void
-  goToLastPage: () => void
-  setCurrentPage: (page: number) => void
-}
+import { UsePaginationOptions, UsePaginationReturn } from '@/interfaces/FolderInterface'
 
 /**
- * Custom hook for pagination logic
  * @param items - Array of items to paginate
  * @param itemsPerPage - Number of items per page
  * @param onPageChange - Optional callback when page changes

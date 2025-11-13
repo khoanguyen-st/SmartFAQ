@@ -3,18 +3,12 @@ import { MoreVertical } from 'lucide-react'
 import { FolderIcon, ReloadIcon, TrashIcon, ViewIcon } from '@/assets/icon'
 import { DocumentCardProps } from '@/interfaces/FolderInterface'
 import { useTranslation } from 'react-i18next'
+import { DOCUMENT_ACTION_KEYS } from '@/constants/routes'
 
-const DOCUMENT_ACTIONS = {
-  VIEW: 'View',
-  RE_UPLOAD: 'Re-upload',
-  DELETE: 'Delete'
-} as const
-
-type DocumentActionType = (typeof DOCUMENT_ACTIONS)[keyof typeof DOCUMENT_ACTIONS]
+type DocumentActionType = keyof typeof DOCUMENT_ACTION_KEYS
 
 const FolderCard: React.FC<DocumentCardProps> = ({ doc, onDelete, onView, onReupload, onSelect }) => {
   const { t } = useTranslation()
-
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
 
@@ -23,20 +17,24 @@ const FolderCard: React.FC<DocumentCardProps> = ({ doc, onDelete, onView, onReup
     setIsMenuOpen(prev => !prev)
   }, [])
 
-  const handleAction = (actionType: DocumentActionType) => {
-    setIsMenuOpen(false)
-    switch (actionType) {
-      case DOCUMENT_ACTIONS.VIEW:
-        onView(doc)
-        break
-      case DOCUMENT_ACTIONS.RE_UPLOAD:
-        onReupload(doc)
-        break
-      case DOCUMENT_ACTIONS.DELETE:
-        onDelete(doc)
-        break
-    }
-  }
+  const handleAction = useCallback(
+    (actionType: DocumentActionType) => {
+      setIsMenuOpen(false)
+
+      switch (actionType) {
+        case 'VIEW':
+          onView(doc)
+          break
+        case 'REUPLOAD':
+          onReupload(doc)
+          break
+        case 'DELETE':
+          onDelete(doc)
+          break
+      }
+    },
+    [doc, onDelete, onReupload, onView]
+  )
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -68,52 +66,48 @@ const FolderCard: React.FC<DocumentCardProps> = ({ doc, onDelete, onView, onReup
         <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[#e0ebfd]">
           <FolderIcon />
         </div>
-
         <div className="relative" ref={menuRef}>
           <button
             onClick={toggleMenu}
             className="rounded-full p-1 text-gray-500 transition-colors hover:bg-gray-100"
-            aria-label="More options"
+            aria-label={t('folder.moreOptions')}
           >
             <MoreVertical className="h-5 w-5" />
           </button>
-
           {isMenuOpen && (
             <div className="absolute right-0 z-10 mt-2 w-48 rounded-lg border border-gray-200 bg-white py-1 shadow-lg">
               <button
-                onClick={() => handleAction(DOCUMENT_ACTIONS.VIEW)}
+                onClick={() => handleAction('VIEW')}
                 className="flex w-full items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
               >
                 <ViewIcon className="mr-2 h-4 w-4" />
-                {t('folder.viewFolder')}
+                {t(DOCUMENT_ACTION_KEYS.VIEW)}
               </button>
               <button
-                onClick={() => handleAction(DOCUMENT_ACTIONS.RE_UPLOAD)}
+                onClick={() => handleAction('REUPLOAD')}
                 className="flex w-full items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
               >
                 <ReloadIcon className="mr-2 h-4 w-4" />
-                {t('folder.reUpload')}
+                {t(DOCUMENT_ACTION_KEYS.REUPLOAD)}
               </button>
               <button
-                onClick={() => handleAction(DOCUMENT_ACTIONS.DELETE)}
+                onClick={() => handleAction('DELETE')}
                 className="flex w-full items-center px-4 py-2 text-sm text-red-600 hover:bg-red-50"
               >
                 <TrashIcon className="mr-2 h-4 w-4" />
-                {t('folder.deleteFolder')}
+                {t(DOCUMENT_ACTION_KEYS.DELETE)}
               </button>
             </div>
           )}
         </div>
       </div>
-
       <div className="flex min-h-[50px] flex-1 items-center">
         <h3 className="line-clamp-2 text-base font-semibold text-gray-900">{doc.title}</h3>
       </div>
-
       <div className="border-t border-gray-100 pt-3 text-sm text-gray-500">
         <div className="flex items-center justify-between">
           <span className="text-xs font-medium text-gray-600">
-            {doc.sources} {t('folder.sources')}
+            {doc.sources} {doc.sources === 1 ? t('folder.source') : t('folder.sources')}
           </span>
           <span>
             {t('folder.lastUpdated')}: {doc.date}

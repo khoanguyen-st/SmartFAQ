@@ -1,19 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
+import { BreakpointConfig } from '@/interfaces/FolderInterface'
 
-/**
- * Breakpoint configuration for responsive items per page
- */
-interface BreakpointConfig {
-  xl: number
-  lg: number
-  md: number
-  sm: number
-  xs: number
-}
-
-/**
- * Default breakpoint configuration
- */
 const DEFAULT_CONFIG: BreakpointConfig = {
   xl: 10,
   lg: 8,
