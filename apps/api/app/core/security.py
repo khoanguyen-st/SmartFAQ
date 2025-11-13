@@ -13,6 +13,11 @@ from .config import settings
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
+def get_password_hash(password: str) -> str:
+    """Hash a password for storing."""
+    return pwd_context.hash(password)
+
+
 @lru_cache(maxsize=1)
 def get_admin_hash() -> str:
     # Tính hash chỉ khi cần, lưu lại để không tính nhiều lần

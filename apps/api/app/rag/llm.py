@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Any, Dict, Optional, Sequence, Union
 
 from langchain_core.documents import Document
+from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_google_genai import ChatGoogleGenerativeAI
@@ -66,11 +67,12 @@ class LLMWrapper:
             "Bạn là trợ lý AI của Đại học Greenwich Việt Nam.\n"
             "Nhiệm vụ: Trả lời câu hỏi của sinh viên dựa trên thông tin được cung cấp.\n\n"
             "Quy tắc:\n"
-            "1. LUÔN trả lời bằng tiếng Việt.\n"
-            "2. CHỈ sử dụng thông tin từ context được cung cấp.\n"
-            '3. Nếu không tìm thấy thông tin, trả lời: "Tôi không tìm thấy thông tin về vấn đề này".\n'
+            "1. Trả lời bằng cùng ngôn ngữ với câu hỏi của người dùng.\n"
+            "2. CHỈ sử dụng thông tin từ context được cung cấp để trả lời nội dung chính.\n"
+            '3. Nếu context không chứa thông tin phù hợp, trả lời: "Tôi không tìm thấy thông tin về vấn đề này" bằng ngôn ngữ của người dùng.\n'
             "4. Trả lời ngắn gọn, rõ ràng, thân thiện.\n"
             "5. Nếu có link/email/số điện thoại trong context, hãy đưa vào câu trả lời.\n"
+            "6. Nếu câu hỏi mang tính chào hỏi hoặc xã giao, hãy đáp lại lịch sự và đề nghị hỗ trợ thêm.\n"
         )
 
         self.prompt = ChatPromptTemplate.from_messages(
@@ -84,6 +86,7 @@ class LLMWrapper:
         # ---- Chain ----
         self.parser = StrOutputParser()
         self.chain = self.prompt | self.llm | self.parser
+        self.direct_chain = self.direct_prompt | self.llm | self.parser
 
         # ---- Params ----
         self.max_context_chars = max_context_chars
@@ -142,4 +145,41 @@ class LLMWrapper:
                 "context": context_text,
                 "question": question.strip(),
             }
+        )
+
+    async def generate_direct_answer_async(
+        self,
+        question: str,
+        history: Optional[Sequence[BaseMessage | Dict[str, Any] | str]] = None,
+    ) -> str:
+        """
+        Invoke the underlying Gemini chat model without any retrieval context.
+        """
+        clean_question = question.strip()
+        if not clean_question:
+            return self._fallback_no_context()
+
+        formatted_history: list[BaseMessage] = []
+        if history:
+            for item in history:
+                message: BaseMessage | None = None
+                if isinstance(item, BaseMessage):
+                    message = item
+                elif isinstance(item, dict):
+                    role = str(item.get("role", "")).lower()
+                    content = item.get("content") or item.get("text") or ""
+                    if not content:
+                        continue
+                    if role == "assistant":
+                        message = AIMessage(content=content)
+                    else:
+                        message = HumanMessage(content=content)
+                elif isinstance(item, str):
+                    # treat plain strings as prior user turns
+                    message = HumanMessage(content=item)
+                if message is not None:
+                    formatted_history.append(message)
+
+        return await self.direct_chain.ainvoke(
+            {"history": formatted_history, "question": clean_question}
         )

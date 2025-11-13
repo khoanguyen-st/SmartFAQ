@@ -4,8 +4,9 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, EmailStr, Field
 from sqlalchemy.orm import Session
 
-from ..core.users import get_current_user, get_password_hash
-from ..core.config import get_db
+from ..core.db import get_session
+from ..core.security import get_password_hash
+from ..core.users import get_current_user
 from ..models.user import User
 from ..services import metrics
 
@@ -59,8 +60,7 @@ async def get_logs(current_user=Depends(get_current_user)) -> dict[str, list]:
 
 @router.get("/users")
 async def get_users(
-    current_user=Depends(get_current_user),
-    db: Session = Depends(get_db)
+    current_user=Depends(get_current_user), db: Session = Depends(get_session)
 ) -> list[UserResponse]:
     """Get all users."""
     users = db.query(User).all()
@@ -68,11 +68,11 @@ async def get_users(
         UserResponse(
             id=user.id,
             username=user.username,
-            email=getattr(user, 'email', None),
+            email=getattr(user, "email", None),
             role=user.role,
             status="active" if user.is_active else "locked",
-            phone_number=getattr(user, 'phone_number', None),
-            created_at=user.created_at.isoformat() if user.created_at else None
+            phone_number=getattr(user, "phone_number", None),
+            created_at=user.created_at.isoformat() if user.created_at else None,
         )
         for user in users
     ]
@@ -82,61 +82,60 @@ async def get_users(
 async def create_user(
     data: CreateUserRequest,
     current_user=Depends(get_current_user),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_session),
 ) -> CreateUserResponse:
     """Create a new user account."""
     # Check if username already exists
     existing_user = db.query(User).filter(User.username == data.username).first()
     if existing_user:
         raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail="Username or email already exists."
+            status_code=status.HTTP_409_CONFLICT, detail="Username or email already exists."
         )
-    
+
     # Validate password complexity
     if len(data.password) < 8:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Password does not meet security requirements."
+            detail="Password does not meet security requirements.",
         )
     if not any(c.isupper() for c in data.password):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Password does not meet security requirements."
+            detail="Password does not meet security requirements.",
         )
     if not any(c.isdigit() for c in data.password):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Password does not meet security requirements."
+            detail="Password does not meet security requirements.",
         )
     if not any(c in "!@#$%^&*" for c in data.password):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Password does not meet security requirements."
+            detail="Password does not meet security requirements.",
         )
-    
+
     # Create new user
     new_user = User(
         username=data.username,
         password_hash=get_password_hash(data.password),
         role=data.role,
-        is_active=True
+        is_active=True,
     )
-    
+
     # Add email if User model supports it
-    if hasattr(User, 'email'):
+    if hasattr(User, "email"):
         new_user.email = data.email
-    
+
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
-    
+
     return CreateUserResponse(
         user_id=new_user.id,
         username=new_user.username,
         role=new_user.role,
         status="active",
-        message="New user created successfully."
+        message="New user created successfully.",
     )
 
 
@@ -145,63 +144,54 @@ async def update_user(
     user_id: int,
     data: UpdateUserRequest,
     current_user=Depends(get_current_user),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_session),
 ) -> UserResponse:
     """Update an existing user account."""
     # Find user
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="User not found."
-        )
-    
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found.")
+
     # Check if username already exists (if updating username)
     if data.username and data.username != user.username:
         existing_user = db.query(User).filter(User.username == data.username).first()
         if existing_user:
             raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
-                detail="Username or email already exists."
+                status_code=status.HTTP_409_CONFLICT, detail="Username or email already exists."
             )
         user.username = data.username
-    
+
     # Update email if provided and model supports it
-    if data.email and hasattr(User, 'email'):
+    if data.email and hasattr(User, "email"):
         user.email = data.email
-    
+
     # Update role if provided
     if data.role:
         user.role = data.role
-    
+
     db.commit()
     db.refresh(user)
-    
+
     return UserResponse(
         id=user.id,
         username=user.username,
-        email=getattr(user, 'email', None),
+        email=getattr(user, "email", None),
         role=user.role,
         status="active" if user.is_active else "locked",
-        phone_number=getattr(user, 'phone_number', None),
-        created_at=user.created_at.isoformat() if user.created_at else None
+        phone_number=getattr(user, "phone_number", None),
+        created_at=user.created_at.isoformat() if user.created_at else None,
     )
 
 
 @router.delete("/users/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_user(
-    user_id: int,
-    current_user=Depends(get_current_user),
-    db: Session = Depends(get_db)
+    user_id: int, current_user=Depends(get_current_user), db: Session = Depends(get_session)
 ):
     """Delete a user account."""
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="User not found."
-        )
-    
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found.")
+
     db.delete(user)
     db.commit()
     return None
