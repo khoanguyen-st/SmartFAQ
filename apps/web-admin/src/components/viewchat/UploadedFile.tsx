@@ -5,6 +5,7 @@ import DocIcon from '@/assets/doc.svg?react'
 import TrashIcon from '@/assets/trash.svg?react'
 import FileIcon from '@/assets/file.svg?react'
 import ImageIcon from '@/assets/image-icon.svg?react'
+import MarkdownIcon from 'assets/icons/md.svg?react'
 import { IUploadedFile } from '../../lib/knowledge-api'
 import DeleteConfirmationModal from './DeleteConfirmationModal'; 
 import { cn } from '@/lib/utils';
@@ -34,12 +35,13 @@ const UploadedFile = ({ files, onDeleteFile, isLoading, loadError, isCompact = f
     switch (fileType) {
       case 'pdf': return <PDFIcon {...props} />
       case 'txt': return <TXTIcon {...props} />
-      case 'doc': 
+      case 'doc': return <DocIcon {...props} />
       case 'docx': return <DocIcon {...props} />
-      case 'jpg':
+      case 'md': return <MarkdownIcon {...props} />
+      case 'jpg': return <ImageIcon {...props} />
       case 'jpeg':
       case 'png':
-      case 'svg': return <ImageIcon {...props} />
+      case 'svg':
       default: return <FileIcon {...props} />
     }
   }
