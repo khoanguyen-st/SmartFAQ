@@ -12,6 +12,7 @@ from langchain_core.runnables import RunnablePassthrough
 from app.core.config import settings
 from app.rag.llm import LLMWrapper
 from app.rag.retriever import Retriever
+from app.rag.formatter import ResponseFormatter
 
 logger = logging.getLogger(__name__)
 
@@ -27,6 +28,7 @@ class RAGOrchestrator:
         self, retriever: Optional[Retriever] = None, llm_wrapper: Optional[LLMWrapper] = None
     ):
         self.retriever = retriever or Retriever()
+        self.formatter = ResponseFormatter()
         self.llm_wrapper = llm_wrapper or LLMWrapper()
 
     async def query(
