@@ -98,6 +98,7 @@ class LLMWrapper:
         self.parser = StrOutputParser()
         self.chain = self.prompt | self.llm | self.parser
         self.direct_chain = self.direct_prompt | self.llm | self.parser
+
         self.max_context_chars = max_context_chars
 
     def format_contexts(
@@ -193,18 +194,11 @@ class LLMWrapper:
                     else:
                         message = HumanMessage(content=content)
                 elif isinstance(item, str):
+                    # treat plain strings as prior user turns
                     message = HumanMessage(content=item)
                 if message is not None:
                     formatted_history.append(message)
-        try:
-            return await self.direct_chain.ainvoke(
-                {"history": formatted_history, "question": clean_question}
-            )
-        except google_exceptions.ResourceExhausted as e:
-            logger.error(f"Gemini API quota exceeded: {e}")
-            raise RuntimeError(
-                "API quota exceeded. Please try again later or contact support."
-            ) from e
-        except Exception as e:
-            logger.error(f"Error generating direct answer: {e}")
-            raise
+
+        return await self.direct_chain.ainvoke(
+            {"history": formatted_history, "question": clean_question}
+        )

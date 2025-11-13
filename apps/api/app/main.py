@@ -3,7 +3,6 @@ from fastapi.middleware.cors import CORSMiddleware
 from .api import admin, auth, chat, docs, fallback
 from .core.config import settings
 
-
 def create_app() -> FastAPI:
     app = FastAPI(
         title="Greenwich SmartFAQ API",

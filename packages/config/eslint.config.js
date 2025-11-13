@@ -1,3 +1,4 @@
+
 import js from '@eslint/js'
 import reactPlugin from 'eslint-plugin-react'
 import jsxA11y from 'eslint-plugin-jsx-a11y'
@@ -5,8 +6,10 @@ import hooks from 'eslint-plugin-react-hooks'
 import tseslint from '@typescript-eslint/eslint-plugin'
 import tsParser from '@typescript-eslint/parser'
 import globals from 'globals'
+import reactJsxRuntime from 'eslint-plugin-react/configs/jsx-runtime.js'
 
 export default [
+  reactJsxRuntime,
   js.configs.recommended,
   {
     files: ['**/*.{ts,tsx,js,jsx}'],
@@ -20,6 +23,7 @@ export default [
         }
       },
       globals: {
+        React: 'readonly',
         ...globals.browser,
         ...globals.es2021,
         __APP_VERSION__: 'readonly'
@@ -38,8 +42,8 @@ export default [
     },
     rules: {
       // React rules
-      'react/react-in-jsx-scope': 'off', // Not needed in React 17+
-      'react/prop-types': 'off', // Use TypeScript instead
+      'react/react-in-jsx-scope': 'off',
+      'react/prop-types': 'off',
       'react/jsx-uses-react': 'error',
       'react/jsx-uses-vars': 'error',
 
@@ -52,7 +56,7 @@ export default [
       'jsx-a11y/anchor-is-valid': 'warn',
 
       // TypeScript
-      'no-unused-vars': 'off', // Disable base rule as it conflicts with @typescript-eslint/no-unused-vars
+      'no-unused-vars': 'off',
       '@typescript-eslint/no-unused-vars': [
         'warn',
         {
@@ -68,7 +72,6 @@ export default [
     }
   },
   {
-    // Ignore patterns
     ignores: ['**/node_modules/**', '**/dist/**', '**/build/**']
   }
 ]

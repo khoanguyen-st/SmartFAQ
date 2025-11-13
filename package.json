@@ -9,9 +9,9 @@
   ],
   "scripts": {
     "prepare": "husky",
-    "lint": "yarn workspaces foreach -pt run lint",
-    "format": "yarn workspaces foreach -pt run format",
-    "format:check": "yarn workspaces foreach -pt run format:check",
+    "lint": "yarn workspaces run lint",
+    "format": "yarn workspaces run format",
+    "format:check": "yarn workspaces run format:check",
     "lint:web": "eslint --config packages/config/eslint.config.js",
     "format:prettier": "prettier --write"
   },
