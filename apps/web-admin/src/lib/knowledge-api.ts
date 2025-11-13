@@ -37,9 +37,9 @@ const delay = (ms: number) => new Promise(res => setTimeout(res, ms));
 export const fetchKnowledgeFiles = async (): Promise<IUploadedFile[]> => {
   await delay(500);
   // Simulate loading error (AC 7)
-  if (Math.random() > 0.8) {
-    throw new Error("Unable to load file information");
-  }
+  // if (Math.random() > 0.8) {
+  //   throw new Error("Unable to load file information");
+  // }
   return [...mockFiles];
 };
 

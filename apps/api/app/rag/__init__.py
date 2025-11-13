@@ -5,11 +5,6 @@ RAG module - Retrieval Augmented Generation components
 from .embedder import get_embeddings
 from .llm import LLMWrapper
 from .orchestrator import RAGOrchestrator
-<<<<<<< HEAD
-from .retriever import Retriever
-from .vector_store import get_vectorstore
-=======
->>>>>>> ee4c06d9da2ffabbeb99d2963165673797671d82
 from .question_understanding import (
     QuestionUnderstanding,
     IntentDetector,
