@@ -1,25 +1,21 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, type FormEvent } from "react";
 import {
   Button,
   Input,
-  Select,
   Dialog,
   DialogHeader,
   DialogTitle,
   DialogDescription,
   DialogFooter,
 } from "../ui";
-import type { CreateUserRequest, UpdateUserRequest, UserRole } from "../../types/user";
+import type { CreateUserRequest, UpdateUserRequest } from "../../types/user";
 import type { UserDialogProps } from "../../interfaces/UserDialogProps";
-
-const ROLES: UserRole[] = ["Super Admin", "Admin"];
 
 const UserDialog = ({ open, onClose, onSubmit, user, mode }: UserDialogProps) => {
   const [formData, setFormData] = useState({
     username: "",
     email: "",
     password: "",
-    role: "Staff" as UserRole,
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -32,14 +28,12 @@ const UserDialog = ({ open, onClose, onSubmit, user, mode }: UserDialogProps) =>
           username: user.username,
           email: user.email,
           password: "",
-          role: user.role,
         });
       } else {
         setFormData({
           username: "",
           email: "",
           password: "",
-          role: "Admin",
         });
       }
       setErrors({});
@@ -49,16 +43,20 @@ const UserDialog = ({ open, onClose, onSubmit, user, mode }: UserDialogProps) =>
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
 
+    // Email validation for both create and update
+    if (!formData.email.trim()) {
+      newErrors.email = "Email is required";
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      newErrors.email = "Invalid email format";
+    }
+
+    // Username validation for create mode
     if (mode === "create") {
-      if (!formData.email.trim()) {
-        newErrors.email = "Email is required";
-      } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-        newErrors.email = "Invalid email format";
+      if (!formData.username.trim()) {
+        newErrors.username = "Username is required";
       }
-    } else {
-      // Update mode - only validate if fields are provided
-      if (formData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-        newErrors.email = "Invalid email format";
+      if (!formData.password.trim()) {
+        newErrors.password = "Password is required";
       }
     }
 
@@ -66,7 +64,7 @@ const UserDialog = ({ open, onClose, onSubmit, user, mode }: UserDialogProps) =>
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
 
     if (!validateForm()) return;
@@ -75,16 +73,15 @@ const UserDialog = ({ open, onClose, onSubmit, user, mode }: UserDialogProps) =>
     try {
       if (mode === "create") {
         await onSubmit({
-          username: formData.email.split('@')[0], // Generate username from email
+          username: formData.username,
           email: formData.email,
-          password: "TempPass123!", // Temporary password
-          role: formData.role,
+          password: formData.password,
         } as CreateUserRequest);
       } else {
-        const updateData: UpdateUserRequest = {};
-        if (formData.username !== user?.username) updateData.username = formData.username;
-        if (formData.email !== user?.email) updateData.email = formData.email;
-        if (formData.role !== user?.role) updateData.role = formData.role;
+        const updateData: UpdateUserRequest = {
+          username: formData.username,
+          email: formData.email,
+        };
         
         await onSubmit(updateData);
       }
@@ -106,8 +103,8 @@ const UserDialog = ({ open, onClose, onSubmit, user, mode }: UserDialogProps) =>
           </DialogTitle>
           <DialogDescription>
             {mode === "create"
-              ? "Modify and extend the current session."
-              : "Modify and extend the current session."}
+              ? "Create account for Student Affairs Department staff."
+              : "Update account for Student Affairs Department staff."}
           </DialogDescription>
         </DialogHeader>
 
@@ -130,23 +127,45 @@ const UserDialog = ({ open, onClose, onSubmit, user, mode }: UserDialogProps) =>
             )}
           </div>
 
-          <div>
-            <label htmlFor="role" className="block text-sm font-medium text-slate-700 mb-1">
-              Role <span className="text-red-500">*</span>
-            </label>
-            <Select
-              id="role"
-              value={formData.role}
-              onChange={(e) => setFormData({ ...formData, role: e.target.value as UserRole })}
-              disabled={isSubmitting}
-            >
-              {ROLES.map((role) => (
-                <option key={role} value={role}>
-                  {role}
-                </option>
-              ))}
-            </Select>
-          </div>
+          {mode === "create" && (
+            <>
+              <div>
+                <label htmlFor="username" className="block text-sm font-medium text-slate-700 mb-1">
+                  Username <span className="text-red-500">*</span>
+                </label>
+                <Input
+                  id="username"
+                  type="text"
+                  placeholder="Enter username"
+                  value={formData.username}
+                  onChange={(e) => setFormData({ ...formData, username: e.target.value })}
+                  error={!!errors.username}
+                  disabled={isSubmitting}
+                />
+                {errors.username && (
+                  <p className="mt-1 text-sm text-red-600">{errors.username}</p>
+                )}
+              </div>
+
+              <div>
+                <label htmlFor="password" className="block text-sm font-medium text-slate-700 mb-1">
+                  Password <span className="text-red-500">*</span>
+                </label>
+                <Input
+                  id="password"
+                  type="password"
+                  placeholder="Enter password"
+                  value={formData.password}
+                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                  error={!!errors.password}
+                  disabled={isSubmitting}
+                />
+                {errors.password && (
+                  <p className="mt-1 text-sm text-red-600">{errors.password}</p>
+                )}
+              </div>
+            </>
+          )}
 
           {errors.submit && (
             <div className="rounded-lg bg-red-50 p-3 text-sm text-red-800">
