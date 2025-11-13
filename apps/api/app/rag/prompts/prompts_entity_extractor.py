@@ -226,22 +226,22 @@ YÊU CẦU / REQUIREMENTS
 Hãy trả về response theo đúng chuẩn JSON sau, KHÔNG trả thêm bất kì text nào khác.
 Return response in the following JSON format exactly, DO NOT add any other text.
 
-{{
+{{{{ 
   "entities": [
-    {{
+    {{{{
       "type": "program",
       "value": "Computer Science",
       "confidence": 0.9,
       "start_pos": 12,
       "end_pos": 28
-    }},
-    {{
+    }}}},
+    {{{{
       "type": "semester",
       "value": "Fall 2025",
       "confidence": 0.95,
       "start_pos": 35,
       "end_pos": 44
-    }}
+    }}}}
   ],
   "language": "en"
-}}"""
+}}}}"""

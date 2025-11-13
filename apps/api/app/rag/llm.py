@@ -1,21 +1,17 @@
 from __future__ import annotations
 
-from typing import Any, Dict, Optional, Sequence, Union
-
-from langchain_core.documents import Document
-from langchain_core.output_parsers import StrOutputParser
-from langchain_core.prompts import ChatPromptTemplate
-from langchain_google_genai import ChatGoogleGenerativeAI
-
 import logging
-from typing import List, Dict, Any, Optional, Sequence, Union
+from typing import Any, Dict, List, Optional, Sequence, Union
+
+from google.api_core import exceptions as google_exceptions
 from langchain_core.documents import Document
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_google_genai import ChatGoogleGenerativeAI
-from google.api_core import exceptions as google_exceptions
+
 from app.core.config import settings
+from app.rag.utils.language import normalize_language_code
 
 logger = logging.getLogger(__name__)
 
@@ -90,6 +86,11 @@ class LLMWrapper:
 
         self.prompt = ChatPromptTemplate.from_messages([
             ("system", self.system_prompt),
+            (
+                "system",
+                "Target language code: {target_language}. Always respond entirely in this language. "
+                "If the code is 'auto', detect the question's language and match it.",
+            ),
             ("system", "Context:\n{context}"),
             ("human", "{question}"),
         ])
@@ -101,6 +102,11 @@ class LLMWrapper:
                 "Trả lời bằng cùng ngôn ngữ với câu hỏi của người dùng. "
                 "Nếu câu hỏi chỉ là lời chào hoặc xã giao, hãy đáp lại phù hợp và hỏi xem bạn có thể hỗ trợ gì thêm. "
                 "Chỉ cung cấp thông tin về Greenwich khi câu hỏi liên quan."
+            ),
+            (
+                "system",
+                "Target language code: {target_language}. Always respond entirely in this language. "
+                "If the code is 'auto', detect and mirror the question's language.",
             ),
             MessagesPlaceholder(variable_name="history"),
             ("human", "{question}"),
@@ -129,25 +135,36 @@ class LLMWrapper:
         joined = "\n\n".join(pieces).strip()
         return _clip(joined, self.max_context_chars)
 
-    def _fallback_no_context(self) -> str:
+    @staticmethod
+    def _resolve_language(language: str | None) -> str:
+        return normalize_language_code(language, default="auto")
+
+    def _fallback_no_context(self, language: str | None = None) -> str:
+        code = self._resolve_language(language)
+        if code == "en":
+            return "I couldn't find information about this topic."
         return "Tôi không tìm thấy thông tin về vấn đề này"
 
     def generate_answer(
         self,
         question: str,
         contexts: Sequence[Union[Document, Dict[str, Any]]],
+        *,
+        target_language: str | None = None,
     ) -> str:
+        lang = self._resolve_language(target_language)
         if not contexts:
-            return self._fallback_no_context()
+            return self._fallback_no_context(lang)
 
         context_text = self.format_contexts(contexts)
         if not context_text.strip():
-            return self._fallback_no_context()
+            return self._fallback_no_context(lang)
 
         return self.chain.invoke(
             {
                 "context": context_text,
                 "question": question.strip(),
+                "target_language": lang,
             }
         )
 
@@ -155,18 +172,22 @@ class LLMWrapper:
         self,
         question: str,
         contexts: Sequence[Union[Document, Dict[str, Any]]],
+        *,
+        target_language: str | None = None,
     ) -> str:
+        lang = self._resolve_language(target_language)
         if not contexts:
-            return self._fallback_no_context()
+            return self._fallback_no_context(lang)
 
         context_text = self.format_contexts(contexts)
         if not context_text.strip():
-            return self._fallback_no_context()
+            return self._fallback_no_context(lang)
 
         try:
             return await self.chain.ainvoke({
                 "context": context_text,
                 "question": question.strip(),
+                "target_language": lang,
             })
         except google_exceptions.ResourceExhausted as e:
             logger.error(f"Gemini API quota exceeded: {e}")
@@ -179,13 +200,17 @@ class LLMWrapper:
         self,
         question: str,
         history: Optional[Sequence[BaseMessage | Dict[str, Any] | str]] = None,
+        *,
+        target_language: str | None = None,
     ) -> str:
         """
         Invoke the underlying Gemini chat model without any retrieval context.
         """
+        lang = self._resolve_language(target_language)
+
         clean_question = question.strip()
         if not clean_question:
-            return self._fallback_no_context()
+            return self._fallback_no_context(lang)
 
         formatted_history: list[BaseMessage] = []
         if history:
@@ -209,7 +234,13 @@ class LLMWrapper:
                     formatted_history.append(message)
 
         try:
-            return await self.direct_chain.ainvoke({"history": formatted_history, "question": clean_question})
+            return await self.direct_chain.ainvoke(
+                {
+                    "history": formatted_history,
+                    "question": clean_question,
+                    "target_language": lang,
+                }
+            )
         except google_exceptions.ResourceExhausted as e:
             logger.error(f"Gemini API quota exceeded: {e}")
             raise RuntimeError("API quota exceeded. Please try again later or contact support.") from e
