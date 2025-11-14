@@ -3,9 +3,8 @@ from __future__ import annotations
 from typing import Any, Dict, Optional, Sequence, Union
 
 from langchain_core.documents import Document
-from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
 from langchain_core.output_parsers import StrOutputParser
-from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
+from langchain_core.prompts import ChatPromptTemplate
 from langchain_google_genai import ChatGoogleGenerativeAI
 
 from app.core.config import settings
@@ -67,9 +66,9 @@ class LLMWrapper:
             "Bạn là trợ lý AI của Đại học Greenwich Việt Nam.\n"
             "Nhiệm vụ: Trả lời câu hỏi của sinh viên dựa trên thông tin được cung cấp.\n\n"
             "Quy tắc:\n"
-            "1. Trả lời bằng cùng ngôn ngữ với câu hỏi của người dùng.\n"
-            "2. CHỈ sử dụng thông tin từ context được cung cấp để trả lời nội dung chính.\n"
-            "3. Nếu context không chứa thông tin phù hợp, trả lời: \"Tôi không tìm thấy thông tin về vấn đề này\" bằng ngôn ngữ của người dùng.\n"
+            "1. LUÔN trả lời bằng tiếng Việt.\n"
+            "2. CHỈ sử dụng thông tin từ context được cung cấp.\n"
+            '3. Nếu không tìm thấy thông tin, trả lời: "Tôi không tìm thấy thông tin về vấn đề này".\n'
             "4. Trả lời ngắn gọn, rõ ràng, thân thiện.\n"
             "5. Nếu có link/email/số điện thoại trong context, hãy đưa vào câu trả lời.\n"
             "6. Nếu câu hỏi mang tính chào hỏi hoặc xã giao, hãy đáp lại lịch sự và đề nghị hỗ trợ thêm.\n"
