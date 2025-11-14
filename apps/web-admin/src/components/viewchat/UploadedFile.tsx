@@ -5,7 +5,7 @@ import DocIcon from '@/assets/doc.svg?react'
 import TrashIcon from '@/assets/trash.svg?react'
 import FileIcon from '@/assets/file.svg?react'
 import ImageIcon from '@/assets/image-icon.svg?react'
-import MarkdownIcon from 'assets/icons/md.svg?react'
+import MarkdownIcon from '@/assets/icons/md.svg?react'
 import { IUploadedFile } from '../../lib/knowledge-api'
 import DeleteConfirmationModal from './DeleteConfirmationModal'; 
 import { cn } from '@/lib/utils';
@@ -80,7 +80,7 @@ const UploadedFile = ({ files, onDeleteFile, isLoading, loadError, isCompact = f
                 // Full mode: Hình chữ nhật dài
                 !isCompact && "h-[70px] w-full rounded-lg flex items-center justify-between px-4 bg-[#F9FAFB]",
                 // Compact mode: Hình vuông nhỏ gọn (56px), bo góc mềm mại hơn
-                isCompact && "h-[56px] w-[56px] rounded-[12px] flex items-center justify-center hover:border-red-200 shadow-sm"
+                isCompact && "h-14 w-14 rounded-xl flex items-center justify-center hover:border-red-200 shadow-sm"
               )}
               title={`File: ${file.name}\nSize: ${formatFileSize(file.size)}`}
             >

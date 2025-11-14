@@ -6,8 +6,6 @@ export interface IUploadedFile {
   type: string;
   uploadDate: string; 
 }
-
-// Backend API response types
 interface BackendDocument {
   id: number;
   title: string;
@@ -27,18 +25,21 @@ interface BackendDocument {
   }>;
 }
 
-// Convert backend document to frontend format
 const mapBackendToFrontend = (doc: BackendDocument): IUploadedFile => {
-  // Get file info from version if available
   const version = doc.versions?.find(v => v.id === doc.current_version_id) || doc.versions?.[0];
-  const fileName = version?.file_path ? version.file_path.split('/').pop() || doc.title : doc.title;
-  const fileExtension = fileName.split('.').pop()?.toLowerCase() || 'unknown';
+  const fileExtension = version?.format || version?.file_path?.split('.').pop() || 'unknown';
+
+  let fileName = doc.title;
+
+  if (fileExtension !== 'unknown' && !fileName.toLowerCase().endsWith(`.${fileExtension.toLowerCase()}`)) {
+    fileName = `${fileName}.${fileExtension}`;
+  }
 
   return {
     id: doc.id.toString(),
-    name: fileName,
+    name: fileName,   
     size: version?.file_size || 0,
-    type: version?.format || fileExtension,
+    type: fileExtension,
     uploadDate: doc.created_at || new Date().toISOString(),
   };
 };
