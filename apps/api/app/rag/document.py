@@ -1,18 +1,18 @@
 # document.py
 from __future__ import annotations
 
+import asyncio
 import hashlib
 import os
 from pathlib import Path
 from typing import Optional
-import asyncio
 
-from fastapi import UploadFile, HTTPException
+from fastapi import HTTPException, UploadFile
 from sqlalchemy.orm import Session
 
+from app.models.document import Document as DocumentModel
 from app.rag.document_processor import DocumentProcessor
 from app.rag.vector_store import VectorStore, upsert_documents  # nếu bạn đã có helper
-from app.models.document import Document as DocumentModel
 
 UPLOAD_ROOT = Path(os.getenv("UPLOAD_DIR", "uploads")).resolve()
 ALLOWED_EXTS = {".pdf", ".docx"}  # mở rộng nếu hỗ trợ thêm
@@ -79,6 +79,7 @@ class DocumentService:
 
         # tên file an toàn + UUID prefix
         from uuid import uuid4
+
         document_id = str(uuid4())
         safe_name = _secure_name(file.filename)
         final_path = (user_dir / f"{document_id}_{safe_name}").resolve()
@@ -102,9 +103,7 @@ class DocumentService:
 
         # nếu muốn: kiểm tra doc tồn tại theo checksum để bỏ qua index trùng
         existing: Optional[DocumentModel] = (
-            db.query(DocumentModel)
-            .filter(DocumentModel.checksum == checksum)
-            .first()
+            db.query(DocumentModel).filter(DocumentModel.checksum == checksum).first()
         )
         if existing:
             # bạn có thể link user với doc sẵn có thay vì re-index
@@ -132,7 +131,9 @@ class DocumentService:
             meta = {"title": safe_name, "uploaded_by": user_id}
             documents = self.processor.process_document(str(final_path), document_id, meta)
             if not documents:
-                raise HTTPException(status_code=422, detail="Không trích xuất được nội dung tài liệu")
+                raise HTTPException(
+                    status_code=422, detail="Không trích xuất được nội dung tài liệu"
+                )
 
             # index (idempotent với ids từ vector_store helper)
             # self.vector_store.add_documents(documents)  # nếu muốn đơn giản
@@ -165,9 +166,7 @@ class DocumentService:
             pass
 
         doc: Optional[DocumentModel] = (
-            db.query(DocumentModel)
-            .filter(DocumentModel.id == document_id)
-            .first()
+            db.query(DocumentModel).filter(DocumentModel.id == document_id).first()
         )
         if not doc:
             return
