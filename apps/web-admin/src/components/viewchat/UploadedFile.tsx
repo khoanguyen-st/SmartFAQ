@@ -1,15 +1,21 @@
+import { useState } from 'react'
 import PDFIcon from '@/assets/icons/pdf.svg?react'
 import TXTIcon from '@/assets/icons/txt.svg?react'
 import TrashIcon from '@/assets/icons/trash.svg?react'
 import FileIcon from '@/assets/icons/file.svg?react'
 import ImageIcon from '@/assets/icons/image-icon.svg?react'
-import { IUploadedFile } from '@/lib/knowledge-api' // Import interface từ tệp mới
+import DocIcon from '@/assets/icons/doc.svg?react'
+
+import DeleteConfirmationModal from './DeleteConfirmationModal'
+import { IUploadedFile } from '@/lib/knowledge-api'
+import { cn } from '@/lib/utils'
 
 interface UploadedFileProps {
   files: IUploadedFile[]
   onDeleteFile: (fileId: string) => void
   isLoading: boolean
   loadError: string | null
+  isCompact?: boolean
 }
 
 const formatFileSize = (bytes: number): string => {
@@ -20,20 +26,25 @@ const formatFileSize = (bytes: number): string => {
   return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i]
 }
 
-const UploadedFile = ({ files, onDeleteFile, isLoading, loadError }: UploadedFileProps) => {
+const UploadedFile = ({ files, onDeleteFile, isLoading, loadError, isCompact = false }: UploadedFileProps) => {
+  const [fileToDelete, setFileToDelete] = useState<IUploadedFile | null>(null)
   const getFileIcon = (fileType: string) => {
+    const props = isCompact ? { className: 'h-6 w-6' } : { className: 'h-[18px] w-[18px]' }
     switch (fileType) {
       case 'pdf':
-        return <PDFIcon className="h-[18px] w-[18px]" />
+        return <PDFIcon {...props} />
+      case 'md':
       case 'txt':
-        return <TXTIcon className="h-[18px] w-[18px]" />
+        return <TXTIcon {...props} />
+      case 'doc':
+      case 'docx':
+        return <DocIcon {...props} />
       case 'jpg':
-      case 'gif':
+      case 'jpeg':
       case 'png':
-      case 'svg':
-        return <ImageIcon className="h-[18px] w-[18px]" />
+        return <ImageIcon {...props} />
       default:
-        return <FileIcon className="h-[18px] w-[18px]" />
+        return <FileIcon {...props} />
     }
   }
 
@@ -44,74 +55,83 @@ const UploadedFile = ({ files, onDeleteFile, isLoading, loadError }: UploadedFil
       day: 'numeric'
     })
   }
-
-  if (loadError) {
-    return (
-      <div className="w-full p-6">
-        <h3 className="mb-8 text-sm font-medium text-[#374151]">Uploaded Files</h3>
-        <div className="py-8 text-center text-red-600">Error: {loadError}</div>
-      </div>
-    )
+  const handleOpenDeleteModal = (file: IUploadedFile) => setFileToDelete(file)
+  const handleCancelDelete = () => setFileToDelete(null)
+  const handleConfirmDelete = () => {
+    if (fileToDelete) onDeleteFile(fileToDelete.id)
+    setFileToDelete(null)
   }
 
-  if (isLoading) {
-    return (
-      <div className="w-full p-6">
-        <h3 className="mb-8 text-sm font-medium text-[#374151]">Uploaded Files</h3>
-        <div className="py-8 text-center text-gray-500">Loading files...</div>
-      </div>
-    )
-  }
-
+  if (loadError) return <div className="w-full p-6 text-center text-red-600">Error: {loadError}</div>
+  if (isLoading) return <div className="w-full p-6 text-center text-gray-500">Loading files...</div>
   if (files.length === 0) {
-    return (
-      <div className="w-full p-6">
-        <h3 className="mb-8 text-sm font-medium text-[#374151]">Uploaded Files</h3>
-        <div className="py-8 text-center text-gray-500">No files uploaded yet</div>
-      </div>
-    )
-  }
-
-  const handleDeleteClick = (fileId: string) => {
-    if (window.confirm('Are you sure you want to delete this file?')) {
-      onDeleteFile(fileId)
-    }
-  }
+  if (isCompact) return null;
+  return <div className="w-full p-6 text-center text-gray-500">No files uploaded yet</div> }
 
   return (
-    <div className="uploaded__content flex h-full flex-col overflow-y-auto">
-      <h3 className="mb-8 text-sm font-semibold text-[#1f2937]">Uploaded Files</h3>
-
-      <div className="space-y-3">
-        {files.map(file => (
-          <div
-            key={file.id}
-            className="h-[70px] w-full rounded-lg border border-[#E5E7EB] bg-[#F9FAFB]"
-            title={`File: ${file.name}\nSize: ${formatFileSize(file.size)}\nUploaded: ${formatDate(file.uploadDate)}`}
-          >
-            <div className="flex h-full w-full items-center justify-between px-4">
-              <div className="flex items-center gap-3 overflow-hidden">
-                <div className="h-[18px] w-[18px] shrink-0 text-[#6B7280]">{getFileIcon(file.type)}</div>
-                <div className="overflow-hidden">
-                  <p className="truncate text-sm font-medium text-[#111827]">{file.name}</p>
-                  <p className="text-xs text-[#6B7280]">
-                    Uploaded: {formatDate(file.uploadDate)}
-                    {` • ${formatFileSize(file.size)}`}
-                  </p>
-                </div>
-              </div>
-              <button
-                onClick={() => handleDeleteClick(file.id)}
-                className="shrink-0 cursor-pointer p-1 text-[#EF4444] transition-colors hover:scale-110"
-              >
-                <TrashIcon className="h-3.5 w-[12.25px]" />
-              </button>
+    <>
+      <div
+        className={cn(
+          'uploaded__content scrollbar-hide flex h-full flex-col overflow-y-auto',
+          isCompact ? 'items-center px-0 pt-4' : 'p-6'
+        )}
+      >
+        <div className={cn('space-y-3', isCompact && 'flex w-full flex-col items-center space-y-3')}>
+          {files.map(file => (
+            <div
+              key={file.id}
+              className={cn(
+                'group relative border border-[#E5E7EB] bg-white transition-all duration-200',
+                !isCompact && 'flex h-[70px] w-full items-center justify-between rounded-lg bg-[#F9FAFB] px-4',
+                isCompact && 'flex h-14 w-14 items-center justify-center rounded-xl shadow-sm hover:border-red-200'
+              )}
+              title={`File: ${file.name}\nSize: ${formatFileSize(file.size)}`}
+            >
+              {isCompact ? (
+                <>
+                  <div className="flex items-center justify-center text-[#6B7280]">{getFileIcon(file.type)}</div>
+                  <button
+                    onClick={e => {
+                      e.stopPropagation()
+                      handleOpenDeleteModal(file)
+                    }}
+                    className="absolute -top-2 -right-2 z-10 hidden h-5 w-5 items-center justify-center rounded-full text-white shadow-md ring-2 ring-white transition-all group-hover:flex"
+                    title="Delete file"
+                  >
+                    <TrashIcon className="h-3 w-3" />
+                  </button>
+                </>
+              ) : (
+                <>
+                  <div className="flex items-center gap-3 overflow-hidden">
+                    <div className="h-[18px] w-[18px] shrink-0 text-[#6B7280]">{getFileIcon(file.type)}</div>
+                    <div className="overflow-hidden">
+                      <p className="truncate text-sm font-medium text-[#111827]">{file.name}</p>
+                      <p className="text-xs text-[#6B7280]">
+                        Uploaded: {formatDate(file.uploadDate)}
+                        {` • ${formatFileSize(file.size)}`}
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => handleOpenDeleteModal(file)}
+                    className="shrink-0 cursor-pointer rounded-full p-1 text-[#EF4444] transition-colors hover:scale-110 hover:bg-red-50"
+                  >
+                    <TrashIcon className="h-3.5 w-[12.25px]" />
+                  </button>
+                </>
+              )}
             </div>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
-    </div>
+      <DeleteConfirmationModal
+        isOpen={!!fileToDelete}
+        documentTitle={fileToDelete?.name || ''}
+        onCancel={handleCancelDelete}
+        onConfirm={handleConfirmDelete}
+      />
+    </>
   )
 }
-
 export default UploadedFile
