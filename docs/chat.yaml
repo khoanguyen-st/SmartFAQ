@@ -1,0 +1,268 @@
+openapi: 3.0.3
+info:
+  title: Greenwich SmartFAQ API
+  version: 0.1.0
+  description: >
+    Chatbot Engine (RAG Pipeline) endpoints for Greenwich SmartFAQ System.
+    Handles user queries, AI-generated responses, chat history, and feedback.
+
+servers:
+  - url: https://smartfaq.university.local/api
+    description: Production
+  - url: http://localhost:8000
+    description: Local development
+
+paths:
+  /chat/query:
+    post:
+      summary: Submit a question and get AI-generated response
+      description: >
+        Accepts a question from user, retrieves related document context, generates answer using RAG pipeline,
+        computes confidence score, and returns response with document sources.
+      tags: [Chat]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                question:
+                  type: string
+                  example: "What are the admission requirements for 2025?"
+                language:
+                  type: string
+                  example: "en"
+                sessionId:
+                  type: string
+                  example: "2fa9f5b3-abc1-4ef9-bc67-5e9a12e2a79d"
+      responses:
+        "200":
+          description: Successful AI-generated response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  answer:
+                    type: string
+                    example: "Applicants must submit application form, transcripts, and proof of English proficiency."
+                  sources:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        title:
+                          type: string
+                          example: "Admissions Policy 2025.pdf"
+                        chunkId:
+                          type: string
+                          example: "c_129"
+                        relevance:
+                          type: number
+                          example: 0.88
+                  confidence:
+                    type: integer
+                    example: 85
+                  language:
+                    type: string
+                    example: "en"
+                  fallback:
+                    type: boolean
+                    example: false
+                  chatId:
+                    type: string
+                    example: "chat_92e1743b"
+        "400":
+          description: Invalid request or missing parameters
+        "500":
+          description: Internal server error
+
+  /chat/history:
+    get:
+      summary: Retrieve chat history of current session
+      tags: [Chat]
+      parameters:
+        - in: query
+          name: sessionId
+          required: true
+          schema:
+            type: string
+          description: Current chat session ID
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 50
+      responses:
+        "200":
+          description: Chat history retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  sessionId:
+                    type: string
+                    example: "2fa9f5b3-abc1-4ef9-bc67-5e9a12e2a79d"
+                  messages:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        role:
+                          type: string
+                          example: "user"
+                        text:
+                          type: string
+                          example: "What is the tuition fee for 2025?"
+                        timestamp:
+                          type: string
+                          example: "2025-11-03T10:45:12Z"
+                        confidence:
+                          type: integer
+                          example: 87
+        "404":
+          description: Session not found
+
+  /chat/feedback:
+    post:
+      summary: Submit feedback for a chatbot response
+      tags: [Chat]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                chatId:
+                  type: string
+                  example: "chat_92e1743b"
+                feedback:
+                  type: string
+                  enum: [up, down]
+                  example: "up"
+                comment:
+                  type: string
+                  example: "Accurate and helpful answer."
+      responses:
+        "200":
+          description: Feedback recorded successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "success"
+                  message:
+                    type: string
+                    example: "Feedback recorded. Thank you!"
+        "400":
+          description: Invalid feedback format
+
+  /chat/new-session:
+    post:
+      summary: Start a new chat session
+      tags: [Chat]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                userAgent:
+                  type: string
+                  example: "Mozilla/5.0"
+                language:
+                  type: string
+                  example: "vi"
+      responses:
+        "200":
+          description: New session created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  sessionId:
+                    type: string
+                    example: "a4f97d5e-b06c-4ed2-9b4c-d53c16d923d3"
+                  message:
+                    type: string
+                    example: "New chat session started."
+
+  /chat/sources/{chatId}:
+    get:
+      summary: Retrieve source documents used for a specific chat response
+      tags: [Chat]
+      parameters:
+        - in: path
+          name: chatId
+          required: true
+          schema:
+            type: string
+          description: Chat response ID
+      responses:
+        "200":
+          description: Source documents retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  chatId:
+                    type: string
+                    example: "chat_92e1743b"
+                  sources:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        title:
+                          type: string
+                          example: "Admissions Policy 2025.pdf"
+                        chunkId:
+                          type: string
+                          example: "c_129"
+                        relevance:
+                          type: number
+                          example: 0.88
+        "404":
+          description: Chat ID not found
+
+  /chat/confidence/{chatId}:
+    get:
+      summary: Retrieve confidence score for a chat response
+      tags: [Chat]
+      parameters:
+        - in: path
+          name: chatId
+          required: true
+          schema:
+            type: string
+          description: Chat response ID
+      responses:
+        "200":
+          description: Confidence score retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  chatId:
+                    type: string
+                    example: "chat_92e1743b"
+                  confidence:
+                    type: integer
+                    example: 85
+                  threshold:
+                    type: integer
+                    example: 60
+                  fallbackTriggered:
+                    type: boolean
+                    example: false
+        "404":
+          description: Chat ID not found

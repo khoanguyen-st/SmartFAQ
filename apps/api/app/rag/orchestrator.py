@@ -12,6 +12,8 @@ from langchain_core.runnables import RunnablePassthrough
 from app.core.config import settings
 from app.rag.llm import LLMWrapper
 from app.rag.retriever import Retriever
+from app.rag.formatter import ResponseFormatter
+from app.rag.utils.language import normalize_language_code
 
 logger = logging.getLogger(__name__)
 
@@ -27,6 +29,7 @@ class RAGOrchestrator:
         self, retriever: Optional[Retriever] = None, llm_wrapper: Optional[LLMWrapper] = None
     ):
         self.retriever = retriever or Retriever()
+        self.formatter = ResponseFormatter()
         self.llm_wrapper = llm_wrapper or LLMWrapper()
 
     async def query(
@@ -34,6 +37,7 @@ class RAGOrchestrator:
         question: str,
         user_id: Optional[str] = None,
         *,
+        language: Optional[str] = None,
         top_k: int = 5,
         where: Optional[Dict[str, Any]] = None,
         search_type: str = "similarity",  # or "mmr"
@@ -44,6 +48,9 @@ class RAGOrchestrator:
         - retrieve -> score/ confidence -> LLM or fallback
         """
         t0 = time.time()
+
+        target_language = normalize_language_code(language, default="auto")
+        text_language = target_language if target_language in {"en", "vi"} else "vi"
 
         # 1) Retrieve
         contexts = self.retriever.retrieve(
@@ -59,21 +66,29 @@ class RAGOrchestrator:
         # 3) Decision policy
         fallback_triggered = False
         if not contexts:
-            answer = "Tôi không tìm thấy thông tin về vấn đề này"
+            answer = self._fallback_message(text_language)
             fallback_triggered = True
         elif confidence >= settings.CONFIDENCE_THRESHOLD:
             # confident → trả lời bình thường
-            answer = await self.llm_wrapper.generate_answer_async(question, contexts)
+            answer = await self.llm_wrapper.generate_answer_async(
+                question,
+                contexts,
+                target_language=target_language,
+            )
         else:
             # medium/low confidence → vẫn gọi LLM nhưng báo “không chắc chắn”
             # (Nếu muốn strict: comment 2 dòng dưới và dùng fallback cứng)
-            cautious_prefix = "Mình chưa chắc chắn lắm, nhưng dựa trên thông tin hiện có: "
+            cautious_prefix = self._cautious_prefix(text_language)
             try:
-                raw = await self.llm_wrapper.generate_answer_async(question, contexts)
+                raw = await self.llm_wrapper.generate_answer_async(
+                    question,
+                    contexts,
+                    target_language=target_language,
+                )
             except Exception as e:
                 logger.error(f"LLM generation failed: {e}")
                 return {
-                    "answer": "Xin lỗi, hệ thống đang gặp sự cố. Vui lòng thử lại sau.",
+                    "answer": self._error_message(text_language),
                     "confidence": 0.0,
                     "fallback_triggered": True,
                     "error": str(e),
@@ -105,6 +120,24 @@ class RAGOrchestrator:
             "fallback_triggered": fallback_triggered,
             "latency_ms": latency_ms,
         }
+
+    @staticmethod
+    def _fallback_message(language: str) -> str:
+        if language == "en":
+            return "I couldn't find information about this topic."
+        return "Tôi không tìm thấy thông tin về vấn đề này"
+
+    @staticmethod
+    def _cautious_prefix(language: str) -> str:
+        if language == "en":
+            return "I'm not completely sure, but based on the available information: "
+        return "Mình chưa chắc chắn lắm, nhưng dựa trên thông tin hiện có: "
+
+    @staticmethod
+    def _error_message(language: str) -> str:
+        if language == "en":
+            return "Sorry, the system is experiencing an issue. Please try again later."
+        return "Xin lỗi, hệ thống đang gặp sự cố. Vui lòng thử lại sau."
 
     def build_rag_chain(
         self,
