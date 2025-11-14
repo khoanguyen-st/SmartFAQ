@@ -18,6 +18,7 @@ dependencies = [
   # Database
   "sqlalchemy>=2.0,<2.1",
   "psycopg[binary]>=3.2,<3.3",
+  "greenlet>=3.0,<4.0",
   "alembic>=1.13,<1.14",
   
   # Settings & Auth
@@ -26,16 +27,16 @@ dependencies = [
   "passlib[bcrypt]>=1.7,<1.8",
   
   # LangChain Core (chỉ giữ những gì thực sự dùng)
-  "langchain>=1,<2",
-  "langchain-core>=1,<2",
+  "langchain>=1.0,<1.1",
+  "langchain-core>=1.0,<1.1",
   "langchain-openai>=1,<2",
-  "langchain-google-genai>=2.0,<3.0",
+  "langchain-google-genai>=3.0,<3.1",
   "langchain-chroma>=1,<2",
   "langchain-huggingface>=1.0.0,<2.0",
   
   # Embeddings & ML
-  "sentence-transformers>=3.0,<4.0",
-  "torch>=2.0,<3.0",
+  "sentence-transformers>=3.0,<3.1",
+  "torch>=2.5.0,<2.6",
   
   # Document Processing
   "pypdf>=4.0,<5.0",
@@ -63,7 +64,20 @@ packages = ["app"]
 [tool.ruff]
 target-version = "py311"
 line-length = 100
+extend-exclude = ["scripts", "tests", "alembic", "venv"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I"]
+ignore = ["E501"]  # line too long (handled by formatter)
 
 [tool.black]
 target-version = ["py311"]
 line-length = 100
+extend-exclude = '''
+/(
+    scripts
+  | tests
+  | alembic
+  | venv
+)/
+'''

@@ -1,16 +1,19 @@
 # orchestrator.py
 from __future__ import annotations
 
-import time
 import logging
-from typing import Optional, Dict, Any, List, Sequence
+import time
+from typing import Any, Dict, List, Optional, Sequence
 
-from app.rag.retriever import Retriever
-from app.rag.llm import LLMWrapper
-from app.core.config import settings
-from langchain_core.runnables import RunnablePassthrough
-from langchain_core.output_parsers import StrOutputParser
 from langchain_core.documents import Document
+from langchain_core.output_parsers import StrOutputParser
+from langchain_core.runnables import RunnablePassthrough
+
+from app.core.config import settings
+from app.rag.formatter import ResponseFormatter
+from app.rag.llm import LLMWrapper
+from app.rag.retriever import Retriever
+from app.rag.formatter import ResponseFormatter
 
 logger = logging.getLogger(__name__)
 
@@ -22,8 +25,11 @@ def _clip(text: str, max_chars: int = 8000) -> str:
 
 
 class RAGOrchestrator:
-    def __init__(self, retriever: Optional[Retriever] = None, llm_wrapper: Optional[LLMWrapper] = None):
+    def __init__(
+        self, retriever: Optional[Retriever] = None, llm_wrapper: Optional[LLMWrapper] = None
+    ):
         self.retriever = retriever or Retriever()
+        self.formatter = ResponseFormatter()
         self.llm_wrapper = llm_wrapper or LLMWrapper()
 
     async def query(
@@ -73,7 +79,7 @@ class RAGOrchestrator:
                     "answer": "Xin lỗi, hệ thống đang gặp sự cố. Vui lòng thử lại sau.",
                     "confidence": 0.0,
                     "fallback_triggered": True,
-                    "error": str(e)
+                    "error": str(e),
                 }
             answer = cautious_prefix + raw
             # fallback mềm, vẫn set cờ để front-end biết hiển thị banner
@@ -83,14 +89,16 @@ class RAGOrchestrator:
         sources = []
         for c in contexts[:return_top_sources]:
             md = c.get("metadata", {})
-            sources.append({
-                "document_id": md.get("document_id"),
-                "chunk_id": md.get("chunk_id"),
-                "chunk_index": md.get("chunk_index"),
-                "source": md.get("source"),
-                "page": md.get("page"),
-                "score": c.get("score"),
-            })
+            sources.append(
+                {
+                    "document_id": md.get("document_id"),
+                    "chunk_id": md.get("chunk_id"),
+                    "chunk_index": md.get("chunk_index"),
+                    "source": md.get("source"),
+                    "page": md.get("page"),
+                    "score": c.get("score"),
+                }
+            )
 
         latency_ms = int((time.time() - t0) * 1000)
         return {
@@ -113,7 +121,9 @@ class RAGOrchestrator:
         LCEL chain: retrieve → format → prompt → LLM → parse
         Cho phép filter & mmr từ đầu.
         """
-        retriever = self.retriever.get_langchain_retriever(k=k, where=where, search_type=search_type)
+        retriever = self.retriever.get_langchain_retriever(
+            k=k, where=where, search_type=search_type
+        )
 
         def format_docs(docs: Sequence[Document]) -> str:
             parts: List[str] = []
