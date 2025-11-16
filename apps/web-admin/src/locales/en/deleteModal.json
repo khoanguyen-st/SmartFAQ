@@ -1,0 +1,7 @@
+{
+  "title": "Confirm Deletion",
+  "message": "Are you sure you want to delete the folder \"{{folderName}}\"?",
+  "warning": "This action cannot be undone."
+}
+
+
