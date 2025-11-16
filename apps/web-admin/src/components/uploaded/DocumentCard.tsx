@@ -3,10 +3,7 @@ import type { ReactNode, MouseEvent as ReactMouseEvent } from 'react'
 
 import { MoreVertical } from 'lucide-react'
 
-import PdfIcon from '../../assets/icon/pdf.svg'
-import ReloadIcon from '../../assets/icon/reload.svg'
-import TrashIcon from '../../assets/icon/trash.svg'
-import ViewIcon from '../../assets/icon/view.svg'
+import { PdfIcon, ReloadIcon, TrashIcon, ViewIcon } from '@/assets'
 
 export interface DocumentCardData {
   id: number
@@ -53,8 +50,6 @@ const DocumentCard = ({ doc, onDelete, onView, onReupload }: DocumentCardProps) 
         break
       case 'delete':
         onDelete(doc)
-        break
-      default:
         break
     }
   }

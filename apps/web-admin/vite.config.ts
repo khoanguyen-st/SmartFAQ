@@ -9,7 +9,8 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 export default defineConfig({
   plugins: [
-    // SVGR must run before React so `?react` imports become components
+    react(),
+    tailwindcss(),
     svgr({
       svgrOptions: {
         exportType: 'default',
@@ -19,8 +20,6 @@ export default defineConfig({
       },
       include: '**/*.svg',
     }),
-    react(),
-    tailwindcss(),
   ],
   server: {
     port: 5174,

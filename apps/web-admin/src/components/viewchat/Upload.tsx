@@ -1,6 +1,5 @@
 import React, { useRef } from 'react'
-import UploadIcon from '@/assets/upload.svg'
-import PlusIcon from '@/assets/plus.svg'
+import { UploadIcon, PlusIconAlt as PlusIcon } from '@/assets'
 
 interface UploadProps {
   onFilesUpload: (files: File[]) => void

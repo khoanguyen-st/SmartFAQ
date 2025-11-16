@@ -1,3 +1,5 @@
+import { ERROR_MESSAGES } from '../constants/api'
+
 export interface IUploadedFile {
   id: string
   name: string
@@ -38,7 +40,7 @@ export const fetchKnowledgeFiles = async (): Promise<IUploadedFile[]> => {
   await delay(500)
   // Simulate loading error (AC 7)
   if (Math.random() > 0.8) {
-    throw new Error('Unable to load file information')
+    throw new Error(ERROR_MESSAGES.UNABLE_TO_LOAD_FILE_INFO)
   }
   return [...mockFiles]
 }
@@ -73,6 +75,6 @@ export const deleteKnowledgeFile = async (fileId: string): Promise<{ id: string 
     mockFiles.splice(index, 1)
     return { id: fileId }
   } else {
-    throw new Error('File not found')
+    throw new Error(ERROR_MESSAGES.FILE_NOT_FOUND)
   }
 }

@@ -1,8 +1,6 @@
-import PDFIcon from '@/assets/pdf.svg'
-import TXTIcon from '@/assets/txt.svg'
-import TrashIcon from '@/assets/trash.svg'
-import FileIcon from '@/assets/file.svg'
+import { PdfFileIcon as PDFIcon, TxtFileIcon as TXTIcon, TrashFileIcon as TrashIcon, FileIcon } from '@/assets'
 import { IUploadedFile } from '../../lib/knowledge-api' // Import interface từ tệp mới
+import { CONFIRMATION_MESSAGES } from '../../constants/messages'
 
 interface UploadedFileProps {
   files: IUploadedFile[]
@@ -67,7 +65,7 @@ const UploadedFile = ({ files, onDeleteFile, isLoading, loadError }: UploadedFil
   }
 
   const handleDeleteClick = (fileId: string) => {
-    if (window.confirm('Are you sure you want to delete this file?')) {
+    if (window.confirm(CONFIRMATION_MESSAGES.DELETE_FILE)) {
       onDeleteFile(fileId)
     }
   }

@@ -83,6 +83,15 @@ class LLMWrapper:
             ]
         )
 
+        # Direct prompt for chat without context (using history)
+        self.direct_prompt = ChatPromptTemplate.from_messages(
+            [
+                ("system", self.system_prompt),
+                ("placeholder", "{history}"),
+                ("human", "{question}"),
+            ]
+        )
+
         # ---- Chain ----
         self.parser = StrOutputParser()
         self.chain = self.prompt | self.llm | self.parser

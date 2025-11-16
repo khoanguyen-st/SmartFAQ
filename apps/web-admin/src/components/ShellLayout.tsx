@@ -4,21 +4,24 @@ import type { ReactNode } from 'react'
 import { Menu, X } from 'lucide-react'
 
 import { cn } from '@/lib/utils'
-
-import Education from '../assets/icon/education.svg'
-import UserIcon from '../assets/icon/user.svg'
-
-const navItems = [
-  { path: 'dashboard', label: 'Dashboard' },
-  { path: 'users', label: 'Users' },
-  { path: 'logs', label: 'Logs' },
-  { path: 'settings', label: 'Settings' },
-  { path: 'uploaded', label: 'Uploaded Documents' },
-  { path: 'view-chat', label: 'View Chat' }
-]
+import { EducationIcon, UserIcon } from '@/assets'
+import { useI18n } from '@/lib/i18n'
 
 const ShellLayout = ({ children }: { children: ReactNode }) => {
+  const { t } = useI18n()
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
+
+  const navItems = useMemo(
+    () => [
+      { path: 'dashboard', label: t('dashboard') },
+      { path: 'users', label: t('users') },
+      { path: 'logs', label: t('logs') },
+      { path: 'settings', label: t('settings') },
+      { path: 'uploaded', label: t('uploadedDocuments') },
+      { path: 'view-chat', label: t('viewChat') }
+    ],
+    [t]
+  )
 
   const toggleSidebar = useCallback(() => setIsSidebarOpen(prev => !prev), [])
   const handleNavigation = useCallback(() => {
@@ -41,7 +44,7 @@ const ShellLayout = ({ children }: { children: ReactNode }) => {
           <button
             onClick={toggleSidebar}
             className="rounded-full p-1 text-slate-300 transition-colors hover:bg-slate-700 hover:text-white lg:hidden"
-            aria-label="Close sidebar"
+            aria-label={t('closeSidebar')}
           >
             <X className="h-6 w-6" />
           </button>
@@ -66,7 +69,7 @@ const ShellLayout = ({ children }: { children: ReactNode }) => {
         </nav>
       </aside>
     ),
-    [handleNavigation, isSidebarOpen, toggleSidebar]
+    [handleNavigation, isSidebarOpen, toggleSidebar, navItems, t]
   )
 
   return (
@@ -81,12 +84,12 @@ const ShellLayout = ({ children }: { children: ReactNode }) => {
               <button
                 onClick={toggleSidebar}
                 className="p-1 text-gray-600 transition-colors hover:text-gray-800 lg:hidden"
-                aria-label={isSidebarOpen ? 'Close menu' : 'Open menu'}
+                aria-label={isSidebarOpen ? t('closeMenu') : t('openMenu')}
               >
                 {isSidebarOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
               </button>
               <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#003087]">
-                <Education />
+                <EducationIcon />
               </div>
               <div className="hidden sm:block">
                 <h1 className="text-xl font-semibold text-gray-900">Greenwich SmartFAQ</h1>

@@ -20,10 +20,19 @@ from ..core.input_validation import UnsafeInputError, ensure_safe_text
 from ..core.rate_limiter import RateLimiter
 from ..models.chat import ChatMessage, ChatRole, ChatSession
 from ..models.query_log import QueryLog
-from ..rag.llm import LLMWrapper
+
+# Use mock LLM for development
+try:
+    from ..rag.llm import LLMWrapper
+
+    llm_wrapper = LLMWrapper()
+except Exception:
+    # Fallback to mock if real LLM fails (e.g., missing Google API key)
+    from ..rag.mock_llm import MockLLMWrapper
+
+    llm_wrapper = MockLLMWrapper()
 
 router = APIRouter()
-llm_wrapper = LLMWrapper()
 
 _FEEDBACK_MESSAGES: dict[str, str] = {
     "en": "Feedback recorded. Thank you!",

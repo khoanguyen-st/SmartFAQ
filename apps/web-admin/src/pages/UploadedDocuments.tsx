@@ -1,7 +1,7 @@
 import { useState, useMemo, useCallback, useEffect } from 'react'
 import DocumentCard, { DocumentCardData } from '../components/uploaded/DocumentCard'
 import UploadCard from '../components/uploaded/UploadCard'
-import PlusIcon from '../assets/icon/plus.svg'
+import { PlusIcon } from '@/assets/icon'
 import { ArrowRight, ArrowLeft } from 'lucide-react'
 import DeleteConfirmationModal from '../components/uploaded/DeleteConfirmationModal'
 

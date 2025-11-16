@@ -1,2 +1,8 @@
-export { default as FolderIcon } from "./folder-open.svg";
-// Add more icon exports here as needed
+export { default as EducationIcon } from './education.svg'
+export { default as UserIcon } from './user.svg'
+export { default as PlusIcon } from './plus.svg'
+export { default as PdfIcon } from './pdf.svg'
+export { default as ReloadIcon } from './reload.svg'
+export { default as TrashIcon } from './trash.svg'
+export { default as ViewIcon } from './view.svg'
+export { default as WarningIcon } from './warning.svg'

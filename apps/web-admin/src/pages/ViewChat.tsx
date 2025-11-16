@@ -7,14 +7,16 @@ import {
   ChatHistoryMessage
 } from '@/services/chat.services'
 
-import MessIcon from '@/assets/messager.svg'
-import SendIcon from '@/assets/send.svg'
-import InforIcon from '@/assets/i-icon.svg'
-import TrashIcon from '@/assets/trash-icon.svg'
-import PdfNoFill from '@/assets/pdf-no-fill.svg'
-import ImageNofill from '@/assets/image-no-fill.svg'
-import TxtNoFill from '@/assets/txt-no-fill.svg'
-import KnowledgeIcon from '@/assets/knowledge.svg'
+import {
+  MessengerIcon as MessIcon,
+  SendIcon,
+  InfoIcon as InforIcon,
+  TrashIconAlt as TrashIcon,
+  PdfNoFillIcon as PdfNoFill,
+  ImageNoFillIcon as ImageNofill,
+  TxtNoFillIcon as TxtNoFill,
+  KnowledgeIcon
+} from '@/assets'
 import UploadedFile from '@/components/viewchat/UploadedFile'
 import { useKnowledgeFiles } from '@/hooks/useKnowledgeFiles'
 import Upload from '@/components/viewchat/Upload'

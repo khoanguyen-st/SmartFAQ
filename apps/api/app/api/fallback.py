@@ -16,7 +16,9 @@ class FallbackRequest(BaseModel):
 
 
 @router.post("/trigger")
-async def trigger_fallback(payload: FallbackRequest, current_user=Depends(get_current_user)) -> dict[str, str]:
+async def trigger_fallback(
+    payload: FallbackRequest, current_user=Depends(get_current_user)
+) -> dict[str, str]:
     await fallback.log_event(
         question=payload.question,
         reason=payload.reason,

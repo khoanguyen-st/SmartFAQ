@@ -1,5 +1,6 @@
 import React from 'react'
-import AleartTriangle from '../../assets/icon/warning.svg'
+import { WarningIcon as AleartTriangle } from '@/assets/icon'
+import { useI18n } from '@/lib/i18n'
 
 interface DeleteConfirmationModalProps {
   isOpen: boolean
@@ -14,6 +15,8 @@ const DeleteConfirmationModal: React.FC<DeleteConfirmationModalProps> = ({
   onCancel,
   onConfirm
 }) => {
+  const { t } = useI18n()
+
   if (!isOpen) return null
 
   return (
@@ -23,14 +26,12 @@ const DeleteConfirmationModal: React.FC<DeleteConfirmationModalProps> = ({
           <div className="mb-4 rounded-full bg-red-100 p-3">
             <AleartTriangle className="h-6 w-6 text-red-500" />
           </div>
-          <h2 className="text-xl font-semibold text-gray-800">Delete Document?</h2>
+          <h2 className="text-xl font-semibold text-gray-800">{t('deleteDocument')}</h2>
         </div>
         <div className="mb-8 text-center">
           <p className="text-gray-600">
-            You are about to delete 1 document named: "{documentTitle}".
-            <span className="mt-1 block font-semibold text-red-600">
-              This action cannot be undone. Do you want to continue?
-            </span>
+            {t('deleteConfirmMessage', { documentTitle })}
+            <span className="mt-1 block font-semibold text-red-600">{t('deleteWarning')}</span>
           </p>
         </div>
 
@@ -40,13 +41,13 @@ const DeleteConfirmationModal: React.FC<DeleteConfirmationModalProps> = ({
             onClick={onCancel}
             className="cursor-pointer rounded-lg border border-gray-300 px-6 py-2 text-gray-700 transition-colors hover:bg-gray-50"
           >
-            Cancel
+            {t('cancel')}
           </button>
           <button
             onClick={onConfirm}
             className="cursor-pointer rounded-lg bg-red-600 px-6 py-2 font-semibold text-white transition-colors hover:bg-red-700"
           >
-            Delete Document
+            {t('delete')} {t('deleteDocument')}
           </button>
         </div>
       </div>

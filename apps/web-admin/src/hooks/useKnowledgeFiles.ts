@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { IUploadedFile, fetchKnowledgeFiles, uploadKnowledgeFile, deleteKnowledgeFile } from '../lib/knowledge-api'
+import { ERROR_MESSAGES } from '../constants/api'
 
 export const useKnowledgeFiles = () => {
   const [files, setFiles] = useState<IUploadedFile[]>([])
@@ -59,7 +60,7 @@ export const useKnowledgeFiles = () => {
       setFiles(prev => prev.filter(file => file.id !== fileId))
     } catch (err) {
       console.error('Failed to delete file:', err)
-      setError('Failed to delete file. Please try again.')
+      setError(ERROR_MESSAGES.FAILED_TO_DELETE_FILE)
     }
   }, [])
 
