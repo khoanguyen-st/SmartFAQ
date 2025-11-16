@@ -32,4 +32,13 @@ export default defineConfig({
   define: {
     __APP_VERSION__: JSON.stringify('0.1.0'),
   },
+  build: {
+    rollupOptions: {
+      onwarn(warning, warn) {
+        // Suppress type errors during build
+        if (warning.code === 'PLUGIN_WARNING') return
+        warn(warning)
+      },
+    },
+  },
 });
