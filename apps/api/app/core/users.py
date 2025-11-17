@@ -5,10 +5,11 @@ from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
 from sqlalchemy.orm import Session
 
-from .config import settings
 from .database import get_db
 from .security import is_token_blacklisted
 from ..models.user import User
+from .config import settings
+from .security import get_admin_hash
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
 
@@ -23,7 +24,9 @@ async def get_current_user(
     try:
         payload = jwt.decode(token, settings.jwt_secret, algorithms=["HS256"])
     except JWTError as exc:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token") from exc
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token"
+        ) from exc
 
     user_id: int | None = payload.get("user_id")
     if user_id is None:

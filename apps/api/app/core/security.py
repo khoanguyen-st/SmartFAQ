@@ -17,6 +17,7 @@ from ..models.token_blacklist import TokenBlacklist
 from ..models.user import User
 
 
+
 def hash_password(password: str) -> str:
     password_bytes = password.encode("utf-8")
     salt = bcrypt.gensalt(rounds=12)
@@ -31,6 +32,7 @@ def verify_password(password: str, hashed_password: str) -> bool:
         return bcrypt.checkpw(password_bytes, hashed_bytes)
     except Exception:
         return False
+
 
 
 @lru_cache(maxsize=1)
