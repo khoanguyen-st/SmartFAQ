@@ -1,9 +1,10 @@
 # retriever.py
 from __future__ import annotations
 
-from typing import List, Dict, Any, Optional, Literal
-from app.rag.vector_store import VectorStore
+from typing import Any, Dict, List, Literal, Optional
+
 from app.core.config import settings
+from app.rag.vector_store import VectorStore
 
 
 def _distance_to_similarity(distance: float, metric: str = None) -> float:
@@ -14,7 +15,7 @@ def _distance_to_similarity(distance: float, metric: str = None) -> float:
     """
     if metric is None:
         metric = settings.CHROMA_METRIC.lower()
-    
+
     if metric == "cosine":
         sim = 1.0 - distance
         # đề phòng sai số float
