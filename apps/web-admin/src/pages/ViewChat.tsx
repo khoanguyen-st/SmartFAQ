@@ -308,91 +308,85 @@ const ViewChatPage = () => {
 
   return (
     <div className="flex h-[calc(100vh-81px)] w-full border border-[#e5e7eb] bg-white">
-      <div 
+      <div
         className={cn(
-          "flex h-full flex-col transition-all duration-300 ease-in-out border-r border-[#F3F4F6] bg-white z-10",
-          isSidebarOpen ? "w-1/2 min-w-[400px]" : "w-[118px]" 
+          'flex h-full flex-col transition-all duration-300 ease-in-out border-r border-[#F3F4F6] bg-white z-10',
+          isSidebarOpen ? 'w-1/2 min-w-[400px]' : 'w-[118px]'
         )}
       >
         {/* Header Area */}
-        <div className={cn(
-            "flex items-center border-b border-[#F3F4F6] transition-all duration-300 shrink-0",
-            isSidebarOpen 
-              ? "justify-between p-6 h-[92px]" 
-              : "justify-center h-[92px]"
-        )}>
-          
+        <div
+          className={cn(
+            'flex items-center border-b border-[#F3F4F6] transition-all duration-300 shrink-0',
+            isSidebarOpen ? 'justify-between p-6 h-[92px]' : 'justify-center h-[92px]'
+          )}
+        >
           {/* Title & Icon (Chỉ hiện khi MỞ) */}
           {isSidebarOpen && (
             <div className="flex flex-col overflow-hidden text-nowrap text-ellipsis">
               <div className="title-header flex items-center">
                 <KnowledgeIcon className="mr-2 h-6 w-6 shrink-0 text-[#003087]" />
-                <h1 className="text-[18px] font-semibold leading-7 text-[#111827] overflow-hidden text-ellipsis whitespace-nowrap">Knowledge Sources</h1>
+                <h1 className="text-[18px] font-semibold leading-7 text-[#111827]">Knowledge Sources</h1>
               </div>
-              <p className="text-[14px] text-[#6B7280] overflow-hidden text-ellipsis whitespace-nowrap">Upload and manage documents</p>
+              <p className="text-[14px] text-[#6B7280]">Upload and manage documents</p>
             </div>
           )}
-          
-          <div className={cn("flex items-center", isSidebarOpen && "gap-4")}>
+
+          <div className={cn('flex items-center', isSidebarOpen && 'gap-4')}>
             {/* Nút Upload (Chỉ hiện trong header khi MỞ) */}
             {isSidebarOpen && (
               <button
                 onClick={handleSelectFileClick}
-                className="flex items-center justify-center h-9 gap-2 px-4  rounded-lg bg-[#003087] transition-all hover:bg-[#00205a]"
+                className="flex items-center justify-center h-[36px] gap-2 px-4 rounded-[8px] bg-[#003087] transition-all hover:bg-[#00205a]"
                 title="Upload Files"
               >
                 <div className="flex items-center justify-center">
-                   <PlusIcon className="h-3.5 w-3 text-white" />
+                  <PlusIcon className="h-3.5 w-3 text-white" />
                 </div>
-                <span className="text-sm font-medium text-white overflow-hidden text-ellipsis whitespace-nowrap lg:block hidden">Select Files</span>
+                <span className="text-sm font-medium text-white">Select Files</span>
               </button>
             )}
-            
+
             {/* Nút Sidebar Toggle */}
-            <button 
-              onClick={() => setIsSidebarOpen(!isSidebarOpen)} 
+            <button
+              onClick={() => setIsSidebarOpen(!isSidebarOpen)}
               className={cn(
-                "cursor-pointer p-1 hover:bg-gray-100 rounded group transition-colors",
-                !isSidebarOpen && "p-2"
+                'cursor-pointer p-1 hover:bg-gray-100 rounded group transition-colors',
+                !isSidebarOpen && 'p-2'
               )}
-              title={isSidebarOpen ? "Collapse sidebar" : "Expand sidebar"}
+              title={isSidebarOpen ? 'Collapse sidebar' : 'Expand sidebar'}
             >
-                <SidebarIcon className={cn("h-6 w-6 text-gray-400 transition-transform group-hover:text-[#003087]", !isSidebarOpen && "rotate-180")} />
+              <SidebarIcon
+                className={cn(
+                  'h-6 w-6 text-gray-400 transition-transform group-hover:text-[#003087]',
+                  !isSidebarOpen && 'rotate-180'
+                )}
+              />
             </button>
           </div>
         </div>
 
         {/* Content Area */}
         <div className="flex-1 flex flex-col overflow-hidden relative">
-            {!isSidebarOpen && (
-                <div className="w-full flex justify-center py-4 shrink-0">
-                    <button
-                        onClick={handleSelectFileClick}
-                        className="flex items-center justify-center w-12 h-9 rounded-lg bg-[#003087] hover:bg-[#00205a] transition-colors shadow-sm"
-                        title="Upload Files"
-                    >
-                        <PlusIcon className="h-3.5 w-3 text-white" />
-                    </button>
-                </div>
-            )}
-
-            {/* Error Notification */}
-            {uploadError && isSidebarOpen && (
-                <div className="px-6 pt-4 shrink-0">
-                    <div className="rounded-md bg-red-50 p-3 text-sm text-red-600 border border-red-200">{uploadError}</div>
-                </div>
-            )}
-
-            {/* File List Content */}
-            <div className={cn("flex-1 overflow-hidden", !isSidebarOpen && "w-full px-[22px]")}>
-                <UploadedFile 
-                    files={files} 
-                    onDeleteFile={handleDeleteFile} 
-                    isLoading={loading} 
-                    loadError={error} 
-                    isCompact={!isSidebarOpen} 
-                />
+          {/* Nút Upload Compact (Chỉ hiện khi sidebar ĐÓNG) */}
+          {!isSidebarOpen && (
+            <div className="w-full flex justify-center py-4 shrink-0">
+              <button
+                onClick={handleSelectFileClick}
+                className="flex items-center justify-center w-[48px] h-[36px] rounded-[8px] bg-[#003087] hover:bg-[#00205a] transition-colors shadow-sm"
+                title="Upload Files"
+              >
+                <PlusIcon className="h-3.5 w-3 text-white" />
+              </button>
             </div>
+          )}
+
+          {/* Error Notification Removed */}
+
+          {/* File List Content */}
+          <div className={cn('flex-1 overflow-hidden', !isSidebarOpen && 'w-full px-[22px]')}>
+            {/*  */}
+          </div>
         </div>
       </div>
 
