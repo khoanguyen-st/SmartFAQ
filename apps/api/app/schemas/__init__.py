@@ -6,6 +6,7 @@ from .user import (
     ForgotPasswordRequest,
     ResetPasswordRequest,
     LogoutResponse,
+    UserMe,
 )
 
 __all__ = [
@@ -14,6 +15,7 @@ __all__ = [
     "ForgotPasswordRequest",
     "ResetPasswordRequest",
     "LogoutResponse",
+    "UserMe",
 ]
 
 
