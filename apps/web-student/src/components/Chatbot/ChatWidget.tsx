@@ -11,7 +11,7 @@ const ChatWidget = () => {
     <div className="fixed right-4 bottom-4">
       <div
         className={`chat flex h-fit w-200 flex-col rounded-3xl bg-white shadow-lg shadow-slate-900/8 transition-all duration-300 ease-in-out ${
-          isOpen ? 'scale-100 opacity-100' : 'pointer-events-none scale-95 opacity-0'
+          isOpen ? 'translate-y-0 scale-100 opacity-100' : 'pointer-events-none translate-y-4 scale-95 opacity-0'
         } `}
         style={{ transformOrigin: 'bottom right' }}
       >
@@ -91,8 +91,10 @@ const ChatWidget = () => {
         </div>
       </div>
       <button
-        className={`open-button flex h-18 w-18 cursor-pointer items-center justify-center rounded-[50%] bg-[#003087] transition-all duration-300 ease-in-out ${
-          isOpen ? 'pointer-events-none scale-95 opacity-0' : 'scale-100 opacity-100'
+        className={`open-button flex h-18 w-18 origin-bottom-right cursor-pointer items-center justify-center rounded-[50%] bg-[#003087] transition-all duration-300 ease-in-out ${
+          isOpen
+            ? 'pointer-events-none translate-y-2 scale-95 opacity-0' // Trạng thái Mở (thêm translate-y-2)
+            : 'translate-y-0 scale-100 opacity-100' // Trạng thái Đóng
         } `}
         onClick={() => setIsOpen(true)}
       >
