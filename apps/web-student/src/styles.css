@@ -45,6 +45,7 @@
   text-align: start;
   padding: 16px;
   margin-bottom: 16px;
+  font-size: 14px;
 }
 
 .message--receiver {
@@ -57,30 +58,34 @@
 .message--sender {
   align-self: flex-start;
   border-radius: 0 8px 8px 8px;
-  background: #f3f4f6;
-  color: #1f2937;
-  font-weight: 400;
+  background: var(--color-gray-1);
+  color: var(--color-dark);
 }
 
 .Chat__footer-input {
+  display: flex;
+  align-items: center;
+  text-align: start;
   outline: none;
-  border: none;
-  color: var(--color-white);
-  border-bottom: 1px solid var(--color-white);
+  color: var(--color-dark);
+  border: 1px solid var(--color-gray-3);
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
 
-
+.Chat__footer-input:focus {
+  outline: none;
+  border: 1px solid var(--color-dark);
+}
 
 .Chat__footer-input::placeholder {
-  color: var(--color-white);
+  color: var(--color-dark);
 }
 
 .open-button {
   position: fixed;
-  bottom: 16px;
-  right: 16px;
+  bottom: 30px;
+  right: 30px;
 }
 
 @layer base {
