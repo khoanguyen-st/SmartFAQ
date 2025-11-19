@@ -72,6 +72,28 @@ class DocxLoader:
         ]
 
 
+class TextLoader:
+    """Custom text loader for .txt and .md files"""
+
+    def __init__(self, file_path: str):
+        self.file_path = file_path
+
+    def load(self) -> List[Document]:
+        try:
+            with open(self.file_path, "r", encoding="utf-8") as f:
+                text = _clean_text(f.read())
+        except Exception:
+            text = ""
+        if not text:
+            return []
+        return [
+            Document(
+                page_content=text,
+                metadata={"source": self.file_path, "page": None},
+            )
+        ]
+
+
 class DocumentProcessor:
     def __init__(
         self,
@@ -95,6 +117,8 @@ class DocumentProcessor:
             loader = PDFLoader(file_path)
         elif ext in (".docx", ".doc"):
             loader = DocxLoader(file_path)
+        elif ext in (".txt", ".md"):
+            loader = TextLoader(file_path)
         else:
             raise ValueError(f"Unsupported file type: {ext}")
 
