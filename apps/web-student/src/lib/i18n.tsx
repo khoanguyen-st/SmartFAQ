@@ -18,10 +18,11 @@ const translations = {
 type Language = keyof typeof translations;
 type TranslationKey = keyof (typeof translations)["en"];
 
+
 interface I18nContextValue {
   lang: Language;
-  setLang: (lang: Language) => void;
-  t: (key: TranslationKey) => string;
+  setLang: (_lang: Language) => void;
+  t: (_key: TranslationKey) => string;
 }
 
 const I18nContext = createContext<I18nContextValue | undefined>(undefined);

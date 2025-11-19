@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Eye, Check, X } from 'lucide-react';
 import avatarIcon from '@/assets/icons/avatar.svg';
 import ChangePassword from '@/pages/ProfilePage/ChangePassword.tsx';
+import React from 'react';
 
 type ProfileState = {
   username: string;

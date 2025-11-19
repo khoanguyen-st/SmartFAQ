@@ -15,7 +15,6 @@ const SettingsForm = () => {
   const handleSubmit = (event: FormEvent) => {
     event.preventDefault();
     // TODO: wire to API
-    console.info("Submitted settings", values);
   };
 
   return (
