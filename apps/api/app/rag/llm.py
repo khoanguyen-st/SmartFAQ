@@ -67,7 +67,7 @@ class LLMWrapper:
             # Optional: add timeout if needed
             # timeout=30,
         )
-        
+
         logger.info(f"LLM initialized with model: {llm_model}")
 
         # ---- Prompt ----

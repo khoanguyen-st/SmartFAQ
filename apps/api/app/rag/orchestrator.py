@@ -10,6 +10,7 @@ from langchain_core.output_parsers import StrOutputParser
 from langchain_core.runnables import RunnablePassthrough
 
 from app.core.config import settings
+from app.rag.formatter import ResponseFormatter
 from app.rag.llm import LLMWrapper
 from app.rag.retriever import Retriever
 from app.rag.formatter import ResponseFormatter
@@ -119,6 +120,7 @@ class RAGOrchestrator:
             "sources": sources,
             "fallback_triggered": fallback_triggered,
             "latency_ms": latency_ms,
+            "formatted": formatted,
         }
 
     @staticmethod
