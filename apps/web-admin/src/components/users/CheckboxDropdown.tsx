@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react"
+import { useState, useRef, useEffect } from 'react'
 
 export interface CheckboxDropdownProps {
   label: string
@@ -17,9 +17,9 @@ const CheckboxDropdown = ({
   options,
   selected,
   onChange,
-  placeholder = "Choose option",
+  placeholder = 'Choose option',
   error = false,
-  disabled = false,
+  disabled = false
 }: CheckboxDropdownProps) => {
   const [isOpen, setIsOpen] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
@@ -31,21 +31,21 @@ const CheckboxDropdown = ({
       }
     }
 
-    document.addEventListener("mousedown", handleClickOutside)
-    return () => document.removeEventListener("mousedown", handleClickOutside)
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
 
   const handleToggle = (option: string) => {
     if (disabled) return
-    
+
     if (selected.includes(option)) {
-      onChange(selected.filter((item) => item !== option))
+      onChange(selected.filter(item => item !== option))
     } else {
       onChange([...selected, option])
     }
   }
 
-  const displayText = selected.length > 0 ? selected.join(", ") : placeholder
+  const displayText = selected.length > 0 ? selected.join(', ') : placeholder
 
   return (
     <div className="space-y-1">
@@ -57,16 +57,11 @@ const CheckboxDropdown = ({
           type="button"
           onClick={() => !disabled && setIsOpen(!isOpen)}
           disabled={disabled}
-          className={`w-full flex items-center justify-between px-3 py-2 border rounded-lg text-sm
-            ${error ? "border-red-500" : "border-slate-300"}
-            ${disabled ? "bg-slate-50 cursor-not-allowed" : "bg-white hover:border-slate-400"}
-            focus:outline-none focus:ring-2 focus:ring-blue-500`}
+          className={`flex w-full items-center justify-between rounded-lg border px-3 py-2 text-sm ${error ? 'border-red-500' : 'border-slate-300'} ${disabled ? 'cursor-not-allowed bg-slate-50' : 'bg-white hover:border-slate-400'} focus:ring-2 focus:ring-blue-500 focus:outline-none`}
         >
-          <span className={selected.length === 0 ? "text-slate-400" : "text-slate-900"}>
-            {displayText}
-          </span>
-          <svg 
-            className={`w-4 h-4 transition-transform ${isOpen ? "rotate-180" : ""}`}
+          <span className={selected.length === 0 ? 'text-slate-400' : 'text-slate-900'}>{displayText}</span>
+          <svg
+            className={`h-4 w-4 transition-transform ${isOpen ? 'rotate-180' : ''}`}
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -76,17 +71,14 @@ const CheckboxDropdown = ({
         </button>
 
         {isOpen && (
-          <div className="absolute z-10 w-full mt-1 bg-white border border-slate-300 rounded-lg shadow-lg max-h-60 overflow-auto">
-            {options.map((option) => (
-              <label
-                key={option}
-                className="flex items-center px-3 py-2 hover:bg-slate-50 cursor-pointer"
-              >
+          <div className="absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-lg border border-slate-300 bg-white shadow-lg">
+            {options.map(option => (
+              <label key={option} className="flex cursor-pointer items-center px-3 py-2 hover:bg-slate-50">
                 <input
                   type="checkbox"
                   checked={selected.includes(option)}
                   onChange={() => handleToggle(option)}
-                  className="w-4 h-4 text-blue-600 border-slate-300 rounded focus:ring-blue-500"
+                  className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
                 />
                 <span className="ml-2 text-sm text-slate-700">{option}</span>
               </label>

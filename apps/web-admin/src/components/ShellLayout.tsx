@@ -45,7 +45,7 @@ const ShellLayout = ({ children }: { children: ReactNode }) => {
         </div>
 
         <nav className="flex flex-col gap-2">
-          {navItems.map((item) => (
+          {navItems.map(item => (
             <NavLink
               key={item.path}
               to={item.path}
@@ -96,7 +96,7 @@ const ShellLayout = ({ children }: { children: ReactNode }) => {
             </div>
           </div>
         </header>
-        <div className="flex flex-col gap-4 md:gap-6 flex-1">{children}</div>
+        <div className="flex flex-1 flex-col gap-4 md:gap-6">{children}</div>
       </main>
     </div>
   )
