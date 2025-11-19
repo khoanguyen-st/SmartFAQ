@@ -4,6 +4,7 @@ import { cn } from '@/lib/utils'
 
 const navItems = [
   { path: 'dashboard', label: 'Dashboard' },
+  { path: 'users', label: 'Users' },
   { path: 'logs', label: 'Logs' },
   { path: 'settings', label: 'Settings' }
 ]
