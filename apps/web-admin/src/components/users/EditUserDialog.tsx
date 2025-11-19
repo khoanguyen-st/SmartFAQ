@@ -1,12 +1,7 @@
 import { useState, useEffect, FormEvent } from 'react'
-import { Button, Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, Input, Select } from '../ui'
+import { Button, Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, Input } from '../ui'
 import { User, UpdateUserRequest, updateUser } from '@/lib/api'
-import { 
-  validateUsername,
-  validateDepartments,
-  CAMPUS_OPTIONS,
-  DEPARTMENT_OPTIONS
-} from '@/lib/validation'
+import { validateEmail } from '@/lib/validation'
 
 interface EditUserDialogProps {
   open: boolean
@@ -17,54 +12,27 @@ interface EditUserDialogProps {
 
 export const EditUserDialog = ({ open, onClose, onSuccess, user }: EditUserDialogProps) => {
   const [formData, setFormData] = useState<UpdateUserRequest>({
-    username: '',
-    campus: 'DN',
-    departments: []
+    email: ''
   })
 
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [loading, setLoading] = useState(false)
-  const [selectedDepartments, setSelectedDepartments] = useState<Set<string>>(new Set())
 
   // Initialize form when user changes
   useEffect(() => {
     if (user) {
       setFormData({
-        username: user.username,
-        campus: user.campus,
-        departments: user.departments
+        email: user.email
       })
-      setSelectedDepartments(new Set(user.departments))
     }
   }, [user])
-
-  const handleDepartmentToggle = (dept: string) => {
-    const newSet = new Set(selectedDepartments)
-    if (newSet.has(dept)) {
-      newSet.delete(dept)
-    } else {
-      newSet.add(dept)
-    }
-    setSelectedDepartments(newSet)
-    setFormData({ ...formData, departments: Array.from(newSet) })
-    
-    // Clear department error if any
-    if (newSet.size > 0 && errors.departments) {
-      setErrors({ ...errors, departments: '' })
-    }
-  }
 
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {}
 
-    if (formData.username) {
-      const usernameError = validateUsername(formData.username)
-      if (usernameError) newErrors.username = usernameError
-    }
-
-    if (formData.departments) {
-      const deptError = validateDepartments(formData.departments)
-      if (deptError) newErrors.departments = deptError
+    if (formData.email) {
+      const emailError = validateEmail(formData.email)
+      if (emailError) newErrors.email = emailError
     }
 
     setErrors(newErrors)
@@ -100,77 +68,33 @@ export const EditUserDialog = ({ open, onClose, onSuccess, user }: EditUserDialo
   if (!user) return null
 
   return (
-    <Dialog open={open} onClose={handleClose} className="max-w-2xl">
+    <Dialog open={open} onClose={handleClose} className="max-w-md">
       <form onSubmit={handleSubmit}>
         <DialogHeader>
           <DialogTitle>Edit User Account</DialogTitle>
           <p className="text-sm text-slate-600 mt-1">
-            Editing user: <span className="font-semibold">{user.email}</span>
+            Editing user: <span className="font-semibold">{user.username}</span>
           </p>
         </DialogHeader>
 
         <DialogContent>
-          {/* Username */}
+          {/* Email */}
           <div>
             <label className="mb-1.5 block text-sm font-medium text-slate-700">
-              Username <span className="text-red-500">*</span>
+              Email <span className="text-red-500">*</span>
             </label>
             <Input
-              value={formData.username}
+              type="email"
+              value={formData.email}
               onChange={(e) => {
-                setFormData({ ...formData, username: e.target.value })
-                if (errors.username) setErrors({ ...errors, username: '' })
+                setFormData({ ...formData, email: e.target.value })
+                if (errors.email) setErrors({ ...errors, email: '' })
               }}
-              error={!!errors.username}
-              placeholder="Enter username"
+              error={!!errors.email}
+              placeholder="Enter email"
               disabled={loading}
             />
-            {errors.username && <p className="mt-1 text-sm text-red-600">{errors.username}</p>}
-          </div>
-
-          {/* Campus */}
-          <div>
-            <label className="mb-1.5 block text-sm font-medium text-slate-700">
-              Campus <span className="text-red-500">*</span>
-            </label>
-            <Select
-              value={formData.campus}
-              onChange={(e) => setFormData({ ...formData, campus: e.target.value as 'DN' | 'HCM' | 'HN' | 'CT' })}
-              disabled={loading}
-            >
-              {CAMPUS_OPTIONS.map((opt) => (
-                <option key={opt.value} value={opt.value}>
-                  {opt.label}
-                </option>
-              ))}
-            </Select>
-          </div>
-
-          {/* Departments - Multi-select with checkboxes */}
-          <div>
-            <label className="mb-1.5 block text-sm font-medium text-slate-700">
-              Departments <span className="text-red-500">*</span>
-            </label>
-            <div className="rounded-lg border border-indigo-200 p-3 max-h-48 overflow-y-auto">
-              {DEPARTMENT_OPTIONS.map((dept) => (
-                <label key={dept} className="flex items-center gap-2 py-1.5 cursor-pointer hover:bg-slate-50 px-2 rounded">
-                  <input
-                    type="checkbox"
-                    checked={selectedDepartments.has(dept)}
-                    onChange={() => handleDepartmentToggle(dept)}
-                    className="w-4 h-4 rounded border-slate-300 text-primary-600 focus:ring-primary-600"
-                    disabled={loading}
-                  />
-                  <span className="text-sm text-slate-700">{dept}</span>
-                </label>
-              ))}
-            </div>
-            {errors.departments && <p className="mt-1 text-sm text-red-600">{errors.departments}</p>}
-            {selectedDepartments.size > 0 && (
-              <p className="mt-1 text-xs text-slate-500">
-                Selected: {Array.from(selectedDepartments).join(', ')}
-              </p>
-            )}
+            {errors.email && <p className="mt-1 text-sm text-red-600">{errors.email}</p>}
           </div>
 
           {errors.submit && (

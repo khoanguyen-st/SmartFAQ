@@ -4,17 +4,15 @@ import { Button, Card, CardContent, Input, Select } from '@/components/ui'
 import { CreateUserDialog } from '../components/users/CreateUserDialog'
 import { EditUserDialog } from '../components/users/EditUserDialog'
 import { Lock, Unlock, Key, Pencil, UserPlus, Search, Filter as FilterIcon } from 'lucide-react'
-import { DEPARTMENT_OPTIONS } from '@/lib/validation'
 
 const UsersPage = () => {
   const [users, setUsers] = useState<User[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [actionLoading, setActionLoading] = useState<string | null>(null)
+  const [actionLoading, setActionLoading] = useState<number | null>(null)
 
   // Filter states
   const [searchQuery, setSearchQuery] = useState('')
-  const [departmentFilter, setDepartmentFilter] = useState<string>('all')
   const [statusFilter, setStatusFilter] = useState<string>('all')
   const [showFilters, setShowFilters] = useState(true) // Always show filters
 
@@ -54,14 +52,8 @@ const UsersPage = () => {
       result = result.filter(
         (user) =>
           user.username.toLowerCase().includes(query) ||
-          user.email.toLowerCase().includes(query) ||
-          user.phoneNumber?.toLowerCase().includes(query)
+          user.email.toLowerCase().includes(query)
       )
-    }
-
-    // Department filter
-    if (departmentFilter !== 'all') {
-      result = result.filter((user) => user.departments.includes(departmentFilter))
     }
 
     // Status filter
@@ -70,7 +62,7 @@ const UsersPage = () => {
     }
 
     return result
-  }, [users, searchQuery, departmentFilter, statusFilter])
+  }, [users, searchQuery, statusFilter])
 
   // Pagination logic
   const totalPages = Math.ceil(filteredUsers.length / itemsPerPage)
@@ -83,9 +75,9 @@ const UsersPage = () => {
   // Reset to page 1 when filters change
   useEffect(() => {
     setCurrentPage(1)
-  }, [searchQuery, departmentFilter, statusFilter, itemsPerPage])
+  }, [searchQuery, statusFilter, itemsPerPage])
 
-  const handleLockUser = async (userId: string) => {
+  const handleLockUser = async (userId: number) => {
     if (!confirm('Are you sure you want to lock this user account?')) return
 
     setActionLoading(userId)
@@ -99,7 +91,7 @@ const UsersPage = () => {
     }
   }
 
-  const handleUnlockUser = async (userId: string) => {
+  const handleUnlockUser = async (userId: number) => {
     if (!confirm('Are you sure you want to unlock this user account?')) return
 
     setActionLoading(userId)
@@ -113,7 +105,7 @@ const UsersPage = () => {
     }
   }
 
-  const handleResetPassword = async (userId: string) => {
+  const handleResetPassword = async (userId: number) => {
     if (!confirm("Are you sure you want to reset this user's password? An email will be sent to the user.")) return
 
     setActionLoading(userId)
@@ -223,18 +215,6 @@ const UsersPage = () => {
       {showFilters && (
         <div className="mb-6 flex gap-3">
           <Select 
-            value={departmentFilter} 
-            onChange={(e) => setDepartmentFilter(e.target.value)}
-            className="bg-white w-64"
-          >
-            <option value="all">Department</option>
-            {DEPARTMENT_OPTIONS.map((dept) => (
-              <option key={dept} value={dept}>
-                {dept}
-              </option>
-            ))}
-          </Select>
-          <Select 
             value={statusFilter} 
             onChange={(e) => setStatusFilter(e.target.value)}
             className="bg-white w-64"
@@ -263,7 +243,6 @@ const UsersPage = () => {
                       <th className="text-left py-3 px-4 text-sm font-semibold text-slate-900">Email</th>
                       <th className="text-left py-3 px-4 text-sm font-semibold text-slate-900">Phone Number</th>
                       <th className="text-left py-3 px-4 text-sm font-semibold text-slate-900">Role</th>
-                      <th className="text-left py-3 px-4 text-sm font-semibold text-slate-900">Department</th>
                       <th className="text-left py-3 px-4 text-sm font-semibold text-slate-900">Status</th>
                       <th className="text-center py-3 px-4 text-sm font-semibold text-slate-900">Action</th>
                     </tr>
@@ -278,9 +257,6 @@ const UsersPage = () => {
                         <td className="py-3 px-4 text-sm text-slate-600">{user.email}</td>
                         <td className="py-3 px-4 text-sm text-slate-600">{user.phoneNumber || '-'}</td>
                         <td className="py-3 px-4 text-sm text-slate-600">{user.role}</td>
-                        <td className="py-3 px-4 text-sm text-slate-600">
-                          {user.departments.length > 0 ? user.departments.join(', ') : '-'}
-                        </td>
                         <td className="py-3 px-4">
                           <span
                             className={`inline-flex items-center px-2.5 py-1 text-xs font-semibold rounded-full ${
@@ -395,20 +371,20 @@ const UsersPage = () => {
           </div>
         )}
 
-          {/* Dialogs */}
-          <CreateUserDialog open={createDialogOpen} onClose={() => setCreateDialogOpen(false)} onSuccess={handleSuccess} />
+        {/* Dialogs */}
+        <CreateUserDialog open={createDialogOpen} onClose={() => setCreateDialogOpen(false)} onSuccess={handleSuccess} />
 
-          <EditUserDialog
-            open={editDialogOpen}
-            onClose={() => {
-              setEditDialogOpen(false)
-              setSelectedUser(null)
-            }}
-            onSuccess={handleSuccess}
-            user={selectedUser}
-          />
-        </div>
-      )
-    }
+        <EditUserDialog
+          open={editDialogOpen}
+          onClose={() => {
+            setEditDialogOpen(false)
+            setSelectedUser(null)
+          }}
+          onSuccess={handleSuccess}
+          user={selectedUser}
+        />
+      </div>
+    )
+}
 
-    export default UsersPage
+export default UsersPage

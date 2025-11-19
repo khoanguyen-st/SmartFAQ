@@ -1,7 +1,23 @@
+import { getAuthToken } from './auth'
+
 export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8000'
 
+// Helper to get headers with auth token
+function getAuthHeaders(): Record<string, string> {
+  const token = getAuthToken()
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json'
+  }
+  if (token) {
+    headers.Authorization = `Bearer ${token}`
+  }
+  return headers
+}
+
 export async function fetchMetrics() {
-  const res = await fetch(`${API_BASE_URL}/admin/metrics`)
+  const res = await fetch(`${API_BASE_URL}/admin/metrics`, {
+    headers: getAuthHeaders()
+  })
   if (!res.ok) throw new Error('Failed to load metrics')
   return res.json()
 }
@@ -9,27 +25,21 @@ export async function fetchMetrics() {
 // ============ User Management API ============
 
 export interface User {
-  id: string
+  id: number  // Backend uses int, not string
   username: string
   email: string
-  campus: 'DN' | 'HCM' | 'HN' | 'CT'
-  departments: string[]
-  role: 'Staff' | 'SuperAdmin'
+  role: 'Admin' | 'SuperAdmin'  // Backend uses 'Admin' not 'Staff'
   status: 'Active' | 'Locked'
   phoneNumber?: string | null
   address?: string | null
   image?: string | null
-  createdAt?: string
-  updatedAt?: string
+  created_at?: string  // Backend uses snake_case
 }
 
 export interface CreateUserRequest {
-  username: string
   email: string
-  campus: 'DN' | 'HCM' | 'HN' | 'CT'
-  departments: string[]
-  role: 'Staff'
   password: string
+  role: 'Admin'  // Backend only allows 'Admin' role
   status: 'Active' | 'Locked'
   phoneNumber?: string | null
   address?: string | null
@@ -37,19 +47,17 @@ export interface CreateUserRequest {
 }
 
 export interface UpdateUserRequest {
-  username?: string
-  campus?: 'DN' | 'HCM' | 'HN' | 'CT'
-  departments?: string[]
+  email?: string
+  role?: 'Admin'
+  phoneNumber?: string | null
+  address?: string | null
+  image?: string | null
 }
 
 // Fetch all users
 export async function fetchUsers(): Promise<User[]> {
   const res = await fetch(`${API_BASE_URL}/api/admin/users`, {
-    headers: {
-      'Content-Type': 'application/json',
-      // Add auth token from localStorage/session if needed
-      // 'Authorization': `Bearer ${token}`
-    }
+    headers: getAuthHeaders()
   })
   if (!res.ok) {
     const error = await res.json().catch(() => ({ error: 'Failed to load users' }))
@@ -62,9 +70,7 @@ export async function fetchUsers(): Promise<User[]> {
 export async function createUser(data: CreateUserRequest): Promise<User> {
   const res = await fetch(`${API_BASE_URL}/api/admin/users`, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
+    headers: getAuthHeaders(),
     body: JSON.stringify(data)
   })
   if (!res.ok) {
@@ -75,10 +81,10 @@ export async function createUser(data: CreateUserRequest): Promise<User> {
 }
 
 // Update user
-export async function updateUser(userId: string, data: UpdateUserRequest): Promise<User> {
+export async function updateUser(userId: number, data: UpdateUserRequest): Promise<User> {
   const res = await fetch(`${API_BASE_URL}/api/admin/users/${userId}`, {
     method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
+    headers: getAuthHeaders(),
     body: JSON.stringify(data)
   })
   if (!res.ok) {
@@ -89,23 +95,24 @@ export async function updateUser(userId: string, data: UpdateUserRequest): Promi
 }
 
 // Reset user password
-export async function resetUserPassword(userId: string): Promise<{ message: string }> {
+export async function resetUserPassword(userId: number): Promise<{ message: string }> {
   const res = await fetch(`${API_BASE_URL}/api/admin/users/${userId}/reset-password`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' }
+    headers: getAuthHeaders()
   })
   if (!res.ok) {
     const error = await res.json().catch(() => ({ error: 'Failed to reset password' }))
     throw new Error(error.error || 'Failed to reset password')
   }
-  return res.json()
+  // Backend returns 204 No Content
+  return { message: 'Password reset email sent successfully' }
 }
 
 // Lock user
-export async function lockUser(userId: string): Promise<User> {
+export async function lockUser(userId: number): Promise<User> {
   const res = await fetch(`${API_BASE_URL}/api/admin/users/${userId}/lock`, {
     method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' }
+    headers: getAuthHeaders()
   })
   if (!res.ok) {
     const error = await res.json().catch(() => ({ error: 'Failed to lock user' }))
@@ -115,10 +122,10 @@ export async function lockUser(userId: string): Promise<User> {
 }
 
 // Unlock user
-export async function unlockUser(userId: string): Promise<User> {
+export async function unlockUser(userId: number): Promise<User> {
   const res = await fetch(`${API_BASE_URL}/api/admin/users/${userId}/unlock`, {
     method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' }
+    headers: getAuthHeaders()
   })
   if (!res.ok) {
     const error = await res.json().catch(() => ({ error: 'Failed to unlock user' }))

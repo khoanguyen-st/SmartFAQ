@@ -1,7 +1,7 @@
 import { useState, FormEvent } from 'react'
-import { Button, Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, Input, Select } from '../ui'
+import { Button, Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, Input } from '../ui'
 import { CreateUserRequest, createUser } from '@/lib/api'
-import { validateEmail, validateUsername, CAMPUS_OPTIONS, DEPARTMENT_OPTIONS } from '@/lib/validation'
+import { validateEmail, validatePassword } from '@/lib/validation'
 
 interface CreateUserDialogProps {
   open: boolean
@@ -11,18 +11,14 @@ interface CreateUserDialogProps {
 
 export const CreateUserDialog = ({ open, onClose, onSuccess }: CreateUserDialogProps) => {
   const [formData, setFormData] = useState<CreateUserRequest>({
-    username: '',
     email: '',
-    campus: 'DN',
-    departments: [],
-    role: 'Staff',
     password: '',
+    role: 'Admin',
     status: 'Active'
   })
 
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [loading, setLoading] = useState(false)
-  const [selectedDepartment, setSelectedDepartment] = useState<string>('')
 
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {}
@@ -30,12 +26,8 @@ export const CreateUserDialog = ({ open, onClose, onSuccess }: CreateUserDialogP
     const emailError = validateEmail(formData.email)
     if (emailError) newErrors.email = emailError
 
-    const usernameError = validateUsername(formData.username)
-    if (usernameError) newErrors.username = usernameError
-
-    if (!selectedDepartment) {
-      newErrors.department = 'Department is required'
-    }
+    const passwordError = validatePassword(formData.password)
+    if (passwordError) newErrors.password = passwordError
 
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
@@ -48,26 +40,15 @@ export const CreateUserDialog = ({ open, onClose, onSuccess }: CreateUserDialogP
 
     setLoading(true)
     try {
-      // Auto-generate a temporary password (backend will handle activation email)
-      const tempPassword = 'TempPass123!'
-
-      await createUser({
-        ...formData,
-        departments: [selectedDepartment],
-        password: tempPassword
-      })
+      await createUser(formData)
 
       // Reset form
       setFormData({
-        username: '',
         email: '',
-        campus: 'DN',
-        departments: [],
-        role: 'Staff',
         password: '',
+        role: 'Admin',
         status: 'Active'
       })
-      setSelectedDepartment('')
       setErrors({})
       onSuccess()
       onClose()
@@ -81,15 +62,11 @@ export const CreateUserDialog = ({ open, onClose, onSuccess }: CreateUserDialogP
   const handleClose = () => {
     if (!loading) {
       setFormData({
-        username: '',
         email: '',
-        campus: 'DN',
-        departments: [],
-        role: 'Staff',
         password: '',
+        role: 'Admin',
         status: 'Active'
       })
-      setSelectedDepartment('')
       setErrors({})
       onClose()
     }
@@ -100,7 +77,7 @@ export const CreateUserDialog = ({ open, onClose, onSuccess }: CreateUserDialogP
       <form onSubmit={handleSubmit}>
         <DialogHeader>
           <DialogTitle>Create New Account</DialogTitle>
-          <p className="text-sm text-slate-600 mt-1">Create account for Student Affairs Department staff.</p>
+          <p className="text-sm text-slate-600 mt-1">Create new admin account.</p>
         </DialogHeader>
 
         <DialogContent>
@@ -123,67 +100,26 @@ export const CreateUserDialog = ({ open, onClose, onSuccess }: CreateUserDialogP
             {errors.email && <p className="mt-1 text-sm text-red-600">{errors.email}</p>}
           </div>
 
-          {/* Username */}
+          {/* Password */}
           <div>
             <label className="mb-1.5 block text-sm font-medium text-slate-700">
-              Username <span className="text-red-500">*</span>
+              Password <span className="text-red-500">*</span>
             </label>
             <Input
-              value={formData.username}
+              type="password"
+              value={formData.password}
               onChange={(e) => {
-                setFormData({ ...formData, username: e.target.value })
-                if (errors.username) setErrors({ ...errors, username: '' })
+                setFormData({ ...formData, password: e.target.value })
+                if (errors.password) setErrors({ ...errors, password: '' })
               }}
-              error={!!errors.username}
-              placeholder="Enter username"
+              error={!!errors.password}
+              placeholder="Enter password (min 8 chars)"
               disabled={loading}
             />
-            {errors.username && <p className="mt-1 text-sm text-red-600">{errors.username}</p>}
-          </div>
-
-          {/* Campus */}
-          <div>
-            <label className="mb-1.5 block text-sm font-medium text-slate-700">
-              Campus <span className="text-red-500">*</span>
-            </label>
-            <Select
-              value={formData.campus}
-              onChange={(e) => setFormData({ ...formData, campus: e.target.value as 'DN' | 'HCM' | 'HN' | 'CT' })}
-              disabled={loading}
-            >
-              <option value="" disabled>
-                Choose campus
-              </option>
-              {CAMPUS_OPTIONS.map((opt) => (
-                <option key={opt.value} value={opt.value}>
-                  {opt.label}
-                </option>
-              ))}
-            </Select>
-          </div>
-
-          {/* Department - Single Select Dropdown */}
-          <div>
-            <label className="mb-1.5 block text-sm font-medium text-slate-700">
-              Department <span className="text-red-500">*</span>
-            </label>
-            <Select
-              value={selectedDepartment}
-              onChange={(e) => {
-                setSelectedDepartment(e.target.value)
-                if (errors.department) setErrors({ ...errors, department: '' })
-              }}
-              error={!!errors.department}
-              disabled={loading}
-            >
-              <option value="">Choose department</option>
-              {DEPARTMENT_OPTIONS.map((dept) => (
-                <option key={dept} value={dept}>
-                  {dept}
-                </option>
-              ))}
-            </Select>
-            {errors.department && <p className="mt-1 text-sm text-red-600">{errors.department}</p>}
+            {errors.password && <p className="mt-1 text-sm text-red-600">{errors.password}</p>}
+            <p className="mt-1 text-xs text-slate-500">
+              Password must be at least 8 characters with uppercase, lowercase, number and special character.
+            </p>
           </div>
 
           {errors.submit && (

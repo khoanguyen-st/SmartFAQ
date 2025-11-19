@@ -36,30 +36,6 @@ export const validateUsername = (username: string): string | null => {
   return null
 }
 
-export const validateDepartments = (departments: string[]): string | null => {
-  if (!departments || departments.length === 0) {
-    return 'At least one department must be assigned.'
-  }
-  return null
-}
-
-export const CAMPUS_OPTIONS = [
-  { value: 'DN', label: 'Da Nang' },
-  { value: 'HCM', label: 'Ho Chi Minh' },
-  { value: 'HN', label: 'Ha Noi' },
-  { value: 'CT', label: 'Can Tho' }
-] as const
-
-export const DEPARTMENT_OPTIONS = [
-  'Student Affairs',
-  'Academic Affairs',
-  'Finance',
-  'IT Support',
-  'Admissions',
-  'Library',
-  'Human Resources'
-]
-
 export const STATUS_OPTIONS = [
   { value: 'Active', label: 'Active' },
   { value: 'Locked', label: 'Locked' }
