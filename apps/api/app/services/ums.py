@@ -104,12 +104,10 @@ async def get_user_profile(user_id: int, db: AsyncSession) -> Optional[dict]:
 
 async def update_user_profile(user_id: int, updates: dict[str, Any], db: AsyncSession) -> bool:
     allowed_fields = {"username", "phone", "address"}
-    updates = {
-        k: v for k, v in updates.items() if k in allowed_fields
-    }  # Filter to allowed fields only
+    updates = {k: v for k, v in updates.items() if k in allowed_fields}
 
     if not updates:
-        return True  # Nothing to update, but consider it successful
+        return True
 
     stmt = select(User).where(User.id == user_id)
     result = await db.execute(stmt)

@@ -35,7 +35,6 @@ async def update_profile(
     user_id: int, payload: schemas.UserUpdate, db: AsyncSession = Depends(get_db)
 ):
     try:
-        # Exclude None values to only update provided fields
         updates = payload.dict(exclude_none=True)
         ok = await ums.update_user_profile(user_id, updates, db)
         if not ok:
@@ -100,8 +99,6 @@ async def change_password(
     try:
         if new_password != confirm_password:
             raise HTTPException(400, "New password and confirm password do not match")
-        # Optional: Add password strength checks here if needed
-        # e.g., if len(new_password) < 8: raise HTTPException(400, "Password too weak")
         ok = await ums.change_user_password(
             current_password=current_password, new_password=new_password, user_id=user_id, db=db
         )
