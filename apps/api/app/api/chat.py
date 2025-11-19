@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import time
 from datetime import datetime, timezone
 from decimal import Decimal
 from typing import Any, Literal
@@ -20,10 +19,16 @@ from ..core.input_validation import UnsafeInputError, ensure_safe_text
 from ..core.rate_limiter import RateLimiter
 from ..models.chat import ChatMessage, ChatRole, ChatSession
 from ..models.query_log import QueryLog
-from ..rag.llm import LLMWrapper
+from ..rag.orchestrator import RAGOrchestrator
+
+from ..rag.question_understanding import QuestionUnderstanding
+from ..rag.validations import NormalizedQuestion
+from ..rag.utils.language import normalize_language_code
+
 
 router = APIRouter()
-llm_wrapper = LLMWrapper()
+rag_orchestrator = RAGOrchestrator()
+question_understanding = QuestionUnderstanding()
 
 _FEEDBACK_MESSAGES: dict[str, str] = {
     "en": "Feedback recorded. Thank you!",
@@ -185,7 +190,10 @@ async def create_session(
     db: AsyncSession = Depends(get_db),
 ) -> NewSessionResponse:
     session_id = str(uuid4())
-    language = (payload.language or "en").strip() or "en"
+    language_raw = (payload.language or "en").strip() or "en"
+    language = normalize_language_code(language_raw, default="en")
+    if language == "auto":
+        language = "en"
     user_agent = payload.user_agent or request.headers.get("user-agent")
 
     session = ChatSession(id=session_id, language=language, user_agent=user_agent)
@@ -225,7 +233,9 @@ async def query_chat(
     if payload.language:
         stripped_lang = payload.language.strip()
         if stripped_lang:
-            session.language = stripped_lang
+            normalized_lang = normalize_language_code(stripped_lang, default=session.language or "en")
+            if normalized_lang != "auto":
+                session.language = normalized_lang
     if not session.user_agent:
         session.user_agent = request.headers.get("user-agent")
 
@@ -233,7 +243,7 @@ async def query_chat(
         select(ChatMessage)
         .where(ChatMessage.session_id == session.id)
         .order_by(ChatMessage.created_at.desc())
-        .limit(10)
+        .limit(5)
     )
     history_result = await db.execute(history_stmt)
     history_records = list(history_result.scalars())
@@ -243,21 +253,61 @@ async def query_chat(
     ]
 
     try:
-        t0 = time.perf_counter()
-        answer = await llm_wrapper.generate_direct_answer_async(
+        normalized: NormalizedQuestion = question_understanding.understand(
             payload.question,
-            history=history_messages,
+            context={
+                "session_language": session.language,
+                "history": history_messages,
+            },
         )
-        latency_ms = int((time.perf_counter() - t0) * 1000)
-    except Exception as exc:  # noqa: BLE001 - surface LLM errors cleanly
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(exc),
+        ) from exc
+
+    normalized_question = normalized.normalized_question
+    detected_language = normalize_language_code(
+        normalized.language,
+        default=session.language or "en",
+    )
+
+    if payload.language:
+        stripped_lang = payload.language.strip()
+        if stripped_lang:
+            normalized_lang = normalize_language_code(stripped_lang, default=detected_language or "en")
+            if normalized_lang != "auto":
+                session.language = normalized_lang
+    else:
+        if detected_language != "auto":
+            session.language = detected_language
+        elif not session.language:
+            session.language = "en"
+
+    try:
+        rag_response = await rag_orchestrator.query(
+            question=normalized_question,
+            top_k=settings.TOP_K_RETRIEVAL,
+            return_top_sources=3,
+            language=session.language,
+        )
+    except Exception as exc:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to generate answer.",
         ) from exc
 
-    confidence_raw = 1.0
-    fallback_triggered = False
-    sources: list[dict[str, Any]] = []
+    answer = str(rag_response.get("answer") or "")
+    fallback_triggered = bool(rag_response.get("fallback_triggered"))
+    confidence_raw = rag_response.get("confidence")
+    sources = rag_response.get("sources")
+    latency_ms = rag_response.get("latency_ms")
+    formatted_sources = _format_sources(sources)
+    if not formatted_sources and not fallback_triggered:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Unable to ground the answer in the knowledge base. Please try rephrasing.",
+        )
 
     question_message = ChatMessage(
         id=str(uuid4()),
@@ -279,10 +329,10 @@ async def query_chat(
     )
 
     query_log = QueryLog(
-        question=payload.question,
+        question=normalized_question,
         lang=session.language,
         response_ms=int(latency_ms) if latency_ms is not None else None,
-        confidence=round(float(confidence_raw) * 100, 2) if confidence_raw is not None else None,
+        confidence=_confidence_to_percent(confidence_raw),
         fallback=fallback_triggered,
         user_agent=session.user_agent,
         channel="chat",
@@ -304,7 +354,7 @@ async def query_chat(
 
     return ChatQueryResponse(
         answer=answer,
-        sources=_format_sources(sources),
+        sources=formatted_sources,
         confidence=_confidence_to_percent(confidence_raw),
         language=session.language,
         fallback=fallback_triggered,

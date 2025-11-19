@@ -113,10 +113,10 @@ Tiếng Việt / Vietnamese:
 Hãy trả về response theo đúng chuẩn JSON sau, KHÔNG trả thêm bất kì text nào khác.
 Return response in the following JSON format exactly, DO NOT add any other text.
 
-{
+{{ 
   "normalized_text": "normalized question here",
   "language": "vi" (nếu tiếng Việt) hoặc "en" (nếu tiếng Anh)
-}
+}}
 
 LƯU Ý / NOTES:
 - "normalized_text" phải là câu hỏi đã được normalize hoàn chỉnh
