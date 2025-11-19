@@ -1,4 +1,4 @@
-import { Navigate, Route, Routes } from "react-router-dom";
+import { Navigate, Route, Routes } from 'react-router-dom'
 
 import DashboardPage from "./pages/Dashboard";
 import LogsPage from "./pages/Logs";
@@ -28,4 +28,4 @@ const App = () => (
   </Routes>
 );
 
-export default App;
+export default App

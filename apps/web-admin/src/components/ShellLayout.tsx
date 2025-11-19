@@ -1,11 +1,11 @@
-import { NavLink, Outlet } from "react-router-dom";
-import { cn } from "@/lib/utils";
+import { NavLink, Outlet } from 'react-router-dom'
+import { cn } from '@/lib/utils'
 
 const navItems = [
-  { path: "dashboard", label: "Dashboard" },
-  { path: "logs", label: "Logs" },
-  { path: "settings", label: "Settings" },
-];
+  { path: 'dashboard', label: 'Dashboard' },
+  { path: 'logs', label: 'Logs' },
+  { path: 'settings', label: 'Settings' }
+]
 
 const ShellLayout = () => {
   return (
@@ -13,16 +13,14 @@ const ShellLayout = () => {
       <aside className="flex w-60 flex-col bg-slate-900 px-4 py-6 text-slate-50">
         <div className="mb-6 text-lg font-semibold">SmartFAQ Admin</div>
         <nav className="flex flex-col gap-2">
-          {navItems.map((item) => (
+          {navItems.map(item => (
             <NavLink
               key={item.path}
               to={item.path}
               className={({ isActive }) =>
                 cn(
-                  "rounded-lg px-3.5 py-2 text-sm transition-colors duration-200",
-                  isActive
-                    ? "bg-primary-600 text-white"
-                    : "bg-transparent hover:bg-slate-400/20"
+                  'rounded-lg px-3.5 py-2 text-sm transition-colors duration-200',
+                  isActive ? 'bg-primary-600 text-white' : 'bg-transparent hover:bg-slate-400/20'
                 )
               }
             >
@@ -34,16 +32,14 @@ const ShellLayout = () => {
       <main className="flex flex-1 flex-col gap-8 p-8">
         <header className="flex items-baseline justify-between gap-4">
           <h1 className="text-3xl font-bold">Greenwich SmartFAQ</h1>
-          <span className="text-xs uppercase tracking-wider text-slate-500">
-            Version {__APP_VERSION__}
-          </span>
+          <span className="text-xs tracking-wider text-slate-500 uppercase">Version {__APP_VERSION__}</span>
         </header>
         <div className="flex flex-col gap-6">
           <Outlet />
         </div>
       </main>
     </div>
-  );
-};
+  )
+}
 
-export default ShellLayout;
+export default ShellLayout
