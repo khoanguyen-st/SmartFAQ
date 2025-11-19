@@ -4,19 +4,18 @@ import type {
   UpdateUserRequest,
   UpdateUserResponse,
   User,
-} from '../types/user'
-
-export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8000'
+} from '@/types/user'
+import { API_BASE_URL, API_ENDPOINTS } from '@/constants/api'
 
 export async function fetchMetrics() {
-  const res = await fetch(`${API_BASE_URL}/admin/metrics`)
+  const res = await fetch(`${API_BASE_URL}${API_ENDPOINTS.METRICS}`)
   if (!res.ok) throw new Error('Failed to load metrics')
   return res.json()
 }
 
 // User Management API
 export async function fetchUsers(): Promise<User[]> {
-  const res = await fetch(`${API_BASE_URL}/api/admin/users`, {
+  const res = await fetch(`${API_BASE_URL}${API_ENDPOINTS.USERS}`, {
     headers: {
       "Content-Type": "application/json",
     },
@@ -27,7 +26,7 @@ export async function fetchUsers(): Promise<User[]> {
 
 export async function createUser(data: CreateUserRequest): Promise<CreateUserResponse> {
   try {
-    const res = await fetch(`${API_BASE_URL}/api/admin/users`, {
+    const res = await fetch(`${API_BASE_URL}${API_ENDPOINTS.USERS}`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -51,7 +50,7 @@ export async function createUser(data: CreateUserRequest): Promise<CreateUserRes
 
 export async function updateUser(userId: number, data: UpdateUserRequest): Promise<UpdateUserResponse> {
   try {
-    const res = await fetch(`${API_BASE_URL}/api/admin/users/${userId}`, {
+    const res = await fetch(`${API_BASE_URL}${API_ENDPOINTS.USER_BY_ID(userId)}`, {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
@@ -74,7 +73,7 @@ export async function updateUser(userId: number, data: UpdateUserRequest): Promi
 }
 
 export async function deleteUser(userId: number): Promise<void> {
-  const res = await fetch(`${API_BASE_URL}/api/admin/users/${userId}`, {
+  const res = await fetch(`${API_BASE_URL}${API_ENDPOINTS.USER_BY_ID(userId)}`, {
     method: "DELETE",
     headers: {
       "Content-Type": "application/json",

@@ -1,50 +1,35 @@
 """Admin endpoints for metrics and logs."""
 
+import secrets
+import string
 from fastapi import APIRouter, Depends, HTTPException, status
-from pydantic import BaseModel, EmailStr, Field
 from sqlalchemy.orm import Session
 
 from ..core.users import get_current_user, get_password_hash
 from ..core.config import get_db
 from ..models.user import User
 from ..services import metrics
+from ..dto.admin import (
+    CreateUserRequest,
+    UpdateUserRequest,
+    UserResponse,
+    CreateUserResponse,
+)
 
 router = APIRouter()
 
 
-# Pydantic models for request/response
-class CreateUserRequest(BaseModel):
-    username: str = Field(..., min_length=3, max_length=150)
-    email: EmailStr
-    password: str = Field(..., min_length=8)
-    role: str = Field(..., pattern="^(Super Admin|Admin|Staff|Viewer)$")
-
-
-class UpdateUserRequest(BaseModel):
-    username: str | None = Field(None, min_length=3, max_length=150)
-    email: EmailStr | None = None
-    role: str | None = Field(None, pattern="^(Super Admin|Admin|Staff|Viewer)$")
-
-
-class UserResponse(BaseModel):
-    id: int
-    username: str
-    email: str | None = None
-    role: str
-    status: str
-    phone_number: str | None = None
-    created_at: str | None = None
-
-    class Config:
-        from_attributes = True
-
-
-class CreateUserResponse(BaseModel):
-    user_id: int
-    username: str
-    role: str
-    status: str
-    message: str
+def generate_random_password(length: int = 12) -> str:
+    """Generate a random secure password."""
+    alphabet = string.ascii_letters + string.digits + "!@#$%^&*"
+    while True:
+        password = ''.join(secrets.choice(alphabet) for _ in range(length))
+        # Ensure password meets complexity requirements
+        if (any(c.isupper() for c in password) and
+            any(c.islower() for c in password) and
+            any(c.isdigit() for c in password) and
+            any(c in "!@#$%^&*" for c in password)):
+            return password
 
 
 @router.get("/metrics")
@@ -71,6 +56,8 @@ async def get_users(
             email=getattr(user, 'email', None),
             role=user.role,
             status="active" if user.is_active else "locked",
+            campus=getattr(user, 'campus', None),
+            department=getattr(user, 'department', None),
             phone_number=getattr(user, 'phone_number', None),
             created_at=user.created_at.isoformat() if user.created_at else None
         )
@@ -84,7 +71,7 @@ async def create_user(
     current_user=Depends(get_current_user),
     db: Session = Depends(get_db)
 ) -> CreateUserResponse:
-    """Create a new user account."""
+    """Create a new user account with auto-generated password."""
     # Check if username already exists
     existing_user = db.query(User).filter(User.username == data.username).first()
     if existing_user:
@@ -93,39 +80,32 @@ async def create_user(
             detail="Username or email already exists."
         )
     
-    # Validate password complexity
-    if len(data.password) < 8:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Password does not meet security requirements."
-        )
-    if not any(c.isupper() for c in data.password):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Password does not meet security requirements."
-        )
-    if not any(c.isdigit() for c in data.password):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Password does not meet security requirements."
-        )
-    if not any(c in "!@#$%^&*" for c in data.password):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Password does not meet security requirements."
-        )
+    # Check if email already exists
+    if data.email:
+        existing_email = db.query(User).filter(User.email == data.email).first()
+        if existing_email:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="Username or email already exists."
+            )
+    
+    # Generate random password
+    auto_password = generate_random_password()
     
     # Create new user
     new_user = User(
         username=data.username,
-        password_hash=get_password_hash(data.password),
+        email=data.email,
+        password_hash=get_password_hash(auto_password),
         role=data.role,
         is_active=True
     )
     
-    # Add email if User model supports it
-    if hasattr(User, 'email'):
-        new_user.email = data.email
+    # Add campus and department if User model supports it
+    if hasattr(User, 'campus'):
+        new_user.campus = data.campus
+    if hasattr(User, 'department'):
+        new_user.department = data.department
     
     db.add(new_user)
     db.commit()
@@ -136,7 +116,7 @@ async def create_user(
         username=new_user.username,
         role=new_user.role,
         status="active",
-        message="New user created successfully."
+        message=f"New user created successfully. Temporary password: {auto_password}"
     )
 
 
@@ -170,6 +150,14 @@ async def update_user(
     if data.email and hasattr(User, 'email'):
         user.email = data.email
     
+    # Update campus if provided
+    if data.campus and hasattr(User, 'campus'):
+        user.campus = data.campus
+    
+    # Update department if provided
+    if data.department and hasattr(User, 'department'):
+        user.department = data.department
+    
     # Update role if provided
     if data.role:
         user.role = data.role
@@ -183,6 +171,8 @@ async def update_user(
         email=getattr(user, 'email', None),
         role=user.role,
         status="active" if user.is_active else "locked",
+        campus=getattr(user, 'campus', None),
+        department=getattr(user, 'department', None),
         phone_number=getattr(user, 'phone_number', None),
         created_at=user.created_at.isoformat() if user.created_at else None
     )

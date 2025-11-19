@@ -7,15 +7,20 @@ import {
   DialogTitle,
   DialogDescription,
   DialogFooter,
-} from "../ui";
-import type { CreateUserRequest, UpdateUserRequest } from "../../types/user";
-import type { UserDialogProps } from "../../interfaces/UserDialogProps";
+} from "@/components/ui";
+import CheckboxDropdown from "./CheckboxDropdown";
+import type { CreateUserRequest, UpdateUserRequest } from "@/types/user";
+import type { UserDialogProps } from "@/interfaces/UserDialogProps";
+
+const CAMPUS_OPTIONS = ["Ha Noi", "Da Nang", "Can Tho", "Ho Chi Minh"];
+const DEPARTMENT_OPTIONS = ["Academic Affairs", "Student Affairs", "Information Technology"];
 
 const UserDialog = ({ open, onClose, onSubmit, user, mode }: UserDialogProps) => {
   const [formData, setFormData] = useState({
     username: "",
     email: "",
-    password: "",
+    campus: [] as string[],
+    department: [] as string[],
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -27,13 +32,15 @@ const UserDialog = ({ open, onClose, onSubmit, user, mode }: UserDialogProps) =>
         setFormData({
           username: user.username,
           email: user.email,
-          password: "",
+          campus: user.campus || [],
+          department: user.department || [],
         });
       } else {
         setFormData({
           username: "",
           email: "",
-          password: "",
+          campus: [],
+          department: [],
         });
       }
       setErrors({});
@@ -55,8 +62,11 @@ const UserDialog = ({ open, onClose, onSubmit, user, mode }: UserDialogProps) =>
       if (!formData.username.trim()) {
         newErrors.username = "Username is required";
       }
-      if (!formData.password.trim()) {
-        newErrors.password = "Password is required";
+      if (formData.campus.length === 0) {
+        newErrors.campus = "At least one campus is required";
+      }
+      if (formData.department.length === 0) {
+        newErrors.department = "At least one department is required";
       }
     }
 
@@ -75,12 +85,15 @@ const UserDialog = ({ open, onClose, onSubmit, user, mode }: UserDialogProps) =>
         await onSubmit({
           username: formData.username,
           email: formData.email,
-          password: formData.password,
+          campus: formData.campus,
+          department: formData.department,
         } as CreateUserRequest);
       } else {
         const updateData: UpdateUserRequest = {
           username: formData.username,
           email: formData.email,
+          campus: formData.campus,
+          department: formData.department,
         };
         
         await onSubmit(updateData);
@@ -127,41 +140,55 @@ const UserDialog = ({ open, onClose, onSubmit, user, mode }: UserDialogProps) =>
             )}
           </div>
 
+          <div>
+            <label htmlFor="username" className="block text-sm font-medium text-slate-700 mb-1">
+              Username <span className="text-red-500">*</span>
+            </label>
+            <Input
+              id="username"
+              type="text"
+              placeholder="Enter username"
+              value={formData.username}
+              onChange={(e) => setFormData({ ...formData, username: e.target.value })}
+              error={!!errors.username}
+              disabled={isSubmitting}
+            />
+            {errors.username && (
+              <p className="mt-1 text-sm text-red-600">{errors.username}</p>
+            )}
+          </div>
+
           {mode === "create" && (
             <>
               <div>
-                <label htmlFor="username" className="block text-sm font-medium text-slate-700 mb-1">
-                  Username <span className="text-red-500">*</span>
-                </label>
-                <Input
-                  id="username"
-                  type="text"
-                  placeholder="Enter username"
-                  value={formData.username}
-                  onChange={(e) => setFormData({ ...formData, username: e.target.value })}
-                  error={!!errors.username}
+                <CheckboxDropdown
+                  label="Campus"
+                  required
+                  options={CAMPUS_OPTIONS}
+                  selected={formData.campus}
+                  onChange={(selected) => setFormData({ ...formData, campus: selected })}
+                  placeholder="Choose campus"
+                  error={!!errors.campus}
                   disabled={isSubmitting}
                 />
-                {errors.username && (
-                  <p className="mt-1 text-sm text-red-600">{errors.username}</p>
+                {errors.campus && (
+                  <p className="mt-1 text-sm text-red-600">{errors.campus}</p>
                 )}
               </div>
 
               <div>
-                <label htmlFor="password" className="block text-sm font-medium text-slate-700 mb-1">
-                  Password <span className="text-red-500">*</span>
-                </label>
-                <Input
-                  id="password"
-                  type="password"
-                  placeholder="Enter password"
-                  value={formData.password}
-                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                  error={!!errors.password}
+                <CheckboxDropdown
+                  label="Department"
+                  required
+                  options={DEPARTMENT_OPTIONS}
+                  selected={formData.department}
+                  onChange={(selected) => setFormData({ ...formData, department: selected })}
+                  placeholder="Choose department"
+                  error={!!errors.department}
                   disabled={isSubmitting}
                 />
-                {errors.password && (
-                  <p className="mt-1 text-sm text-red-600">{errors.password}</p>
+                {errors.department && (
+                  <p className="mt-1 text-sm text-red-600">{errors.department}</p>
                 )}
               </div>
             </>

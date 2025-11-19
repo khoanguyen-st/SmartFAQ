@@ -78,8 +78,10 @@ const UsersPage = () => {
       username: createData.username,
       email: createData.email,
       phone_number: "",
-      role: createData.role,
+      role: createData.role || "Staff",
       status: "active",
+      campus: createData.campus,
+      department: createData.department,
     };
     setUsers([...users, newUser]);
   };

@@ -8,6 +8,8 @@ export interface User {
   phone_number?: string;
   role: UserRole;
   status: UserStatus;
+  campus?: string[];
+  department?: string[];
   created_at?: string;
   updated_at?: string;
 }
@@ -15,13 +17,16 @@ export interface User {
 export interface CreateUserRequest {
   username: string;
   email: string;
-  password: string;
-  role: UserRole;
+  campus: string[];
+  department: string[];
+  role?: UserRole;
 }
 
 export interface UpdateUserRequest {
   username?: string;
   email?: string;
+  campus?: string[];
+  department?: string[];
   role?: UserRole;
 }
 
