@@ -9,7 +9,6 @@ from typing import Callable, Deque, Dict
 
 from fastapi import HTTPException, Request, status
 
-
 IdentifierFn = Callable[[Request], str]
 
 
@@ -40,14 +39,20 @@ class RateLimiter:
         self.identifier = identifier or _default_identifier
         self.error_detail = error_detail or "Too many requests. Please slow down."
         self._hits: Dict[str, Deque[float]] = {}
-        self._lock = asyncio.Lock()
+        self._lock: asyncio.Lock | None = None
+
+    def _get_lock(self) -> asyncio.Lock:
+        # Instantiate lock lazily so we don't require an event loop at import time
+        if self._lock is None:
+            self._lock = asyncio.Lock()
+        return self._lock
 
     async def __call__(self, request: Request) -> None:
         key = self.identifier(request)
         now = time.monotonic()
         window_start = now - self.window_seconds
 
-        async with self._lock:
+        async with self._get_lock():
             bucket = self._hits.setdefault(key, deque())
 
             while bucket and bucket[0] <= window_start:

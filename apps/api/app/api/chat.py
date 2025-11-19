@@ -2,10 +2,11 @@
 
 from __future__ import annotations
 
+import logging
 import time
 from datetime import datetime, timezone
 from decimal import Decimal
-from typing import Any, Literal
+from typing import Any, Literal, Optional
 from uuid import uuid4
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
@@ -14,8 +15,6 @@ from sqlalchemy import select
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.rag.lang_utils import detect_language
-
 from ..core.config import settings
 from ..core.database import get_db
 from ..core.input_validation import UnsafeInputError, ensure_safe_text
@@ -23,9 +22,35 @@ from ..core.rate_limiter import RateLimiter
 from ..models.chat import ChatMessage, ChatRole, ChatSession
 from ..models.query_log import QueryLog
 from ..rag.llm import LLMWrapper
+from ..rag.orchestrator import RAGOrchestrator
 
 router = APIRouter()
-llm_wrapper = LLMWrapper()
+
+logger = logging.getLogger(__name__)
+if not logger.handlers:
+    logging.basicConfig(level=logging.INFO)
+
+# Lazy init of orchestrator
+_rag_orchestrator: Optional[RAGOrchestrator] = None
+
+
+def get_rag_orchestrator() -> RAGOrchestrator:
+    global _rag_orchestrator
+    if _rag_orchestrator is None:
+        _rag_orchestrator = RAGOrchestrator()
+    return _rag_orchestrator
+
+
+# Keep LLMWrapper lazy in case used elsewhere
+_llm_wrapper: Optional[LLMWrapper] = None
+
+
+def get_llm_wrapper() -> LLMWrapper:
+    global _llm_wrapper
+    if _llm_wrapper is None:
+        _llm_wrapper = LLMWrapper()
+    return _llm_wrapper
+
 
 _FEEDBACK_MESSAGES: dict[str, str] = {
     "en": "Feedback recorded. Thank you!",
@@ -60,7 +85,7 @@ def _confidence_to_percent(value: float | Decimal | None) -> int:
     return int(round(numeric))
 
 
-def _format_sources(sources: list[dict[str, Any]] | None) -> list[ChatSource]:
+def _format_sources(sources: list[dict[str, Any]] | None) -> list["ChatSource"]:
     formatted: list[ChatSource] = []
     for src in sources or []:
         relevance_raw = src.get("score")
@@ -197,6 +222,7 @@ async def create_session(
         await db.commit()
     except SQLAlchemyError as exc:
         await db.rollback()
+        logger.exception("Failed to create chat session")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Unable to create chat session.",
@@ -225,14 +251,13 @@ async def query_chat(
             detail="Session not found.",
         )
 
-    # --- detect language once and set session.language ---
-    det_lang, _ = detect_language(payload.question)
-    session.language = "vi" if det_lang == "vi" else "en"
-
+    if payload.language:
+        stripped_lang = payload.language.strip()
+        if stripped_lang:
+            session.language = stripped_lang
     if not session.user_agent:
         session.user_agent = request.headers.get("user-agent")
 
-    # load last messages for history
     history_stmt = (
         select(ChatMessage)
         .where(ChatMessage.session_id == session.id)
@@ -244,31 +269,43 @@ async def query_chat(
     history_records.reverse()
     history_messages = [
         {"role": message.role, "content": message.text} for message in history_records
-    ]
+    ]  # noqa: F841
 
+    # --- Use RAG orchestrator to retrieve + answer ---
     try:
-        # prepare model input: if not Vietnamese -> force English instruction
-        if session.language == "vi":
-            model_question = payload.question
-        else:
-            model_question = f"Please answer in English. Question: {payload.question}"
-
         t0 = time.perf_counter()
-        answer = await llm_wrapper.generate_direct_answer_async(
-            model_question,
-            history=history_messages,
+        orchestrator = get_rag_orchestrator()
+        rag_response = await orchestrator.query(
+            question=payload.question,
+            user_id=session.id,
+            top_k=5,
+            where=None,
+            return_top_sources=5,
         )
         latency_ms = int((time.perf_counter() - t0) * 1000)
-    except Exception as exc:  # noqa: BLE001 - surface LLM errors cleanly
+    except Exception as exc:
+        internal_id = str(uuid4())
+        logger.exception("RAGOrchestrator.query failed [%s]", internal_id)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to generate answer.",
+            detail=f"Failed to generate answer. reference={internal_id}",
         ) from exc
 
-    confidence_raw = 1.0
-    fallback_triggered = False
-    sources: list[dict[str, Any]] = []
+    # Validate rag_response shape minimally
+    if not isinstance(rag_response, dict):
+        internal_id = str(uuid4())
+        logger.error("Invalid RAG response shape [%s]: %s", internal_id, str(rag_response))
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail=f"Invalid answer structure from RAG. reference={internal_id}",
+        )
 
+    answer = rag_response.get("answer", "")
+    confidence_raw = rag_response.get("confidence", 0.0)
+    fallback_triggered = bool(rag_response.get("fallback_triggered", False))
+    sources: list[dict[str, Any]] = rag_response.get("sources", []) or []
+
+    # Persist question + response + query log
     question_message = ChatMessage(
         id=str(uuid4()),
         session_id=session.id,
@@ -307,6 +344,7 @@ async def query_chat(
         await db.commit()
     except SQLAlchemyError as exc:
         await db.rollback()
+        logger.exception("Failed to persist chat data for session %s", session.id)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to persist chat data.",
@@ -398,6 +436,7 @@ async def submit_feedback(
         await db.commit()
     except SQLAlchemyError as exc:
         await db.rollback()
+        logger.exception("Failed to record feedback for chat %s", payload.chat_id)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to record feedback.",

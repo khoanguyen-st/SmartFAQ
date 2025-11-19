@@ -8,13 +8,9 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
-        env_file=".env",
-        env_file_encoding="utf-8",
-        case_sensitive=False,
-        extra="ignore"
+        env_file=".env", env_file_encoding="utf-8", case_sensitive=False, extra="ignore"
     )
-    
-    # Core API
+
     env: str = Field("development", alias="APP_ENV")
     api_host: str = Field("0.0.0.0", alias="API_HOST")
     api_port: int = Field(8000, alias="API_PORT")
@@ -22,45 +18,69 @@ class Settings(BaseSettings):
         default=["http://localhost:5174", "http://localhost:5173"],
         alias="CORS_ALLOW_ORIGINS",
     )
-    
-    # Security
+
     jwt_secret: str = Field("change-me", alias="JWT_SECRET")
     jwt_expire_minutes: int = Field(60, alias="JWT_EXPIRE_MINUTES")
-    
-    # Database
+
     database_url: str = Field(
         "postgresql+psycopg://smartfaq:smartfaq@localhost:5432/smartfaq",
         alias="DATABASE_URL",
     )
-    
-    # Google Gemini LLM
+
     GOOGLE_API_KEY: str = Field("", alias="GOOGLE_API_KEY")
     LLM_MODEL: str = Field("gemini-2.0-flash-exp", alias="LLM_MODEL")
     LLM_TEMPERATURE: float = Field(0.3, alias="LLM_TEMPERATURE")
     LLM_MAX_TOKENS: int = Field(2048, alias="LLM_MAX_TOKENS")
-    
-    # Embeddings (HuggingFace Local)
+
     EMBED_MODEL: str = Field("intfloat/multilingual-e5-small", alias="EMBED_MODEL")
-    EMBED_DEVICE: str = Field("cpu", alias="EMBED_DEVICE")  # cpu | cuda
+    EMBED_DEVICE: str = Field("cpu", alias="EMBED_DEVICE")
     EMBED_NORMALIZE: bool = Field(True, alias="EMBED_NORMALIZE")
     EMBED_BATCH: int = Field(32, alias="EMBED_BATCH")
-    
-    # Vector Store (Chroma)
+
     CHROMA_URL: str = Field("http://localhost:8000", alias="CHROMA_URL")
     CHROMA_COLLECTION: str = Field("kb_main", alias="CHROMA_COLLECTION")
-    CHROMA_METRIC: str = Field("cosine", alias="CHROMA_METRIC")  # cosine | l2 | ip
+    CHROMA_METRIC: str = Field("cosine", alias="CHROMA_METRIC")
     CHROMA_HEADERS: str = Field("", alias="CHROMA_HEADERS")
-    
-    # RAG Configuration
+
+    RERANKER_MODEL: str = Field("", alias="RERANKER_MODEL")
+
     CONFIDENCE_THRESHOLD: float = Field(0.65, alias="CONFIDENCE_THRESHOLD")
     MAX_CONTEXT_CHARS: int = Field(8000, alias="MAX_CONTEXT_CHARS")
     TOP_K_RETRIEVAL: int = Field(5, alias="TOP_K_RETRIEVAL")
-    
-    # Document Upload
+
+    CONSISTENCY_PASSES: int = Field(3, alias="CONSISTENCY_PASSES")
+
+    RETRIEVAL_CONF_WEIGHTS: list[float] = Field(
+        default=[0.5, 0.3, 0.2], alias="RETRIEVAL_CONF_WEIGHTS"
+    )
+
+    FINAL_CONF_WEIGHTS: dict = Field(
+        default={
+            "retrieval": 0.5,
+            "answer": 0.3,
+            "consistency": 0.2,
+        },
+        alias="FINAL_CONF_WEIGHTS",
+    )
+
+    CONFIDENCE_WEIGHTS: dict = Field(
+        default={
+            "retrieval": 0.3,
+            "rerank": 0.5,
+            "verification": 0.2,
+        },
+        alias="CONFIDENCE_WEIGHTS",
+    )
+
+    STRICT_FALLBACK: bool = Field(False, alias="STRICT_FALLBACK")
+
+    ENABLE_VERIFICATION: bool = Field(True, alias="ENABLE_VERIFICATION")
+
+    ALLOW_DEBUG_RAG: bool = Field(True, alias="ALLOW_DEBUG_RAG")
+
     UPLOAD_DIR: str = Field("./uploads", alias="UPLOAD_DIR")
     UPLOAD_MAX_MB: int = Field(50, alias="UPLOAD_MAX_MB")
-    
-    # Celery
+
     CELERY_BROKER_URL: str = Field("redis://localhost:6379/0", alias="CELERY_BROKER_URL")
     CELERY_RESULT_BACKEND: str = Field("redis://localhost:6379/0", alias="CELERY_RESULT_BACKEND")
 
