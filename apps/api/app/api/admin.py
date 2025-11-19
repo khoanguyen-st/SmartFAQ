@@ -2,19 +2,20 @@
 
 import secrets
 import string
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
-from ..core.users import get_current_user, get_password_hash
 from ..core.config import get_db
-from ..models.user import User
-from ..services import metrics
+from ..core.users import get_current_user, get_password_hash
 from ..dto.admin import (
     CreateUserRequest,
+    CreateUserResponse,
     UpdateUserRequest,
     UserResponse,
-    CreateUserResponse,
 )
+from ..models.user import User
+from ..services import metrics
 
 router = APIRouter()
 

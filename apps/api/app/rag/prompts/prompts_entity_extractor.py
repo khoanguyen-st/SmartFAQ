@@ -6,7 +6,9 @@ This module contains the system prompt for entity extraction, which instructs th
 - Use detected intent to guide extraction
 - Detect language (Vietnamese with/without diacritics or English)
 """
+
 from typing import Optional
+
 
 def get_entity_extraction_prompt(intent_label: Optional[str] = None, intent_confidence: Optional[float] = None) -> str:
     """
