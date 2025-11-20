@@ -3,24 +3,19 @@ RAG module - Retrieval Augmented Generation components
 """
 
 from .embedder import get_embeddings
-from .llm import LLMWrapper
-from .orchestrator import RAGOrchestrator
-<<<<<<< HEAD
-from .retriever import Retriever
-from .vector_store import get_vectorstore
-=======
->>>>>>> ee4c06d9da2ffabbeb99d2963165673797671d82
-from .question_understanding import (
-    QuestionUnderstanding,
-    IntentDetector,
-    EntityExtractor,
-    QuestionNormalizer,
-)
-from .validations import Intent, Entity, NormalizedQuestion
-from .intent_detector import RuleBasedIntentDetector
-from .normalizer import RuleBasedNormalizer
 from .entity_extractor import RuleBasedEntityExtractor
+from .intent_detector import RuleBasedIntentDetector
+from .llm import LLMWrapper
+from .normalizer import RuleBasedNormalizer
+from .orchestrator import RAGOrchestrator
+from .question_understanding import (
+    EntityExtractor,
+    IntentDetector,
+    QuestionNormalizer,
+    QuestionUnderstanding,
+)
 from .retriever import Retriever
+from .validations import Entity, Intent, NormalizedQuestion
 from .vector_store import get_vectorstore
 
 __all__ = [
