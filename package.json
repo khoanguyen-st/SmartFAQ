@@ -1,24 +1,32 @@
 {
-  "name": "smartfaq-root",
+  "name": "smartfaq-monorepo",
+  "version": "0.1.0",
   "private": true,
+  "type": "module",
   "workspaces": [
     "apps/*",
     "packages/*"
   ],
   "scripts": {
-    "lint": "yarn workspaces run lint",
-    "build": "yarn workspaces run build",
-    "dev": "yarn workspaces run dev"
+    "prepare": "husky",
+    "lint": "yarn workspaces foreach -pt run lint",
+    "format": "yarn workspaces foreach -pt run format",
+    "format:check": "yarn workspaces foreach -pt run format:check",
+    "lint:web": "eslint --config packages/config/eslint.config.js",
+    "format:prettier": "prettier --write"
   },
   "devDependencies": {
-    "@eslint/js": "^9.5.0",
-    "@typescript-eslint/eslint-plugin": "^8.46.2",
-    "@typescript-eslint/parser": "^8.46.2",
-    "eslint": "^9.5.0",
-    "eslint-plugin-jsx-a11y": "^6.8.0",
-    "eslint-plugin-react": "^7.34.1",
-    "eslint-plugin-react-hooks": "^5.0.0",
-    "globals": "^15.0.0",
-    "typescript": "~5.4.5"
+    "husky": "^9.1.7",
+    "lint-staged": "^15.2.11"
+  },
+  "lint-staged": {
+    "apps/web-{student,admin}/src/**/*.{ts,tsx}": [
+      "yarn lint:web --fix --max-warnings=0",
+      "yarn format:prettier"
+    ],
+    "apps/api/app/**/*.py": [
+      "ruff check --fix",
+      "black"
+    ]
   }
 }
