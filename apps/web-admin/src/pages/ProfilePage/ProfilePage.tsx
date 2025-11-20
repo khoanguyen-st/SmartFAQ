@@ -18,7 +18,7 @@ const ProfilePage = () => {
 
   const initialProfile: ProfileState = {
     username: '',
-    email: '',
+    email: 'nguyenan123@example.com',
     phoneNumber: '',
     address: '',
     avatarUrl: avatarIcon,
@@ -41,15 +41,12 @@ const ProfilePage = () => {
     setIsModalOpen(false);
   };
 
-
-
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { id, value } = e.target;
     setTempProfile((prev) => ({ ...prev, [id]: value }));
   };
 
   const handleSaveClick = () => {
-
     setProfile(tempProfile);
     setEditingField(null);
   };
@@ -65,7 +62,6 @@ const ProfilePage = () => {
     }
     setEditingField(fieldName);
   };
-
 
   const handleUpdateAvatar = () => {
     setAvatarError('');
@@ -118,12 +114,12 @@ const ProfilePage = () => {
     fieldId: keyof ProfileState,
     label: string,
     type: string = 'text',
+    isEditable: boolean = true
   ) => {
     const isEditing = editingField === fieldId;
 
     return (
       <div className="flex items-center gap-4">
-
         <label
           htmlFor={fieldId}
 
@@ -132,55 +128,56 @@ const ProfilePage = () => {
           {t(label)}
         </label>
 
-        <div className="flex items-center gap-3 flex-1 overflow-hidden"> 
-  <input
-    type={type}
-    id={fieldId}
-    value={tempProfile[fieldId]}
-    readOnly={!isEditing}
-    onChange={handleInputChange}
-    onClick={() => handleEditClick(fieldId)}
-    className={`px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 
-      flex-1 transition-colors duration-200 ease-in-out 
-      isEditing
-        ? 'bg-white' 
-        : 'bg-gray-100 cursor-pointer' 
-    }`}
-  />
+        <div className="flex items-center gap-3 flex-1 overflow-hidden">
+          <input
+            type={type}
+            id={fieldId}
+            value={tempProfile[fieldId]}
+            readOnly={!isEditing}
+            disabled={!isEditable && !isEditing}
+            onChange={handleInputChange}
+            onClick={() => isEditable && handleEditClick(fieldId)}
+            className={`px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 
+              flex-1 transition-colors duration-200 ease-in-out 
+              ${
+                isEditing
+                  ? 'bg-white'
+                  : isEditable
+                  ? 'bg-gray-100 cursor-pointer'
+                  : 'bg-gray-200 text-gray-500 cursor-not-allowed'
+              }`}
+          />
 
-  
-  <div
-    className={`flex items-center gap-2 transition-all duration-200 ${ 
-      isEditing
-        ? 'max-w-md opacity-100' 
-        : 'max-w-0 opacity-0 overflow-hidden' 
-    }`}
-  >
-    
-    <button
-      type="button"
-      onClick={handleSaveClick}
-      className="p-2 border border-gray-300 rounded-md text-green-600 hover:bg-green-50"
-    >
-      <Check size={20} />
-    </button>
-    <button
-      type="button"
-      onClick={handleCancelClick}
-      className="p-2 border border-gray-300 rounded-md text-red-600 hover:bg-red-50"
-    >
-      <X size={20} />
-    </button>
-  </div>
-</div>
+          <div
+            className={`flex items-center gap-2 transition-all duration-200 ${
+              isEditing
+                ? 'max-w-md opacity-100'
+                : 'max-w-0 opacity-0 overflow-hidden'
+            }`}
+          >
+            <button
+              type="button"
+              onClick={handleSaveClick}
+              className="p-2 border border-gray-300 rounded-md text-green-600 hover:bg-green-50"
+            >
+              <Check size={20} />
+            </button>
+            <button
+              type="button"
+              onClick={handleCancelClick}
+              className="p-2 border border-gray-300 rounded-md text-red-600 hover:bg-red-50"
+            >
+              <X size={20} />
+            </button>
+          </div>
+        </div>
       </div>
     );
   };
 
-
   return (
     <div className="bg-gray-50 min-h-screen">
-      <div className="max-w-7xl mx-auto p-8">
+      <div className="max-w-6xl mx-auto p-8">
         <header className="flex justify-between items-center mb-8">
           <div>
             <h1 className="text-3xl font-bold text-gray-900">
@@ -191,9 +188,7 @@ const ProfilePage = () => {
             </p>
           </div>
 
-          <button
-            className="px-4 py-2 bg-[#003087] text-white rounded-lg font-medium hover:bg-[#002a73] focus:outline-none focus:ring-2 focus:ring-[#003087] focus:ring-opacity-50 flex items-center gap-2"
-          >
+          <button className="px-4 py-2 bg-[#003087] text-white rounded-lg font-medium hover:bg-[#002a73] focus:outline-none focus:ring-2 focus:ring-[#003087] focus:ring-opacity-50 flex items-center gap-2">
             <Eye size={18} />
             {t('See Your Documents')}
           </button>
@@ -201,7 +196,6 @@ const ProfilePage = () => {
 
         <div className="bg-white rounded-2xl shadow-lg p-12 border border-gray-200 flex justify-between items-center">
           <div className="grid grid-cols-1 md:grid-cols-12 gap-10 w-full">
-
             <div className="md:col-span-4 flex flex-col items-center justify-center">
               <img
                 src={profile.avatarUrl}
@@ -238,23 +232,20 @@ const ProfilePage = () => {
               )}
             </div>
 
-      
             <form className="md:col-span-8 flex flex-col gap-6 justify-center">
-              {renderProfileField('email', 'Email', 'email')}
+              {renderProfileField('email', 'Email', 'email', false)}
               {renderProfileField('username', 'Username', 'text')}
               {renderProfileField('phoneNumber', 'Phone Number', 'tel')}
               {renderProfileField('address', 'Address', 'text')}
 
-          
-              <div className="flex justify-end mt-4">
-                <button
-                  type="button"
-                  onClick={handleChangePasswordClick}
-                  className="px-4 py-2 bg-[#003087] text-white rounded-lg font-medium hover:bg-[#002a73] focus:outline-none focus:ring-2 focus:ring-[#003087] focus:ring-opacity-50"
-                  disabled={!!editingField}
-                >
-                  {t('Change Password')}
-                </button>
+              <div className="flex justify-end mt-4 pr-3"> 
+              <button
+              type="button"
+              onClick={handleChangePasswordClick}
+              className="px-4 py-2 bg-[#003087] text-white rounded-lg font-medium hover:bg-[#002a73] focus:outline-none focus:ring-2 focus:ring-[#003087] focus:ring-opacity-50"
+              disabled={!!editingField} >
+              {t('Change Password')}
+              </button>
               </div>
             </form>
           </div>
