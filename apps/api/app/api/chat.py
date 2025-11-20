@@ -15,6 +15,8 @@ from sqlalchemy import select
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.rag.utils.language import detect_language_simple, normalize_language_code
+
 from ..core.config import settings
 from ..core.database import get_db
 from ..core.input_validation import UnsafeInputError, ensure_safe_text
@@ -249,12 +251,16 @@ async def query_chat(
             detail="Session not found.",
         )
 
-    if payload.language:
-        stripped_lang = payload.language.strip()
-        if stripped_lang:
-            session.language = stripped_lang
-    if not session.user_agent:
-        session.user_agent = request.headers.get("user-agent")
+    stripped_lang = None
+    if getattr(payload, "language", None):
+        stripped_lang = (payload.language or "").strip()
+
+    if stripped_lang:
+        norm = normalize_language_code(stripped_lang, default="en")
+        session.language = "vi" if norm == "vi" else "en"
+    else:
+        detected = detect_language_simple(getattr(payload, "question", "") or "")
+        session.language = "vi" if detected == "vi" else "en"
 
     history_stmt = (
         select(ChatMessage)
@@ -272,12 +278,14 @@ async def query_chat(
     try:
         t0 = time.perf_counter()
         orchestrator = get_rag_orchestrator()
+        # Pass response_language so orchestrator/LLM can be forced to the desired language
         rag_response = await orchestrator.query(
             question=payload.question,
             user_id=session.id,
             top_k=5,
             where=None,
             return_top_sources=5,
+            response_language=session.language,
         )
         latency_ms = int((time.perf_counter() - t0) * 1000)
     except Exception as exc:

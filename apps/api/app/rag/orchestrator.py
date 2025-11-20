@@ -36,16 +36,10 @@ class RAGOrchestrator:
         *,
         top_k: int = 5,
         where: Optional[Dict[str, Any]] = None,
-        search_type: str = "similarity",  # or "mmr"
+        search_type: str = "similarity",
         return_top_sources: int = 3,
+        response_language: str = "en",
     ) -> Dict[str, Any]:
-        """
-        RAG pipeline with strict threshold policy:
-        - If no contexts -> hard fallback (no sources)
-        - If confidence >= threshold -> call LLM and return answer + sources
-        - If confidence < threshold -> hard fallback (no sources)
-        - If LLM returns fallback-like text despite contexts -> convert to fallback (no sources, confidence=0)
-        """
         t0 = time.time()
 
         # 1) Retrieve
@@ -58,8 +52,13 @@ class RAGOrchestrator:
             )
         except Exception as e:
             logger.exception("Retriever failed: %s", e)
+            error_msg = (
+                "Xin lỗi, hệ thống tìm kiếm tài liệu gặp lỗi. Vui lòng thử lại sau."
+                if response_language == "vi"
+                else "Sorry, the document search system failed. Please try again later."
+            )
             return {
-                "answer": "Xin lỗi, hệ thống tìm kiếm tài liệu gặp lỗi. Vui lòng thử lại sau.",
+                "answer": error_msg,
                 "confidence": 0.0,
                 "sources": [],
                 "fallback_triggered": True,
@@ -82,23 +81,36 @@ class RAGOrchestrator:
         fallback_triggered = False
         sources_to_return: List[Dict[str, Any]] = []
 
-        # Case: no contexts -> hard fallback
+        is_vi = response_language == "vi"
+        fallback_text = (
+            "Tôi không tìm thấy thông tin về vấn đề này"
+            if is_vi
+            else "I could not find information about that."
+        )
+        error_text = (
+            "Xin lỗi, hệ thống đang gặp sự cố. Vui lòng thử lại sau."
+            if is_vi
+            else "Sorry, the system encountered an error. Please try again later."
+        )
+
         if not contexts:
             logger.info("No contexts found for question=%s -> hard fallback", question)
-            answer = "Tôi không tìm thấy thông tin về vấn đề này"
+            answer = fallback_text
             fallback_triggered = True
             sources_to_return = []
         else:
             logger.debug("Retriever confidence=%.4f threshold=%.4f", confidence, threshold)
 
             if confidence >= threshold:
-                # confident: call LLM normally
+                # confident: call LLM with explicit target language
                 try:
-                    raw = await self.llm_wrapper.generate_answer_async(question, contexts)
+                    raw = await self.llm_wrapper.generate_answer_async(
+                        question, contexts, target_language=response_language
+                    )
                 except Exception as e:
                     logger.exception("LLM generation failed on confident path: %s", e)
                     return {
-                        "answer": "Xin lỗi, hệ thống đang gặp sự cố. Vui lòng thử lại sau.",
+                        "answer": error_text,
                         "confidence": 0.0,
                         "sources": [],
                         "fallback_triggered": True,
@@ -108,24 +120,29 @@ class RAGOrchestrator:
                 answer = raw or ""
                 sources_to_return = contexts[:return_top_sources]
             else:
-                # confidence below threshold -> hard fallback (no sources)
                 logger.info(
                     "Retriever confidence too low (%.4f < %.4f) for question=%s -> fallback (no sources)",
                     confidence,
                     threshold,
                     question,
                 )
-                answer = "Tôi không tìm thấy thông tin về vấn đề này"
+                answer = fallback_text
                 fallback_triggered = True
                 sources_to_return = []
 
-        # Post-process: if LLM returned fallback-like text despite contexts present -> convert to fallback
-        llm_fallback_markers = [
-            "tôi không tìm thấy thông tin",
-            "không tìm thấy thông tin",
-            "không có thông tin",
-            "không biết",
-        ]
+        if is_vi:
+            llm_fallback_markers = [
+                "tôi không tìm thấy thông tin",
+                "không tìm thấy thông tin",
+            ]
+        else:
+            llm_fallback_markers = [
+                "could not find",
+                "no information",
+                "i do not know",
+                "i don't know",
+            ]
+
         normalized_answer = (answer or "").strip().lower()
         if sources_to_return and (
             normalized_answer == ""
@@ -140,7 +157,7 @@ class RAGOrchestrator:
             fallback_triggered = True
             sources_to_return = []
             confidence = 0.0
-            answer = "Tôi không tìm thấy thông tin về vấn đề này"
+            answer = fallback_text
 
         # Build sources payload
         sources_list: List[Dict[str, Any]] = []
