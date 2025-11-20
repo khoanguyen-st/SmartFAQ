@@ -30,7 +30,6 @@ logger = logging.getLogger(__name__)
 if not logger.handlers:
     logging.basicConfig(level=logging.INFO)
 
-# Lazy init of orchestrator
 _rag_orchestrator: Optional[RAGOrchestrator] = None
 
 
@@ -41,7 +40,6 @@ def get_rag_orchestrator() -> RAGOrchestrator:
     return _rag_orchestrator
 
 
-# Keep LLMWrapper lazy in case used elsewhere
 _llm_wrapper: Optional[LLMWrapper] = None
 
 
@@ -271,7 +269,6 @@ async def query_chat(
         {"role": message.role, "content": message.text} for message in history_records
     ]  # noqa: F841
 
-    # --- Use RAG orchestrator to retrieve + answer ---
     try:
         t0 = time.perf_counter()
         orchestrator = get_rag_orchestrator()
@@ -291,7 +288,6 @@ async def query_chat(
             detail=f"Failed to generate answer. reference={internal_id}",
         ) from exc
 
-    # Validate rag_response shape minimally
     if not isinstance(rag_response, dict):
         internal_id = str(uuid4())
         logger.error("Invalid RAG response shape [%s]: %s", internal_id, str(rag_response))
@@ -305,7 +301,6 @@ async def query_chat(
     fallback_triggered = bool(rag_response.get("fallback_triggered", False))
     sources: list[dict[str, Any]] = rag_response.get("sources", []) or []
 
-    # Persist question + response + query log
     question_message = ChatMessage(
         id=str(uuid4()),
         session_id=session.id,
