@@ -28,7 +28,6 @@ class UserLogin(BaseModel):
             }
         }
 
-
 class Token(BaseModel):
     """
     Schema for login response body (AC 2.1).
@@ -48,7 +47,6 @@ class Token(BaseModel):
             }
         }
 
-
 class ForgotPasswordRequest(BaseModel):
     """
     Schema for forgot password request (AC 7.1).
@@ -64,7 +62,6 @@ class ForgotPasswordRequest(BaseModel):
                 "email": "user@example.com"
             }
         }
-
 
 class ResetPasswordRequest(BaseModel):
     """
@@ -84,7 +81,6 @@ class ResetPasswordRequest(BaseModel):
                 "new_password": "NewSecurePassword123!"
             }
         }
-
 
 class LogoutResponse(BaseModel):
     """
@@ -129,6 +125,17 @@ class UserMe(BaseModel):
                 "is_active": True,
                 "notification_email": "admin@example.com",
                 "created_at": "2025-01-01T00:00:00Z"
+            }
+        }
+
+class UnlockAccountResponse(BaseModel):
+    """Schema for unlock account response."""
+    message: str = Field(default="Account unlocked successfully", description="Success message")
+    
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "message": "Account unlocked successfully"
             }
         }
 
