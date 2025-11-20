@@ -14,7 +14,6 @@ const InformationModal: React.FC<InformationModalProps> = ({
   existingInfo,
   selectedFiles,
 }) => {
-  // Derive initial common values across selected files
   const { initialCategory, initialTags } = useMemo(() => {
     if (!selectedFiles || selectedFiles.length === 0) {
       return { initialCategory: "", initialTags: "" }

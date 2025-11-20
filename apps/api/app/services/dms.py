@@ -8,6 +8,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 from sqlalchemy import select
 
 from ..core.config import settings
@@ -173,7 +174,7 @@ async def create_metadata_document(data: dict[str, Any], db: AsyncSession) -> di
 
 async def list_documents(db: AsyncSession) -> list[dict[str, Any]]:
     """✅ Chuyển thành async, dùng select() thay vì query()"""
-    stmt = select(Document).order_by(Document.created_at.desc())
+    stmt = (select(Document).options(selectinload(Document.current_version)).order_by(Document.created_at.desc()))
     result = await db.execute(stmt)
     rows = result.scalars().all()
     

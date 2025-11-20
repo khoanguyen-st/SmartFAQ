@@ -7,6 +7,7 @@ import {
   ChatHistoryMessage
 } from '@/services/chat.services'
 
+import KnowledgeSidebar from '@/components/viewchat/KnowledgeSidebar' 
 import MessIcon from '@/assets/icons/messager.svg?react'
 import SendIcon from '@/assets/icons/send.svg?react'
 import InforIcon from '@/assets/icons/i-icon.svg?react'
@@ -14,13 +15,10 @@ import TrashIcon from '@/assets/icons/trash-icon.svg?react'
 import PdfNoFill from '@/assets/icons/pdf-no-fill.svg?react'
 import ImageNofill from '@/assets/icons/image-no-fill.svg?react'
 import TxtNoFill from '@/assets/icons/txt-no-fill.svg?react'
-import SidebarIcon from '@/assets/icons/sidebar.svg?react'
-import PlusIcon from '@/assets/icons/plus.svg?react'
-
-
-import UploadedFile from '@/components/viewchat/UploadedFile'
-import KnowledgeIcon from '@/assets/icons/knowledge.svg?react'
-import { useKnowledgeFiles } from '@/hooks/useKnowledgeFiles'
+import UploadModal from '@/components/viewchat/UploadModal'
+// 🌟 Import type handle cho ref
+import UploadedFile, { UploadedFileHandle } from '@/components/viewchat/UploadedFile' 
+import { uploadKnowledgeFiles } from '@/services/document.services'
 import { cn } from '@/lib/utils'
 
 type DisplayMessage = {
@@ -37,20 +35,16 @@ const initialMessage: DisplayMessage = {
   content: ['Welcome to Smart FAQ.']
 }
 
-// --- Helper function to format API history ---
 function formatHistoryMessage(msg: ChatHistoryMessage): DisplayMessage {
   return {
     id: msg.chatId || msg.timestamp,
     type: msg.role === 'user' ? 'receiver' : 'sender',
     content: msg.text.split('\n'),
     chatId: msg.chatId || undefined,
-    // Note: Your /history endpoint doesn't return sources for old messages.
-    // Sources will only appear for new messages in this session.
     sources: undefined
   }
 }
 
-// --- Updated ChatMessage Component ---
 type ChatMessageProps = {
   message: DisplayMessage
 }
@@ -82,13 +76,12 @@ const ChatMessage = ({ message }: ChatMessageProps) => {
         {message.content.map((line: string, i: number) => (
           <p key={i}>{line}</p>
         ))}
-        {/* Updated Source Rendering Logic */}
         {message.sources && message.sources.length > 0 && (
           <div className="message__reference mt-2 border-t border-gray-300 pt-2">
             <h4 className="mb-1 text-xs font-semibold">Sources:</h4>
             {message.sources.map((source, index) => {
               const filename = source.title.toLowerCase()
-              let IconComponent = TxtNoFill // Default
+              let IconComponent = TxtNoFill
               if (filename.endsWith('.pdf')) {
                 IconComponent = PdfNoFill
               } else if (filename.endsWith('.jpg') || filename.endsWith('.gif') || filename.endsWith('.png')) {
@@ -100,8 +93,6 @@ const ChatMessage = ({ message }: ChatMessageProps) => {
                   <IconComponent className="mr-2 h-3 w-3 shrink-0" />
                   <p className="truncate text-sm">
                     {source.title}
-                    {/* API doesn't provide pages, but you could show relevance or chunkId */}
-                    {/* {source.relevance && ` (${(source.relevance * 100).toFixed(0)}%)`} */}
                   </p>
                 </div>
               )
@@ -124,10 +115,13 @@ const ChatMessage = ({ message }: ChatMessageProps) => {
   return null
 }
 
-// --- Updated ViewChatPage Component ---
 const ViewChatPage = () => {
-  const { files, loading, error, uploadError, handleFileUpload, handleDeleteFile } = useKnowledgeFiles()
-
+  // ❌ DÒNG GÂY LỖI ĐÃ BỊ XÓA!
+  // const { refreshFiles } = uploadKnowledgeFiles() 
+  
+  // 🌟 TẠO REF ĐỂ GỌI HÀM TỪ UPLOADEDFILE
+  const uploadedFileRef = useRef<UploadedFileHandle>(null);
+  
   const [isSidebarOpen, setIsSidebarOpen] = useState(true)
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false)
 
@@ -137,9 +131,11 @@ const ViewChatPage = () => {
 
   const handleModalClose = () => {
     setIsUploadModalOpen(false)
-    refreshFiles() 
+    // 🌟 GỌI HÀM LÀM MỚI TỪ REF SAU KHI ĐÓNG MODAL
+    if (uploadedFileRef.current) {
+      uploadedFileRef.current.refreshFiles();
+    }
   }
-
 
   const [messages, setMessages] = useState<DisplayMessage[]>(() => {
     const storedMessages = localStorage.getItem('chatMessages')
@@ -153,18 +149,15 @@ const ViewChatPage = () => {
   })
 
   const [isLoading, setIsLoading] = useState(false)
-  const [errorState, setErrorState] = useState<string | null>(null)
+  const [errorState, setErrorState] = useState<string | null>(null) 
 
   const chatContentRef = useRef<HTMLDivElement>(null)
 
-  // Effect to get session ID on mount
-  // --- MODIFIED EFFECT: Load session or start new one ---
   useEffect(() => {
     const initSession = async () => {
       const storedSessionId = localStorage.getItem('chatSessionId')
 
       if (storedSessionId) {
-        // Session found, validate it and fetch history
         setSessionId(storedSessionId)
         setIsLoading(true)
         try {
@@ -172,19 +165,15 @@ const ViewChatPage = () => {
           if (historyResponse.messages.length > 0) {
             setMessages(historyResponse.messages.map(formatHistoryMessage))
           } else {
-            // Session was valid but empty, or history was cleared
             setMessages([initialMessage])
           }
-          // setErrorState(null)
         } catch (err) {
           console.error('Failed to fetch history, starting new session.', err)
-          // The stored session might be invalid/expired. Start a new one.
           await startNewSession()
         } finally {
           setIsLoading(false)
         }
       } else {
-        // No session found, start a new one
         await startNewSession()
       }
     }
@@ -192,13 +181,11 @@ const ViewChatPage = () => {
     const startNewSession = async () => {
       setIsLoading(true)
       try {
-        // setErrorState(null)
         const sessionResponse = await startNewChatSession()
         setSessionId(sessionResponse.sessionId)
         setMessages([initialMessage])
       } catch (err) {
         console.error(err)
-        // setErrorState('Failed to start chat session.')
         setMessages([
           {
             id: 'error-session',
@@ -211,12 +198,10 @@ const ViewChatPage = () => {
       }
     }
 
-    // We only want this to run once on initial load.
-    // The `sessionId` state is already initialized from localStorage.
     if (!sessionId) {
       initSession()
     }
-  }, []) // Empty dependency array ensures this runs only once on mount
+  }, []) 
 
   useEffect(() => {
     if (sessionId) {
@@ -226,12 +211,10 @@ const ViewChatPage = () => {
 
   useEffect(() => {
     if (sessionId && messages.length > 0) {
-      // Only save messages if a session is active
       localStorage.setItem('chatMessages', JSON.stringify(messages))
     }
   }, [messages, sessionId])
 
-  // Effect to scroll to bottom on new message
   useEffect(() => {
     const el = chatContentRef.current
     if (el) {
@@ -239,29 +222,22 @@ const ViewChatPage = () => {
     }
   }, [messages])
 
-  // Handle clearing chat (start a new session)
+
   const handleClearChat = async () => {
     setIsLoading(true)
     try {
-      // setErrorState(null)
-      // Clear local storage
       localStorage.removeItem('chatSessionId')
       localStorage.removeItem('chatMessages')
-
-      // Start a new session
       const sessionResponse = await startNewChatSession()
       setSessionId(sessionResponse.sessionId)
-      setMessages([initialMessage]) // Reset to welcome
+      setMessages([initialMessage]) 
     } catch (err) {
       console.error(err)
-      // setErrorState('Failed to start a new chat session.')
-      // ... error handling ...
     } finally {
       setIsLoading(false)
     }
   }
 
-  // Handle sending a message
   const handleSend = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     const trimmedInput = userText.trim()
@@ -277,17 +253,14 @@ const ViewChatPage = () => {
     setMessages(prev => [...prev.filter(m => m.type !== 'system'), newUserMessage])
     setIsLoading(true)
     setUserText('')
-    // setErrorState(null)
 
     try {
-      // --- Real API Call ---
       const response = await sendChatMessage(sessionId, trimmedInput)
 
-      // Format API response to DisplayMessage
       const aiMessage: DisplayMessage = {
         id: response.chatId,
         type: 'sender',
-        content: response.answer.split('\n'), // Split answer by newlines
+        content: response.answer.split('\n'), 
         sources: response.sources,
         chatId: response.chatId
       }
@@ -308,87 +281,14 @@ const ViewChatPage = () => {
 
   return (
     <div className="flex h-[calc(100vh-81px)] w-full border border-[#e5e7eb] bg-white">
-      <div
-        className={cn(
-          'flex h-full flex-col transition-all duration-300 ease-in-out border-r border-[#F3F4F6] bg-white z-10',
-          isSidebarOpen ? 'w-1/2 min-w-[400px]' : 'w-[118px]'
-        )}
-      >
-        {/* Header Area */}
-        <div
-          className={cn(
-            'flex items-center border-b border-[#F3F4F6] transition-all duration-300 shrink-0',
-            isSidebarOpen ? 'justify-between p-6 h-[92px]' : 'justify-center h-[92px]'
-          )}
-        >
-          {/* Title & Icon (Chỉ hiện khi MỞ) */}
-          {isSidebarOpen && (
-            <div className="flex flex-col overflow-hidden text-nowrap text-ellipsis">
-              <div className="title-header flex items-center">
-                <KnowledgeIcon className="mr-2 h-6 w-6 shrink-0 text-[#003087]" />
-                <h1 className="text-[18px] font-semibold leading-7 text-[#111827]">Knowledge Sources</h1>
-              </div>
-              <p className="text-[14px] text-[#6B7280]">Upload and manage documents</p>
-            </div>
-          )}
-
-          <div className={cn('flex items-center', isSidebarOpen && 'gap-4')}>
-            {/* Nút Upload (Chỉ hiện trong header khi MỞ) */}
-            {isSidebarOpen && (
-              <button
-                onClick={handleSelectFileClick}
-                className="flex items-center justify-center h-[36px] gap-2 px-4 rounded-[8px] bg-[#003087] transition-all hover:bg-[#00205a]"
-                title="Upload Files"
-              >
-                <div className="flex items-center justify-center">
-                  <PlusIcon className="h-3.5 w-3 text-white" />
-                </div>
-                <span className="text-sm font-medium text-white">Select Files</span>
-              </button>
-            )}
-
-            {/* Nút Sidebar Toggle */}
-            <button
-              onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-              className={cn(
-                'cursor-pointer p-1 hover:bg-gray-100 rounded group transition-colors',
-                !isSidebarOpen && 'p-2'
-              )}
-              title={isSidebarOpen ? 'Collapse sidebar' : 'Expand sidebar'}
-            >
-              <SidebarIcon
-                className={cn(
-                  'h-6 w-6 text-gray-400 transition-transform group-hover:text-[#003087]',
-                  !isSidebarOpen && 'rotate-180'
-                )}
-              />
-            </button>
-          </div>
-        </div>
-
-        {/* Content Area */}
-        <div className="flex-1 flex flex-col overflow-hidden relative">
-          {/* Nút Upload Compact (Chỉ hiện khi sidebar ĐÓNG) */}
-          {!isSidebarOpen && (
-            <div className="w-full flex justify-center py-4 shrink-0">
-              <button
-                onClick={handleSelectFileClick}
-                className="flex items-center justify-center w-[48px] h-[36px] rounded-[8px] bg-[#003087] hover:bg-[#00205a] transition-colors shadow-sm"
-                title="Upload Files"
-              >
-                <PlusIcon className="h-3.5 w-3 text-white" />
-              </button>
-            </div>
-          )}
-
-          {/* Error Notification Removed */}
-
-          {/* File List Content */}
-          <div className={cn('flex-1 overflow-hidden', !isSidebarOpen && 'w-full px-[22px]')}>
-            {/*  */}
-          </div>
-        </div>
-      </div>
+      
+      {/* 🌟 TRUYỀN REF VÀO SIDEBAR */}
+      <KnowledgeSidebar
+        isSidebarOpen={isSidebarOpen}
+        setIsSidebarOpen={setIsSidebarOpen}
+        handleSelectFileClick={handleSelectFileClick}
+        uploadedFileRef={uploadedFileRef}
+      />
 
       <div className="chat flex h-full flex-1 flex-col">
         <div className="chat__header flex items-center justify-between p-6">
@@ -414,23 +314,18 @@ const ViewChatPage = () => {
           {messages.map(msg => (
             <ChatMessage key={msg.id} message={msg} />
           ))}
-          {/* Show typing indicator */}
           {isLoading && (
             <div className="message message--sender">
               <p className="animate-pulse">Typing...</p>
             </div>
           )}
-          {/* Show general error */}
-          {error && !messages.some(m => m.type === 'error') && (
+          {errorState && !messages.some(m => m.type === 'error') && (
             <div className="message message--sender bg-red-100 py-3 text-red-700">
               <p className="font-bold">Error:</p>
-              <p>{error}</p>
+              <p>{errorState}</p>
             </div>
           )}
         </div>
-
-        {/* Commented out static content */}
-        {/* <div className="chat__content ..."> ... </div> */}
 
         <div className="chat__footer flex h-24 flex-col px-6 py-4">
           <form
@@ -466,6 +361,10 @@ const ViewChatPage = () => {
           </div>
         </div>
       </div>
+      <UploadModal
+        isOpen={isUploadModalOpen}
+        onClose={handleModalClose}
+      />
     </div>
   )
 }
