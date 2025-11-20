@@ -1,4 +1,3 @@
-# vector_store.py
 from __future__ import annotations
 
 import hashlib
@@ -11,12 +10,13 @@ from langchain_core.documents import Document
 from app.core.config import settings
 from app.rag.embedder import get_embeddings
 
+__VECTORSTORE: Optional[Chroma] = None
 
-# Optional auth headers if behind gateway
+
 def _parse_headers(raw: Optional[str]) -> Optional[Dict[str, str]]:
     if not raw:
         return None
-    out = {}
+    out: Dict[str, str] = {}
     for kv in raw.split(";"):
         kv = kv.strip()
         if not kv:
@@ -26,92 +26,66 @@ def _parse_headers(raw: Optional[str]) -> Optional[Dict[str, str]]:
     return out
 
 
-# -------- Lazy singleton cache --------
-__VECTORSTORE: Optional[Chroma] = None
-
-
-def get_vectorstore() -> Chroma:
-    """
-    Get singleton Chroma vector store instance.
-    Connects to Chroma server using HTTP client.
-    """
+def _get_vectorstore() -> Chroma:
     global __VECTORSTORE
-    if __VECTORSTORE is None:
-        embeddings = get_embeddings()
+    if __VECTORSTORE is not None:
+        return __VECTORSTORE
 
-        # Parse URL
-        chroma_url = settings.CHROMA_URL.replace("http://", "").replace("https://", "")
-        if ":" in chroma_url:
-            host, port_str = chroma_url.split(":")
-            port = int(port_str)
-        else:
-            host = chroma_url
-            port = 8000
+    embeddings = get_embeddings()
+    chroma_url = settings.CHROMA_URL.replace("http://", "").replace("https://", "")
+    if ":" in chroma_url:
+        host, port_str = chroma_url.split(":", 1)
+        port = int(port_str)
+    else:
+        host = chroma_url
+        port = 8000
 
-        # Create Chroma Settings object
-        chroma_settings = ChromaSettings(
-            chroma_api_impl="chromadb.api.fastapi.FastAPI",
-            chroma_server_host=host,
-            chroma_server_http_port=port,
-        )
+    chroma_settings = ChromaSettings(
+        chroma_api_impl="chromadb.api.fastapi.FastAPI",
+        chroma_server_host=host,
+        chroma_server_http_port=port,
+    )
 
-        # Initialize Chroma with Settings object
-        __VECTORSTORE = Chroma(
-            client_settings=chroma_settings,
-            collection_name=settings.CHROMA_COLLECTION,
-            embedding_function=embeddings,
-            collection_metadata={"hnsw:space": settings.CHROMA_METRIC},
-        )
+    __VECTORSTORE = Chroma(
+        client_settings=chroma_settings,
+        collection_name=settings.CHROMA_COLLECTION,
+        embedding_function=embeddings,
+        collection_metadata={"hnsw:space": settings.CHROMA_METRIC},
+    )
     return __VECTORSTORE
 
 
-# -------- Helpers --------
-def build_documents(chunks: List[Dict[str, Any]]) -> List[Document]:
-    """
-    chunks: [{"text": "...", "meta": {...}, "id": "...?"}, ...]
-    """
-    docs = []
-    for c in chunks:
-        docs.append(Document(page_content=c["text"], metadata=c.get("meta", {})))
-    return docs
+def build_documents(chunks: Iterable[Dict[str, Any]]) -> List[Document]:
+    return [Document(page_content=c["text"], metadata=c.get("meta", {})) for c in chunks]
 
 
-def _hash_id(text: str, meta: Optional[dict] = None, model: Optional[str] = None) -> str:
-    """Generate deterministic hash ID for document chunks."""
+def _hash_id(text: str, meta: Optional[Dict[str, Any]] = None, model: Optional[str] = None) -> str:
     h = hashlib.sha256()
     h.update((model or settings.EMBED_MODEL).encode("utf-8"))
     h.update(text.encode("utf-8"))
     if meta:
-        # tránh dài dòng: chỉ lấy một số field phổ biến
         h.update(str(meta.get("source", "")).encode("utf-8"))
         h.update(str(meta.get("page", "")).encode("utf-8"))
     return h.hexdigest()
 
 
-# -------- Ingest / Upsert --------
 def upsert_documents(docs: Iterable[Document], ids: Optional[List[str]] = None) -> None:
-    """
-    Upsert documents to vector store.
-    If ids not provided, generates deterministic hash IDs for idempotency.
-    """
-    vs = get_vectorstore()
-    docs = list(docs)
+    vs = _get_vectorstore()
+    docs_list = list(docs)
     if ids is not None:
-        if len(ids) != len(docs):
+        if len(ids) != len(docs_list):
             raise ValueError("Length of ids must match documents")
-        vs.add_documents(docs, ids=ids)
+        vs.add_documents(docs_list, ids=ids)
         return
 
-    # nếu không truyền ids, tạo id hash để idempotent
-    gen_ids = [_hash_id(d.page_content, d.metadata, settings.EMBED_MODEL) for d in docs]
-    vs.add_documents(docs, ids=gen_ids)
+    gen_ids = [_hash_id(d.page_content, d.metadata, settings.EMBED_MODEL) for d in docs_list]
+    vs.add_documents(docs_list, ids=gen_ids)
 
 
-# -------- Search --------
 def similarity_search(
     query: str, k: int = 5, where: Optional[Dict[str, Any]] = None
 ) -> List[Document]:
-    vs = get_vectorstore()
+    vs = _get_vectorstore()
     if where:
         retriever = vs.as_retriever(search_kwargs={"k": k, "filter": where})
         return retriever.invoke(query)
@@ -121,34 +95,47 @@ def similarity_search(
 def similarity_search_with_score(
     query: str, k: int = 5, where: Optional[Dict[str, Any]] = None
 ) -> List[Tuple[Document, float]]:
-    vs = get_vectorstore()
+    vs = _get_vectorstore()
     if where:
-        # langchain-chroma hiện chưa expose with_score + filter thẳng;
-        # có thể dùng client.query(...) nếu cần score thật (xem note).
-        docs = similarity_search(query, k=k, where=where)
-        return [(d, 0.0) for d in docs]  # placeholder score
+        try:
+            collection = vs._collection
+            resp = collection.query(
+                query_texts=[query],
+                n_results=k,
+                where=where,
+                include=["distances", "documents", "metadatas"],
+            )
+            results: List[Tuple[Document, float]] = []
+            rr = resp.get("results", [])
+            if rr:
+                hits = rr[0]
+                docs = hits.get("documents", [])
+                distances = hits.get("distances", [])
+                metadatas = hits.get("metadatas", [])
+                for doc_text, dist, md in zip(docs, distances, metadatas):
+                    d = Document(page_content=doc_text, metadata=md or {})
+                    results.append((d, float(dist or 0.0)))
+                return results
+        except Exception:
+            docs = similarity_search(query, k=k, where=where)
+            return [(d, 0.0) for d in docs]
+
     return vs.similarity_search_with_score(query, k=k)
 
 
-# -------- Delete / Admin --------
 def delete_by_metadata(where: Dict[str, Any]) -> None:
-    """Delete documents by metadata filter."""
-    # Dùng underlying client/collection cùng context
-    vs = get_vectorstore()
-    collection = vs._collection  # type: ignore[attr-defined]  # private, nhưng cùng context
+    vs = _get_vectorstore()
+    collection = vs._collection
     collection.delete(where=where)
 
 
-# -------- VectorStore wrapper class --------
 class VectorStore:
-    """Wrapper class for backwards compatibility"""
-
-    def __init__(self):
-        self._vs = get_vectorstore()
+    def __init__(self) -> None:
+        self._vs = _get_vectorstore()
 
     def similarity_search(
         self, query: str, k: int = 5, where: Optional[Dict[str, Any]] = None
-    ) -> List:
+    ) -> List[Document]:
         return similarity_search(query, k, where)
 
     def similarity_search_with_score(
@@ -156,18 +143,17 @@ class VectorStore:
     ):
         return similarity_search_with_score(query, k, where)
 
-    def add_documents(self, documents, ids: Optional[List[str]] = None):
-        return upsert_documents(documents, ids)
+    def add_documents(self, documents: Iterable[Document], ids: Optional[List[str]] = None) -> None:
+        upsert_documents(documents, ids)
 
-    def delete_by_metadata(self, where: Dict[str, Any]):
-        return delete_by_metadata(where)
+    def delete_by_metadata(self, where: Dict[str, Any]) -> None:
+        delete_by_metadata(where)
 
     def get_retriever(
         self,
         search_type: str = "similarity",
         search_kwargs: Optional[Dict[str, Any]] = None,
-        **kwargs,
+        **kwargs: Any,
     ):
-        """Get LangChain retriever interface"""
         search_kwargs = search_kwargs or {}
         return self._vs.as_retriever(search_type=search_type, search_kwargs=search_kwargs, **kwargs)

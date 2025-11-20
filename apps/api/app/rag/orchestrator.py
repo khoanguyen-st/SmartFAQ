@@ -12,8 +12,6 @@ from langchain_core.runnables import RunnablePassthrough
 from app.core.config import settings
 from app.rag.llm import LLMWrapper
 from app.rag.retriever import Retriever
-from app.rag.formatter import ResponseFormatter
-from app.rag.utils.language import normalize_language_code
 
 logger = logging.getLogger(__name__)
 
@@ -29,7 +27,6 @@ class RAGOrchestrator:
         self, retriever: Optional[Retriever] = None, llm_wrapper: Optional[LLMWrapper] = None
     ):
         self.retriever = retriever or Retriever()
-        self.formatter = ResponseFormatter()
         self.llm_wrapper = llm_wrapper or LLMWrapper()
 
     async def query(
@@ -37,107 +34,138 @@ class RAGOrchestrator:
         question: str,
         user_id: Optional[str] = None,
         *,
-        language: Optional[str] = None,
         top_k: int = 5,
         where: Optional[Dict[str, Any]] = None,
         search_type: str = "similarity",  # or "mmr"
         return_top_sources: int = 3,
     ) -> Dict[str, Any]:
         """
-        Main RAG pipeline:
-        - retrieve -> score/ confidence -> LLM or fallback
+        RAG pipeline with strict threshold policy:
+        - If no contexts -> hard fallback (no sources)
+        - If confidence >= threshold -> call LLM and return answer + sources
+        - If confidence < threshold -> hard fallback (no sources)
+        - If LLM returns fallback-like text despite contexts -> convert to fallback (no sources, confidence=0)
         """
         t0 = time.time()
 
-        target_language = normalize_language_code(language, default="auto")
-        text_language = target_language if target_language in {"en", "vi"} else "vi"
-
         # 1) Retrieve
-        contexts = self.retriever.retrieve(
-            query=question,
-            top_k=top_k,
-            where=where,
-            with_score=True,
-        )
+        try:
+            contexts = self.retriever.retrieve(
+                query=question,
+                top_k=top_k,
+                where=where,
+                with_score=True,
+            )
+        except Exception as e:
+            logger.exception("Retriever failed: %s", e)
+            return {
+                "answer": "Xin lỗi, hệ thống tìm kiếm tài liệu gặp lỗi. Vui lòng thử lại sau.",
+                "confidence": 0.0,
+                "sources": [],
+                "fallback_triggered": True,
+                "latency_ms": int((time.time() - t0) * 1000),
+                "error": str(e),
+            }
 
-        # 2) Confidence
+        if not isinstance(contexts, list):
+            contexts = []
+
+        logger.debug("Retrieved %d contexts for question=%s", len(contexts), question)
+
+        # 2) Confidence (retriever-level)
         confidence = self.retriever.calculate_confidence(contexts)
 
-        # 3) Decision policy
-        fallback_triggered = False
-        if not contexts:
-            answer = self._fallback_message(text_language)
-            fallback_triggered = True
-        elif confidence >= settings.CONFIDENCE_THRESHOLD:
-            # confident → trả lời bình thường
-            answer = await self.llm_wrapper.generate_answer_async(
-                question,
-                contexts,
-                target_language=target_language,
-            )
-        else:
-            # medium/low confidence → vẫn gọi LLM nhưng báo “không chắc chắn”
-            # (Nếu muốn strict: comment 2 dòng dưới và dùng fallback cứng)
-            cautious_prefix = self._cautious_prefix(text_language)
-            try:
-                raw = await self.llm_wrapper.generate_answer_async(
-                    question,
-                    contexts,
-                    target_language=target_language,
-                )
-            except Exception as e:
-                logger.error(f"LLM generation failed: {e}")
-                return {
-                    "answer": self._error_message(text_language),
-                    "confidence": 0.0,
-                    "fallback_triggered": True,
-                    "error": str(e),
-                }
-            answer = cautious_prefix + raw
-            # fallback mềm, vẫn set cờ để front-end biết hiển thị banner
-            fallback_triggered = True
+        # threshold
+        threshold = float(getattr(settings, "CONFIDENCE_THRESHOLD", 0.65))
 
-        # 4) sources gợi ý cho UI
-        sources = []
-        for c in contexts[:return_top_sources]:
-            md = c.get("metadata", {})
-            sources.append(
+        answer: str = ""
+        fallback_triggered = False
+        sources_to_return: List[Dict[str, Any]] = []
+
+        # Case: no contexts -> hard fallback
+        if not contexts:
+            logger.info("No contexts found for question=%s -> hard fallback", question)
+            answer = "Tôi không tìm thấy thông tin về vấn đề này"
+            fallback_triggered = True
+            sources_to_return = []
+        else:
+            logger.debug("Retriever confidence=%.4f threshold=%.4f", confidence, threshold)
+
+            if confidence >= threshold:
+                # confident: call LLM normally
+                try:
+                    raw = await self.llm_wrapper.generate_answer_async(question, contexts)
+                except Exception as e:
+                    logger.exception("LLM generation failed on confident path: %s", e)
+                    return {
+                        "answer": "Xin lỗi, hệ thống đang gặp sự cố. Vui lòng thử lại sau.",
+                        "confidence": 0.0,
+                        "sources": [],
+                        "fallback_triggered": True,
+                        "latency_ms": int((time.time() - t0) * 1000),
+                        "error": str(e),
+                    }
+                answer = raw or ""
+                sources_to_return = contexts[:return_top_sources]
+            else:
+                # confidence below threshold -> hard fallback (no sources)
+                logger.info(
+                    "Retriever confidence too low (%.4f < %.4f) for question=%s -> fallback (no sources)",
+                    confidence,
+                    threshold,
+                    question,
+                )
+                answer = "Tôi không tìm thấy thông tin về vấn đề này"
+                fallback_triggered = True
+                sources_to_return = []
+
+        # Post-process: if LLM returned fallback-like text despite contexts present -> convert to fallback
+        llm_fallback_markers = [
+            "tôi không tìm thấy thông tin",
+            "không tìm thấy thông tin",
+            "không có thông tin",
+            "không biết",
+        ]
+        normalized_answer = (answer or "").strip().lower()
+        if sources_to_return and (
+            normalized_answer == ""
+            or any(marker in normalized_answer for marker in llm_fallback_markers)
+        ):
+            logger.warning(
+                "LLM returned fallback-like answer despite contexts present. question=%s retriever_confidence=%.4f top_context_preview=%s",
+                question,
+                confidence,
+                (sources_to_return[0].get("text") or "")[:300] if sources_to_return else None,
+            )
+            fallback_triggered = True
+            sources_to_return = []
+            confidence = 0.0
+            answer = "Tôi không tìm thấy thông tin về vấn đề này"
+
+        # Build sources payload
+        sources_list: List[Dict[str, Any]] = []
+        for c in sources_to_return or []:
+            md = c.get("metadata", {}) or {}
+            sources_list.append(
                 {
                     "document_id": md.get("document_id"),
                     "chunk_id": md.get("chunk_id"),
                     "chunk_index": md.get("chunk_index"),
-                    "source": md.get("source"),
+                    "source": md.get("source") or md.get("uri") or md.get("url"),
                     "page": md.get("page"),
                     "score": c.get("score"),
+                    "text_preview": (c.get("text") or "")[:500],
                 }
             )
 
         latency_ms = int((time.time() - t0) * 1000)
         return {
             "answer": answer,
-            "confidence": round(confidence, 3),
-            "sources": sources,
-            "fallback_triggered": fallback_triggered,
+            "confidence": round(float(confidence), 4),
+            "sources": sources_list,
+            "fallback_triggered": bool(fallback_triggered),
             "latency_ms": latency_ms,
         }
-
-    @staticmethod
-    def _fallback_message(language: str) -> str:
-        if language == "en":
-            return "I couldn't find information about this topic."
-        return "Tôi không tìm thấy thông tin về vấn đề này"
-
-    @staticmethod
-    def _cautious_prefix(language: str) -> str:
-        if language == "en":
-            return "I'm not completely sure, but based on the available information: "
-        return "Mình chưa chắc chắn lắm, nhưng dựa trên thông tin hiện có: "
-
-    @staticmethod
-    def _error_message(language: str) -> str:
-        if language == "en":
-            return "Sorry, the system is experiencing an issue. Please try again later."
-        return "Xin lỗi, hệ thống đang gặp sự cố. Vui lòng thử lại sau."
 
     def build_rag_chain(
         self,
@@ -147,10 +175,6 @@ class RAGOrchestrator:
         search_type: str = "similarity",
         max_context_chars: int = 8000,
     ):
-        """
-        LCEL chain: retrieve → format → prompt → LLM → parse
-        Cho phép filter & mmr từ đầu.
-        """
         retriever = self.retriever.get_langchain_retriever(
             k=k, where=where, search_type=search_type
         )

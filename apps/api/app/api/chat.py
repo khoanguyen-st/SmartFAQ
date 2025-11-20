@@ -2,9 +2,11 @@
 
 from __future__ import annotations
 
+import logging
+import time
 from datetime import datetime, timezone
 from decimal import Decimal
-from typing import Any, Literal
+from typing import Any, Literal, Optional
 from uuid import uuid4
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
@@ -19,16 +21,34 @@ from ..core.input_validation import UnsafeInputError, ensure_safe_text
 from ..core.rate_limiter import RateLimiter
 from ..models.chat import ChatMessage, ChatRole, ChatSession
 from ..models.query_log import QueryLog
+from ..rag.llm import LLMWrapper
 from ..rag.orchestrator import RAGOrchestrator
 
-from ..rag.question_understanding import QuestionUnderstanding
-from ..rag.validations import NormalizedQuestion
-from ..rag.utils.language import normalize_language_code
-
-
 router = APIRouter()
-rag_orchestrator = RAGOrchestrator()
-question_understanding = QuestionUnderstanding()
+
+logger = logging.getLogger(__name__)
+if not logger.handlers:
+    logging.basicConfig(level=logging.INFO)
+
+_rag_orchestrator: Optional[RAGOrchestrator] = None
+
+
+def get_rag_orchestrator() -> RAGOrchestrator:
+    global _rag_orchestrator
+    if _rag_orchestrator is None:
+        _rag_orchestrator = RAGOrchestrator()
+    return _rag_orchestrator
+
+
+_llm_wrapper: Optional[LLMWrapper] = None
+
+
+def get_llm_wrapper() -> LLMWrapper:
+    global _llm_wrapper
+    if _llm_wrapper is None:
+        _llm_wrapper = LLMWrapper()
+    return _llm_wrapper
+
 
 _FEEDBACK_MESSAGES: dict[str, str] = {
     "en": "Feedback recorded. Thank you!",
@@ -63,7 +83,7 @@ def _confidence_to_percent(value: float | Decimal | None) -> int:
     return int(round(numeric))
 
 
-def _format_sources(sources: list[dict[str, Any]] | None) -> list[ChatSource]:
+def _format_sources(sources: list[dict[str, Any]] | None) -> list["ChatSource"]:
     formatted: list[ChatSource] = []
     for src in sources or []:
         relevance_raw = src.get("score")
@@ -190,10 +210,7 @@ async def create_session(
     db: AsyncSession = Depends(get_db),
 ) -> NewSessionResponse:
     session_id = str(uuid4())
-    language_raw = (payload.language or "en").strip() or "en"
-    language = normalize_language_code(language_raw, default="en")
-    if language == "auto":
-        language = "en"
+    language = (payload.language or "en").strip() or "en"
     user_agent = payload.user_agent or request.headers.get("user-agent")
 
     session = ChatSession(id=session_id, language=language, user_agent=user_agent)
@@ -203,12 +220,14 @@ async def create_session(
         await db.commit()
     except SQLAlchemyError as exc:
         await db.rollback()
+        logger.exception("Failed to create chat session")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Unable to create chat session.",
         ) from exc
 
     return NewSessionResponse(sessionId=session_id, message="New chat session started.")
+
 
 @router.post("/query", response_model=ChatQueryResponse)
 async def query_chat(
@@ -233,9 +252,7 @@ async def query_chat(
     if payload.language:
         stripped_lang = payload.language.strip()
         if stripped_lang:
-            normalized_lang = normalize_language_code(stripped_lang, default=session.language or "en")
-            if normalized_lang != "auto":
-                session.language = normalized_lang
+            session.language = stripped_lang
     if not session.user_agent:
         session.user_agent = request.headers.get("user-agent")
 
@@ -243,71 +260,46 @@ async def query_chat(
         select(ChatMessage)
         .where(ChatMessage.session_id == session.id)
         .order_by(ChatMessage.created_at.desc())
-        .limit(5)
+        .limit(10)
     )
     history_result = await db.execute(history_stmt)
     history_records = list(history_result.scalars())
     history_records.reverse()
     history_messages = [
         {"role": message.role, "content": message.text} for message in history_records
-    ]
+    ]  # noqa: F841
 
     try:
-        normalized: NormalizedQuestion = question_understanding.understand(
-            payload.question,
-            context={
-                "session_language": session.language,
-                "history": history_messages,
-            },
+        t0 = time.perf_counter()
+        orchestrator = get_rag_orchestrator()
+        rag_response = await orchestrator.query(
+            question=payload.question,
+            user_id=session.id,
+            top_k=5,
+            where=None,
+            return_top_sources=5,
         )
-    except ValueError as exc:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(exc),
-        ) from exc
-
-    normalized_question = normalized.normalized_question
-    detected_language = normalize_language_code(
-        normalized.language,
-        default=session.language or "en",
-    )
-
-    if payload.language:
-        stripped_lang = payload.language.strip()
-        if stripped_lang:
-            normalized_lang = normalize_language_code(stripped_lang, default=detected_language or "en")
-            if normalized_lang != "auto":
-                session.language = normalized_lang
-    else:
-        if detected_language != "auto":
-            session.language = detected_language
-        elif not session.language:
-            session.language = "en"
-
-    try:
-        rag_response = await rag_orchestrator.query(
-            question=normalized_question,
-            top_k=settings.TOP_K_RETRIEVAL,
-            return_top_sources=3,
-            language=session.language,
-        )
+        latency_ms = int((time.perf_counter() - t0) * 1000)
     except Exception as exc:
+        internal_id = str(uuid4())
+        logger.exception("RAGOrchestrator.query failed [%s]", internal_id)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to generate answer.",
+            detail=f"Failed to generate answer. reference={internal_id}",
         ) from exc
 
-    answer = str(rag_response.get("answer") or "")
-    fallback_triggered = bool(rag_response.get("fallback_triggered"))
-    confidence_raw = rag_response.get("confidence")
-    sources = rag_response.get("sources")
-    latency_ms = rag_response.get("latency_ms")
-    formatted_sources = _format_sources(sources)
-    if not formatted_sources and not fallback_triggered:
+    if not isinstance(rag_response, dict):
+        internal_id = str(uuid4())
+        logger.error("Invalid RAG response shape [%s]: %s", internal_id, str(rag_response))
         raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="Unable to ground the answer in the knowledge base. Please try rephrasing.",
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail=f"Invalid answer structure from RAG. reference={internal_id}",
         )
+
+    answer = rag_response.get("answer", "")
+    confidence_raw = rag_response.get("confidence", 0.0)
+    fallback_triggered = bool(rag_response.get("fallback_triggered", False))
+    sources: list[dict[str, Any]] = rag_response.get("sources", []) or []
 
     question_message = ChatMessage(
         id=str(uuid4()),
@@ -329,10 +321,10 @@ async def query_chat(
     )
 
     query_log = QueryLog(
-        question=normalized_question,
+        question=payload.question,
         lang=session.language,
         response_ms=int(latency_ms) if latency_ms is not None else None,
-        confidence=_confidence_to_percent(confidence_raw),
+        confidence=round(float(confidence_raw) * 100, 2) if confidence_raw is not None else None,
         fallback=fallback_triggered,
         user_agent=session.user_agent,
         channel="chat",
@@ -347,6 +339,7 @@ async def query_chat(
         await db.commit()
     except SQLAlchemyError as exc:
         await db.rollback()
+        logger.exception("Failed to persist chat data for session %s", session.id)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to persist chat data.",
@@ -354,7 +347,7 @@ async def query_chat(
 
     return ChatQueryResponse(
         answer=answer,
-        sources=formatted_sources,
+        sources=_format_sources(sources),
         confidence=_confidence_to_percent(confidence_raw),
         language=session.language,
         fallback=fallback_triggered,
@@ -390,7 +383,9 @@ async def get_history(
     messages: list[ChatHistoryMessage] = []
     for message in records:
         timestamp = message.created_at.replace(tzinfo=None).isoformat(timespec="seconds") + "Z"
-        confidence = _confidence_to_percent(message.confidence) if message.confidence is not None else None
+        confidence = (
+            _confidence_to_percent(message.confidence) if message.confidence is not None else None
+        )
         fallback = message.fallback if message.role == ASSISTANT_ROLE else None
         entry = ChatHistoryMessage(
             role=message.role,
@@ -403,6 +398,7 @@ async def get_history(
         messages.append(entry)
 
     return ChatHistoryResponse(sessionId=session.id, messages=messages)
+
 
 @router.post("/feedback", response_model=FeedbackResponse)
 async def submit_feedback(
@@ -435,6 +431,7 @@ async def submit_feedback(
         await db.commit()
     except SQLAlchemyError as exc:
         await db.rollback()
+        logger.exception("Failed to record feedback for chat %s", payload.chat_id)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to record feedback.",
