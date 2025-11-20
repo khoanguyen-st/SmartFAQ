@@ -1,6 +1,8 @@
 """Pydantic schemas for API payloads and responses."""
 
-from pydantic import BaseModel
+from typing import Optional
+
+from pydantic import BaseModel, EmailStr
 
 
 class DocumentCreate(BaseModel):
@@ -39,9 +41,27 @@ class DocumentOut(BaseModel):
     versions: list[DocumentVersionOut] | None = None
 
     class Config:
-        # Pydantic v2 renamed `orm_mode` to `from_attributes`.
-        # Keep both for compatibility: prefer `from_attributes` when available.
         try:
-            from_attributes = True  # type: ignore
+            from_attributes = True
         except Exception:
             orm_mode = True
+
+
+class UserOut(BaseModel):
+    username: str
+    email: EmailStr
+    phone: Optional[str] = None
+    address: Optional[str] = None
+    image: Optional[str] = None
+
+    class Config:
+        try:
+            from_attributes = True
+        except Exception:
+            orm_mode = True
+
+
+class UserUpdate(BaseModel):
+    username: Optional[str] = None
+    phone: Optional[str] = None
+    address: Optional[str] = None
