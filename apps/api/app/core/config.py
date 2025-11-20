@@ -18,6 +18,10 @@ class Settings(BaseSettings):
     env: str = Field("development", alias="APP_ENV")
     api_host: str = Field("0.0.0.0", alias="API_HOST")
     api_port: int = Field(8000, alias="API_PORT")
+    cors_allow_origins: list[str] = Field(
+        default=["http://localhost:5174", "http://localhost:5173"],
+        alias="CORS_ALLOW_ORIGINS",
+    )
     
     # Security
     jwt_secret: str = Field("change-me", alias="JWT_SECRET")
