@@ -1,0 +1,273 @@
+openapi: 3.0.3
+info:
+  title: Greenwich SmartFAQ - Fallback API
+  version: 0.1.0
+  description: >
+    Smart Fallback Mechanism endpoints for Greenwich SmartFAQ System.
+    Handles unanswerable queries, logs fallback events, and allows configuration of fallback channels.
+
+servers:
+  - url: https://smartfaq.university.local/api
+    description: Production
+  - url: http://localhost:8000
+    description: Local development
+
+paths:
+  /fallback/trigger:
+    post:
+      summary: Trigger fallback event for unanswered query
+      description: >
+        This endpoint is called automatically when the chatbot cannot provide a confident answer.
+        It logs the fallback reason and provides contact options to the user.
+      tags: [Fallback]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                question:
+                  type: string
+                  example: "Can I apply for a scholarship after enrollment?"
+                reason:
+                  type: string
+                  enum: [no_relevant_docs, low_confidence, user_request, dissatisfaction]
+                  example: "low_confidence"
+                confidence:
+                  type: integer
+                  example: 45
+                sessionId:
+                  type: string
+                  example: "2fa9f5b3-abc1-4ef9-bc67-5e9a12e2a79d"
+      responses:
+        "200":
+          description: Fallback event successfully logged
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Fallback triggered and logged."
+                  fallbackId:
+                    type: string
+                    example: "fb_8793ce28"
+                  contactOptions:
+                    type: object
+                    properties:
+                      facebook:
+                        type: string
+                        example: "https://facebook.com/greenwichstudentaffairs"
+                      zalo:
+                        type: string
+                        example: "https://zalo.me/greenwichuniversity"
+                      email:
+                        type: string
+                        example: "studentaffairs@greenwich.edu.vn"
+                      phone:
+                        type: string
+                        example: "+84-123-456-789"
+        "400":
+          description: Invalid fallback request
+
+  /fallback/logs:
+    get:
+      summary: Retrieve fallback log list
+      tags: [Fallback]
+      parameters:
+        - in: query
+          name: from
+          schema:
+            type: string
+            format: date-time
+            example: "2025-10-01T00:00:00Z"
+        - in: query
+          name: to
+          schema:
+            type: string
+            format: date-time
+            example: "2025-11-01T00:00:00Z"
+        - in: query
+          name: reason
+          schema:
+            type: string
+            enum: [no_relevant_docs, low_confidence, user_request, dissatisfaction]
+        - in: query
+          name: resolved
+          schema:
+            type: boolean
+      responses:
+        "200":
+          description: Fallback logs retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  total:
+                    type: integer
+                    example: 23
+                  logs:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        fallbackId:
+                          type: string
+                          example: "fb_8793ce28"
+                        question:
+                          type: string
+                          example: "Can I apply for a scholarship after enrollment?"
+                        reason:
+                          type: string
+                          example: "low_confidence"
+                        confidence:
+                          type: integer
+                          example: 45
+                        timestamp:
+                          type: string
+                          example: "2025-11-03T10:45:12Z"
+                        resolved:
+                          type: boolean
+                          example: false
+                        channelUsed:
+                          type: string
+                          example: "email"
+        "404":
+          description: No fallback logs found in given range
+
+  /fallback/{id}/resolve:
+    put:
+      summary: Mark fallback question as resolved
+      tags: [Fallback]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+          description: Fallback event ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                resolutionNote:
+                  type: string
+                  example: "Added new FAQ document for scholarship process."
+      responses:
+        "200":
+          description: Fallback marked as resolved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  fallbackId:
+                    type: string
+                    example: "fb_8793ce28"
+                  status:
+                    type: string
+                    example: "resolved"
+                  resolutionNote:
+                    type: string
+                    example: "Added new FAQ document for scholarship process."
+        "404":
+          description: Fallback not found
+
+  /fallback/config:
+    get:
+      summary: Retrieve fallback configuration
+      tags: [Fallback]
+      responses:
+        "200":
+          description: Fallback configuration retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  confidenceThreshold:
+                    type: integer
+                    example: 60
+                  relevanceThreshold:
+                    type: number
+                    example: 0.7
+                  defaultChannel:
+                    type: string
+                    example: "email"
+                  channels:
+                    type: object
+                    properties:
+                      facebook:
+                        type: string
+                        example: "https://facebook.com/greenwichstudentaffairs"
+                      zalo:
+                        type: string
+                        example: "https://zalo.me/greenwichuniversity"
+                      email:
+                        type: string
+                        example: "studentaffairs@greenwich.edu.vn"
+                      phone:
+                        type: string
+                        example: "+84-123-456-789"
+
+  /fallback/config:
+    put:
+      summary: Update fallback configuration
+      tags: [Fallback]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                confidenceThreshold:
+                  type: integer
+                  example: 65
+                relevanceThreshold:
+                  type: number
+                  example: 0.75
+                defaultChannel:
+                  type: string
+                  enum: [facebook, zalo, email, phone]
+                  example: "zalo"
+                channels:
+                  type: object
+                  properties:
+                    facebook:
+                      type: string
+                      example: "https://facebook.com/greenwichstudentaffairs"
+                    zalo:
+                      type: string
+                      example: "https://zalo.me/greenwichuniversity"
+                    email:
+                      type: string
+                      example: "studentaffairs@greenwich.edu.vn"
+                    phone:
+                      type: string
+                      example: "+84-123-456-789"
+      responses:
+        "200":
+          description: Fallback configuration updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Fallback configuration updated."
+                  updatedBy:
+                    type: string
+                    example: "admin01"
+                  updatedAt:
+                    type: string
+                    example: "2025-11-03T11:00:00Z"
+        "400":
+          description: Invalid configuration values

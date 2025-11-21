@@ -14,9 +14,6 @@ const SettingsForm = () => {
 
   const handleSubmit = (event: FormEvent) => {
     event.preventDefault()
-    // TODO: wire to API
-    // eslint-disable-next-line no-console
-    console.info('Submitted settings', values)
   }
 
   return (

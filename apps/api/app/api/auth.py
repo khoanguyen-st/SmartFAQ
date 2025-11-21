@@ -1,5 +1,3 @@
-"""Authentication endpoints."""
-
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
 
@@ -8,11 +6,9 @@ from ..core.users import get_current_user
 
 router = APIRouter()
 
-
 class LoginRequest(BaseModel):
     username: str
     password: str
-
 
 @router.post("/login")
 async def login(payload: LoginRequest) -> dict[str, str]:
@@ -22,7 +18,6 @@ async def login(payload: LoginRequest) -> dict[str, str]:
 
     token = create_access_token(subject=user.username)
     return {"access_token": token, "token_type": "bearer"}
-
 
 @router.get("/me")
 async def read_current_user(current_user=Depends(get_current_user)) -> dict[str, str]:
