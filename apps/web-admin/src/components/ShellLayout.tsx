@@ -8,6 +8,7 @@ import { Menu, X } from 'lucide-react'
 
 const navItems = [
   { path: 'dashboard', label: 'Dashboard' },
+  { path: 'users', label: 'Users' },
   { path: 'logs', label: 'Logs' },
   { path: 'settings', label: 'Settings' },
   { path: 'uploaded', label: 'Uploaded Documents' },
@@ -95,7 +96,7 @@ const ShellLayout = ({ children }: { children: ReactNode }) => {
             </div>
           </div>
         </header>
-        <div className="flex flex-col gap-6">{children}</div>
+        <div className="flex flex-col gap-4 p-4 md:gap-6 md:p-8">{children}</div>
       </main>
     </div>
   )

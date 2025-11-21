@@ -1,7 +1,16 @@
 from __future__ import annotations
+
 from typing import AsyncGenerator
-from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker, create_async_engine
+
+from sqlalchemy.ext.asyncio import (
+    AsyncEngine,
+    AsyncSession,
+    async_sessionmaker,
+    create_async_engine,
+)
+
 from .config import settings
+
 
 def _ensure_async_driver(url: str) -> str:
     """
@@ -15,6 +24,8 @@ def _ensure_async_driver(url: str) -> str:
     if url.startswith(prefix):
         return url.replace(prefix, async_prefix, 1)
     return url
+
+
 ASYNC_DATABASE_URL = _ensure_async_driver(settings.database_url)
 engine: AsyncEngine = create_async_engine(
     ASYNC_DATABASE_URL,
@@ -26,8 +37,12 @@ AsyncSessionLocal = async_sessionmaker(
     class_=AsyncSession,
     expire_on_commit=False,
 )
+
+
 async def get_db() -> AsyncGenerator[AsyncSession, None]:
     """FastAPI dependency that yields an async database session."""
     async with AsyncSessionLocal() as session:
         yield session
+
+
 __all__ = ["engine", "AsyncSessionLocal", "get_db"]

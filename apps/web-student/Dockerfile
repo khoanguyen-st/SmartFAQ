@@ -5,8 +5,11 @@ WORKDIR /workspace
 # Enable yarn via corepack (Node 20+ có sẵn)
 RUN corepack enable
 
+# Copy workspace root files
+COPY package.json yarn.lock ./
+
 # Copy dependency files first (for better caching)
-COPY apps/web-student/package.json apps/web-student/yarn.lock ./apps/web-student/
+COPY apps/web-student/package.json ./apps/web-student/
 COPY packages/ui/package.json ./packages/ui/
 COPY packages/config ./packages/config/
 
