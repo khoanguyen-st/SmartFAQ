@@ -69,7 +69,13 @@ def invoke_json_llm(
                 logger.error("%s quota exhausted after %s attempts: %s", log_ctx, max_retries, exc)
                 return None
             delay = base_delay * (2**attempt)
-            logger.warning("%s quota exhausted, retrying in %ss (attempt %s/%s)", log_ctx, delay, attempt + 1, max_retries)
+            logger.warning(
+                "%s quota exhausted, retrying in %ss (attempt %s/%s)",
+                log_ctx,
+                delay,
+                attempt + 1,
+                max_retries,
+            )
             time.sleep(delay)
         except Exception as exc:  # noqa: BLE001
             logger.error(
@@ -86,4 +92,3 @@ def invoke_json_llm(
             time.sleep(delay)
 
     return None
-

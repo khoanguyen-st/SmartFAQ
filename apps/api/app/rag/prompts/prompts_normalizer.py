@@ -13,14 +13,14 @@ This module contains the system prompt for question normalization, which instruc
 def get_normalization_prompt() -> str:
     """
     Get the system prompt for question normalization.
-    
+
     This prompt instructs the AI to:
     - Correct spelling errors
     - Expand abbreviations
     - Normalize synonyms
     - Detect and preserve language (Vietnamese with diacritics or English)
     - Maintain capitalization and punctuation
-    
+
     Returns:
         str: Complete system prompt for normalization
     """

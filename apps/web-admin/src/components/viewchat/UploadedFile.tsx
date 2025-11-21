@@ -1,15 +1,15 @@
-import { useState, useEffect, useCallback, forwardRef, useImperativeHandle } from 'react';
-import PDFIcon from '@/assets/icons/pdf.svg?react'
-import TXTIcon from '@/assets/icons/txt.svg'
-import DocIcon from '@/assets/icons/doc.svg?react'
-import TrashIcon from '@/assets/icons/trash.svg?react'
-import FileIcon from '@/assets/icons/file.svg?react'
-import MarkdownIcon from '@/assets/icons/md.svg?react'
-import { IUploadedFile, fetchKnowledgeFiles, deleteKnowledgeFile } from '../../services/document.services';
-import DeleteConfirmationModal from './DeleteConfirmationModal';
+import docUrl from '@/assets/icons/doc.svg';
+import fileUrl from '@/assets/icons/file.svg';
+import mdUrl from '@/assets/icons/md.svg';
+import pdfUrl from '@/assets/icons/pdf.svg';
+import trashUrl from '@/assets/icons/trash.svg';
+import txtUrl from '@/assets/icons/txt.svg';
 import { MAX_SIZE } from '@/lib/files';
 import { cn } from '@/lib/utils';
+import { forwardRef, useCallback, useEffect, useImperativeHandle, useState } from 'react';
 import { API_BASE_URL } from '../../lib/api';
+import { IUploadedFile, deleteKnowledgeFile, fetchKnowledgeFiles } from '../../services/document.services';
+import DeleteConfirmationModal from './DeleteConfirmationModal';
 
 export interface UploadedFileHandle {
   refreshFiles: () => Promise<void>;
@@ -56,20 +56,20 @@ const UploadedFile = forwardRef<UploadedFileHandle, UploadedFileProps>(({ isComp
   }, [refreshFiles]);
 
   const handleViewFile = (fileId: string) => {
-  window.open(`${API_BASE_URL}/api/docs/${fileId}/download`, '_blank');
-};
-  
+    window.open(`${API_BASE_URL}/api/docs/${fileId}/download`, '_blank');
+  };
+
   const handleDeleteFile = async (fileId: string) => {
     setIsLoading(true);
     try {
-        await deleteKnowledgeFile(fileId);
-        await refreshFiles(); 
+      await deleteKnowledgeFile(fileId);
+      await refreshFiles();
     } catch (e) {
-        alert("Error deleting file!");
-        console.error(e);
-        await refreshFiles(); 
+      alert("Error deleting file!");
+      console.error(e);
+      await refreshFiles();
     } finally {
-        setIsLoading(false);
+      setIsLoading(false);
     }
   };
 
@@ -108,14 +108,19 @@ const UploadedFile = forwardRef<UploadedFileHandle, UploadedFileProps>(({ isComp
   };
 
   const getFileIcon = (fileType: string) => {
-    const props = isCompact ? { className: "h-6 w-6" } : { className: "h-[18px] w-[18px]" };
+    const className = isCompact ? 'h-6 w-6' : 'h-[18px] w-[18px]';
     switch (fileType) {
-      case 'pdf': return <PDFIcon {...props} />
-      case 'txt': return <TXTIcon {...props} />
-      case 'doc': return <DocIcon {...props} />
-      case 'docx': return <DocIcon {...props} />
-      case 'md': return <MarkdownIcon {...props} />
-      default: return <FileIcon {...props} />
+      case 'pdf':
+        return <img src={pdfUrl} alt="pdf" className={className} />;
+      case 'txt':
+        return <img src={txtUrl} alt="txt" className={className} />;
+      case 'doc':
+      case 'docx':
+        return <img src={docUrl} alt="doc" className={className} />;
+      case 'md':
+        return <img src={mdUrl} alt="md" className={className} />;
+      default:
+        return <img src={fileUrl} alt="file" className={className} />;
     }
   }
 
@@ -141,8 +146,8 @@ const UploadedFile = forwardRef<UploadedFileHandle, UploadedFileProps>(({ isComp
   return (
     <>
       <div className={cn(
-          "uploaded__content flex h-full flex-col overflow-y-auto scrollbar-hide",
-          isCompact ? "pt-4 px-0 items-center" : "p-6"
+        "uploaded__content flex h-full flex-col overflow-y-auto scrollbar-hide",
+        isCompact ? "pt-4 px-0 items-center" : "p-6"
       )}>
         <div className={cn("space-y-3", isCompact && "space-y-3 w-full flex flex-col items-center")}>
           {files.map(file => (
@@ -168,7 +173,7 @@ const UploadedFile = forwardRef<UploadedFileHandle, UploadedFileProps>(({ isComp
                     className="absolute -top-2 -right-2 hidden group-hover:flex h-5 w-5 items-center justify-center rounded-full text-white shadow-md transition-all z-10 ring-2 ring-white bg-red-500"
                     title="Delete file"
                   >
-                    <TrashIcon className="h-3 w-3" />
+                    <img src={trashUrl} alt="delete" className="h-3 w-3" />
                   </button>
                 </>
               ) : (
@@ -176,7 +181,7 @@ const UploadedFile = forwardRef<UploadedFileHandle, UploadedFileProps>(({ isComp
                   <div className="flex items-center gap-3 overflow-hidden">
                     <div className="h-[18px] w-[18px] shrink-0 text-[#6B7280]">{getFileIcon(file.type)}</div>
                     <div className="overflow-hidden">
-                      <p 
+                      <p
                         className="truncate text-sm font-medium text-[#111827] cursor-pointer hover:text-indigo-600 hover:underline transition-colors"
                         onClick={() => handleViewFile(file.id)}
                         title="Click to view file"
@@ -189,7 +194,7 @@ const UploadedFile = forwardRef<UploadedFileHandle, UploadedFileProps>(({ isComp
                       </p>
                     </div>
                   </div>
-                  
+
                   <div className="flex items-center gap-2 shrink-0">
                     <button
                       onClick={() => handleReplace(file.id)}
@@ -201,7 +206,7 @@ const UploadedFile = forwardRef<UploadedFileHandle, UploadedFileProps>(({ isComp
                       onClick={() => handleOpenDeleteModal(file)}
                       className="cursor-pointer p-1.5 text-[#EF4444] transition-all hover:scale-110 hover:bg-red-50 rounded-full"
                     >
-                      <TrashIcon className="h-3.5 w-[12.25px]" />
+                      <img src={trashUrl} alt="delete" className="h-3.5 w-[12.25px]" />
                     </button>
                   </div>
                 </>

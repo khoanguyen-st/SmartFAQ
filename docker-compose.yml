@@ -20,8 +20,8 @@ services:
       dockerfile: apps/web-student/Dockerfile
     env_file: ./.env.docker
     volumes:
-      - ./apps/web-student/src:/workspace/apps/web-student/src
-      - ./packages/ui/src:/workspace/packages/ui/src
+      - ./apps/web-student/src:/workspace/apps/web-student/src:cached
+      - ./packages/ui/src:/workspace/packages/ui/src:cached
     ports:
       - "${WEB_STUDENT_PORT_EXTERNAL:-5173}:5173"
     depends_on:

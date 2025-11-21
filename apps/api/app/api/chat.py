@@ -271,9 +271,9 @@ async def query_chat(
     history_result = await db.execute(history_stmt)
     history_records = list(history_result.scalars())
     history_records.reverse()
-    history_messages = [
-        {"role": message.role, "content": message.text} for message in history_records
-    ]  # noqa: F841
+    # history_messages = [
+    #     {"role": message.role, "content": message.text} for message in history_records
+    # ]
 
     try:
         t0 = time.perf_counter()

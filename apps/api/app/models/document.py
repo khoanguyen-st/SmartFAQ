@@ -25,8 +25,7 @@ class Document(Base):
     status: Mapped[str] = mapped_column(String(50), default="ACTIVE")
 
     current_version_id: Mapped[int | None] = mapped_column(
-        ForeignKey("document_versions.id"),
-        nullable=True
+        ForeignKey("document_versions.id"), nullable=True
     )
 
     created_by: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True)

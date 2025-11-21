@@ -26,6 +26,7 @@ def _secure_name(name: str) -> str:
     safe = "".join(c for c in base if c.isalnum() or c in ("-", "_", ".", " "))
     return safe.strip() or "file"
 
+
 async def _save_upload_async(src: UploadFile, dst: Path) -> int:
     """Lưu file upload theo dạng streaming, trả về số bytes ghi."""
     # tạo parent

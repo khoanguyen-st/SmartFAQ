@@ -1,6 +1,6 @@
-from .intent import SUPPORTED_INTENTS  # noqa: F401
 from .entity import SUPPORTED_ENTITY_TYPES  # noqa: F401
-from .limits import MAX_QUESTION_LENGTH, MAX_NORMALIZER_INPUT_LENGTH  # noqa: F401
+from .intent import SUPPORTED_INTENTS  # noqa: F401
+from .limits import MAX_NORMALIZER_INPUT_LENGTH, MAX_QUESTION_LENGTH  # noqa: F401
 
 __all__ = [
     "SUPPORTED_INTENTS",

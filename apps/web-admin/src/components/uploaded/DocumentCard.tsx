@@ -1,9 +1,9 @@
-import React, { useState, useRef, useEffect, useCallback } from "react";
+import pdfUrl from "@/assets/icons/pdf.svg";
+import reloadUrl from "@/assets/icons/reload.svg";
+import trashUrl from "@/assets/icons/trash.svg";
+import viewUrl from "@/assets/icons/view.svg";
 import { MoreVertical } from "lucide-react";
-import PdfIcon from "@/assets/icons/pdf.svg?react";
-import ReloadIcon from "@/assets/icons/reload.svg?react";
-import TrashIcon from "@/assets/icons/trash.svg?react";
-import ViewIcon from "@/assets/icons/view.svg?react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 
 interface IDocument {
     id: number;
@@ -76,7 +76,9 @@ const DocumentCard = ({ doc, onDelete, onView, onReupload }: DocumentCardProps) 
     return (
         <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-4 hover:shadow-md transition-shadow cursor-pointer w-full ">
             <div className="flex justify-between items-start mb-3">
-                <div className="bg-[#FEF2F2] p-2 rounded-xl"><PdfIcon className="text-red-500 h-6 w-6" /></div>
+                <div className="bg-[#FEF2F2] p-2 rounded-xl">
+                    <img src={pdfUrl} alt="pdf" className="h-6 w-6" />
+                </div>
 
                 <div className="relative " ref={menuRef}>
                     <button
@@ -91,13 +93,13 @@ const DocumentCard = ({ doc, onDelete, onView, onReupload }: DocumentCardProps) 
                             className="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-md shadow-lg z-10"
                             onClick={(e) => e.stopPropagation()}
                         >
-                            <MenuItem onClick={() => handleAction('View')}><ViewIcon />View document</MenuItem>
-                            <MenuItem onClick={() => handleAction('Re-upload')}> <ReloadIcon /> Re-upload</MenuItem>
+                            <MenuItem onClick={() => handleAction('View')}><img src={viewUrl} alt="view" className="h-4 w-4 mr-2" />View document</MenuItem>
+                            <MenuItem onClick={() => handleAction('Re-upload')}> <img src={reloadUrl} alt="reload" className="h-4 w-4 mr-2" /> Re-upload</MenuItem>
                             <MenuItem
                                 onClick={() => handleAction('Delete')}
                                 className="text-red-600 hover:bg-red-50"
                             >
-                                <TrashIcon />
+                                <img src={trashUrl} alt="delete" className="h-4 w-4 mr-2" />
                                 Delete document
                             </MenuItem>
                         </div>

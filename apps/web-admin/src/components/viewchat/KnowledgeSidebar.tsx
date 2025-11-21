@@ -1,9 +1,9 @@
-import React from 'react';
+import knowledgeUrl from '@/assets/icons/knowledge.svg';
+import plusUrl from '@/assets/icons/plus.svg';
+import sidebarUrl from '@/assets/icons/sidebar.svg';
 import { cn } from '@/lib/utils';
-import SidebarIcon from '@/assets/icons/sidebar.svg?react';
-import PlusIcon from '@/assets/icons/plus.svg?react';
-import KnowledgeIcon from '@/assets/icons/knowledge.svg?react';
-import UploadedFile, { UploadedFileHandle } from './UploadedFile'; 
+import React from 'react';
+import UploadedFile, { UploadedFileHandle } from './UploadedFile';
 
 interface KnowledgeSidebarProps {
   isSidebarOpen: boolean;
@@ -16,8 +16,9 @@ const KnowledgeSidebar: React.FC<KnowledgeSidebarProps> = ({
   isSidebarOpen,
   setIsSidebarOpen,
   handleSelectFileClick,
-  uploadedFileRef 
+  uploadedFileRef
 }) => {
+  console.log('KnowledgeIcon value:', knowledgeUrl);
   return (
     <div
       className={cn(
@@ -36,7 +37,7 @@ const KnowledgeSidebar: React.FC<KnowledgeSidebarProps> = ({
         {isSidebarOpen && (
           <div className="flex flex-col overflow-hidden text-nowrap text-ellipsis">
             <div className="title-header flex items-center">
-              <KnowledgeIcon className="mr-2 h-6 w-6 shrink-0 text-[#003087]" />
+              <img src={knowledgeUrl} alt="knowledge" className="mr-2 h-6 w-6 shrink-0 text-[#003087]" />
               <h1 className="text-[18px] font-semibold leading-7 text-[#111827]">Knowledge Sources</h1>
             </div>
             <p className="text-[14px] text-[#6B7280]">Upload and manage documents</p>
@@ -44,7 +45,6 @@ const KnowledgeSidebar: React.FC<KnowledgeSidebarProps> = ({
         )}
 
         <div className={cn('flex items-center', isSidebarOpen && 'gap-4')}>
-          {/* Nút Upload (Chỉ hiện trong header khi MỞ) */}
           {isSidebarOpen && (
             <button
               onClick={handleSelectFileClick}
@@ -52,13 +52,13 @@ const KnowledgeSidebar: React.FC<KnowledgeSidebarProps> = ({
               title="Upload Files"
             >
               <div className="flex items-center justify-center">
-                <PlusIcon className="h-3.5 w-3 text-white" />
+                <img src={plusUrl} alt="plus" className="h-3.5 w-3 text-white" />
               </div>
               <span className="text-sm font-medium text-white">Select Files</span>
             </button>
           )}
 
-          <button
+            <button
             onClick={() => setIsSidebarOpen(!isSidebarOpen)}
             className={cn(
               'cursor-pointer p-1 hover:bg-gray-100 rounded group transition-colors',
@@ -66,10 +66,12 @@ const KnowledgeSidebar: React.FC<KnowledgeSidebarProps> = ({
             )}
             title={isSidebarOpen ? 'Collapse sidebar' : 'Expand sidebar'}
           >
-            <SidebarIcon
+            <img
+              src={sidebarUrl}
+              alt="sidebar"
               className={cn(
                 'h-6 w-6 text-gray-400 transition-transform group-hover:text-[#003087]',
-                !isSidebarOpen && 'rotate-180' 
+                !isSidebarOpen && 'rotate-180'
               )}
             />
           </button>
@@ -84,15 +86,15 @@ const KnowledgeSidebar: React.FC<KnowledgeSidebarProps> = ({
               className="flex items-center justify-center w-[48px] h-[36px] rounded-[8px] bg-[#003087] hover:bg-[#00205a] transition-colors shadow-sm"
               title="Upload Files"
             >
-              <PlusIcon className="h-3.5 w-3 text-white" />
+              <img src={plusUrl} alt="plus" className="h-3.5 w-3 text-white" />
             </button>
           </div>
         )}
 
         <div className={cn('flex-1 overflow-hidden', !isSidebarOpen && 'w-full px-[22px]')}>
-          <UploadedFile 
+          <UploadedFile
             ref={uploadedFileRef}
-            isCompact={!isSidebarOpen} 
+            isCompact={!isSidebarOpen}
           />
         </div>
       </div>

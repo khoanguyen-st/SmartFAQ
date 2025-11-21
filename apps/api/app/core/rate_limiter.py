@@ -9,7 +9,6 @@ from typing import Callable, Deque, Dict
 
 from fastapi import HTTPException, Request, status
 
-
 IdentifierFn = Callable[[Request], str]
 
 

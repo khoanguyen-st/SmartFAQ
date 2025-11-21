@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import logging
-from typing import Any, Dict, List, Optional, Sequence, Union
+from typing import Any, Dict, Optional, Sequence, Union
 
 from google.api_core import exceptions as google_exceptions
 from langchain_core.documents import Document
@@ -67,7 +67,7 @@ class LLMWrapper:
             # Optional: add timeout if needed
             # timeout=30,
         )
-        
+
         logger.info(f"LLM initialized with model: {llm_model}")
 
         # ---- Prompt ----
@@ -78,39 +78,43 @@ class LLMWrapper:
             "Quy tắc:\n"
             "1. Trả lời bằng cùng ngôn ngữ với câu hỏi của người dùng.\n"
             "2. CHỈ sử dụng thông tin từ context được cung cấp để trả lời nội dung chính.\n"
-            "3. Nếu context không chứa thông tin phù hợp, trả lời: \"Tôi không tìm thấy thông tin về vấn đề này\" bằng ngôn ngữ của người dùng.\n"
+            '3. Nếu context không chứa thông tin phù hợp, trả lời: "Tôi không tìm thấy thông tin về vấn đề này" bằng ngôn ngữ của người dùng.\n'
             "4. Trả lời ngắn gọn, rõ ràng, thân thiện.\n"
             "5. Nếu có link/email/số điện thoại trong context, hãy đưa vào câu trả lời.\n"
             "6. Nếu câu hỏi mang tính chào hỏi hoặc xã giao, hãy đáp lại lịch sự và đề nghị hỗ trợ thêm.\n"
         )
 
-        self.prompt = ChatPromptTemplate.from_messages([
-            ("system", self.system_prompt),
-            (
-                "system",
-                "Target language code: {target_language}. Always respond entirely in this language. "
-                "If the code is 'auto', detect the question's language and match it.",
-            ),
-            ("system", "Context:\n{context}"),
-            ("human", "{question}"),
-        ])
-        self.direct_prompt = ChatPromptTemplate.from_messages([
-            (
-                "system",
-                "Bạn là trợ lý AI thân thiện của Đại học Greenwich Việt Nam. "
-                "Luôn trả lời ngắn gọn, rõ ràng, thân thiện. "
-                "Trả lời bằng cùng ngôn ngữ với câu hỏi của người dùng. "
-                "Nếu câu hỏi chỉ là lời chào hoặc xã giao, hãy đáp lại phù hợp và hỏi xem bạn có thể hỗ trợ gì thêm. "
-                "Chỉ cung cấp thông tin về Greenwich khi câu hỏi liên quan."
-            ),
-            (
-                "system",
-                "Target language code: {target_language}. Always respond entirely in this language. "
-                "If the code is 'auto', detect and mirror the question's language.",
-            ),
-            MessagesPlaceholder(variable_name="history"),
-            ("human", "{question}"),
-        ])
+        self.prompt = ChatPromptTemplate.from_messages(
+            [
+                ("system", self.system_prompt),
+                (
+                    "system",
+                    "Target language code: {target_language}. Always respond entirely in this language. "
+                    "If the code is 'auto', detect the question's language and match it.",
+                ),
+                ("system", "Context:\n{context}"),
+                ("human", "{question}"),
+            ]
+        )
+        self.direct_prompt = ChatPromptTemplate.from_messages(
+            [
+                (
+                    "system",
+                    "Bạn là trợ lý AI thân thiện của Đại học Greenwich Việt Nam. "
+                    "Luôn trả lời ngắn gọn, rõ ràng, thân thiện. "
+                    "Trả lời bằng cùng ngôn ngữ với câu hỏi của người dùng. "
+                    "Nếu câu hỏi chỉ là lời chào hoặc xã giao, hãy đáp lại phù hợp và hỏi xem bạn có thể hỗ trợ gì thêm. "
+                    "Chỉ cung cấp thông tin về Greenwich khi câu hỏi liên quan.",
+                ),
+                (
+                    "system",
+                    "Target language code: {target_language}. Always respond entirely in this language. "
+                    "If the code is 'auto', detect and mirror the question's language.",
+                ),
+                MessagesPlaceholder(variable_name="history"),
+                ("human", "{question}"),
+            ]
+        )
 
         # ---- Chain ----
         self.parser = StrOutputParser()
@@ -184,14 +188,18 @@ class LLMWrapper:
             return self._fallback_no_context(lang)
 
         try:
-            return await self.chain.ainvoke({
-                "context": context_text,
-                "question": question.strip(),
-                "target_language": lang,
-            })
+            return await self.chain.ainvoke(
+                {
+                    "context": context_text,
+                    "question": question.strip(),
+                    "target_language": lang,
+                }
+            )
         except google_exceptions.ResourceExhausted as e:
             logger.error(f"Gemini API quota exceeded: {e}")
-            raise RuntimeError("API quota exceeded. Please try again later or contact support.") from e
+            raise RuntimeError(
+                "API quota exceeded. Please try again later or contact support."
+            ) from e
         except Exception as e:
             logger.error(f"Error generating answer: {e}")
             raise
@@ -243,7 +251,9 @@ class LLMWrapper:
             )
         except google_exceptions.ResourceExhausted as e:
             logger.error(f"Gemini API quota exceeded: {e}")
-            raise RuntimeError("API quota exceeded. Please try again later or contact support.") from e
+            raise RuntimeError(
+                "API quota exceeded. Please try again later or contact support."
+            ) from e
         except Exception as e:
             logger.error(f"Error generating direct answer: {e}")
             raise

@@ -1,16 +1,16 @@
-import React, { useState, useRef, useEffect } from "react";
 import {
-  MAX_FILES,
-  MAX_SIZE,
-  formatBytes,
-  mapFiles,
-  validateFiles,
+    MAX_FILES,
+    MAX_SIZE,
+    formatBytes,
+    mapFiles,
+    validateFiles,
 } from "@/lib/files";
+import React, { useEffect, useRef, useState } from "react";
+import iUrl from "../../assets/icons/i.svg";
+import uploadUrl from "../../assets/icons/upload.svg";
 import { getFileIcon } from "../../lib/icons";
-import uploadIcon from "../../assets/icons/upload.svg";
-import infoIcon from "../../assets/icons/i.svg";
-import InformationModal from "./InformationModal";
 import { uploadKnowledgeFiles } from "../../services/document.services";
+import InformationModal from "./InformationModal";
 export interface FileItem {
   id: string;
   name: string;
@@ -194,6 +194,10 @@ const UploadModal = ({ isOpen, onClose }: UploadModalProps) => {
 
   if (!isOpen) return null;
 
+  type ImgCompProps = React.ImgHTMLAttributes<HTMLImageElement>;
+  const InfoIcon: React.FC<ImgCompProps> = (props) => <img src={iUrl} alt="info" {...props} />;
+  const UploadIcon: React.FC<ImgCompProps> = (props) => <img src={uploadUrl} alt="upload" {...props} />;
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-opacity-70 backdrop-blur-sm">
       <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl overflow-hidden">
@@ -217,7 +221,7 @@ const UploadModal = ({ isOpen, onClose }: UploadModalProps) => {
             className="border-2 border-dashed border-indigo-200 rounded-lg p-10 text-center cursor-pointer hover:border-indigo-400 transition bg-slate-50"
           >
             <div className="mx-auto mb-3 flex items-center justify-center w-16 h-16 rounded-full bg-indigo-100">
-              <img src={uploadIcon} alt="upload" className="w-[30px] h-[21px]" />
+              <UploadIcon className="w-[30px] h-[21px]" aria-hidden />
             </div>
             <p className="font-semibold text-gray-700">
               Drag & drop files here or{" "}
@@ -301,7 +305,10 @@ const UploadModal = ({ isOpen, onClose }: UploadModalProps) => {
                       <div
                         className={`flex items-center justify-center w-8 h-8 rounded-lg ${getFileBgClass(file.name)}`}
                       >
-                        <img src={getFileIcon(file.name)} alt="file icon" className="w-[15px] h-[15px]" />
+                        {(() => {
+                          const IconComp = getFileIcon(file.name);
+                          return <IconComp className="w-[15px] h-[15px]" />;
+                        })()}
                       </div>
                       <div>
                         <p className="text-sm font-medium text-gray-800">{file.name}</p>
@@ -337,7 +344,7 @@ const UploadModal = ({ isOpen, onClose }: UploadModalProps) => {
         <div className="p-6 border-t border-gray-100 flex justify-between items-center gap-4">
           <div className="flex-1">
             <p className="text-xs text-indigo-700 flex items-start space-x-1">
-              <img src={infoIcon} alt="info" className="w-[14px] h-[14px] mt-1" />
+              <InfoIcon className="w-[14px] h-[14px] mt-1" />
               <span className="block max-w-[360px]">
                 Uploaded documents will be automatically processed into the chatbot knowledge base.
               </span>

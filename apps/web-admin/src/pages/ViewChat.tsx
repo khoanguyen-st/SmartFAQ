@@ -1,25 +1,33 @@
-import React, { useState, useEffect, useRef } from 'react'
 import {
-  startNewChatSession,
-  sendChatMessage,
+  ChatHistoryMessage,
   ChatSource,
   getChatHistory,
-  ChatHistoryMessage
+  sendChatMessage,
+  startNewChatSession
 } from '@/services/chat.services'
+import React, { useEffect, useRef, useState } from 'react'
 
-import KnowledgeSidebar from '@/components/viewchat/KnowledgeSidebar' 
-import MessIcon from '@/assets/icons/messager.svg?react'
-import SendIcon from '@/assets/icons/send.svg?react'
-import InforIcon from '@/assets/icons/i-icon.svg?react'
-import TrashIcon from '@/assets/icons/trash-icon.svg?react'
-import PdfNoFill from '@/assets/icons/pdf-no-fill.svg?react'
-import ImageNofill from '@/assets/icons/image-no-fill.svg?react'
-import TxtNoFill from '@/assets/icons/txt-no-fill.svg?react'
+import inforUrl from '@/assets/icons/i-icon.svg'
+import imageNoFillUrl from '@/assets/icons/image-no-fill.svg'
+import messagerUrl from '@/assets/icons/messager.svg'
+import pdfNoFillUrl from '@/assets/icons/pdf-no-fill.svg'
+import sendUrl from '@/assets/icons/send.svg'
+import trashUrl from '@/assets/icons/trash-icon.svg'
+import txtNoFillUrl from '@/assets/icons/txt-no-fill.svg'
+import KnowledgeSidebar from '@/components/viewchat/KnowledgeSidebar'
 import UploadModal from '@/components/viewchat/UploadModal'
 // 🌟 Import type handle cho ref
-import UploadedFile, { UploadedFileHandle } from '@/components/viewchat/UploadedFile' 
-import { uploadKnowledgeFiles } from '@/services/document.services'
-import { cn } from '@/lib/utils'
+import { UploadedFileHandle } from '@/components/viewchat/UploadedFile'
+
+// Small image wrapper components to avoid depending on SVGR at runtime
+type ImgCompProps = React.ImgHTMLAttributes<HTMLImageElement>;
+const InforIcon: React.FC<ImgCompProps> = (props) => <img src={inforUrl} alt="info" {...props} />;
+const ImageNofill: React.FC<ImgCompProps> = (props) => <img src={imageNoFillUrl} alt="image" {...props} />;
+const MessIcon: React.FC<ImgCompProps> = (props) => <img src={messagerUrl} alt="message" {...props} />;
+const PdfNoFill: React.FC<ImgCompProps> = (props) => <img src={pdfNoFillUrl} alt="pdf" {...props} />;
+const SendIcon: React.FC<ImgCompProps> = (props) => <img src={sendUrl} alt="send" {...props} />;
+const TrashIcon: React.FC<ImgCompProps> = (props) => <img src={trashUrl} alt="trash" {...props} />;
+const TxtNoFill: React.FC<ImgCompProps> = (props) => <img src={txtNoFillUrl} alt="txt" {...props} />;
 
 type DisplayMessage = {
   id: string | number
@@ -117,11 +125,11 @@ const ChatMessage = ({ message }: ChatMessageProps) => {
 
 const ViewChatPage = () => {
   // ❌ DÒNG GÂY LỖI ĐÃ BỊ XÓA!
-  // const { refreshFiles } = uploadKnowledgeFiles() 
-  
+  // const { refreshFiles } = uploadKnowledgeFiles()
+
   // 🌟 TẠO REF ĐỂ GỌI HÀM TỪ UPLOADEDFILE
   const uploadedFileRef = useRef<UploadedFileHandle>(null);
-  
+
   const [isSidebarOpen, setIsSidebarOpen] = useState(true)
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false)
 
@@ -149,7 +157,7 @@ const ViewChatPage = () => {
   })
 
   const [isLoading, setIsLoading] = useState(false)
-  const [errorState, setErrorState] = useState<string | null>(null) 
+  const [errorState] = useState<string | null>(null)
 
   const chatContentRef = useRef<HTMLDivElement>(null)
 
@@ -201,7 +209,7 @@ const ViewChatPage = () => {
     if (!sessionId) {
       initSession()
     }
-  }, []) 
+  }, [sessionId])
 
   useEffect(() => {
     if (sessionId) {
@@ -230,7 +238,7 @@ const ViewChatPage = () => {
       localStorage.removeItem('chatMessages')
       const sessionResponse = await startNewChatSession()
       setSessionId(sessionResponse.sessionId)
-      setMessages([initialMessage]) 
+      setMessages([initialMessage])
     } catch (err) {
       console.error(err)
     } finally {
@@ -260,7 +268,7 @@ const ViewChatPage = () => {
       const aiMessage: DisplayMessage = {
         id: response.chatId,
         type: 'sender',
-        content: response.answer.split('\n'), 
+        content: response.answer.split('\n'),
         sources: response.sources,
         chatId: response.chatId
       }
@@ -281,7 +289,7 @@ const ViewChatPage = () => {
 
   return (
     <div className="flex h-[calc(100vh-81px)] w-full border border-[#e5e7eb] bg-white">
-      
+
       {/* 🌟 TRUYỀN REF VÀO SIDEBAR */}
       <KnowledgeSidebar
         isSidebarOpen={isSidebarOpen}

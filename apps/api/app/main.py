@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+
 from .api import admin, auth, chat, docs, fallback
 from .core.config import settings
 
@@ -11,15 +12,15 @@ def create_app() -> FastAPI:
         docs_url="/docs/openapi",
         redoc_url="/docs/redoc",
     )
-    
+
     origins = settings.cors_allow_origins
 
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=origins,       # Specifies the allowed origins
-        allow_credentials=True,    # Allows cookies (if you use them)
-        allow_methods=["*"],         # Allows all methods (GET, POST, OPTIONS, etc.)
-        allow_headers=["*"],         # Allows all headers
+        allow_origins=origins,  # Specifies the allowed origins
+        allow_credentials=True,  # Allows cookies (if you use them)
+        allow_methods=["*"],  # Allows all methods (GET, POST, OPTIONS, etc.)
+        allow_headers=["*"],  # Allows all headers
     )
 
     app.include_router(auth.router, prefix="/api/auth", tags=["auth"])

@@ -40,6 +40,7 @@ type UploadItem = {
     filename?: string;
     name?: string;
     error?: string; // Backend error message
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     [key: string]: any; // Allow other fields from backend
 };
 
@@ -132,7 +133,7 @@ export const uploadKnowledgeFiles = async (files: File[]): Promise<IUploadedFile
         const data: { items?: UploadItem[]; status?: string } = await response.json();
         
         // Log full response for debugging
-        console.log("Upload response:", JSON.stringify(data, null, 2));
+        // console.log("Upload response:", JSON.stringify(data, null, 2));
 
         if (!data.items || data.items.length === 0) {
             console.warn("Backend returned no items in upload response");
@@ -174,7 +175,7 @@ export const uploadKnowledgeFiles = async (files: File[]): Promise<IUploadedFile
         const uploadedFiles: IUploadedFile[] = [];
 
         for (const item of successItems) {
-            console.log("Processing upload item:", item);
+            // console.log("Processing upload item:", item);
 
             // ✅ Try multiple ways to extract document ID
             const docId = item.document_id || item.id;

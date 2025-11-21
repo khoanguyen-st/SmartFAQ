@@ -1,9 +1,9 @@
-import { useState, useMemo, useCallback, useEffect } from 'react';
+import { ArrowLeft, ArrowRight } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import plusUrl from "../assets/icons/plus.svg";
+import DeleteConfirmationModal from "../components/uploaded/DeleteFolderModal";
 import DocumentCard from "../components/uploaded/DocumentCard";
 import UploadCard from "../components/uploaded/UploadCard";
-import PlusIcon from "../assets/icons/plus.svg?react";
-import { ArrowRight, ArrowLeft } from 'lucide-react';
-import DeleteConfirmationModal from "../components/uploaded/DeleteConfirmationModal"; 
 
 
 interface IDocument {
@@ -34,13 +34,13 @@ const sortDocuments = (docs: IDocument[]): IDocument[] => {
 };
 
 const getMaxDocsPerPage = () => {
-    if (typeof window === 'undefined') return 3; 
-    if (window.innerWidth >= 1280) { 
-        return 10; 
-    } else if (window.innerWidth >= 1024) { 
-        return 8; 
+    if (typeof window === 'undefined') return 3;
+    if (window.innerWidth >= 1280) {
+        return 10;
+    } else if (window.innerWidth >= 1024) {
+        return 8;
     } else {
-        return 3; 
+        return 3;
     }
 };
 
@@ -54,7 +54,7 @@ const UploadedPage = () => {
     useEffect(() => {
         const handleResize = () => {
             setDocsPerPage(getMaxDocsPerPage());
-            setCurrentPage(1); 
+            setCurrentPage(1);
         };
 
         window.addEventListener('resize', handleResize);
@@ -62,11 +62,11 @@ const UploadedPage = () => {
     }, []);
 
     const onUploadClick = () => {
-        
+
     };
 
     const handleOpenDeleteModal = useCallback((doc: IDocument) => {
-        setDocumentToDelete(doc); 
+        setDocumentToDelete(doc);
     }, []);
 
     const handleCloseDeleteModal = useCallback(() => {
@@ -75,49 +75,49 @@ const UploadedPage = () => {
 
     const handleConfirmDelete = useCallback(() => {
         if (documentToDelete) {
-            console.log(`[ACTION] CONFIRMED Deleting document ID: ${documentToDelete.id} - ${documentToDelete.title}`);
+            // console.log(`[ACTION] CONFIRMED Deleting document ID: ${documentToDelete.id} - ${documentToDelete.title}`);
             setDocuments(prev => prev.filter(doc => doc.id !== documentToDelete.id));
         }
-        
+
         const newTotalPages = Math.ceil((documents.length - 1) / docsPerPage);
         if (currentPage > newTotalPages && newTotalPages > 0) {
             setCurrentPage(newTotalPages);
         } else if (newTotalPages === 0) {
             setCurrentPage(1);
         }
-        
-        handleCloseDeleteModal(); 
+
+        handleCloseDeleteModal();
     }, [documentToDelete, handleCloseDeleteModal, documents.length, docsPerPage, currentPage]);
 
-    const handleViewDocument = useCallback((doc: IDocument) => console.log(`View ${doc.title}`), []);
-    const handleReuploadDocument = useCallback((doc: IDocument) => console.log(`Re-upload ${doc.title}`), []);
+    const handleViewDocument = useCallback(() => { }, []);
+    const handleReuploadDocument = useCallback(() => { }, []);
 
 
     const sortedDocuments = useMemo(() => {
-        return sortDocuments(documents); 
+        return sortDocuments(documents);
     }, [documents]);
-    
-    const totalPages = Math.ceil(sortedDocuments.length / docsPerPage); 
+
+    const totalPages = Math.ceil(sortedDocuments.length / docsPerPage);
     const startIndex = (currentPage - 1) * docsPerPage;
-    
+
     let currentDocuments = sortedDocuments.slice(startIndex, startIndex + docsPerPage);
     let placeholders: number[] = [];
-    
+
     const isLastPage = currentPage === totalPages;
-    
+
     if (isLastPage && sortedDocuments.length > 0) {
-        const DOCUMENTS_PER_ROW = 
-            window.innerWidth >= 1280 ? 5 : 
-            window.innerWidth >= 1024 ? 4 : 
-            window.innerWidth >= 640 ? 2 : 1;
-            
-        const MAX_ROWS = 3; 
-        const maxItemsOnGrid = MAX_ROWS * DOCUMENTS_PER_ROW; 
-        
+        const DOCUMENTS_PER_ROW =
+            window.innerWidth >= 1280 ? 5 :
+                window.innerWidth >= 1024 ? 4 :
+                    window.innerWidth >= 640 ? 2 : 1;
+
+        const MAX_ROWS = 3;
+        const maxItemsOnGrid = MAX_ROWS * DOCUMENTS_PER_ROW;
+
         const itemsOnPage = currentPage === 1 ? currentDocuments.length + 1 : currentDocuments.length;
-        
+
         const emptySlots = maxItemsOnGrid - itemsOnPage;
-        
+
         if (emptySlots > 0) {
             placeholders = Array.from({ length: emptySlots }, (_, i) => -(i + 1));
         }
@@ -128,7 +128,7 @@ const UploadedPage = () => {
             setCurrentPage(page);
         }
     }, [totalPages]);
-    
+
     const isDocumentEmpty = sortedDocuments.length === 0;
 
     const modalProps = useMemo(() => {
@@ -137,7 +137,7 @@ const UploadedPage = () => {
                 isOpen: true,
                 documentTitle: documentToDelete.title,
                 onCancel: handleCloseDeleteModal,
-                onConfirm: handleConfirmDelete, 
+                onConfirm: handleConfirmDelete,
             };
         }
         return { isOpen: false, documentTitle: '' } as const;
@@ -151,8 +151,8 @@ const UploadedPage = () => {
             <UploadCard onClick={onUploadClick} />
         </div>
     ) : (
-        <div className="flex flex-col gap-6"> 
-            
+        <div className="flex flex-col gap-6">
+
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
 
                 {currentPage === 1 && (
@@ -162,20 +162,21 @@ const UploadedPage = () => {
                 {currentDocuments.map(doc => (
                     <DocumentCard
                         key={doc.id}
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
                         doc={doc as any}
-                        onDelete={handleOpenDeleteModal} 
+                        onDelete={handleOpenDeleteModal}
                         onView={handleViewDocument}
                         onReupload={handleReuploadDocument}
                     />
                 ))}
-                
+
                 {placeholders.map(key => (
                     <div key={key} className="opacity-0 pointer-events-none">
                         <DocumentCard
                             doc={{ id: key, title: "Placeholder", date: "", sources: 0 } as IDocument}
-                            onDelete={() => {}} 
-                            onView={() => {}}
-                            onReupload={() => {}}
+                            onDelete={() => { }}
+                            onView={() => { }}
+                            onReupload={() => { }}
                         />
                     </div>
                 ))}
@@ -189,18 +190,17 @@ const UploadedPage = () => {
                         disabled={currentPage === 1}
                         className="p-2 border border-gray-300 rounded-lg text-gray-700 disabled:opacity-50 hover:bg-gray-100 transition-colors cursor-pointer"
                     >
-                        <ArrowLeft/>
+                        <ArrowLeft />
                     </button>
 
                     {Array.from({ length: totalPages }, (_, index) => index + 1).map(page => (
                         <button
                             key={page}
                             onClick={() => handlePageChange(page)}
-                            className={`px-4 py-2 rounded-lg font-medium transition-colors cursor-pointer ${
-                                page === currentPage 
-                                    ? 'bg-[#003087] text-white' 
-                                    : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-100'
-                            }`}
+                            className={`px-4 py-2 rounded-lg font-medium transition-colors cursor-pointer ${page === currentPage
+                                ? 'bg-[#003087] text-white'
+                                : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-100'
+                                }`}
                         >
                             {page}
                         </button>
@@ -217,11 +217,11 @@ const UploadedPage = () => {
             )}
         </div>
     );
-    
+
     return (
         <div className="mx-5 mt-6">
             <div className="px-4 flex justify-between items-center">
-                <div className= "hidden sm:block">
+                <div className="hidden sm:block">
                     <h2 className="text-2xl font-semibold mb-2">Uploaded Documents</h2>
                     <p className="text-gray-600 mb-4">Manage and review the documents you have uploaded to the SmartFAQ system.</p>
                 </div>
@@ -230,7 +230,7 @@ const UploadedPage = () => {
                     <button
                         onClick={onUploadClick}
                         className="bg-[#003087] hover:bg-blue-800 text-white px-4 py-2 rounded-lg flex items-center gap-2 font-medium transition-colors cursor-pointer sm:min-w-[150px]" >
-                        <PlusIcon />
+                        <img src={plusUrl} alt="plus" className="h-4 w-4" />
                         <span className="hidden sm:block">
                             Upload New Document
                         </span>
@@ -240,9 +240,9 @@ const UploadedPage = () => {
             <div className="m-3">
                 {content}
             </div>
-            
+
             {modalProps.isOpen && (
-                <DeleteConfirmationModal 
+                <DeleteConfirmationModal
                     isOpen={modalProps.isOpen}
                     documentTitle={modalProps.documentTitle}
                     onCancel={modalProps.onCancel}
