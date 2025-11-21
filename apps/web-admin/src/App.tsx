@@ -1,11 +1,13 @@
 import { Navigate, Route, Routes } from 'react-router-dom'
 import { ReactNode } from 'react'
 
+import UploadedPage from './pages/UploadedDocuments'
 import DashboardPage from './pages/Dashboard'
 import LogsPage from './pages/Logs'
 import UsersPage from './pages/Users'
 import SettingsPage from './pages/Settings'
 import LoginPage from './pages/Login'
+import ViewChatPage from './pages/ViewChat'
 import ShellLayout from './components/ShellLayout'
 import { getAuthToken } from './lib/auth'
 
@@ -31,6 +33,8 @@ const App = () => (
               <Route path="users" element={<UsersPage />} />
               <Route path="logs" element={<LogsPage />} />
               <Route path="settings" element={<SettingsPage />} />
+              <Route path="uploaded" element={<UploadedPage />} />
+              <Route path="view-chat" element={<ViewChatPage />} />
               <Route path="*" element={<Navigate to="dashboard" replace />} />
             </Routes>
           </ShellLayout>
