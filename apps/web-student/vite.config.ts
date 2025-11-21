@@ -7,17 +7,42 @@ import { fileURLToPath } from 'node:url'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
-export default defineConfig({
-  plugins: [react(), tailwindcss(), svgr()],
-  server: {
-    port: 5173
-  },
-  resolve: {
-    alias: {
-      '@': path.resolve(__dirname, './src')
-    }
-  },
-  define: {
-    __APP_VERSION__: JSON.stringify('0.1.0')
-  }
-})
+export default defineConfig(({ command, mode }) => {
+  const isWidget = mode === 'widget';
+
+  return {
+    plugins: [react(), tailwindcss(), svgr()],
+
+    server: {
+      port: 5173
+    },
+
+    resolve: {
+      alias: {
+        '@': path.resolve(__dirname, './src')
+      }
+    },
+
+    define: {
+      __APP_VERSION__: JSON.stringify('0.1.0')
+    },
+
+    // ⚡ CHỈ ÁP DỤNG CHO BUILD WIDGET
+    build: isWidget
+      ? {
+          outDir: 'dist-widget',
+          emptyOutDir: true,
+          rollupOptions: {
+            input: path.resolve(__dirname, 'src/widget/index.tsx'),
+            output: {
+              format: 'iife',
+              entryFileNames: 'student-widget.js',
+              // Đảm bảo script dạng IIFE không gây xung đột global
+              name: 'StudentWidgetBundle'
+            }
+          }
+        }
+      : undefined
+  };
+});
+
