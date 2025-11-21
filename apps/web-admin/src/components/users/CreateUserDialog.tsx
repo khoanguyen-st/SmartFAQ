@@ -1,6 +1,6 @@
 import { useState, FormEvent } from 'react'
 import { Button, Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, Input } from '../ui'
-import { CreateUserRequest, createUser } from '@/lib/api'
+import { api, CreateUserRequest } from '@/lib/api.client'
 import { validateEmail, validatePassword } from '@/lib/validation'
 
 interface CreateUserDialogProps {
@@ -40,7 +40,7 @@ export const CreateUserDialog = ({ open, onClose, onSuccess }: CreateUserDialogP
 
     setLoading(true)
     try {
-      await createUser(formData)
+      await api.createUser(formData)
 
       // Reset form
       setFormData({
@@ -77,7 +77,7 @@ export const CreateUserDialog = ({ open, onClose, onSuccess }: CreateUserDialogP
       <form onSubmit={handleSubmit}>
         <DialogHeader>
           <DialogTitle>Create New Account</DialogTitle>
-          <p className="text-sm text-slate-600 mt-1">Create new admin account.</p>
+          <p className="mt-1 text-sm text-slate-600">Create new admin account.</p>
         </DialogHeader>
 
         <DialogContent>
@@ -89,7 +89,7 @@ export const CreateUserDialog = ({ open, onClose, onSuccess }: CreateUserDialogP
             <Input
               type="email"
               value={formData.email}
-              onChange={(e) => {
+              onChange={e => {
                 setFormData({ ...formData, email: e.target.value })
                 if (errors.email) setErrors({ ...errors, email: '' })
               }}
@@ -108,7 +108,7 @@ export const CreateUserDialog = ({ open, onClose, onSuccess }: CreateUserDialogP
             <Input
               type="password"
               value={formData.password}
-              onChange={(e) => {
+              onChange={e => {
                 setFormData({ ...formData, password: e.target.value })
                 if (errors.password) setErrors({ ...errors, password: '' })
               }}
@@ -123,7 +123,7 @@ export const CreateUserDialog = ({ open, onClose, onSuccess }: CreateUserDialogP
           </div>
 
           {errors.submit && (
-            <div className="rounded-lg bg-red-50 border border-red-200 p-3">
+            <div className="rounded-lg border border-red-200 bg-red-50 p-3">
               <p className="text-sm text-red-700">{errors.submit}</p>
             </div>
           )}

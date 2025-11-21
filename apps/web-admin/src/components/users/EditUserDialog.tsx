@@ -1,6 +1,6 @@
 import { useState, useEffect, FormEvent } from 'react'
 import { Button, Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, Input } from '../ui'
-import { User, UpdateUserRequest, updateUser } from '@/lib/api'
+import { api, User, UpdateUserRequest } from '@/lib/api.client'
 import { validateEmail } from '@/lib/validation'
 
 interface EditUserDialogProps {
@@ -41,13 +41,13 @@ export const EditUserDialog = ({ open, onClose, onSuccess, user }: EditUserDialo
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
-    
+
     if (!user) return
     if (!validateForm()) return
 
     setLoading(true)
     try {
-      await updateUser(user.id, formData)
+      await api.updateUser(user.id, formData)
       setErrors({})
       onSuccess()
       onClose()
@@ -72,7 +72,7 @@ export const EditUserDialog = ({ open, onClose, onSuccess, user }: EditUserDialo
       <form onSubmit={handleSubmit}>
         <DialogHeader>
           <DialogTitle>Edit User Account</DialogTitle>
-          <p className="text-sm text-slate-600 mt-1">
+          <p className="mt-1 text-sm text-slate-600">
             Editing user: <span className="font-semibold">{user.username}</span>
           </p>
         </DialogHeader>
@@ -86,7 +86,7 @@ export const EditUserDialog = ({ open, onClose, onSuccess, user }: EditUserDialo
             <Input
               type="email"
               value={formData.email}
-              onChange={(e) => {
+              onChange={e => {
                 setFormData({ ...formData, email: e.target.value })
                 if (errors.email) setErrors({ ...errors, email: '' })
               }}
@@ -98,7 +98,7 @@ export const EditUserDialog = ({ open, onClose, onSuccess, user }: EditUserDialo
           </div>
 
           {errors.submit && (
-            <div className="rounded-lg bg-red-50 border border-red-200 p-3">
+            <div className="rounded-lg border border-red-200 bg-red-50 p-3">
               <p className="text-sm text-red-700">{errors.submit}</p>
             </div>
           )}
