@@ -1,5 +1,3 @@
-"""Document management endpoints (async version)."""
-
 import logging
 import os
 
@@ -38,7 +36,7 @@ async def create_docs(
     tags: str | None = Form(None),
     language: str = Form("en"),
     status: str = Form("ACTIVE"),
-    db: AsyncSession = Depends(get_db),  
+    db: AsyncSession = Depends(get_db),
 ):
     try:
         if files:

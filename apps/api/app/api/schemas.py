@@ -1,7 +1,4 @@
-"""Pydantic schemas for API payloads and responses."""
-
 from pydantic import BaseModel
-
 
 class DocumentCreate(BaseModel):
     title: str
@@ -9,7 +6,6 @@ class DocumentCreate(BaseModel):
     tags: str | None = None
     language: str = "en"
     status: str = "ACTIVE"
-
 
 class DocumentUpdate(BaseModel):
     title: str | None = None
@@ -40,6 +36,6 @@ class DocumentOut(BaseModel):
 
     class Config:
         try:
-            from_attributes = True 
+            from_attributes = True
         except Exception:
             orm_mode = True

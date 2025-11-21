@@ -1,5 +1,5 @@
 export const MAX_FILES = 20;
-export const MAX_SIZE = 10 * 1024 * 1024;
+export const MAX_SIZE = 1000 * 1024 * 1024;
 
 const allowedExtensions = [".pdf", ".doc", ".docx", ".txt", ".md"];
 
@@ -9,7 +9,7 @@ export const SUPPORTED_TYPES = [
   "text/plain",
   "text/markdown",
   "text/x-markdown",
-  
+
 ];
 
 export const formatBytes = (bytes: number) => {
@@ -36,7 +36,7 @@ export const validateFiles = (
     return { valid: [], error: `You can upload up to ${MAX_FILES} files only.` };
   }
 
- 
+
   const sizeValid = files.filter((f) => f.size <= MAX_SIZE);
   if (sizeValid.length < files.length) {
     return { valid: sizeValid, error: "Some files were rejected (max 10MB each)." };

@@ -28,7 +28,7 @@ class Settings(BaseSettings):
     )
 
     GOOGLE_API_KEY: str = Field("", alias="GOOGLE_API_KEY")
-    LLM_MODEL: str = Field("gemini-2.0-flash-exp", alias="LLM_MODEL")
+    LLM_MODEL: str = Field("gemini-2.5-flash", alias="LLM_MODEL")
     LLM_TEMPERATURE: float = Field(0.3, alias="LLM_TEMPERATURE")
     LLM_MAX_TOKENS: int = Field(2048, alias="LLM_MAX_TOKENS")
 
@@ -56,6 +56,5 @@ class Settings(BaseSettings):
 @lru_cache(maxsize=1)
 def get_settings() -> Settings:
     return Settings()
-
 
 settings = get_settings()
