@@ -25,8 +25,8 @@
       "yarn format:prettier"
     ],
     "apps/api/app/**/*.py": [
-      "ruff check --fix",
-      "black"
+      "python3 -m ruff check --fix",
+      "python3 -m black"
     ]
   }
 }

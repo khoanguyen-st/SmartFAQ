@@ -1,4 +1,5 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
+
 
 class DocumentCreate(BaseModel):
     title: str
@@ -6,6 +7,7 @@ class DocumentCreate(BaseModel):
     tags: str | None = None
     language: str = "en"
     status: str = "ACTIVE"
+
 
 class DocumentUpdate(BaseModel):
     title: str | None = None
@@ -34,8 +36,4 @@ class DocumentOut(BaseModel):
     current_version_id: int | None
     versions: list[DocumentVersionOut] | None = None
 
-    class Config:
-        try:
-            from_attributes = True
-        except Exception:
-            orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
