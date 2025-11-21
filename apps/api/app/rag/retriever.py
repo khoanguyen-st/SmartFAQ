@@ -1,4 +1,3 @@
-# retriever.py
 from __future__ import annotations
 
 from typing import Any, Dict, List, Literal, Optional
@@ -18,13 +17,11 @@ def _distance_to_similarity(distance: float, metric: str = None) -> float:
 
     if metric == "cosine":
         sim = 1.0 - distance
-        # đề phòng sai số float
         if sim < 0.0:
             sim = 0.0
         if sim > 1.0:
             sim = 1.0
         return sim
-    # Heuristic fallback
     return 1.0 / (1.0 + max(distance, 0.0))
 
 
@@ -56,7 +53,6 @@ class Retriever:
                         "text": doc.page_content,
                         "metadata": meta,
                         "score": similarity,
-                        # hữu ích cho citation:
                         "document_id": meta.get("document_id"),
                         "chunk_id": meta.get("chunk_id"),
                         "page": meta.get("page"),
@@ -85,15 +81,16 @@ class Retriever:
         """
         if not contexts:
             return 0.0
-        weights = [0.5, 0.3, 0.2]
+        top_n = min(3, len(contexts))
+        scores = [ctx.get("score") for ctx in contexts[:top_n] if ctx.get("score") is not None]
+        if not scores:
+            return 0.0
+        decay = 0.6
         weighted_sum = 0.0
         total_weight = 0.0
-        for i, ctx in enumerate(contexts[: len(weights)]):
-            score = ctx.get("score")
-            if score is None:
-                continue
-            w = weights[i]
-            weighted_sum += score * w
+        for i, s in enumerate(scores):
+            w = decay**i
+            weighted_sum += s * w
             total_weight += w
         return (weighted_sum / total_weight) if total_weight > 0 else 0.0
 
