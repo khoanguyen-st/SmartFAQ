@@ -1,85 +1,92 @@
-interface PaginationProps {
+import React from 'react'
+
+interface Props {
   currentPage: number
-  totalPages: number
-  onPageChange: (page: number) => void
-  maxPagesToShow?: number
+  pageSize?: number
+  totalPages?: number
+  totalCount?: number
+  onPageChange: (p: number) => void
+  onPageSizeChange?: (s: number) => void
+  className?: string
 }
 
-export default function Pagination({ currentPage, totalPages, onPageChange, maxPagesToShow = 5 }: PaginationProps) {
-  if (totalPages <= 1) return null
+const MOCK_TOTAL = 50
 
-  let startPage = Math.max(1, currentPage - Math.floor(maxPagesToShow / 2))
-  let endPage = Math.min(totalPages, startPage + maxPagesToShow - 1)
+export const Pagination: React.FC<Props> = ({
+  currentPage,
+  pageSize = 10,
+  totalPages,
+  totalCount,
+  onPageChange,
+  onPageSizeChange,
+  className = ''
+}) => {
+  const effectiveTotal = totalCount ?? (totalPages ? totalPages * pageSize : MOCK_TOTAL)
+  const pages = totalPages ?? Math.max(1, Math.ceil(effectiveTotal / pageSize))
+  const displayedPages = Array.from({ length: Math.min(pages, 5) }, (_, index) => index + 1)
+  const start = (currentPage - 1) * pageSize + 1
+  const end = Math.min(currentPage * pageSize, effectiveTotal > 0 ? effectiveTotal : 5)
+  const endLabel = end.toString().padStart(2, '0')
+  const containerClass =
+    `flex flex-wrap items-center justify-end gap-4 px-6 py-4 text-sm text-slate-500 ${className}`.trim()
 
-  if (endPage - startPage < maxPagesToShow - 1) {
-    startPage = Math.max(1, endPage - maxPagesToShow + 1)
-  }
-
-  const pages = []
-  for (let i = startPage; i <= endPage; i++) {
-    pages.push(i)
+  const changePage = (pageValue: number) => {
+    if (pageValue < 1 || pageValue > pages || pageValue === currentPage) return
+    onPageChange(pageValue)
   }
 
   return (
-    <div className="flex items-center gap-2">
-      {/* Previous Button */}
-      <button
-        onClick={() => onPageChange(currentPage - 1)}
-        disabled={currentPage === 1}
-        className="h-8 min-w-[32px] rounded border px-3 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50"
-      >
-        ←
-      </button>
-
-      {/* First page */}
-      {startPage > 1 && (
-        <>
-          <button
-            onClick={() => onPageChange(1)}
-            className="h-8 min-w-[32px] rounded border border-transparent px-3 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-100"
-          >
-            1
-          </button>
-          {startPage > 2 && <span className="text-slate-400">...</span>}
-        </>
-      )}
-
-      {/* Page numbers */}
-      {pages.map(page => (
+    <div className={containerClass}>
+      <span className="text-sm text-slate-500">
+        Showing {start}-{endLabel} of {effectiveTotal}
+      </span>
+      <div className="flex items-center gap-1">
         <button
-          key={page}
-          onClick={() => onPageChange(page)}
-          className={`h-8 min-w-[32px] rounded px-3 text-sm font-medium transition-colors ${
-            currentPage === page
-              ? 'border border-blue-600 bg-blue-600 text-white'
-              : 'border border-transparent text-slate-600 hover:bg-slate-100'
-          }`}
+          type="button"
+          onClick={() => changePage(currentPage - 1)}
+          disabled={currentPage === 1}
+          className="h-8 w-8 rounded-lg border border-slate-200 text-base text-slate-500 transition enabled:hover:border-blue-200 enabled:hover:text-blue-600 disabled:opacity-40"
+          aria-label="Previous page"
         >
-          {page}
+          ‹
         </button>
-      ))}
-
-      {/* Last page */}
-      {endPage < totalPages && (
-        <>
-          {endPage < totalPages - 1 && <span className="text-slate-400">...</span>}
-          <button
-            onClick={() => onPageChange(totalPages)}
-            className="h-8 min-w-[32px] rounded border border-transparent px-3 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-100"
-          >
-            {totalPages}
-          </button>
-        </>
-      )}
-
-      {/* Next Button */}
-      <button
-        onClick={() => onPageChange(currentPage + 1)}
-        disabled={currentPage === totalPages}
-        className="h-8 min-w-[32px] rounded border px-3 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50"
+        {displayedPages.map(p => {
+          const isActive = p === currentPage
+          return (
+            <button
+              key={p}
+              type="button"
+              onClick={() => changePage(p)}
+              className={`h-8 w-8 rounded-lg border text-sm font-medium transition ${
+                isActive
+                  ? 'border-blue-600 bg-blue-600 text-white shadow'
+                  : 'border-slate-200 text-slate-600 hover:border-blue-200 hover:text-blue-600'
+              }`}
+            >
+              {p}
+            </button>
+          )
+        })}
+        <button
+          type="button"
+          onClick={() => changePage(currentPage + 1)}
+          disabled={currentPage === pages}
+          className="h-8 w-8 rounded-lg border border-slate-200 text-base text-slate-500 transition enabled:hover:border-blue-200 enabled:hover:text-blue-600 disabled:opacity-40"
+          aria-label="Next page"
+        >
+          ›
+        </button>
+      </div>
+      <select
+        value={pageSize}
+        onChange={e => onPageSizeChange?.(Number(e.target.value))}
+        className="h-9 rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-600"
+        disabled={!onPageSizeChange}
       >
-        →
-      </button>
+        <option value={10}>10 / pages</option>
+      </select>
     </div>
   )
 }
+
+export default Pagination

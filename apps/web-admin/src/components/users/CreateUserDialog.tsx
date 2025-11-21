@@ -1,143 +1,182 @@
-import { useState, FormEvent } from 'react'
-import { Button, Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, Input } from '../ui'
-import { api, CreateUserRequest } from '@/lib/api.client'
-import { validateEmail, validatePassword } from '@/lib/validation'
+import React, { useMemo, useState } from 'react'
+import type { CreateUserRequest } from '../../types/users'
 
-interface CreateUserDialogProps {
+const CAMPUS_OPTIONS = ['Hà Nội Campus', 'Đà Nẵng Campus', 'Hồ Chí Minh Campus']
+const DEPARTMENT_OPTIONS = ['Academic Affairs', 'Student Affairs', 'Information Technology']
+
+interface Props {
   open: boolean
   onClose: () => void
-  onSuccess: () => void
+  onSubmit?: (data: CreateUserRequest) => Promise<void> | void
+  onSuccess?: () => void
 }
 
-export const CreateUserDialog = ({ open, onClose, onSuccess }: CreateUserDialogProps) => {
+export const CreateUserDialog: React.FC<Props> = ({ open, onClose, onSubmit, onSuccess }) => {
   const [formData, setFormData] = useState<CreateUserRequest>({
+    username: '',
     email: '',
-    password: '',
-    role: 'Admin',
+    campus: '',
+    department: '',
+    phoneNumber: '0224576981',
+    role: 'Staff',
     status: 'Active'
   })
-
-  const [errors, setErrors] = useState<Record<string, string>>({})
   const [loading, setLoading] = useState(false)
+  const [campusOpen, setCampusOpen] = useState(false)
+  const [departmentOpen, setDepartmentOpen] = useState(false)
 
-  const validateForm = (): boolean => {
-    const newErrors: Record<string, string> = {}
+  const isSubmitDisabled = useMemo(() => {
+    return !formData.email || !formData.username || !formData.campus || !formData.department
+  }, [formData])
 
-    const emailError = validateEmail(formData.email)
-    if (emailError) newErrors.email = emailError
-
-    const passwordError = validatePassword(formData.password)
-    if (passwordError) newErrors.password = passwordError
-
-    setErrors(newErrors)
-    return Object.keys(newErrors).length === 0
-  }
-
-  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-
-    if (!validateForm()) return
-
+    if (isSubmitDisabled) return
     setLoading(true)
     try {
-      await api.createUser(formData)
-
-      // Reset form
-      setFormData({
-        email: '',
-        password: '',
-        role: 'Admin',
-        status: 'Active'
-      })
-      setErrors({})
-      onSuccess()
+      await onSubmit?.(formData)
+      onSuccess?.()
       onClose()
-    } catch (err) {
-      setErrors({ submit: err instanceof Error ? err.message : 'Failed to create user' })
+      setFormData(prev => ({ ...prev, username: '', email: '' }))
+    } catch {
+      /* ignore */
     } finally {
       setLoading(false)
     }
   }
 
-  const handleClose = () => {
-    if (!loading) {
-      setFormData({
-        email: '',
-        password: '',
-        role: 'Admin',
-        status: 'Active'
-      })
-      setErrors({})
-      onClose()
-    }
-  }
+  if (!open) return null
 
   return (
-    <Dialog open={open} onClose={handleClose} className="max-w-md">
-      <form onSubmit={handleSubmit}>
-        <DialogHeader>
-          <DialogTitle>Create New Account</DialogTitle>
-          <p className="mt-1 text-sm text-slate-600">Create new admin account.</p>
-        </DialogHeader>
-
-        <DialogContent>
-          {/* Email */}
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-0 sm:px-4">
+      <div className="h-full w-full overflow-y-auto bg-white p-6 shadow-2xl sm:h-auto sm:max-w-xl sm:rounded-3xl sm:p-8">
+        <div className="mb-6">
+          <h2 className="text-xl font-semibold text-slate-900 sm:text-2xl">Create New Account</h2>
+          <p className="mt-1 text-sm text-slate-500">Create account for Student Affairs Department staff.</p>
+        </div>
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="mb-1.5 block text-sm font-medium text-slate-700">
-              Email <span className="text-red-500">*</span>
-            </label>
-            <Input
+            <label className="mb-1 block text-sm font-medium text-slate-700">Email *</label>
+            <input
+              required
               type="email"
               value={formData.email}
-              onChange={e => {
-                setFormData({ ...formData, email: e.target.value })
-                if (errors.email) setErrors({ ...errors, email: '' })
-              }}
-              error={!!errors.email}
+              onChange={e => setFormData({ ...formData, email: e.target.value })}
               placeholder="Enter email"
-              disabled={loading}
+              className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm focus:border-blue-500 focus:outline-none"
             />
-            {errors.email && <p className="mt-1 text-sm text-red-600">{errors.email}</p>}
           </div>
-
-          {/* Password */}
           <div>
-            <label className="mb-1.5 block text-sm font-medium text-slate-700">
-              Password <span className="text-red-500">*</span>
-            </label>
-            <Input
-              type="password"
-              value={formData.password}
-              onChange={e => {
-                setFormData({ ...formData, password: e.target.value })
-                if (errors.password) setErrors({ ...errors, password: '' })
-              }}
-              error={!!errors.password}
-              placeholder="Enter password (min 8 chars)"
-              disabled={loading}
+            <label className="mb-1 block text-sm font-medium text-slate-700">Username *</label>
+            <input
+              required
+              value={formData.username}
+              onChange={e => setFormData({ ...formData, username: e.target.value })}
+              placeholder="Enter username"
+              className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm focus:border-blue-500 focus:outline-none"
             />
-            {errors.password && <p className="mt-1 text-sm text-red-600">{errors.password}</p>}
-            <p className="mt-1 text-xs text-slate-500">
-              Password must be at least 8 characters with uppercase, lowercase, number and special character.
-            </p>
+          </div>
+          <div className="relative">
+            <label className="mb-1 block text-sm font-medium text-slate-700">Campus *</label>
+            <button
+              type="button"
+              onClick={() => setCampusOpen(o => !o)}
+              className="flex w-full items-center justify-between rounded-xl border border-slate-200 px-4 py-2.5 text-left text-sm text-slate-600 focus:border-blue-500 focus:outline-none"
+              aria-haspopup="listbox"
+              aria-expanded={campusOpen}
+            >
+              <span>{formData.campus || 'Choose campus'}</span>
+              <span className="text-slate-400">▾</span>
+            </button>
+            {campusOpen && (
+              <div className="absolute left-0 z-10 mt-2 w-full rounded-xl border border-slate-200 bg-white p-4 shadow-xl">
+                <ul className="space-y-3 text-sm" role="listbox">
+                  {CAMPUS_OPTIONS.map(option => {
+                    const checked = formData.campus === option
+                    return (
+                      <li key={option} className="flex items-center gap-3">
+                        <input
+                          type="checkbox"
+                          className="h-4 w-4 border-slate-300 text-blue-600 focus:ring-blue-500"
+                          checked={checked}
+                          onChange={() => {
+                            setFormData({ ...formData, campus: checked ? '' : option })
+                          }}
+                        />
+                        <label
+                          onClick={() => setFormData({ ...formData, campus: checked ? '' : option })}
+                          className="cursor-pointer text-slate-700 select-none"
+                        >
+                          {option}
+                        </label>
+                      </li>
+                    )
+                  })}
+                </ul>
+              </div>
+            )}
+          </div>
+          <div className="relative">
+            <label className="mb-1 block text-sm font-medium text-slate-700">Department *</label>
+            <button
+              type="button"
+              onClick={() => setDepartmentOpen(o => !o)}
+              className="flex w-full items-center justify-between rounded-xl border border-slate-200 px-4 py-2.5 text-left text-sm text-slate-600 focus:border-blue-500 focus:outline-none"
+              aria-haspopup="listbox"
+              aria-expanded={departmentOpen}
+            >
+              <span>{formData.department || 'Choose department'}</span>
+              <span className="text-slate-400">▾</span>
+            </button>
+            {departmentOpen && (
+              <div className="absolute left-0 z-10 mt-2 w-full rounded-xl border border-slate-200 bg-white p-4 shadow-xl">
+                <ul className="space-y-3 text-sm" role="listbox">
+                  {DEPARTMENT_OPTIONS.map(option => {
+                    const checked = formData.department === option
+                    return (
+                      <li key={option} className="flex items-center gap-3">
+                        <input
+                          type="checkbox"
+                          className="h-4 w-4 border-slate-300 text-blue-600 focus:ring-blue-500"
+                          checked={checked}
+                          onChange={() => {
+                            setFormData({ ...formData, department: checked ? '' : option })
+                          }}
+                        />
+                        <label
+                          onClick={() => setFormData({ ...formData, department: checked ? '' : option })}
+                          className="cursor-pointer text-slate-700 select-none"
+                        >
+                          {option}
+                        </label>
+                      </li>
+                    )
+                  })}
+                </ul>
+              </div>
+            )}
           </div>
 
-          {errors.submit && (
-            <div className="rounded-lg border border-red-200 bg-red-50 p-3">
-              <p className="text-sm text-red-700">{errors.submit}</p>
-            </div>
-          )}
-        </DialogContent>
-
-        <DialogFooter>
-          <Button type="button" variant="outline" onClick={handleClose} disabled={loading}>
-            Cancel
-          </Button>
-          <Button type="submit" disabled={loading}>
-            {loading ? 'Creating...' : 'Create'}
-          </Button>
-        </DialogFooter>
-      </form>
-    </Dialog>
+          <div className="mt-6 flex items-center justify-end gap-3">
+            <button
+              type="button"
+              onClick={onClose}
+              className="rounded-full border border-slate-200 px-6 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={loading || isSubmitDisabled}
+              className="rounded-full bg-blue-800 px-8 py-2 text-sm font-semibold text-white hover:bg-blue-900 disabled:opacity-50"
+            >
+              {loading ? 'Creating...' : 'Create'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
   )
 }
+
+export default CreateUserDialog

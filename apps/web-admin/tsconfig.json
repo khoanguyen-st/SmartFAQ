@@ -2,6 +2,7 @@
   "extends": "../../packages/config/tsconfig.base.json",
   "compilerOptions": {
     "types": ["vite/client"],
+    "lib": ["DOM", "ES2022"],
     "baseUrl": "./src",
     "paths": {
       "@smartfaq/ui": ["../../packages/ui/src"],
