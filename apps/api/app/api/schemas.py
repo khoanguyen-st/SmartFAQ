@@ -39,9 +39,7 @@ class DocumentOut(BaseModel):
     versions: list[DocumentVersionOut] | None = None
 
     class Config:
-        # Pydantic v2 renamed `orm_mode` to `from_attributes`.
-        # Keep both for compatibility: prefer `from_attributes` when available.
         try:
-            from_attributes = True  # type: ignore
+            from_attributes = True 
         except Exception:
             orm_mode = True

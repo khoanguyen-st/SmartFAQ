@@ -16,10 +16,9 @@ import trashUrl from '@/assets/icons/trash-icon.svg'
 import txtNoFillUrl from '@/assets/icons/txt-no-fill.svg'
 import KnowledgeSidebar from '@/components/viewchat/KnowledgeSidebar'
 import UploadModal from '@/components/viewchat/UploadModal'
-// 🌟 Import type handle cho ref
+
 import { UploadedFileHandle } from '@/components/viewchat/UploadedFile'
 
-// Small image wrapper components to avoid depending on SVGR at runtime
 type ImgCompProps = React.ImgHTMLAttributes<HTMLImageElement>;
 const InforIcon: React.FC<ImgCompProps> = (props) => <img src={inforUrl} alt="info" {...props} />;
 const ImageNofill: React.FC<ImgCompProps> = (props) => <img src={imageNoFillUrl} alt="image" {...props} />;
@@ -124,10 +123,9 @@ const ChatMessage = ({ message }: ChatMessageProps) => {
 }
 
 const ViewChatPage = () => {
-  // ❌ DÒNG GÂY LỖI ĐÃ BỊ XÓA!
-  // const { refreshFiles } = uploadKnowledgeFiles()
 
-  // 🌟 TẠO REF ĐỂ GỌI HÀM TỪ UPLOADEDFILE
+
+
   const uploadedFileRef = useRef<UploadedFileHandle>(null);
 
   const [isSidebarOpen, setIsSidebarOpen] = useState(true)
@@ -139,11 +137,12 @@ const ViewChatPage = () => {
 
   const handleModalClose = () => {
     setIsUploadModalOpen(false)
-    // 🌟 GỌI HÀM LÀM MỚI TỪ REF SAU KHI ĐÓNG MODAL
+
     if (uploadedFileRef.current) {
       uploadedFileRef.current.refreshFiles();
     }
   }
+
 
   const [messages, setMessages] = useState<DisplayMessage[]>(() => {
     const storedMessages = localStorage.getItem('chatMessages')
@@ -290,7 +289,7 @@ const ViewChatPage = () => {
   return (
     <div className="flex h-[calc(100vh-81px)] w-full border border-[#e5e7eb] bg-white">
 
-      {/* 🌟 TRUYỀN REF VÀO SIDEBAR */}
+
       <KnowledgeSidebar
         isSidebarOpen={isSidebarOpen}
         setIsSidebarOpen={setIsSidebarOpen}

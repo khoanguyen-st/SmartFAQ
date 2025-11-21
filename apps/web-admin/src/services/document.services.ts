@@ -17,7 +17,7 @@ interface BackendDocument {
     status: string;
     current_version_id: number | null;
     created_at: string | null;
-    current_file_size: number | null; 
+    current_file_size: number | null;
     current_format: string | null;
 
     versions?: Array<{
@@ -39,9 +39,8 @@ type UploadItem = {
     file_name?: string;
     filename?: string;
     name?: string;
-    error?: string; // Backend error message
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    [key: string]: any; // Allow other fields from backend
+    error?: string;
+    [key: string]: any;
 };
 
 const mapBackendToFrontend = (doc: BackendDocument): IUploadedFile => {
@@ -54,7 +53,7 @@ const mapBackendToFrontend = (doc: BackendDocument): IUploadedFile => {
     return {
         id: doc.id.toString(),
         name: fileName,
-        size: doc.current_file_size || 0, 
+        size: doc.current_file_size || 0,
         type: fileExtension,
         uploadDate: doc.created_at || new Date().toISOString(),
     };
@@ -70,7 +69,7 @@ export const fetchKnowledgeFiles = async (): Promise<IUploadedFile[]> => {
             console.error(`API Error - Status: ${response.status} on GET /api/docs/`, errorText);
             throw new Error(`Failed to list documents. Server responded with status: ${response.status}`);
         }
-        
+
         const data: { items?: BackendDocument[] } = await response.json();
         const documents: BackendDocument[] = data.items || [];
         return documents.map(mapBackendToFrontend);
@@ -83,23 +82,19 @@ export const fetchKnowledgeFiles = async (): Promise<IUploadedFile[]> => {
 
 export const uploadKnowledgeFiles = async (files: File[]): Promise<IUploadedFile[]> => {
     const MAX_FILE_SIZE = 50 * 1024 * 1024;
-    
-    // ✅ Allowed file types: pdf, doc, docx, txt, md
+
     const ALLOWED_EXTENSIONS = ['pdf', 'doc', 'docx', 'txt', 'md'];
-    
-    // Validate files before upload
+
     for (const file of files) {
-        // Check file size
         if (file.size > MAX_FILE_SIZE) {
             throw new Error(`File "${file.name}" exceeds ${MAX_FILE_SIZE / (1024 * 1024)}MB limit`);
         }
-        
-        // Check file extension
+
         const extension = file.name.split('.').pop()?.toLowerCase();
         if (!extension) {
             throw new Error(`File "${file.name}" has no extension`);
         }
-        
+
         if (!ALLOWED_EXTENSIONS.includes(extension)) {
             throw new Error(
                 `File type ".${extension}" is not supported.\n` +
@@ -131,16 +126,13 @@ export const uploadKnowledgeFiles = async (files: File[]): Promise<IUploadedFile
         }
 
         const data: { items?: UploadItem[]; status?: string } = await response.json();
-        
-        // Log full response for debugging
-        // console.log("Upload response:", JSON.stringify(data, null, 2));
+
 
         if (!data.items || data.items.length === 0) {
             console.warn("Backend returned no items in upload response");
-            
-            // Fallback: return uploaded files info without backend confirmation
+
             return files.map((file, index) => ({
-                id: `temp-${Date.now()}-${index}`, // Temporary ID
+                id: `temp-${Date.now()}-${index}`,
                 name: file.name,
                 size: file.size,
                 type: file.name.split('.').pop() || 'unknown',
@@ -148,10 +140,9 @@ export const uploadKnowledgeFiles = async (files: File[]): Promise<IUploadedFile
             }));
         }
 
-        // ✅ Check for errors in response items
         const errors: string[] = [];
         const successItems: UploadItem[] = [];
-        
+
         for (const item of data.items) {
             if (item.error) {
                 const fileName = item.filename || item.title || item.file_name || item.name || 'unknown';
@@ -160,34 +151,28 @@ export const uploadKnowledgeFiles = async (files: File[]): Promise<IUploadedFile
                 successItems.push(item);
             }
         }
-        
-        // If all files failed, throw error with all messages
+
         if (errors.length > 0 && successItems.length === 0) {
             throw new Error(`Upload failed:\n${errors.join('\n')}`);
         }
-        
-        // If some files failed, log warnings
+
         if (errors.length > 0) {
             console.warn("Some files failed to upload:", errors);
-            // Optionally show warning to user
         }
 
         const uploadedFiles: IUploadedFile[] = [];
 
         for (const item of successItems) {
-            // console.log("Processing upload item:", item);
 
-            // ✅ Try multiple ways to extract document ID
             const docId = item.document_id || item.id;
-            
-            // If we have a valid document ID, fetch full details
+
             if (docId) {
                 try {
                     const docResponse = await fetch(`${DOCS_BASE_URL}/${docId}`);
                     if (docResponse.ok) {
                         const doc: BackendDocument = await docResponse.json();
                         uploadedFiles.push(mapBackendToFrontend(doc));
-                        continue; // Success, move to next item
+                        continue;
                     } else {
                         console.warn(`Could not fetch details for doc ${docId}, status: ${docResponse.status}`);
                     }
@@ -196,17 +181,15 @@ export const uploadKnowledgeFiles = async (files: File[]): Promise<IUploadedFile
                 }
             }
 
-            // ✅ Fallback: Create file info from upload response + original file
             const fileName = item.title || item.file_name || item.filename || item.name;
-            const matchingFile = files.find(f => 
-                f.name === fileName || 
+            const matchingFile = files.find(f =>
+                f.name === fileName ||
                 f.name === item.title ||
                 f.name.includes(fileName || '')
             );
 
-            // Use document_id or id if available, otherwise create temp ID
             const fileId = docId?.toString() || `pending-${Date.now()}-${uploadedFiles.length}`;
-            
+
             uploadedFiles.push({
                 id: fileId,
                 name: fileName || matchingFile?.name || "unknown",
@@ -226,7 +209,6 @@ export const uploadKnowledgeFiles = async (files: File[]): Promise<IUploadedFile
 
 export const deleteKnowledgeFile = async (fileId: string): Promise<{ id: string }> => {
     try {
-        // Skip deletion for temporary IDs
         if (fileId.startsWith('temp-') || fileId.startsWith('pending-')) {
             console.warn(`Skipping deletion of temporary file ID: ${fileId}`);
             return { id: fileId };

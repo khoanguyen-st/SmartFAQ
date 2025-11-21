@@ -1,4 +1,3 @@
-# orchestrator.py
 from __future__ import annotations
 
 import logging
@@ -74,7 +73,6 @@ class RAGOrchestrator:
         # 2) Confidence (retriever-level)
         confidence = self.retriever.calculate_confidence(contexts)
 
-        # threshold
         threshold = float(getattr(settings, "CONFIDENCE_THRESHOLD", 0.65))
 
         answer: str = ""
@@ -102,7 +100,6 @@ class RAGOrchestrator:
             logger.debug("Retriever confidence=%.4f threshold=%.4f", confidence, threshold)
 
             if confidence >= threshold:
-                # confident: call LLM with explicit target language
                 try:
                     raw = await self.llm_wrapper.generate_answer_async(
                         question, contexts, target_language=response_language
@@ -159,7 +156,6 @@ class RAGOrchestrator:
             confidence = 0.0
             answer = fallback_text
 
-        # Build sources payload
         sources_list: List[Dict[str, Any]] = []
         for c in sources_to_return or []:
             md = c.get("metadata", {}) or {}

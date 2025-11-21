@@ -1,5 +1,3 @@
-# language.py
-# Utilities for language normalization and simple detection
 from __future__ import annotations
 
 from typing import Optional

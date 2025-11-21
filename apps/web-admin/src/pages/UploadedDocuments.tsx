@@ -75,7 +75,6 @@ const UploadedPage = () => {
 
     const handleConfirmDelete = useCallback(() => {
         if (documentToDelete) {
-            // console.log(`[ACTION] CONFIRMED Deleting document ID: ${documentToDelete.id} - ${documentToDelete.title}`);
             setDocuments(prev => prev.filter(doc => doc.id !== documentToDelete.id));
         }
 

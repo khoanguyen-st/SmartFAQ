@@ -13,7 +13,6 @@ from langchain_text_splitters import RecursiveCharacterTextSplitter
 def _clean_text(s: Optional[str]) -> str:
     if not s:
         return ""
-    # chuẩn hoá cơ bản
     return " ".join(s.split())
 
 
@@ -40,7 +39,6 @@ class PDFLoader:
                 except Exception:
                     text = ""
                 if not text:
-                    # skip trang trống/không trích được
                     continue
                 docs.append(
                     Document(

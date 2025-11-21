@@ -23,7 +23,6 @@ def _clip(text: str, max_chars: int) -> str:
 
 
 def _doc_to_text(doc: Union[Document, Dict[str, Any]], idx: int) -> str:
-    # Hỗ trợ cả Document và dict {"text": "...", "metadata": {...}}
     if isinstance(doc, Document):
         content = doc.page_content or ""
         meta = doc.metadata or {}
@@ -50,28 +49,21 @@ class LLMWrapper:
         max_context_chars: int = 8000,
         max_tokens: Optional[int] = None,
     ):
-        # ---- Model init (Gemini via langchain-google-genai) ----
         llm_model = model or settings.LLM_MODEL
         llm_temperature = temperature if temperature is not None else settings.LLM_TEMPERATURE
         llm_max_tokens = max_tokens or settings.LLM_MAX_TOKENS
 
-        # Initialize Gemini model
-        # Make sure GOOGLE_API_KEY is set in environment
         self.llm = ChatGoogleGenerativeAI(
             model=llm_model,
             temperature=llm_temperature,
             max_output_tokens=llm_max_tokens,
             google_api_key=settings.GOOGLE_API_KEY,
-            # Configure retry settings for rate limits
-            max_retries=2,  # Limit retries to avoid long waits
-            # Optional: add timeout if needed
-            # timeout=30,
+            max_retries=2,
         )
 
         logger.info(f"LLM initialized with model: {llm_model}")
 
         # ---- Prompt ----
-        # Để context ở một message riêng -> dễ kiểm soát và thay thế
         self.system_prompt = (
             "Bạn là trợ lý AI của Đại học Greenwich Việt Nam.\n"
             "Nhiệm vụ: Trả lời câu hỏi của sinh viên dựa trên thông tin được cung cấp.\n\n"
@@ -132,7 +124,6 @@ class LLMWrapper:
         """
         Ghép context với nguồn, có clip để tránh vượt giới hạn.
         """
-        # Chỉ lấy tối đa N nguồn để giữ prompt gọn
         pieces = []
         for i, ctx in enumerate(contexts[:max_sources], start=1):
             pieces.append(_doc_to_text(ctx, i))
@@ -236,7 +227,6 @@ class LLMWrapper:
                     else:
                         message = HumanMessage(content=content)
                 elif isinstance(item, str):
-                    # treat plain strings as prior user turns
                     message = HumanMessage(content=item)
                 if message is not None:
                     formatted_history.append(message)

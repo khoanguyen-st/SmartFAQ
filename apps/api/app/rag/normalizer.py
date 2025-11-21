@@ -51,7 +51,7 @@ class RuleBasedNormalizer(QuestionNormalizer):
             logger.warning(
                 "Quota exhausted in normalization: %s. Using basic cleaning fallback.", exc
             )
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc: 
             logger.warning("AI-based normalization failed: %s. Using basic cleaning fallback.", exc)
         if ai_normalized:
             return ai_normalized
@@ -86,7 +86,6 @@ class RuleBasedNormalizer(QuestionNormalizer):
             normalized = question.strip()
             normalized = re.sub(r"\s+", " ", normalized)
 
-            # Handle trailing punctuation
             trailing_punct = ""
             if normalized.endswith(("?", "!")):
                 trailing_punct = normalized[-1]
@@ -99,7 +98,6 @@ class RuleBasedNormalizer(QuestionNormalizer):
 
             normalized = re.sub(r"\s+", " ", normalized).strip()
 
-            # Ensure punctuation is not duplicated
             if trailing_punct and not normalized.endswith(trailing_punct):
                 normalized = normalized + trailing_punct
 

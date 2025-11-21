@@ -43,7 +43,7 @@ class RuleBasedEntityExtractor(EntityExtractor):
         except google_exceptions.ResourceExhausted as exc:
             logger.warning("Quota exhausted in entity extraction: %s", exc)
             return []
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             logger.warning("AI-based entity extraction failed: %s. Returning empty list.", exc)
             return []
         if ai_entities is not None:

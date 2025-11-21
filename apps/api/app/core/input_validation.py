@@ -5,9 +5,10 @@ from __future__ import annotations
 import re
 from typing import Iterable
 
-_HTML_PATTERN = re.compile(
-    r"<\/?script|<\/?iframe|javascript:\s*|onerror\s*=|onload\s*=|onfocus\s*=", re.IGNORECASE
+_HTML_PATTERN_STRING = (
+    r"<\/?script|<\/?iframe|javascript:\s*|onerror\s*=|onload\s*=|onfocus\s*="
 )
+_HTML_PATTERN = re.compile(_HTML_PATTERN_STRING, re.IGNORECASE)
 _PROMPT_INJECTION_PHRASES: tuple[str, ...] = (
     "ignore all previous instructions",
     "disregard the above",

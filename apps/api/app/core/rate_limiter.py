@@ -42,7 +42,6 @@ class RateLimiter:
         self._lock: asyncio.Lock | None = None
 
     def _get_lock(self) -> asyncio.Lock:
-        # Instantiate lock lazily so we don't require an event loop at import time
         if self._lock is None:
             self._lock = asyncio.Lock()
         return self._lock
