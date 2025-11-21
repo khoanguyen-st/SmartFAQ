@@ -35,7 +35,8 @@
   border-left: 1px solid var(--color-gray-3);
 }
 
-.chat__header, .detail__header {
+.chat__header,
+.detail__header {
   border-bottom: 1px solid var(--color-gray-3);
   height: 92px;
   width: 100%;
@@ -47,7 +48,8 @@
   border: none;
 }
 
-.chat__content, .uploaded__content {
+.chat__content,
+.uploaded__content {
   flex-grow: 1;
   padding: 24px;
   overflow: auto;
@@ -98,7 +100,7 @@
   box-shadow: 3px 4px 6px rgba(0, 0, 0, 0.1);
 }
 
-.welcome-message p{
+.welcome-message p {
   font-size: 14px;
 }
 
@@ -129,20 +131,20 @@
 
 @media (max-width: 1229px) {
   .chat__clear-button {
-    @apply w-auto justify-center p-2 rounded-md;
+    @apply w-auto justify-center rounded-md p-2;
   }
   .chat__clear-button p {
     @apply hidden;
   }
   .chat__clear-button .TrashIcon {
-    @apply mr-0 absolute right-5 w-5;
+    @apply absolute right-5 mr-0 w-5;
   }
-  
+
   .chat__title .MessIcon {
     @apply mr-2;
   }
 
   .chat__note p {
- @apply whitespace-nowrap overflow-hidden text-ellipsis;
- }
+    @apply overflow-hidden text-ellipsis whitespace-nowrap;
+  }
 }

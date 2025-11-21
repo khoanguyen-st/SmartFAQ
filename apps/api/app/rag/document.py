@@ -11,7 +11,8 @@ from sqlalchemy.orm import Session
 
 from app.models.document import Document as DocumentModel
 from app.rag.document_processor import DocumentProcessor
-from app.rag.vector_store import VectorStore, upsert_documents  
+from app.rag.vector_store import VectorStore, upsert_documents
+
 UPLOAD_ROOT = Path(os.getenv("UPLOAD_DIR", "uploads")).resolve()
 ALLOWED_EXTS = {".pdf", ".docx"}
 MAX_SIZE_MB = int(os.getenv("UPLOAD_MAX_MB", "50"))

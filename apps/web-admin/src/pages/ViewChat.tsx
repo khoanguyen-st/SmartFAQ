@@ -19,14 +19,14 @@ import UploadModal from '@/components/viewchat/UploadModal'
 
 import { UploadedFileHandle } from '@/components/viewchat/UploadedFile'
 
-type ImgCompProps = React.ImgHTMLAttributes<HTMLImageElement>;
-const InforIcon: React.FC<ImgCompProps> = (props) => <img src={inforUrl} alt="info" {...props} />;
-const ImageNofill: React.FC<ImgCompProps> = (props) => <img src={imageNoFillUrl} alt="image" {...props} />;
-const MessIcon: React.FC<ImgCompProps> = (props) => <img src={messagerUrl} alt="message" {...props} />;
-const PdfNoFill: React.FC<ImgCompProps> = (props) => <img src={pdfNoFillUrl} alt="pdf" {...props} />;
-const SendIcon: React.FC<ImgCompProps> = (props) => <img src={sendUrl} alt="send" {...props} />;
-const TrashIcon: React.FC<ImgCompProps> = (props) => <img src={trashUrl} alt="trash" {...props} />;
-const TxtNoFill: React.FC<ImgCompProps> = (props) => <img src={txtNoFillUrl} alt="txt" {...props} />;
+type ImgCompProps = React.ImgHTMLAttributes<HTMLImageElement>
+const InforIcon: React.FC<ImgCompProps> = props => <img src={inforUrl} alt="info" {...props} />
+const ImageNofill: React.FC<ImgCompProps> = props => <img src={imageNoFillUrl} alt="image" {...props} />
+const MessIcon: React.FC<ImgCompProps> = props => <img src={messagerUrl} alt="message" {...props} />
+const PdfNoFill: React.FC<ImgCompProps> = props => <img src={pdfNoFillUrl} alt="pdf" {...props} />
+const SendIcon: React.FC<ImgCompProps> = props => <img src={sendUrl} alt="send" {...props} />
+const TrashIcon: React.FC<ImgCompProps> = props => <img src={trashUrl} alt="trash" {...props} />
+const TxtNoFill: React.FC<ImgCompProps> = props => <img src={txtNoFillUrl} alt="txt" {...props} />
 
 type DisplayMessage = {
   id: string | number
@@ -69,7 +69,7 @@ const ChatMessage = ({ message }: ChatMessageProps) => {
   if (message.type === 'error') {
     return (
       <div className="welcome-message w-70">
-        <p className="font-bold text-xl text-red-700">Error:</p>
+        <p className="text-xl font-bold text-red-700">Error:</p>
         {message.content.map((line: string, i: number) => (
           <p key={i}>{line}</p>
         ))}
@@ -98,9 +98,7 @@ const ChatMessage = ({ message }: ChatMessageProps) => {
               return (
                 <div key={index} className="mt-1 flex items-center">
                   <IconComponent className="mr-2 h-3 w-3 shrink-0" />
-                  <p className="truncate text-sm">
-                    {source.title}
-                  </p>
+                  <p className="truncate text-sm">{source.title}</p>
                 </div>
               )
             })}
@@ -123,10 +121,7 @@ const ChatMessage = ({ message }: ChatMessageProps) => {
 }
 
 const ViewChatPage = () => {
-
-
-
-  const uploadedFileRef = useRef<UploadedFileHandle>(null);
+  const uploadedFileRef = useRef<UploadedFileHandle>(null)
 
   const [isSidebarOpen, setIsSidebarOpen] = useState(true)
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false)
@@ -139,10 +134,9 @@ const ViewChatPage = () => {
     setIsUploadModalOpen(false)
 
     if (uploadedFileRef.current) {
-      uploadedFileRef.current.refreshFiles();
+      uploadedFileRef.current.refreshFiles()
     }
   }
-
 
   const [messages, setMessages] = useState<DisplayMessage[]>(() => {
     const storedMessages = localStorage.getItem('chatMessages')
@@ -229,7 +223,6 @@ const ViewChatPage = () => {
     }
   }, [messages])
 
-
   const handleClearChat = async () => {
     setIsLoading(true)
     try {
@@ -288,8 +281,6 @@ const ViewChatPage = () => {
 
   return (
     <div className="flex h-[calc(100vh-81px)] w-full border border-[#e5e7eb] bg-white">
-
-
       <KnowledgeSidebar
         isSidebarOpen={isSidebarOpen}
         setIsSidebarOpen={setIsSidebarOpen}
@@ -368,10 +359,7 @@ const ViewChatPage = () => {
           </div>
         </div>
       </div>
-      <UploadModal
-        isOpen={isUploadModalOpen}
-        onClose={handleModalClose}
-      />
+      <UploadModal isOpen={isUploadModalOpen} onClose={handleModalClose} />
     </div>
   )
 }

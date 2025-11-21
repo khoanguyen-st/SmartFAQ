@@ -15,14 +15,18 @@ from ..models.document_version import DocumentVersion
 from ..rag.document_processor import DocumentProcessor
 from ..rag.vector_store import upsert_documents
 
+
 class UploadTooLarge(Exception):
     pass
+
 
 class InvalidFileType(Exception):
     pass
 
+
 class UserNotFound(Exception):
     pass
+
 
 ALLOWED_EXTS = {
     ".md",
@@ -31,6 +35,7 @@ ALLOWED_EXTS = {
     ".txt",
     ".pdf",
 }
+
 
 async def save_uploaded_file(file: UploadFile) -> tuple[str, int, str]:
     """Save uploaded file to disk and return (file_path, size, format)."""
