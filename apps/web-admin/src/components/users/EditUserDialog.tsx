@@ -1,194 +1,160 @@
-import { useState, useEffect, FormEvent } from 'react'
-import { Button, Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, Input, Select } from '../ui'
-import { User, UpdateUserRequest, updateUser } from '@/lib/api'
-import { 
-  validateUsername,
-  validateDepartments,
-  CAMPUS_OPTIONS,
-  DEPARTMENT_OPTIONS
-} from '@/lib/validation'
+import React, { useState, useEffect } from 'react'
+import type { User } from '../../../types/users'
 
-interface EditUserDialogProps {
+interface Props {
   open: boolean
-  onClose: () => void
-  onSuccess: () => void
   user: User | null
+  onClose: () => void
+  onSubmit?: (id: number, data: Partial<User>) => Promise<void> | void
+  onSuccess?: () => void
 }
 
-export const EditUserDialog = ({ open, onClose, onSuccess, user }: EditUserDialogProps) => {
-  const [formData, setFormData] = useState<UpdateUserRequest>({
-    username: '',
-    campus: 'DN',
-    departments: []
-  })
+const CAMPUS_OPTIONS = ['Hà Nội Campus', 'Đà Nẵng Campus', 'Hồ Chí Minh Campus']
+const DEPARTMENT_OPTIONS = ['Academic Affairs', 'Student Affairs', 'Information Technology']
 
-  const [errors, setErrors] = useState<Record<string, string>>({})
+export const EditUserDialog: React.FC<Props> = ({ open, user, onClose, onSubmit, onSuccess }) => {
+  const [formData, setFormData] = useState<Partial<User>>({})
   const [loading, setLoading] = useState(false)
-  const [selectedDepartments, setSelectedDepartments] = useState<Set<string>>(new Set())
+  const [campusOpen, setCampusOpen] = useState(false)
+  const [departmentOpen, setDepartmentOpen] = useState(false)
 
-  // Initialize form when user changes
   useEffect(() => {
     if (user) {
-      setFormData({
-        username: user.username,
-        campus: user.campus,
-        departments: user.departments
-      })
-      setSelectedDepartments(new Set(user.departments))
+      setFormData({ email: user.email, department: user.department, campus: user.campus })
     }
   }, [user])
 
-  const handleDepartmentToggle = (dept: string) => {
-    const newSet = new Set(selectedDepartments)
-    if (newSet.has(dept)) {
-      newSet.delete(dept)
-    } else {
-      newSet.add(dept)
-    }
-    setSelectedDepartments(newSet)
-    setFormData({ ...formData, departments: Array.from(newSet) })
-    
-    // Clear department error if any
-    if (newSet.size > 0 && errors.departments) {
-      setErrors({ ...errors, departments: '' })
-    }
-  }
-
-  const validateForm = (): boolean => {
-    const newErrors: Record<string, string> = {}
-
-    if (formData.username) {
-      const usernameError = validateUsername(formData.username)
-      if (usernameError) newErrors.username = usernameError
-    }
-
-    if (formData.departments) {
-      const deptError = validateDepartments(formData.departments)
-      if (deptError) newErrors.departments = deptError
-    }
-
-    setErrors(newErrors)
-    return Object.keys(newErrors).length === 0
-  }
-
-  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    
     if (!user) return
-    if (!validateForm()) return
-
     setLoading(true)
     try {
-      await updateUser(user.id, formData)
-      setErrors({})
-      onSuccess()
+      await onSubmit?.(user.id, formData)
+      onSuccess?.()
       onClose()
-    } catch (err) {
-      setErrors({ submit: err instanceof Error ? err.message : 'Failed to update user' })
+    } catch {
+      /* ignore */
     } finally {
       setLoading(false)
     }
   }
 
-  const handleClose = () => {
-    if (!loading) {
-      setErrors({})
-      onClose()
-    }
-  }
-
-  if (!user) return null
+  if (!open || !user) return null
 
   return (
-    <Dialog open={open} onClose={handleClose} className="max-w-2xl">
-      <form onSubmit={handleSubmit}>
-        <DialogHeader>
-          <DialogTitle>Edit User Account</DialogTitle>
-          <p className="text-sm text-slate-600 mt-1">
-            Editing user: <span className="font-semibold">{user.email}</span>
-          </p>
-        </DialogHeader>
-
-        <DialogContent>
-          {/* Username */}
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-0 sm:px-4">
+      <div className="h-full w-full overflow-y-auto bg-white p-6 shadow-2xl sm:h-auto sm:max-w-xl sm:rounded-3xl sm:p-8">
+        <div className="mb-6">
+          <h2 className="text-xl font-semibold text-slate-900 sm:text-2xl">Edit User Account</h2>
+          <p className="mt-1 text-sm text-slate-500">Update email or department information.</p>
+        </div>
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="mb-1.5 block text-sm font-medium text-slate-700">
-              Username <span className="text-red-500">*</span>
-            </label>
-            <Input
-              value={formData.username}
-              onChange={(e) => {
-                setFormData({ ...formData, username: e.target.value })
-                if (errors.username) setErrors({ ...errors, username: '' })
-              }}
-              error={!!errors.username}
-              placeholder="Enter username"
-              disabled={loading}
+            <label className="mb-1 block text-sm font-medium text-slate-700">Email *</label>
+            <input
+              required
+              type="email"
+              value={formData.email || ''}
+              onChange={e => setFormData({ ...formData, email: e.target.value })}
+              className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm focus:border-blue-500 focus:outline-none"
             />
-            {errors.username && <p className="mt-1 text-sm text-red-600">{errors.username}</p>}
           </div>
-
-          {/* Campus */}
-          <div>
-            <label className="mb-1.5 block text-sm font-medium text-slate-700">
-              Campus <span className="text-red-500">*</span>
-            </label>
-            <Select
-              value={formData.campus}
-              onChange={(e) => setFormData({ ...formData, campus: e.target.value as 'DN' | 'HCM' | 'HN' | 'CT' })}
-              disabled={loading}
+          <div className="relative">
+            <label className="mb-1 block text-sm font-medium text-slate-700">Campus</label>
+            <button
+              type="button"
+              onClick={() => setCampusOpen(o => !o)}
+              className="flex w-full items-center justify-between rounded-xl border border-slate-200 px-4 py-2.5 text-left text-sm text-slate-600 focus:border-blue-500 focus:outline-none"
+              aria-haspopup="listbox"
+              aria-expanded={campusOpen}
             >
-              {CAMPUS_OPTIONS.map((opt) => (
-                <option key={opt.value} value={opt.value}>
-                  {opt.label}
-                </option>
-              ))}
-            </Select>
-          </div>
-
-          {/* Departments - Multi-select with checkboxes */}
-          <div>
-            <label className="mb-1.5 block text-sm font-medium text-slate-700">
-              Departments <span className="text-red-500">*</span>
-            </label>
-            <div className="rounded-lg border border-indigo-200 p-3 max-h-48 overflow-y-auto">
-              {DEPARTMENT_OPTIONS.map((dept) => (
-                <label key={dept} className="flex items-center gap-2 py-1.5 cursor-pointer hover:bg-slate-50 px-2 rounded">
-                  <input
-                    type="checkbox"
-                    checked={selectedDepartments.has(dept)}
-                    onChange={() => handleDepartmentToggle(dept)}
-                    className="w-4 h-4 rounded border-slate-300 text-primary-600 focus:ring-primary-600"
-                    disabled={loading}
-                  />
-                  <span className="text-sm text-slate-700">{dept}</span>
-                </label>
-              ))}
-            </div>
-            {errors.departments && <p className="mt-1 text-sm text-red-600">{errors.departments}</p>}
-            {selectedDepartments.size > 0 && (
-              <p className="mt-1 text-xs text-slate-500">
-                Selected: {Array.from(selectedDepartments).join(', ')}
-              </p>
+              <span>{formData.campus || 'Choose campus'}</span>
+              <span className="text-slate-400">▾</span>
+            </button>
+            {campusOpen && (
+              <div className="absolute left-0 z-10 mt-2 w-full rounded-xl border border-slate-200 bg-white p-4 shadow-xl">
+                <ul className="space-y-3 text-sm" role="listbox">
+                  {CAMPUS_OPTIONS.map(option => {
+                    const checked = formData.campus === option
+                    return (
+                      <li key={option} className="flex items-center gap-3">
+                        <input
+                          type="checkbox"
+                          className="h-4 w-4 border-slate-300 text-blue-600 focus:ring-blue-500"
+                          checked={checked}
+                          onChange={() => setFormData({ ...formData, campus: checked ? '' : option })}
+                        />
+                        <label
+                          onClick={() => setFormData({ ...formData, campus: checked ? '' : option })}
+                          className="cursor-pointer text-slate-700 select-none"
+                        >
+                          {option}
+                        </label>
+                      </li>
+                    )
+                  })}
+                </ul>
+              </div>
             )}
           </div>
-
-          {errors.submit && (
-            <div className="rounded-lg bg-red-50 border border-red-200 p-3">
-              <p className="text-sm text-red-700">{errors.submit}</p>
-            </div>
-          )}
-        </DialogContent>
-
-        <DialogFooter>
-          <Button type="button" variant="outline" onClick={handleClose} disabled={loading}>
-            Cancel
-          </Button>
-          <Button type="submit" disabled={loading}>
-            {loading ? 'Saving...' : 'Save Changes'}
-          </Button>
-        </DialogFooter>
-      </form>
-    </Dialog>
+          <div className="relative">
+            <label className="mb-1 block text-sm font-medium text-slate-700">Department</label>
+            <button
+              type="button"
+              onClick={() => setDepartmentOpen(o => !o)}
+              className="flex w-full items-center justify-between rounded-xl border border-slate-200 px-4 py-2.5 text-left text-sm text-slate-600 focus:border-blue-500 focus:outline-none"
+              aria-haspopup="listbox"
+              aria-expanded={departmentOpen}
+            >
+              <span>{formData.department || 'Choose department'}</span>
+              <span className="text-slate-400">▾</span>
+            </button>
+            {departmentOpen && (
+              <div className="absolute left-0 z-10 mt-2 w-full rounded-xl border border-slate-200 bg-white p-4 shadow-xl">
+                <ul className="space-y-3 text-sm" role="listbox">
+                  {DEPARTMENT_OPTIONS.map(option => {
+                    const checked = formData.department === option
+                    return (
+                      <li key={option} className="flex items-center gap-3">
+                        <input
+                          type="checkbox"
+                          className="h-4 w-4 border-slate-300 text-blue-600 focus:ring-blue-500"
+                          checked={checked}
+                          onChange={() => setFormData({ ...formData, department: checked ? '' : option })}
+                        />
+                        <label
+                          onClick={() => setFormData({ ...formData, department: checked ? '' : option })}
+                          className="cursor-pointer text-slate-700 select-none"
+                        >
+                          {option}
+                        </label>
+                      </li>
+                    )
+                  })}
+                </ul>
+              </div>
+            )}
+          </div>
+          <div className="mt-6 flex items-center justify-end gap-3">
+            <button
+              type="button"
+              onClick={onClose}
+              className="rounded-full border border-slate-200 px-6 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={loading}
+              className="rounded-full bg-blue-800 px-8 py-2 text-sm font-semibold text-white hover:bg-blue-900 disabled:opacity-50"
+            >
+              {loading ? 'Updating...' : 'Update'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
   )
 }
+
+export default EditUserDialog
