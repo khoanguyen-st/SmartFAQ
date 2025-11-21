@@ -137,7 +137,7 @@
   .chat__clear-button .TrashIcon {
     @apply mr-0 absolute right-5 w-5;
   }
-  
+
   .chat__title .MessIcon {
     @apply mr-2;
   }

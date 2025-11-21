@@ -128,7 +128,6 @@ const UploadedPage = () => {
             setCurrentPage(page);
         }
     }, [totalPages]);
-
     const isDocumentEmpty = sortedDocuments.length === 0;
 
     const modalProps = useMemo(() => {
@@ -169,7 +168,6 @@ const UploadedPage = () => {
                         onReupload={handleReuploadDocument}
                     />
                 ))}
-
                 {placeholders.map(key => (
                     <div key={key} className="opacity-0 pointer-events-none">
                         <DocumentCard

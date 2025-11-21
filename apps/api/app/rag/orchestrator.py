@@ -10,6 +10,7 @@ from langchain_core.output_parsers import StrOutputParser
 from langchain_core.runnables import RunnablePassthrough
 
 from app.core.config import settings
+from app.rag.formatter import ResponseFormatter
 from app.rag.llm import LLMWrapper
 from app.rag.retriever import Retriever
 
@@ -175,14 +176,24 @@ class RAGOrchestrator:
                 }
             )
 
-        latency_ms = int((time.time() - t0) * 1000)
-        return {
-            "answer": answer,
-            "confidence": round(float(confidence), 4),
-            "sources": sources_list,
-            "fallback_triggered": bool(fallback_triggered),
-            "latency_ms": latency_ms,
-        }
+            # Format the answer + sources for client-friendly output
+            try:
+                formatter = ResponseFormatter(document_preview_url=getattr(settings, "DOCUMENT_PREVIEW_URL", None))
+                formatted = formatter.format(answer, sources_list, fallback_triggered)
+            except Exception as e:
+                logger.exception("Formatting of RAG response failed: %s", e)
+                # Fallback: minimal formatted structure
+                formatted = {"formatted_text": answer or "", "raw_text": answer or "", "sources": sources_list, "has_error": True, "fallback_triggered": fallback_triggered}
+
+            latency_ms = int((time.time() - t0) * 1000)
+            return {
+                "answer": answer,
+                "confidence": round(float(confidence), 4),
+                "sources": sources_list,
+                "fallback_triggered": bool(fallback_triggered),
+                "latency_ms": latency_ms,
+                "formatted": formatted,
+            }
 
     def build_rag_chain(
         self,

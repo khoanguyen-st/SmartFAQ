@@ -7,7 +7,7 @@ from fastapi import APIRouter, Depends, Form, HTTPException, UploadFile, status
 from fastapi.responses import FileResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from ..api import schemas
+from ..schemas import schemas
 from ..core.database import get_db
 from ..services import dms
 
