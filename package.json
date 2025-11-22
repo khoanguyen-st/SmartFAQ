@@ -26,8 +26,7 @@
       "prettier --write"
     ],
     "apps/api/app/**/*.py": [
-      "apps/api/venv/bin/ruff check --fix",
-      "apps/api/venv/bin/black"
+      "node scripts/lint-python.cjs"
     ]
   }
 }

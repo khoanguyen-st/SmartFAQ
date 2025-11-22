@@ -1,9 +1,12 @@
 # Contributing to SmartFAQ
 
+> **Cross-Platform Support:** This project works on macOS, Linux, and Windows. All setup scripts and git hooks are designed to be cross-platform compatible.
+
 ## 🚀 Quick Start for New Team Members
 
 ### 1. Initial Setup
 
+**macOS/Linux:**
 ```bash
 # Clone the repository
 git clone https://github.com/khoanguyen-st/SmartFAQ.git
@@ -13,7 +16,17 @@ cd SmartFAQ
 ./scripts/setup.sh
 ```
 
-The setup script will:
+**Windows:**
+```powershell
+# Clone the repository
+git clone https://github.com/khoanguyen-st/SmartFAQ.git
+cd SmartFAQ
+
+# Install dependencies manually
+yarn install
+```
+
+The setup will:
 
 - ✅ Install Node.js dependencies (Yarn)
 - ✅ Setup Husky git hooks
@@ -23,14 +36,33 @@ The setup script will:
 
 If you plan to commit Python code, you **must** set up the API virtual environment:
 
+**macOS/Linux:**
 ```bash
 cd apps/api
 python3 -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
+source venv/bin/activate
+pip install -e ".[dev]"
+```
+
+**Windows (PowerShell):**
+```powershell
+cd apps\api
+python -m venv venv
+venv\Scripts\activate
+pip install -e ".[dev]"
+```
+
+**Windows (CMD):**
+```cmd
+cd apps\api
+python -m venv venv
+venv\Scripts\activate.bat
 pip install -e ".[dev]"
 ```
 
 This installs linting tools (ruff, black) needed by pre-commit hooks.
+
+> **Note:** The pre-commit hooks use a cross-platform Node.js script (`scripts/lint-python.cjs`) that automatically detects your OS and uses the correct venv path.
 
 ### 3. Environment Configuration
 
@@ -113,11 +145,36 @@ yarn format       # Format code
 
 ### Backend (API)
 
+**macOS/Linux:**
 ```bash
 cd apps/api
 
 # Activate virtual environment
-source venv/bin/activate  # On Windows: venv\Scripts\activate
+source venv/bin/activate
+
+# Install dependencies
+pip install -e ".[dev]"
+
+# Run development server
+uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+
+# Database migrations
+alembic upgrade head
+alembic revision --autogenerate -m "description"
+
+# Linting & Formatting
+ruff check .
+ruff check --fix .
+black .
+```
+
+**Windows:**
+```powershell
+cd apps\api
+
+# Activate virtual environment (PowerShell)
+venv\Scripts\activate
+# Or CMD: venv\Scripts\activate.bat
 
 # Install dependencies
 pip install -e ".[dev]"
@@ -179,6 +236,7 @@ SmartFAQ/
 
 ### "yarn not found"
 
+**macOS/Linux:**
 ```bash
 # Install Yarn globally
 npm install -g yarn
@@ -187,11 +245,35 @@ npm install -g yarn
 corepack enable
 ```
 
-### "No module named ruff"
+**Windows:**
+```powershell
+# Install Yarn globally
+npm install -g yarn
 
+# Or use corepack (recommended)
+corepack enable
+```
+
+### "No module named ruff" or "black not found"
+
+**macOS/Linux:**
 ```bash
 cd apps/api
 source venv/bin/activate
+pip install -e ".[dev]"
+```
+
+**Windows (PowerShell):**
+```powershell
+cd apps\api
+venv\Scripts\activate
+pip install -e ".[dev]"
+```
+
+**Windows (CMD):**
+```cmd
+cd apps\api
+venv\Scripts\activate.bat
 pip install -e ".[dev]"
 ```
 
@@ -203,10 +285,30 @@ Make sure you have:
 2. ✅ Set up Python venv if committing Python files
 3. ✅ Fixed all linting errors
 
+**Note:** Pre-commit hooks work on all platforms (macOS, Linux, Windows) thanks to the cross-platform `scripts/lint-python.cjs` script.
+
 To bypass hooks (not recommended):
 
 ```bash
 git commit --no-verify -m "your message"
+```
+
+### Windows-specific: "cannot be loaded because running scripts is disabled"
+
+If you get this error when activating venv in PowerShell:
+
+```powershell
+# Run as Administrator
+Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+```
+
+Then try activating venv again.
+
+### "bash: ./scripts/setup.sh: Permission denied" (macOS/Linux)
+
+```bash
+chmod +x scripts/setup.sh
+./scripts/setup.sh
 ```
 
 ### Docker build fails

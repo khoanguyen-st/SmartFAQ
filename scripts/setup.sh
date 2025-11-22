@@ -1,5 +1,9 @@
 #!/bin/bash
 
+# Note: This script is for macOS/Linux only.
+# Windows users: Please run these commands manually in PowerShell or use WSL
+# See CONTRIBUTING.md for Windows-specific instructions
+
 # Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -65,11 +69,7 @@ else
 fi
 
 echo -e "\n${GREEN}✅ Setup complete!${NC}\n"
-    echo -e "${GREEN}You can now run:${NC}"
-    echo -e "  ${YELLOW}yarn dev:admin${NC}   - Start admin dashboard"
-    echo -e "  ${YELLOW}yarn dev:student${NC} - Start student chat"
-    echo -e "  ${YELLOW}yarn build${NC}       - Build all projects\n"
-else
-    echo -e "\n${RED}❌ Installation failed!${NC}"
-    exit 1
-fi
+echo -e "${GREEN}You can now run:${NC}"
+echo -e "  ${YELLOW}yarn dev:admin${NC}   - Start admin dashboard"
+echo -e "  ${YELLOW}yarn dev:student${NC} - Start student chat"
+echo -e "  ${YELLOW}yarn build${NC}       - Build all projects\n"
