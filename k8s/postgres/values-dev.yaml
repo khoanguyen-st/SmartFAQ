@@ -1,0 +1,54 @@
+auth:
+  enablePostgresUser: true
+  postgresPassword: YEqiRJChlx
+  username: "postgres"
+  password: YEqiRJChlx
+  database: "smartfaq_dev"
+
+primary:
+  persistence:
+    enabled: true
+    storageClass: "standard-rwo"
+    size: 5Gi
+    accessModes:
+      - ReadWriteOnce
+
+  resources:
+    requests:
+      memory: 512Mi
+      cpu: 250m
+    limits:
+      memory: 1Gi
+      cpu: 500m
+
+  securityContext:
+    enabled: true
+    fsGroup: 1001
+    runAsUser: 1001
+
+  containerSecurityContext:
+    enabled: true
+    runAsUser: 1001
+    runAsNonRoot: true
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+        - ALL
+
+backup:
+  enabled: false
+
+metrics:
+  enabled: true
+  serviceMonitor:
+    enabled: false # Usually no Prometheus in dev
+
+networkPolicy:
+  enabled: true
+  allowExternal: false
+  ingress:
+    enabled: true
+    from:
+      - namespaceSelector:
+          matchLabels:
+            name: smartfaq-dev

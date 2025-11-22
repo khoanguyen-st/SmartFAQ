@@ -1,0 +1,61 @@
+## Redis configuration for Production
+auth:
+  enabled: true
+  password: "CHANGE_ME_IN_PRODUCTION"
+
+## Architecture
+architecture: standalone
+
+## Master configuration
+master:
+  persistence:
+    enabled: true
+    storageClass: "standard-rwo"
+    size: 10Gi
+    accessModes:
+      - ReadWriteOnce
+
+  resources:
+    requests:
+      memory: 256Mi
+      cpu: 100m
+    limits:
+      memory: 1Gi
+      cpu: 500m
+
+  ## Security context
+  securityContext:
+    enabled: true
+    fsGroup: 1001
+    runAsUser: 1001
+
+  containerSecurityContext:
+    enabled: true
+    runAsUser: 1001
+    runAsNonRoot: true
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+        - ALL
+
+## Redis configuration
+redis:
+  configuration: |-
+    # Redis production configuration
+    maxmemory 512mb
+    maxmemory-policy allkeys-lru
+    save 900 1
+    save 300 10
+    save 60 10000
+    tcp-keepalive 60
+
+## Monitoring
+metrics:
+  enabled: true
+  serviceMonitor:
+    enabled: true
+
+## Network Policy
+networkPolicy:
+  enabled: true
+  allowExternal: false
