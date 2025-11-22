@@ -26,8 +26,8 @@
       "prettier --write"
     ],
     "apps/api/app/**/*.py": [
-      "ruff check --fix",
-      "black"
+      "apps/api/venv/bin/ruff check --fix",
+      "apps/api/venv/bin/black"
     ]
   }
 }

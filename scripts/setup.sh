@@ -38,8 +38,33 @@ fi
 echo -e "${GREEN}📦 Installing dependencies with Yarn...${NC}\n"
 yarn install
 
-if [ $? -eq 0 ]; then
-    echo -e "\n${GREEN}✅ Setup complete!${NC}\n"
+if [ $? -ne 0 ]; then
+    echo -e "\n${RED}❌ Installation failed!${NC}"
+    exit 1
+fi
+
+# Check if API venv exists and has required packages
+echo -e "\n${GREEN}🐍 Checking Python API environment...${NC}"
+if [ -d "apps/api/venv" ]; then
+    echo -e "${GREEN}✓ Python venv exists${NC}"
+    
+    # Check if ruff and black are installed in venv
+    if [ -f "apps/api/venv/bin/ruff" ] && [ -f "apps/api/venv/bin/black" ]; then
+        echo -e "${GREEN}✓ Linting tools (ruff, black) are installed${NC}"
+    else
+        echo -e "${YELLOW}⚠️  Linting tools missing in venv${NC}"
+        echo -e "${YELLOW}   Run: cd apps/api && source venv/bin/activate && pip install -e \".[dev]\"${NC}"
+    fi
+else
+    echo -e "${YELLOW}⚠️  Python venv not found at apps/api/venv${NC}"
+    echo -e "${YELLOW}   For full development (including Python linting):${NC}"
+    echo -e "${YELLOW}   1. cd apps/api${NC}"
+    echo -e "${YELLOW}   2. python3 -m venv venv${NC}"
+    echo -e "${YELLOW}   3. source venv/bin/activate${NC}"
+    echo -e "${YELLOW}   4. pip install -e \".[dev]\"${NC}"
+fi
+
+echo -e "\n${GREEN}✅ Setup complete!${NC}\n"
     echo -e "${GREEN}You can now run:${NC}"
     echo -e "  ${YELLOW}yarn dev:admin${NC}   - Start admin dashboard"
     echo -e "  ${YELLOW}yarn dev:student${NC} - Start student chat"
