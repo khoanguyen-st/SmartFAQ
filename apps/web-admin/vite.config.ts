@@ -1,15 +1,14 @@
-import { defineConfig } from "vite";
-import react from "@vitejs/plugin-react";
-import tailwindcss from '@tailwindcss/vite';
-import svgr from 'vite-plugin-svgr'
+import tailwindcss from '@tailwindcss/vite'
+import react from '@vitejs/plugin-react'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { defineConfig } from 'vite'
+import svgr from 'vite-plugin-svgr'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
 export default defineConfig({
-  plugins: [react(), tailwindcss(),svgr()],
-
+  plugins: [svgr(), react(), tailwindcss()],
   server: {
     port: 5174
   },
@@ -17,6 +16,9 @@ export default defineConfig({
     alias: {
       '@': path.resolve(__dirname, './src')
     }
+  },
+  build: {
+    chunkSizeWarningLimit: 1024
   },
   define: {
     __APP_VERSION__: JSON.stringify('0.1.0')

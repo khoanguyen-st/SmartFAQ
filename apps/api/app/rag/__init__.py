@@ -16,11 +16,11 @@ from .question_understanding import (
 )
 from .retriever import Retriever
 from .validations import Entity, Intent, NormalizedQuestion
-from .vector_store import get_vectorstore
+from .vector_store import _get_vectorstore
 
 __all__ = [
     "get_embeddings",
-    "get_vectorstore",
+    "_get_vectorstore",
     "LLMWrapper",
     "Retriever",
     "RAGOrchestrator",

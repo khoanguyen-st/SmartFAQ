@@ -6,22 +6,28 @@ This module contains the system prompt for entity extraction, which instructs th
 - Use detected intent to guide extraction
 - Detect language (Vietnamese with/without diacritics or English)
 """
+
 from typing import Optional
 
-def get_entity_extraction_prompt(intent_label: Optional[str] = None, intent_confidence: Optional[float] = None) -> str:
+
+def get_entity_extraction_prompt(
+    intent_label: Optional[str] = None, intent_confidence: Optional[float] = None
+) -> str:
     """
     Get the system prompt for entity extraction.
-    
+
     Args:
         intent_label: Optional detected intent label to guide extraction
         intent_confidence: Optional confidence score of detected intent
-    
+
     Returns:
         str: Complete system prompt for entity extraction
     """
     intent_info = ""
     if intent_label:
-        confidence_text = f" (confidence: {intent_confidence:.2f})" if intent_confidence is not None else ""
+        confidence_text = (
+            f" (confidence: {intent_confidence:.2f})" if intent_confidence is not None else ""
+        )
         intent_info = f"""
 ═══════════════════════════════════════════════════════════════════════════════
 INTENT CONTEXT / NGỮ CẢNH INTENT
@@ -39,7 +45,7 @@ Ví dụ / Example:
 - If intent is "ask_deadline" → focus on extracting entities like "semester", "date", "deadline"
 
 """
-    
+
     return f"""Đây là hệ thống FAQ của trường Greenwich University Việt Nam, phục vụ sinh viên và người quan tâm đến thông tin tuyển sinh.
 
 This is the FAQ system of Greenwich University Vietnam, serving students and those interested in admission information.

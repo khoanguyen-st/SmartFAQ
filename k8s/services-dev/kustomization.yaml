@@ -1,0 +1,26 @@
+namespace: smartfaq-dev
+
+resources:
+  - ../base
+
+# secretGenerator:
+#   - name: smartfaq-api-env
+#     envs:
+#       - .env.dev
+#     options:
+#       disableNameSuffixHash: true
+
+images:
+  - name: asia-southeast1-docker.pkg.dev/enspara/smartfaq/smartfaq-api
+    newTag: "dev-latest"
+
+commonLabels:
+  app: smartfaq-api
+  version: v1
+  component: backend
+  environment: development
+
+patches:
+  - path: patches/ingress.yaml
+  - path: patches/statefulSet.yaml
+  # - path: patches/celery-worker.yaml  # TODO: Enable when Celery is implemented

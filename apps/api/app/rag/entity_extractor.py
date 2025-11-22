@@ -4,25 +4,26 @@ import logging
 import re
 from typing import List, Optional
 
-from langchain_google_genai import ChatGoogleGenerativeAI
-from langchain_core.output_parsers import StrOutputParser
 from google.api_core import exceptions as google_exceptions
+from langchain_core.output_parsers import StrOutputParser
+from langchain_google_genai import ChatGoogleGenerativeAI
 
 from app.core.config import settings
 from app.rag.constants import SUPPORTED_ENTITY_TYPES
 from app.rag.prompts import get_entity_extraction_prompt
 from app.rag.question_understanding import EntityExtractor
-from app.rag.validations import Entity, Intent
 from app.rag.utils.llm_json import invoke_json_llm
+from app.rag.validations import Entity, Intent
 
 logger = logging.getLogger(__name__)
+
 
 class RuleBasedEntityExtractor(EntityExtractor):
     def __init__(self):
         try:
             self.ai_llm = ChatGoogleGenerativeAI(
                 model=settings.LLM_MODEL,
-                temperature=0.1,  
+                temperature=0.1,
                 max_output_tokens=1024,
                 google_api_key=settings.GOOGLE_API_KEY,
             )
@@ -31,7 +32,7 @@ class RuleBasedEntityExtractor(EntityExtractor):
             logger.warning(f"Failed to initialize AI components: {e}. Will use fallback only.")
             self.ai_llm = None
             self.ai_parser = None
-    
+
     def extract(self, question: str, intent: Optional[Intent] = None) -> List[Entity]:
         if not question or not question.strip():
             logger.debug("Empty question received in entity extractor")
@@ -42,15 +43,17 @@ class RuleBasedEntityExtractor(EntityExtractor):
         except google_exceptions.ResourceExhausted as exc:
             logger.warning("Quota exhausted in entity extraction: %s", exc)
             return []
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             logger.warning("AI-based entity extraction failed: %s. Returning empty list.", exc)
             return []
         if ai_entities is not None:
             return ai_entities
         logger.warning("AI-based entity extraction failed. Returning empty list.")
         return []
-    
-    def _extract_with_ai(self, question: str, intent: Optional[Intent] = None) -> Optional[List[Entity]]:
+
+    def _extract_with_ai(
+        self, question: str, intent: Optional[Intent] = None
+    ) -> Optional[List[Entity]]:
         """Extract entities using Gemini AI with retry logic."""
         prompt = self._build_unified_prompt(intent)
         result = invoke_json_llm(
@@ -93,12 +96,7 @@ class RuleBasedEntityExtractor(EntityExtractor):
 
             start_pos = entity_data.get("start_pos")
             end_pos = entity_data.get("end_pos")
-            if (
-                start_pos is None
-                or end_pos is None
-                or start_pos < 0
-                or end_pos > len(question)
-            ):
+            if start_pos is None or end_pos is None or start_pos < 0 or end_pos > len(question):
                 found_pos = self._find_entity_positions(question, value)
                 if found_pos:
                     start_pos, end_pos = found_pos
@@ -116,7 +114,7 @@ class RuleBasedEntityExtractor(EntityExtractor):
             entities.append(entity)
 
         return self._deduplicate_entities(entities)
-    
+
     def _find_entity_positions(self, question: str, entity_value: str) -> Optional[tuple]:
         """Fallback method to find entity positions if AI doesn't provide them."""
         if not entity_value:
@@ -126,7 +124,7 @@ class RuleBasedEntityExtractor(EntityExtractor):
         if matches:
             match = matches[0]
             return (match.start(), match.end())
-        
+
         question_lower = question.lower()
         entity_lower = entity_value.lower()
         start_idx = question_lower.find(entity_lower)
@@ -134,7 +132,7 @@ class RuleBasedEntityExtractor(EntityExtractor):
             end_idx = start_idx + len(entity_value)
             return (start_idx, end_idx)
         return None
-    
+
     def _deduplicate_entities(self, entities: List[Entity]) -> List[Entity]:
         """Remove duplicate entities based on type and value."""
         seen = set()
@@ -145,7 +143,7 @@ class RuleBasedEntityExtractor(EntityExtractor):
                 seen.add(key)
                 unique.append(entity)
         return unique
-    
+
     def _build_unified_prompt(self, intent: Optional[Intent] = None) -> str:
         """Build unified system prompt that handles both Vietnamese and English."""
         intent_label = None
@@ -153,7 +151,9 @@ class RuleBasedEntityExtractor(EntityExtractor):
         if intent:
             intent_label = intent.label
             intent_confidence = intent.confidence
-        return get_entity_extraction_prompt(intent_label=intent_label, intent_confidence=intent_confidence)
-    
+        return get_entity_extraction_prompt(
+            intent_label=intent_label, intent_confidence=intent_confidence
+        )
+
     def get_supported_entity_types(self) -> List[str]:
         return SUPPORTED_ENTITY_TYPES

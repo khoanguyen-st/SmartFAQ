@@ -2,7 +2,7 @@
 
 from typing import Optional
 
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, ConfigDict, EmailStr
 
 
 class DocumentCreate(BaseModel):
@@ -65,3 +65,4 @@ class UserUpdate(BaseModel):
     username: Optional[str] = None
     phone: Optional[str] = None
     address: Optional[str] = None
+    model_config = ConfigDict(from_attributes=True)

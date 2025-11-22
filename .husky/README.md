@@ -13,6 +13,27 @@ Runs `lint-staged` to automatically:
 
 Only staged files are checked and fixed.
 
+### Requirements for Python Linting
+
+**Important:** Python linting tools (ruff, black) run from the API's virtual environment at `apps/api/venv/`.
+
+**First-time setup:**
+```bash
+cd apps/api
+python3 -m venv venv
+source venv/bin/activate
+pip install -e ".[dev]"
+```
+
+**Or use the setup script:**
+```bash
+./scripts/setup.sh
+```
+
+If you don't have the venv set up, commits touching Python files will fail. The pre-commit hook uses:
+- `apps/api/venv/bin/ruff` 
+- `apps/api/venv/bin/black`
+
 ## Commit Message Hook
 
 Enforces conventional commit message format:

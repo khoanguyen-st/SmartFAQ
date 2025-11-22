@@ -1,5 +1,3 @@
-"""Document management endpoints (async version)."""
-
 import logging
 import os
 
@@ -7,8 +5,8 @@ from fastapi import APIRouter, Depends, Form, HTTPException, UploadFile, status
 from fastapi.responses import FileResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from ..api import schemas
 from ..core.database import get_db
-from ..schemas import schemas
 from ..services import dms
 
 router = APIRouter()
@@ -38,15 +36,13 @@ async def create_docs(
     tags: str | None = Form(None),
     language: str = Form("en"),
     status: str = Form("ACTIVE"),
-    db: AsyncSession = Depends(get_db),  # ✅ AsyncSession
+    db: AsyncSession = Depends(get_db),
 ):
     try:
-        # ✅ Case 1: Upload N files
         if files:
             results = await dms.enqueue_multiple_documents(files)
             return {"status": "accepted", "items": results}
 
-        # ✅ Case 2: Metadata only
         if not title:
             raise HTTPException(400, "title is required")
 

@@ -1,0 +1,20 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: smartfaq-api
+spec:
+  tls:
+    - hosts:
+        - api.smartfaq.dev.devplus.edu.vn
+      secretName: smartfaq-dev-tls
+  rules:
+    - host: api.smartfaq.dev.devplus.edu.vn
+      http:
+        paths:
+          - backend:
+              service:
+                name: smartfaq-api
+                port:
+                  number: 8000
+            path: /
+            pathType: Prefix

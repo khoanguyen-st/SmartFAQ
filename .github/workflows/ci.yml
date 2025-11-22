@@ -37,7 +37,6 @@ jobs:
           cache: "yarn"
       - name: Install dependencies
         run: yarn install --frozen-lockfile
-        working-directory: apps/${{ matrix.app }}
       - name: Lint
         run: yarn lint
         working-directory: apps/${{ matrix.app }}

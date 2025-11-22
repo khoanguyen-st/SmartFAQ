@@ -8,4 +8,3 @@ SUPPORTED_ENTITY_TYPES = [
     "tuition_fee",
     "contact_info",
 ]
-
