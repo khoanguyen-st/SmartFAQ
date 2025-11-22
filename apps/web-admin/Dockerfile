@@ -1,18 +1,17 @@
 FROM node:20-alpine
 
-WORKDIR /workspace
+WORKDIR /app
 
 RUN corepack enable
 
-COPY package.json yarn.lock ./
+# Copy package files for caching
+COPY package.json yarn.lock* ./
 
-COPY packages ./packages
-COPY apps ./apps
-
-ENV NODE_ENV=development
+# Install dependencies
 RUN yarn install --frozen-lockfile
 
-WORKDIR /workspace/apps/web-admin
+# Copy source code
+COPY . .
 
 EXPOSE 5173
 

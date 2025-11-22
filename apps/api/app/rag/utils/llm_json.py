@@ -77,7 +77,7 @@ def invoke_json_llm(
                 max_retries,
             )
             time.sleep(delay)
-        except Exception as exc:  
+        except Exception as exc:
             logger.error(
                 "%s attempted JSON invocation failed (attempt %s/%s): %s",
                 log_ctx,

@@ -51,7 +51,7 @@ class RuleBasedNormalizer(QuestionNormalizer):
             logger.warning(
                 "Quota exhausted in normalization: %s. Using basic cleaning fallback.", exc
             )
-        except Exception as exc: 
+        except Exception as exc:
             logger.warning("AI-based normalization failed: %s. Using basic cleaning fallback.", exc)
         if ai_normalized:
             return ai_normalized

@@ -13,11 +13,24 @@ def create_app() -> FastAPI:
         redoc_url="/docs/redoc",
     )
 
-    origins = settings.cors_allow_origins
-
+    # Configure CORS
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=origins,
+        allow_origins=(
+            [
+                # Development
+                "http://localhost:5173",  # web-student dev
+                "http://localhost:5174",  # web-admin dev
+                # Production - Cloudflare Pages
+                "https://smartfaq-admin.pages.dev",
+                "https://smartfaq-student.pages.dev",
+                # Production - Custom domains
+                "https://admin.smartfaq.dev.devplus.edu.vn",
+                "https://chat.smartfaq.dev.devplus.edu.vn",
+            ]
+            if settings.env == "production"
+            else ["*"]
+        ),  # Allow all in dev
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],

@@ -270,7 +270,6 @@ async def query_chat(
     history_records = list(history_result.scalars())
     history_records.reverse()
 
-
     try:
         t0 = time.perf_counter()
         orchestrator = get_rag_orchestrator()

@@ -7,10 +7,22 @@ RUN apt-get update && apt-get install -y \
     build-essential \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy and install dependencies
+# Copy source code and install dependencies
 COPY pyproject.toml ./
+COPY app ./app
+
+# Install PyTorch CPU-only first, then other dependencies
 RUN pip install --upgrade pip setuptools wheel && \
-    pip install --no-cache-dir -e .
+    pip install --no-cache-dir torch==2.5.1 --index-url https://download.pytorch.org/whl/cpu && \
+    pip install --no-cache-dir . && \
+    # Clean up unnecessary files to reduce image size
+    find /usr/local -depth \( \
+      -type d -a \( -name test -o -name tests -o -name __pycache__ \) \
+      -o -type f -a \( -name '*.pyc' -o -name '*.pyo' -o -name '*.a' \) \
+    \) -exec rm -rf '{}' + && \
+    # Remove CUDA libraries if accidentally installed
+    rm -rf /usr/local/lib/python3.11/site-packages/nvidia* \
+           /usr/local/lib/python3.11/site-packages/triton*
 
 # Final stage
 FROM python:3.11-slim
@@ -41,4 +53,4 @@ EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=3s --start-period=40s --retries=3 \
     CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')" || exit 1
 
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "4"]
+CMD ["sh", "-c", "uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers ${UVICORN_WORKERS:-2}"]

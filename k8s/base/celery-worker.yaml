@@ -1,0 +1,67 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: smartfaq-celery-worker
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: smartfaq-celery-worker
+  template:
+    metadata:
+      labels:
+        app: smartfaq-celery-worker
+    spec:
+      securityContext:
+        fsGroup: 1000
+        runAsNonRoot: true
+        runAsGroup: 1000
+        runAsUser: 1000
+        fsGroupChangePolicy: "OnRootMismatch"
+      containers:
+        - name: celery-worker
+          image: asia-southeast1-docker.pkg.dev/enspara/smartfaq/smartfaq-api:latest
+          command:
+            - python
+            - -m
+            - celery
+            - -A
+            - app.workers
+            - worker
+            - --loglevel=info
+            - --concurrency=2
+          envFrom:
+            - secretRef:
+                name: smartfaq-api-env
+          volumeMounts:
+            - name: storage-volume
+              mountPath: /app/uploads
+            - name: tmp-volume
+              mountPath: /tmp
+            - name: model-cache-volume
+              mountPath: /app/.cache
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsNonRoot: true
+            runAsGroup: 1000
+            runAsUser: 1000
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+          resources:
+            requests:
+              memory: 2Gi
+              cpu: "1"
+            limits:
+              memory: 3Gi
+              cpu: "2"
+      volumes:
+        - name: storage-volume
+          persistentVolumeClaim:
+            claimName: storage-volume-smartfaq-api-0
+        - name: tmp-volume
+          emptyDir: {}
+        - name: model-cache-volume
+          persistentVolumeClaim:
+            claimName: model-cache-volume-smartfaq-api-0

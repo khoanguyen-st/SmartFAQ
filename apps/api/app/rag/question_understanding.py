@@ -158,7 +158,7 @@ class QuestionUnderstanding:
             else:
                 metadata["processing_steps"].append("normalization")
                 normalization_failed = False
-        except Exception as exc:  
+        except Exception as exc:
             logger.error("Normalization failed: %s", exc, exc_info=True)
             metadata["errors"].append(
                 {"step": "normalization", "error": str(exc), "error_type": type(exc).__name__}
@@ -212,7 +212,7 @@ class QuestionUnderstanding:
                     f"Low confidence intent: {intent.label} ({intent.confidence})"
                 )
             return intent, False, detected_language
-        except Exception as exc:  
+        except Exception as exc:
             logger.error("Intent detection failed: %s", exc, exc_info=True)
             metadata["errors"].append(
                 {"step": "intent_detection", "error": str(exc), "error_type": type(exc).__name__}
@@ -252,7 +252,7 @@ class QuestionUnderstanding:
 
             metadata["processing_steps"].append("entity_extraction")
             return valid_entities, False
-        except Exception as exc:  
+        except Exception as exc:
             logger.error("Entity extraction failed: %s", exc, exc_info=True)
             metadata["errors"].append(
                 {"step": "entity_extraction", "error": str(exc), "error_type": type(exc).__name__}
