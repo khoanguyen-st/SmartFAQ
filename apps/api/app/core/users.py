@@ -9,7 +9,6 @@ from .database import get_db
 from .security import is_token_blacklisted
 from ..models.user import User
 from .config import settings
-from .security import get_admin_hash
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
 
@@ -18,7 +17,7 @@ async def get_current_user(
     token: str = Depends(oauth2_scheme),
     db: Session = Depends(get_db),
 ) -> User:
-    if is_token_blacklisted(token):
+    if is_token_blacklisted(token, db):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token has been revoked")
 
     try:
