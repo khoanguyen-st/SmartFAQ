@@ -1,4 +1,3 @@
-// User Actions
 export const USER_ACTION_LABELS = {
   EDIT: 'Edit',
   LOCK: 'Lock',
@@ -9,19 +8,16 @@ export const USER_ACTION_LABELS = {
   UNLOCK_USER: 'Unlock user'
 } as const
 
-// User Status
 export const USER_STATUS = {
   ACTIVE: 'Active',
   LOCKED: 'Locked'
 } as const
 
-// Loading and Empty States
 export const UI_MESSAGES = {
   LOADING: 'Loading...',
   NO_USERS_FOUND: 'No users found'
 } as const
 
-// Table Headers
 export const USER_TABLE_HEADERS = {
   ID: 'ID',
   USERNAME: 'Username',
@@ -33,7 +29,6 @@ export const USER_TABLE_HEADERS = {
   ACTION: 'Action'
 } as const
 
-// Card Labels
 export const USER_CARD_LABELS = {
   EMAIL: 'Email:',
   PHONE: 'Phone:',

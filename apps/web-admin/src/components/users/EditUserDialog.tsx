@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import type { User } from '@/types/users'
+import type { User } from '../../../types/users'
 import type { EditUserDialogProps } from '@/interfaces/edit-user-dialog'
 import { validateDepartments } from '@/lib/validation'
 
@@ -21,7 +21,7 @@ export const EditUserDialog: React.FC<EditUserDialogProps> = ({ open, user, onCl
 
   const toggleDepartment = (dept: string) => {
     const current = formData.departments || []
-    const updated = current.includes(dept) ? current.filter(d => d !== dept) : [...current, dept]
+    const updated = current.includes(dept) ? current.filter((d: string) => d !== dept) : [...current, dept]
     setFormData({ ...formData, departments: updated })
   }
 

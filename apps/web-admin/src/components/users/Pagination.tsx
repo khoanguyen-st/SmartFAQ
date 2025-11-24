@@ -14,7 +14,6 @@ export const Pagination: React.FC<PaginationProps & { className?: string }> = ({
 }) => {
   const effectiveTotal = totalCount ?? (totalPages ? totalPages * pageSize : MOCK_TOTAL)
   const pages = totalPages ?? Math.max(1, Math.ceil(effectiveTotal / pageSize))
-  // Always show 5 page buttons
   const maxDisplayPages = 5
   const displayedPages = Array.from({ length: maxDisplayPages }, (_, index) => index + 1)
   const start = (currentPage - 1) * pageSize + 1

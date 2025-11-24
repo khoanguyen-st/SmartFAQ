@@ -10,43 +10,43 @@ const mockUsers: User[] = [
     email: 'nguyenan123@example.com',
     phoneNumber: '0224576981',
     role: 'Staff',
-    department: 'Academic Affairs',
+    departments: ['Academic Affairs'],
     status: 'Active'
   },
   {
     id: 2,
-    username: 'nguyenan123',
-    email: 'nguyenan123@example.com',
+    username: 'tranbinh456',
+    email: 'tranbinh456@example.com',
     phoneNumber: '0224576981',
     role: 'Staff',
-    department: 'Academic Affairs',
+    departments: ['Academic Affairs'],
     status: 'Locked'
   },
   {
     id: 3,
-    username: 'nguyenan123',
-    email: 'nguyenan123@example.com',
+    username: 'lechi789',
+    email: 'lechi789@example.com',
     phoneNumber: '0224576981',
     role: 'Staff',
-    department: 'Student Affairs,\nAcademic Affairs',
+    departments: ['Student Affairs', 'Academic Affairs'],
     status: 'Active'
   },
   {
     id: 4,
-    username: 'nguyenan123',
-    email: 'nguyenan123@example.com',
+    username: 'phamdung012',
+    email: 'phamdung012@example.com',
     phoneNumber: '0224576981',
     role: 'Staff',
-    department: 'Information Technology',
+    departments: ['Information Technology'],
     status: 'Active'
   },
   {
     id: 5,
-    username: 'nguyenan123',
-    email: 'nguyenan123@example.com',
+    username: 'hoangeminh345',
+    email: 'hoangeminh345@example.com',
     phoneNumber: '0224576981',
     role: 'Staff',
-    department: 'Academic Affairs',
+    departments: ['Academic Affairs'],
     status: 'Active'
   }
 ]
@@ -65,14 +65,61 @@ export const mockApi = {
       }
     }
   },
-  async createUser(_: CreateUserRequest): Promise<User> {
+  async createUser(request: CreateUserRequest): Promise<User> {
     await delay(250)
-    return mockUsers[0]
+
+    const duplicateUsername = mockUsers.find(u => u.username === request.username)
+    if (duplicateUsername) {
+      throw new Error('Username or email already exists.')
+    }
+
+    const duplicateEmail = mockUsers.find(u => u.email === request.email)
+    if (duplicateEmail) {
+      throw new Error('Username or email already exists.')
+    }
+
+    if (!request.departments || request.departments.length === 0) {
+      throw new Error('At least one department must be assigned.')
+    }
+
+    const newUser: User = {
+      id: mockUsers.length + 1,
+      username: request.username,
+      email: request.email,
+      phoneNumber: request.phoneNumber,
+      role: request.role || 'Staff',
+      departments: request.departments,
+      campus: request.campus,
+      status: request.status || 'Active'
+    }
+
+    mockUsers.push(newUser)
+    return newUser
   },
   async updateUser(id: number, data: Partial<User>): Promise<User> {
     await delay(250)
-    const base = mockUsers.find(u => u.id === id) || mockUsers[0]
-    return { ...base, ...data }
+    const base = mockUsers.find(u => u.id === id)
+    if (!base) {
+      throw new Error('User not found')
+    }
+
+    if (data.email && data.email !== base.email) {
+      const duplicateEmail = mockUsers.find(u => u.email === data.email && u.id !== id)
+      if (duplicateEmail) {
+        throw new Error('Username or email already exists.')
+      }
+    }
+
+    if (data.departments !== undefined && data.departments.length === 0) {
+      throw new Error('At least one department must be assigned.')
+    }
+
+    const updated = { ...base, ...data }
+    const index = mockUsers.findIndex(u => u.id === id)
+    if (index !== -1) {
+      mockUsers[index] = updated
+    }
+    return updated
   },
   async lockUser(id: number): Promise<void> {
     await delay(150)

@@ -9,7 +9,6 @@ type FetchOptions = {
   cache?: 'default' | 'no-cache' | 'reload' | 'force-cache' | 'only-if-cached'
 }
 
-// API client with error handling
 async function apiClient<T>(endpoint: string, options?: FetchOptions): Promise<T> {
   const url = `${API_BASE_URL}${endpoint}`
 
@@ -39,8 +38,6 @@ async function apiClient<T>(endpoint: string, options?: FetchOptions): Promise<T
 export async function fetchMetrics(): Promise<Record<string, unknown>> {
   return apiClient<Record<string, unknown>>('/admin/metrics')
 }
-
-// ============ User Management API ============
 
 export interface User {
   id: string
@@ -76,7 +73,6 @@ export interface UpdateUserRequest {
   departments?: string[]
 }
 
-// Fetch all users
 export async function fetchUsers(): Promise<User[]> {
   const res = await fetch(`${API_BASE_URL}/api/admin/users`, {
     headers: {
@@ -90,9 +86,7 @@ export async function fetchUsers(): Promise<User[]> {
   return res.json()
 }
 
-// Create new user
 export async function createUser(data: CreateUserRequest): Promise<User> {
-  // Validate departments
   if (!data.departments || data.departments.length === 0) {
     throw new Error('At least one department must be assigned.')
   }
@@ -106,7 +100,7 @@ export async function createUser(data: CreateUserRequest): Promise<User> {
   })
   if (!res.ok) {
     const error = await res.json().catch(() => ({ error: 'Failed to create user' }))
-    // Check for duplicate username/email error from backend
+
     if (error.error?.includes('already exists') || error.error?.includes('duplicate')) {
       throw new Error('Username or email already exists.')
     }
@@ -115,9 +109,7 @@ export async function createUser(data: CreateUserRequest): Promise<User> {
   return res.json()
 }
 
-// Update user
 export async function updateUser(userId: string, data: UpdateUserRequest): Promise<User> {
-  // Validate departments if provided
   if (data.departments !== undefined && data.departments.length === 0) {
     throw new Error('At least one department must be assigned.')
   }
@@ -129,7 +121,7 @@ export async function updateUser(userId: string, data: UpdateUserRequest): Promi
   })
   if (!res.ok) {
     const error = await res.json().catch(() => ({ error: 'Failed to update user' }))
-    // Check for duplicate email error from backend
+
     if (error.error?.includes('already exists') || error.error?.includes('duplicate')) {
       throw new Error('Username or email already exists.')
     }
@@ -138,7 +130,6 @@ export async function updateUser(userId: string, data: UpdateUserRequest): Promi
   return res.json()
 }
 
-// Reset user password
 export async function resetUserPassword(userId: string): Promise<{ message: string }> {
   const res = await fetch(`${API_BASE_URL}/api/admin/users/${userId}/reset-password`, {
     method: 'POST',
@@ -151,7 +142,6 @@ export async function resetUserPassword(userId: string): Promise<{ message: stri
   return res.json()
 }
 
-// Lock user
 export async function lockUser(userId: string): Promise<User> {
   const res = await fetch(`${API_BASE_URL}/api/admin/users/${userId}/lock`, {
     method: 'PATCH',
@@ -164,7 +154,6 @@ export async function lockUser(userId: string): Promise<User> {
   return res.json()
 }
 
-// Unlock user
 export async function unlockUser(userId: string): Promise<User> {
   const res = await fetch(`${API_BASE_URL}/api/admin/users/${userId}/unlock`, {
     method: 'PATCH',

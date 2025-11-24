@@ -40,7 +40,6 @@ export const validateFiles = (
     return { valid: sizeValid, error: 'Some files were rejected (max 10MB each).' }
   }
 
-  // Check for duplicates within the new files array itself
   const seenNames = new Set<string>()
   const duplicatesInBatch: string[] = []
   for (const f of files) {
@@ -55,7 +54,6 @@ export const validateFiles = (
     return { valid: [], error: 'Duplicate file detected. Please upload unique files only.' }
   }
 
-  // Check for duplicates against existing files
   const duplicateFiles = files.filter(f => existingNames.includes(f.name.toLowerCase()))
   if (duplicateFiles.length > 0) {
     return { valid: [], error: 'Duplicate file detected. Please upload unique files only.' }

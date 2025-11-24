@@ -1,24 +1,20 @@
 import { mockApi } from './api.mock'
 import type { UserListResponse, UserQuery, User, CreateUserRequest } from '../../types/users'
 
-// Toggle mock bằng biến môi trường
 const USE_MOCK = import.meta.env.VITE_USE_MOCK_API === 'true'
 
 function getValidBaseUrl(): string {
   const envBase = import.meta.env.VITE_API_BASE_URL
   try {
     if (envBase && /^https?:\/\/.+/.test(envBase)) {
-      // Valid URL format
       return envBase
     }
-    // If envBase is set but invalid, log warning
     if (envBase) {
       console.warn('VITE_API_BASE_URL is set but invalid:', envBase)
     }
   } catch (e) {
     console.warn('Error validating VITE_API_BASE_URL:', e)
   }
-  // Fallback to localhost
   return 'http://localhost:8000'
 }
 
@@ -74,7 +70,6 @@ export const apiClient = {
   }
 }
 
-// Backward compatible aggregate
 export const api = {
   listUsers: apiClient.listUsers,
   createUser: apiClient.createUser,
