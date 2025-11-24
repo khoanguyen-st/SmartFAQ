@@ -1,9 +1,6 @@
-// Validation helpers for User Management
-
 export const validateEmail = (email: string): string | null => {
-  if (!email) return 'Email is required'
-
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
   if (!emailRegex.test(email)) {
     return 'Invalid email format. Please enter a valid email address.'
   }
@@ -40,3 +37,10 @@ export const STATUS_OPTIONS = [
   { value: 'Active', label: 'Active' },
   { value: 'Locked', label: 'Locked' }
 ] as const
+
+export const validateDepartments = (departments?: string[]): string | null => {
+  if (!departments || departments.length === 0) {
+    return 'At least one department must be assigned.'
+  }
+  return null
+}

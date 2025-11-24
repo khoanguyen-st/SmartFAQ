@@ -1,17 +1,10 @@
 import React from 'react'
 import { Filter, Search } from 'lucide-react'
 import type { User } from '../../../types/users'
+import type { FilterDropdownProps, SearchBarProps } from '@/interfaces/search-and-filter'
 
 const DepartmentOptions = ['Academic Affairs', 'Student Affairs', 'Information Technology']
 const StatusOptions: Array<User['status']> = ['Active', 'Locked']
-
-interface FilterDropdownProps {
-  selectedDepartments: string[]
-  selectedStatuses: User['status'][]
-  onToggleDepartment: (dept: string) => void
-  onToggleStatus: (status: User['status']) => void
-  onClearFilters: () => void
-}
 
 export const FilterDropdown: React.FC<FilterDropdownProps> = ({
   selectedDepartments,
@@ -55,15 +48,6 @@ export const FilterDropdown: React.FC<FilterDropdownProps> = ({
       </button>
     </div>
   )
-}
-
-interface SearchBarProps {
-  searchQuery: string
-  onSearchChange: (query: string) => void
-  filterOpen: boolean
-  onToggleFilter: () => void
-  filterRef: React.RefObject<HTMLDivElement>
-  renderFilterDropdown: () => React.ReactNode
 }
 
 export const SearchBar: React.FC<SearchBarProps> = ({

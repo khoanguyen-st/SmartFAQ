@@ -1,18 +1,9 @@
 import React from 'react'
-
-interface Props {
-  currentPage: number
-  pageSize?: number
-  totalPages?: number
-  totalCount?: number
-  onPageChange: (p: number) => void
-  onPageSizeChange?: (s: number) => void
-  className?: string
-}
+import type { PaginationProps } from '@/interfaces/pagination'
 
 const MOCK_TOTAL = 50
 
-export const Pagination: React.FC<Props> = ({
+export const Pagination: React.FC<PaginationProps & { className?: string }> = ({
   currentPage,
   pageSize = 10,
   totalPages,

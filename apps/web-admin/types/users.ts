@@ -6,7 +6,7 @@ export interface User {
   email: string
   phoneNumber?: string | null
   role: string
-  department?: string
+  departments?: string[]
   campus?: string
   status: UserStatus
 }
@@ -31,7 +31,7 @@ export type CreateUserRequest = {
   email: string
   phoneNumber?: string
   role?: string
-  department?: string
+  departments?: string[]
   campus?: string
   status?: UserStatus
 }

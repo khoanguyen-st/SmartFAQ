@@ -16,9 +16,8 @@ export const useUserFilters = ({ users, searchQuery, selectedDepartments, select
           user.email.toLowerCase().includes(searchQuery.toLowerCase())
         : true
 
-      const department = user.department ?? ''
       const matchesDepartment = selectedDepartments.length
-        ? department !== '' && selectedDepartments.includes(department)
+        ? user.departments?.some(dept => selectedDepartments.includes(dept))
         : true
 
       const matchesStatus = selectedStatuses.length ? selectedStatuses.includes(user.status) : true

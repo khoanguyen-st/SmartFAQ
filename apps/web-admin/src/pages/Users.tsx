@@ -1,14 +1,18 @@
 import React, { useState, useRef, useEffect } from 'react'
 import { UserPlus } from 'lucide-react'
 import type { User } from '../../types/users'
-import { useUsers } from '../hooks/useUsers'
-import { useUserFilters, usePagination } from '../hooks/useUseFilters'
-import { SearchBar, FilterDropdown } from '../components/users/SearchAndFilter'
-import { UserTable } from '../components/users/UserTable'
-import { UserCardList } from '../components/users/UserCardList'
-import Pagination from '../components/users/Pagination'
-import CreateUserDialog from '../components/users/CreateUserDialog'
-import EditUserDialog from '../components/users/EditUserDialog'
+import { useUsers } from '@/hooks/useUsers'
+import { useUserFilters, usePagination } from '@/hooks/useUseFilters'
+import { SearchBar, FilterDropdown } from '@/components/users/SearchAndFilter'
+import { UserTable } from '@/components/users/UserTable'
+import { UserCardList } from '@/components/users/UserCardList'
+import Pagination from '@/components/users/Pagination'
+import CreateUserDialog from '@/components/users/CreateUserDialog'
+import EditUserDialog from '@/components/users/EditUserDialog'
+
+const LIST_OF_USER_ACCOUNTS = 'List of User Accounts'
+const MANAGE_USER_ACCOUNTS = 'Manage your user accounts'
+const CREATE_NEW_ACCOUNT = 'Create New Account'
 
 const Users: React.FC = () => {
   const {
@@ -44,7 +48,6 @@ const Users: React.FC = () => {
     onPageChange: setPage
   })
 
-  // Close filter dropdown when clicking outside
   useEffect(() => {
     const handleClick = (event: MouseEvent) => {
       if (filterOpen && filterRef.current && !filterRef.current.contains(event.target as Node)) {
@@ -55,7 +58,6 @@ const Users: React.FC = () => {
     return () => document.removeEventListener('mousedown', handleClick)
   }, [filterOpen])
 
-  // Reset to page 1 when filters change
   useEffect(() => {
     setPage(1)
   }, [searchQuery, selectedDepartments, selectedStatuses, pageSize, setPage])
@@ -81,15 +83,15 @@ const Users: React.FC = () => {
     <div className="space-y-4 md:space-y-6">
       <header className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
-          <h1 className="text-xl font-semibold text-slate-900 md:text-2xl lg:text-3xl">List of User Accounts</h1>
-          <p className="text-xs text-slate-500 md:text-sm">Manage your user accounts</p>
+          <h1 className="text-xl font-semibold text-slate-900 md:text-2xl lg:text-3xl">{LIST_OF_USER_ACCOUNTS}</h1>
+          <p className="text-xs text-slate-500 md:text-sm">{MANAGE_USER_ACCOUNTS}</p>
         </div>
         <button
           onClick={() => setCreateDialogOpen(true)}
           className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-blue-800 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-900 md:w-auto"
         >
           <UserPlus className="h-4 w-4" />
-          Create New Account
+          {CREATE_NEW_ACCOUNT}
         </button>
       </header>
 
@@ -171,5 +173,4 @@ const Users: React.FC = () => {
     </div>
   )
 }
-
 export default Users

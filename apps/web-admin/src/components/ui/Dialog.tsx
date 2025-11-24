@@ -1,12 +1,12 @@
 import { cn } from '@/lib/utils'
-import { ReactNode, useEffect } from 'react'
-
-interface DialogProps {
-  open: boolean
-  onClose: () => void
-  children: ReactNode
-  className?: string
-}
+import { useEffect } from 'react'
+import {
+  DialogProps,
+  DialogHeaderProps,
+  DialogTitleProps,
+  DialogContentProps,
+  DialogFooterProps
+} from '@/interfaces/dialog'
 
 export const Dialog = ({ open, onClose, children, className }: DialogProps) => {
   useEffect(() => {
@@ -38,18 +38,18 @@ export const Dialog = ({ open, onClose, children, className }: DialogProps) => {
   )
 }
 
-export const DialogHeader = ({ children, className }: { children: ReactNode; className?: string }) => (
+export const DialogHeader = ({ children, className }: DialogHeaderProps) => (
   <div className={cn('mb-6', className)}>{children}</div>
 )
 
-export const DialogTitle = ({ children, className }: { children: ReactNode; className?: string }) => (
+export const DialogTitle = ({ children, className }: DialogTitleProps) => (
   <h2 className={cn('text-2xl font-bold text-slate-900', className)}>{children}</h2>
 )
 
-export const DialogContent = ({ children, className }: { children: ReactNode; className?: string }) => (
+export const DialogContent = ({ children, className }: DialogContentProps) => (
   <div className={cn('space-y-4', className)}>{children}</div>
 )
 
-export const DialogFooter = ({ children, className }: { children: ReactNode; className?: string }) => (
+export const DialogFooter = ({ children, className }: DialogFooterProps) => (
   <div className={cn('mt-6 flex justify-end gap-3', className)}>{children}</div>
 )

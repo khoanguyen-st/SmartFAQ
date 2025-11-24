@@ -1,7 +1,16 @@
 export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8000'
 
+type FetchOptions = {
+  method?: string
+  headers?: Record<string, string>
+  body?: string
+  credentials?: 'include' | 'omit' | 'same-origin'
+  mode?: 'cors' | 'no-cors' | 'same-origin'
+  cache?: 'default' | 'no-cache' | 'reload' | 'force-cache' | 'only-if-cached'
+}
+
 // API client with error handling
-async function apiClient<T>(endpoint: string, options?: RequestInit): Promise<T> {
+async function apiClient<T>(endpoint: string, options?: FetchOptions): Promise<T> {
   const url = `${API_BASE_URL}${endpoint}`
 
   try {
@@ -72,8 +81,6 @@ export async function fetchUsers(): Promise<User[]> {
   const res = await fetch(`${API_BASE_URL}/api/admin/users`, {
     headers: {
       'Content-Type': 'application/json'
-      // Add auth token from localStorage/session if needed
-      // 'Authorization': `Bearer ${token}`
     }
   })
   if (!res.ok) {
@@ -85,6 +92,11 @@ export async function fetchUsers(): Promise<User[]> {
 
 // Create new user
 export async function createUser(data: CreateUserRequest): Promise<User> {
+  // Validate departments
+  if (!data.departments || data.departments.length === 0) {
+    throw new Error('At least one department must be assigned.')
+  }
+
   const res = await fetch(`${API_BASE_URL}/api/admin/users`, {
     method: 'POST',
     headers: {
@@ -94,6 +106,10 @@ export async function createUser(data: CreateUserRequest): Promise<User> {
   })
   if (!res.ok) {
     const error = await res.json().catch(() => ({ error: 'Failed to create user' }))
+    // Check for duplicate username/email error from backend
+    if (error.error?.includes('already exists') || error.error?.includes('duplicate')) {
+      throw new Error('Username or email already exists.')
+    }
     throw new Error(error.error || 'Failed to create user')
   }
   return res.json()
@@ -101,6 +117,11 @@ export async function createUser(data: CreateUserRequest): Promise<User> {
 
 // Update user
 export async function updateUser(userId: string, data: UpdateUserRequest): Promise<User> {
+  // Validate departments if provided
+  if (data.departments !== undefined && data.departments.length === 0) {
+    throw new Error('At least one department must be assigned.')
+  }
+
   const res = await fetch(`${API_BASE_URL}/api/admin/users/${userId}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
@@ -108,6 +129,10 @@ export async function updateUser(userId: string, data: UpdateUserRequest): Promi
   })
   if (!res.ok) {
     const error = await res.json().catch(() => ({ error: 'Failed to update user' }))
+    // Check for duplicate email error from backend
+    if (error.error?.includes('already exists') || error.error?.includes('duplicate')) {
+      throw new Error('Username or email already exists.')
+    }
     throw new Error(error.error || 'Failed to update user')
   }
   return res.json()

@@ -1,5 +1,7 @@
 import React from 'react'
 import type { User } from '../../../types/users'
+import type { UserCardListProps } from '@/interfaces/user-card-list'
+import { UI_MESSAGES, USER_CARD_LABELS } from '@/constants/user'
 import { UserActions } from './UserActions'
 
 const getStatusText = (status: User['status']) => {
@@ -10,17 +12,6 @@ const renderStatusBadge = (status: User['status']) => {
   const base = 'inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold'
   if (status === 'Locked') return `${base} bg-red-50 text-red-600`
   return `${base} bg-emerald-50 text-emerald-600`
-}
-
-interface UserCardListProps {
-  users: User[]
-  loading: boolean
-  page: number
-  pageSize: number
-  onEdit: (user: User) => void
-  onLock: (userId: number) => void
-  onUnlock: (userId: number) => void
-  onResetPassword: (userId: number) => void
 }
 
 export const UserCardList: React.FC<UserCardListProps> = ({
@@ -34,11 +25,11 @@ export const UserCardList: React.FC<UserCardListProps> = ({
   onResetPassword
 }) => {
   if (loading) {
-    return <div className="py-12 text-center text-sm text-slate-500">Loading...</div>
+    return <div className="py-12 text-center text-sm text-slate-500">{UI_MESSAGES.LOADING}</div>
   }
 
   if (users.length === 0) {
-    return <div className="py-12 text-center text-sm text-slate-500">No users found</div>
+    return <div className="py-12 text-center text-sm text-slate-500">{UI_MESSAGES.NO_USERS_FOUND}</div>
   }
 
   return (
@@ -52,16 +43,17 @@ export const UserCardList: React.FC<UserCardListProps> = ({
           <div className="mb-3 space-y-2">
             <div className="text-base font-semibold text-slate-900">{user.username}</div>
             <div className="text-sm text-slate-600">
-              <span className="font-medium">Email:</span> {user.email}
+              <span className="font-medium">{USER_CARD_LABELS.EMAIL}</span> {user.email}
             </div>
             <div className="text-sm text-slate-600">
-              <span className="font-medium">Phone:</span> {user.phoneNumber}
+              <span className="font-medium">{USER_CARD_LABELS.PHONE}</span> {user.phoneNumber}
             </div>
             <div className="text-sm text-slate-600">
-              <span className="font-medium">Role:</span> {user.role}
+              <span className="font-medium">{USER_CARD_LABELS.ROLE}</span> {user.role}
             </div>
             <div className="text-sm text-slate-600">
-              <span className="font-medium">Department:</span> {user.department ?? '—'}
+              <span className="font-medium">{USER_CARD_LABELS.DEPARTMENT}</span>{' '}
+              {user.departments && user.departments.length > 0 ? user.departments.join(', ') : '-'}
             </div>
           </div>
           <div className="border-t border-slate-100 pt-3">

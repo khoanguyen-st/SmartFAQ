@@ -1,11 +1,6 @@
 import { useState, useCallback, useEffect } from 'react'
-import { apiClient } from '../lib/apt.client'
+import { UserService } from '@/services/user.services'
 import type { User, CreateUserRequest } from '../../types/users'
-
-const normalizeUser = (user: User): User => {
-  const normalizedStatus = String(user.status).toLowerCase() === 'locked' ? 'Locked' : 'Active'
-  return { ...user, status: normalizedStatus as User['status'] }
-}
 
 export const useUsers = () => {
   const [users, setUsers] = useState<User[]>([])
@@ -18,9 +13,8 @@ export const useUsers = () => {
   const loadUsers = useCallback(async () => {
     setLoading(true)
     try {
-      const res = await apiClient.listUsers({ page, pageSize })
-      const normalized = res.data.map(normalizeUser)
-      setUsers(normalized)
+      const res = await UserService.listUsers({ page, pageSize })
+      setUsers(res.data)
       setTotalRecords(res.metadata?.total ?? res.data.length)
       setError(null)
     } catch (err) {
@@ -37,7 +31,7 @@ export const useUsers = () => {
 
   const createUser = useCallback(
     async (payload: CreateUserRequest) => {
-      await apiClient.createUser(payload)
+      await UserService.createUser(payload)
       await loadUsers()
     },
     [loadUsers]
@@ -45,7 +39,7 @@ export const useUsers = () => {
 
   const updateUser = useCallback(
     async (userId: number, payload: Partial<User>) => {
-      await apiClient.updateUser(userId, payload)
+      await UserService.updateUser(userId, payload)
       await loadUsers()
     },
     [loadUsers]
@@ -53,7 +47,7 @@ export const useUsers = () => {
 
   const lockUser = useCallback(
     async (userId: number) => {
-      await apiClient.lockUser(userId)
+      await UserService.lockUser(userId)
       await loadUsers()
     },
     [loadUsers]
@@ -61,14 +55,14 @@ export const useUsers = () => {
 
   const unlockUser = useCallback(
     async (userId: number) => {
-      await apiClient.unlockUser(userId)
+      await UserService.unlockUser(userId)
       await loadUsers()
     },
     [loadUsers]
   )
 
   const resetPassword = useCallback(async (userId: number) => {
-    await apiClient.resetUserPassword(userId)
+    await UserService.resetUserPassword(userId)
     alert('Password reset email sent successfully')
   }, [])
 
