@@ -1,6 +1,6 @@
-"""Language helpers."""
-
 from __future__ import annotations
+
+from typing import Optional
 
 LANGUAGE_ALIASES: dict[str, str] = {
     "en": "en",
@@ -14,31 +14,42 @@ LANGUAGE_ALIASES: dict[str, str] = {
 }
 
 
-def normalize_language_code(value: str | None, *, default: str = "auto") -> str:
+def normalize_language_code(value: Optional[str], *, default: str = "auto") -> str:
     """
-    Normalize raw language input to a short code.
+    Normalize a user-provided language string into a canonical code.
 
-    Returns one of:
-    - "en": English
-    - "vi": Vietnamese
-    - default (defaults to "auto") if unrecognized/empty
+    Returns:
+        "vi", "en", or "auto" (if unknown and default is "auto")
     """
-    if value is None:
+    if not value:
         return default
-
-    code = value.strip().lower()
-    if not code:
+    v = value.strip().lower()
+    if not v:
         return default
-
-    if code in LANGUAGE_ALIASES:
-        return LANGUAGE_ALIASES[code]
-
-    if code.startswith("en"):
-        return "en"
-    if code.startswith("vi"):
-        return "vi"
-
+    if v in LANGUAGE_ALIASES:
+        return LANGUAGE_ALIASES[v]
+    if "-" in v:
+        prefix = v.split("-", 1)[0]
+        if prefix in LANGUAGE_ALIASES:
+            return LANGUAGE_ALIASES[prefix]
     return default
 
 
-__all__ = ["normalize_language_code"]
+VIETNAMESE_DIACRITIC_CHARS = set(
+    "ắằẳẵặấầẩẫậáàảãạéèẻẽẹêếềểễệíìỉĩịóòỏõọôốồổỗộơớờởỡợúùủũụưứừửữựýỳỷỹỵđ"
+)
+
+
+def detect_language_simple(text: Optional[str]) -> str:
+    if not text:
+        return "en"
+    t = text.strip().lower()
+    if not t:
+        return "en"
+    for ch in t:
+        if ch in VIETNAMESE_DIACRITIC_CHARS:
+            return "vi"
+    return "en"
+
+
+__all__ = ["normalize_language_code", "detect_language_simple"]

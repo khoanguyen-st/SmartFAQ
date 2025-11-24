@@ -1,14 +1,12 @@
-"""Document management service (async version)."""
-
 import logging
 import os
-from typing import Any
-from uuid import uuid4
 from contextlib import asynccontextmanager
+from typing import Any
 
 from fastapi import UploadFile
-from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from ..core.config import settings
 from ..core.database import AsyncSessionLocal
@@ -30,12 +28,17 @@ class UserNotFound(Exception):
     pass
 
 
-ALLOWED_EXTS = {".pdf", ".txt", ".docx", ".md", ".png", ".jpg", ".jpeg"}
+ALLOWED_EXTS = {
+    ".md",
+    ".doc",
+    ".docx",
+    ".txt",
+    ".pdf",
+}
 
 
 async def save_uploaded_file(file: UploadFile) -> tuple[str, int, str]:
     """Save uploaded file to disk and return (file_path, size, format)."""
-    # Giữ nguyên code này vì đã là async
     upload_dir = settings.UPLOAD_DIR
     os.makedirs(upload_dir, exist_ok=True)
 
@@ -46,8 +49,7 @@ async def save_uploaded_file(file: UploadFile) -> tuple[str, int, str]:
     if ext not in ALLOWED_EXTS:
         raise InvalidFileType(f"file type '{ext}' is not allowed")
 
-    unique_name = f"{uuid4().hex}{ext}"
-    dest_path = os.path.join(upload_dir, unique_name)
+    dest_path = os.path.join(upload_dir, orig_name)
 
     max_bytes = int(settings.UPLOAD_MAX_MB) * 1024 * 1024
     written = 0
@@ -93,7 +95,7 @@ async def create_document_record(
         created_by=uploaded_by,
     )
     db.add(doc)
-    await db.flush()  # ✅ await flush
+    await db.flush()
 
     if file_path:
         dv = DocumentVersion(
@@ -105,7 +107,7 @@ async def create_document_record(
             uploaded_by=uploaded_by,
         )
         db.add(dv)
-        await db.flush()  # ✅ await flush
+        await db.flush()
 
         doc.current_version_id = dv.id
         db.add(doc)
@@ -128,8 +130,7 @@ async def async_session_scope():
 async def enqueue_single_document(file: UploadFile, uploaded_by=None) -> dict:
     """Upload a single file and create document record."""
     file_path, size, fmt = await save_uploaded_file(file)
-    
-    # ✅ Thay session_scope() bằng async_session_scope()
+
     async with async_session_scope() as db:
         doc_id = await create_document_record(
             db,
@@ -140,7 +141,6 @@ async def enqueue_single_document(file: UploadFile, uploaded_by=None) -> dict:
             format=fmt,
         )
 
-        # Process and upsert to vector DB
         processor = DocumentProcessor()
         split_docs = processor.process_document(
             file_path, str(doc_id), metadata={"title": file.filename}
@@ -163,20 +163,22 @@ async def enqueue_multiple_documents(files: list[UploadFile]) -> list[dict]:
 
 
 async def create_metadata_document(data: dict[str, Any], db: AsyncSession) -> dict:
-    """✅ Chuyển thành async"""
     doc = Document(**data)
     db.add(doc)
-    await db.commit()  # ✅ await commit
-    await db.refresh(doc)  # ✅ await refresh
+    await db.commit()
+    await db.refresh(doc)
     return {"id": doc.id, "title": doc.title}
 
 
 async def list_documents(db: AsyncSession) -> list[dict[str, Any]]:
-    """✅ Chuyển thành async, dùng select() thay vì query()"""
-    stmt = select(Document).order_by(Document.created_at.desc())
+    stmt = (
+        select(Document)
+        .options(selectinload(Document.current_version))
+        .order_by(Document.created_at.desc())
+    )
     result = await db.execute(stmt)
     rows = result.scalars().all()
-    
+
     return [
         {
             "id": d.id,
@@ -195,15 +197,13 @@ async def list_documents(db: AsyncSession) -> list[dict[str, Any]]:
 
 
 async def get_document(doc_id: int, db: AsyncSession):
-    """✅ Chuyển thành async, dùng select() thay vì query()"""
     stmt = select(Document).where(Document.id == doc_id)
     result = await db.execute(stmt)
     d = result.scalar_one_or_none()
-    
+
     if not d:
         return None
 
-    # ✅ Load relationship nếu cần
     await db.refresh(d, ["versions", "current_version"])
 
     versions = [
@@ -233,30 +233,28 @@ async def get_document(doc_id: int, db: AsyncSession):
 
 
 async def update_document(doc_id: int, updates: dict[str, Any], db: AsyncSession) -> bool:
-    """✅ Chuyển thành async"""
     stmt = select(Document).where(Document.id == doc_id)
     result = await db.execute(stmt)
     doc = result.scalar_one_or_none()
-    
+
     if not doc:
         return False
 
     for k, v in updates.items():
         setattr(doc, k, v)
 
-    await db.commit()  # ✅ await commit
+    await db.commit()
     return True
 
 
 async def delete_document(doc_id: int, db: AsyncSession) -> bool:
-    """✅ Chuyển thành async"""
     stmt = select(Document).where(Document.id == doc_id)
     result = await db.execute(stmt)
     doc = result.scalar_one_or_none()
-    
+
     if not doc:
         return False
 
-    await db.delete(doc)  # ✅ await delete
-    await db.commit()  # ✅ await commit
+    await db.delete(doc)
+    await db.commit()
     return True

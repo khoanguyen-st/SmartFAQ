@@ -21,7 +21,6 @@ def get_embeddings(model: Optional[str] = None) -> Embeddings:
     if name in _EMBED_CACHE:
         return _EMBED_CACHE[name]
 
-    # Prepare model_kwargs for device configuration
     model_kwargs = {}
     device = settings.EMBED_DEVICE
 
@@ -44,8 +43,6 @@ def get_embeddings(model: Optional[str] = None) -> Embeddings:
         else:
             model_kwargs["device"] = device
 
-    # Create HuggingFace embeddings
-    # For multilingual-e5-small: dimension=384, supports 100+ languages
     emb = HuggingFaceEmbeddings(
         model_name=name,
         encode_kwargs={
