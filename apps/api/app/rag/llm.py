@@ -1,14 +1,16 @@
 from __future__ import annotations
 
-from typing import Any, Dict, Optional, Sequence, Union
-
+import logging
+from typing import List, Dict, Any, Optional, Sequence, Union
 from langchain_core.documents import Document
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_google_genai import ChatGoogleGenerativeAI
-
+from google.api_core import exceptions as google_exceptions
 from app.core.config import settings
+
+logger = logging.getLogger(__name__)
 
 
 def _clip(text: str, max_chars: int) -> str:
@@ -57,9 +59,13 @@ class LLMWrapper:
             temperature=llm_temperature,
             max_output_tokens=llm_max_tokens,
             google_api_key=settings.GOOGLE_API_KEY,
+            # Configure retry settings for rate limits
+            max_retries=2,  # Limit retries to avoid long waits
             # Optional: add timeout if needed
             # timeout=30,
         )
+        
+        logger.info(f"LLM initialized with model: {llm_model}")
 
         # ---- Prompt ----
         # Để context ở một message riêng -> dễ kiểm soát và thay thế
@@ -150,10 +156,17 @@ class LLMWrapper:
         if not context_text.strip():
             return self._fallback_no_context()
 
-        return await self.chain.ainvoke({
-            "context": context_text,
-            "question": question.strip(),
-        })
+        try:
+            return await self.chain.ainvoke({
+                "context": context_text,
+                "question": question.strip(),
+            })
+        except google_exceptions.ResourceExhausted as e:
+            logger.error(f"Gemini API quota exceeded: {e}")
+            raise RuntimeError("API quota exceeded. Please try again later or contact support.") from e
+        except Exception as e:
+            logger.error(f"Error generating answer: {e}")
+            raise
 
     async def generate_direct_answer_async(
         self,
@@ -188,4 +201,11 @@ class LLMWrapper:
                 if message is not None:
                     formatted_history.append(message)
 
-        return await self.direct_chain.ainvoke({"history": formatted_history, "question": clean_question})
+        try:
+            return await self.direct_chain.ainvoke({"history": formatted_history, "question": clean_question})
+        except google_exceptions.ResourceExhausted as e:
+            logger.error(f"Gemini API quota exceeded: {e}")
+            raise RuntimeError("API quota exceeded. Please try again later or contact support.") from e
+        except Exception as e:
+            logger.error(f"Error generating direct answer: {e}")
+            raise

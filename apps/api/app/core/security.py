@@ -1,12 +1,10 @@
 """Security helpers for authentication and authorization."""
 
 import hashlib
-import time
-from datetime import datetime, timedelta
-from functools import lru_cache
-from typing import Optional
 import re
 import time
+from datetime import datetime, timedelta
+from typing import Optional
 
 import bcrypt
 from jose import jwt
@@ -19,6 +17,7 @@ from .config import settings
 
 
 def hash_password(password: str) -> str:
+    """Hash password using bcrypt (12 rounds)."""
     password_bytes = password.encode("utf-8")
     salt = bcrypt.gensalt(rounds=12)
     hashed = bcrypt.hashpw(password_bytes, salt)
@@ -26,6 +25,7 @@ def hash_password(password: str) -> str:
 
 
 def verify_password(password: str, hashed_password: str) -> bool:
+    """Verify password against hash."""
     try:
         password_bytes = password.encode("utf-8")
         hashed_bytes = hashed_password.encode("utf-8")
@@ -48,6 +48,7 @@ async def authenticate_user(username: str, password: str) -> Optional[User]:
 
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
+    """Create JWT access token (default: 8 hours)."""
     if expires_delta is None:
         expires_delta = timedelta(seconds=28800) 
 
@@ -81,6 +82,7 @@ def _extract_token_expiration(token: str) -> datetime:
 
 
 def add_token_to_blacklist(token: str, db: Session | None = None) -> None:
+    """Add token to blacklist (in-memory and database)."""
     expires_at = _extract_token_expiration(token)
 
     if db:
@@ -97,6 +99,7 @@ def add_token_to_blacklist(token: str, db: Session | None = None) -> None:
 
 
 def is_token_blacklisted(token: str, db: Session | None = None) -> bool:
+    """Check if token is blacklisted."""
     if db:
         token_hash = _hash_token(token)
         record = db.query(TokenBlacklist).filter(TokenBlacklist.token_hash == token_hash).first()
@@ -111,6 +114,7 @@ def is_token_blacklisted(token: str, db: Session | None = None) -> bool:
 
 
 def clear_token_blacklist(db: Session | None = None) -> None:
+    """Clear all blacklisted tokens."""
     if db:
         db.query(TokenBlacklist).delete()
         db.commit()
@@ -118,9 +122,9 @@ def clear_token_blacklist(db: Session | None = None) -> None:
 
 
 def create_reset_token(user_id: int, email: str, expires_delta: Optional[timedelta] = None) -> str:
+    """Create password reset token (default: 1 hour)."""
     if expires_delta is None:
         expires_delta = timedelta(hours=1)
-
     now_ts = int(time.time())
     expire_ts = now_ts + int(expires_delta.total_seconds())
 
@@ -135,6 +139,7 @@ def create_reset_token(user_id: int, email: str, expires_delta: Optional[timedel
 
 
 def verify_reset_token(token: str) -> dict | None:
+    """Verify and decode password reset token."""
     try:
         payload = jwt.decode(token, settings.jwt_secret, algorithms=["HS256"])
         if payload.get("type") != "password_reset":
@@ -149,6 +154,13 @@ def verify_reset_token(token: str) -> dict | None:
 def validate_password_strength(password: str) -> bool:
     """
     Validate password complexity rules (AC 7.5).
+    
+    Rules:
+        - Minimum 8 characters
+        - Contains uppercase letter
+        - Contains lowercase letter
+        - Contains digit
+        - Contains special character
     """
     pattern = re.compile(
         r"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_\-+=\[{\]};:'\",<.>/?\\|`~]).{8,}$"
