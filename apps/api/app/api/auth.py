@@ -1,13 +1,9 @@
-<<<<<<< HEAD
 """Authentication endpoints (clean version)."""
 
-from fastapi import APIRouter, Depends, HTTPException
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
-=======
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
->>>>>>> c9830a2e982ac42f9012c4efa52f1e2f36fc456a
 
 from ..core.database import get_db
 from ..core.users import get_current_user

@@ -1,34 +1,20 @@
 from __future__ import annotations
-
 import logging
-<<<<<<< HEAD
-from typing import List, Dict, Any, Optional, Sequence, Union
-=======
 from typing import Any, Dict, Optional, Sequence, Union
-
 from google.api_core import exceptions as google_exceptions
->>>>>>> c9830a2e982ac42f9012c4efa52f1e2f36fc456a
 from langchain_core.documents import Document
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_google_genai import ChatGoogleGenerativeAI
-<<<<<<< HEAD
-from google.api_core import exceptions as google_exceptions
-=======
-
->>>>>>> c9830a2e982ac42f9012c4efa52f1e2f36fc456a
 from app.core.config import settings
 from app.rag.utils.language import normalize_language_code
-
 logger = logging.getLogger(__name__)
-
 
 def _clip(text: str, max_chars: int) -> str:
     if len(text) <= max_chars:
         return text
     return text[: max_chars - 3] + "..."
-
 
 def _doc_to_text(doc: Union[Document, Dict[str, Any]], idx: int) -> str:
     if isinstance(doc, Document):
@@ -78,35 +64,12 @@ class LLMWrapper:
             "Quy tắc:\n"
             "1. Trả lời bằng cùng ngôn ngữ với câu hỏi của người dùng.\n"
             "2. CHỈ sử dụng thông tin từ context được cung cấp để trả lời nội dung chính.\n"
-<<<<<<< HEAD
-            "3. Nếu context không chứa thông tin phù hợp, trả lời: \"Tôi không tìm thấy thông tin về vấn đề này\" bằng ngôn ngữ của người dùng.\n"
-=======
             '3. Nếu context không chứa thông tin phù hợp, trả lời: "Tôi không tìm thấy thông tin về vấn đề này" bằng ngôn ngữ của người dùng.\n'
->>>>>>> c9830a2e982ac42f9012c4efa52f1e2f36fc456a
             "4. Trả lời ngắn gọn, rõ ràng, thân thiện.\n"
             "5. Nếu có link/email/số điện thoại trong context, hãy đưa vào câu trả lời.\n"
             "6. Nếu câu hỏi mang tính chào hỏi hoặc xã giao, hãy đáp lại lịch sự và đề nghị hỗ trợ thêm.\n"
         )
 
-<<<<<<< HEAD
-        self.prompt = ChatPromptTemplate.from_messages([
-            ("system", self.system_prompt),
-            ("system", "Context:\n{context}"),
-            ("human", "{question}"),
-        ])
-        self.direct_prompt = ChatPromptTemplate.from_messages([
-            (
-                "system",
-                "Bạn là trợ lý AI thân thiện của Đại học Greenwich Việt Nam. "
-                "Luôn trả lời ngắn gọn, rõ ràng, thân thiện. "
-                "Trả lời bằng cùng ngôn ngữ với câu hỏi của người dùng. "
-                "Nếu câu hỏi chỉ là lời chào hoặc xã giao, hãy đáp lại phù hợp và hỏi xem bạn có thể hỗ trợ gì thêm. "
-                "Chỉ cung cấp thông tin về Greenwich khi câu hỏi liên quan."
-            ),
-            MessagesPlaceholder(variable_name="history"),
-            ("human", "{question}"),
-        ])
-=======
         self.prompt = ChatPromptTemplate.from_messages(
             [
                 ("system", self.system_prompt),
@@ -138,7 +101,6 @@ class LLMWrapper:
                 ("human", "{question}"),
             ]
         )
->>>>>>> c9830a2e982ac42f9012c4efa52f1e2f36fc456a
 
         # ---- Chain ----
         self.parser = StrOutputParser()

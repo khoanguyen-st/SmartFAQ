@@ -44,8 +44,4 @@ async def get_current_user(
     if not user.is_active:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="User is inactive")
 
-<<<<<<< HEAD
-    return user
-=======
     return User(username=username, password_hash=ADMIN_HASH, role="SUPER_ADMIN", is_active=True)
->>>>>>> c9830a2e982ac42f9012c4efa52f1e2f36fc456a
