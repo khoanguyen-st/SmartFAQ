@@ -11,7 +11,9 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from .config import Base
 
 if TYPE_CHECKING:
+    from .department import Department
     from .document_version import DocumentVersion
+    from .user import User
 
 
 class Document(Base):
@@ -21,15 +23,17 @@ class Document(Base):
     title: Mapped[str] = mapped_column(String(255), nullable=False)
     category: Mapped[str | None] = mapped_column(String(120), nullable=True)
     tags: Mapped[str | None] = mapped_column(String(255), nullable=True)
-    language: Mapped[str] = mapped_column(String(10), default="en")
-    status: Mapped[str] = mapped_column(String(50), default="ACTIVE")
+    language: Mapped[str] = mapped_column(String(10), nullable=False, default="vi")
+    status: Mapped[str] = mapped_column(String(50), nullable=False, default="active")
 
     current_version_id: Mapped[int | None] = mapped_column(
-        ForeignKey("document_versions.id"),
-        nullable=True
+        ForeignKey("document_versions.id"), nullable=True
     )
 
-    created_by: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True)
+    department_id: Mapped[int | None] = mapped_column(ForeignKey("departments.id"), nullable=True)
+
+    creator_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True)
+
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
     versions: Mapped[list["DocumentVersion"]] = relationship(
@@ -45,4 +49,12 @@ class Document(Base):
         uselist=False,
         foreign_keys=[current_version_id],
         post_update=True,
+    )
+
+    department: Mapped["Department | None"] = relationship(
+        "Department", back_populates="documents", foreign_keys=[department_id]
+    )
+
+    creator: Mapped["User | None"] = relationship(
+        "User", back_populates="documents", foreign_keys=[creator_id]
     )
