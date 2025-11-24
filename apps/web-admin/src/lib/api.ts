@@ -14,32 +14,55 @@ function getAuthHeaders(): Record<string, string> {
   return headers
 }
 
-export async function fetchMetrics() {
-  const res = await fetch(`${API_BASE_URL}/admin/metrics`, {
-    headers: getAuthHeaders()
-  })
-  if (!res.ok) throw new Error('Failed to load metrics')
-  return res.json()
+// API client with error handling
+async function apiClient<T>(endpoint: string, options?: RequestInit): Promise<T> {
+  const url = `${API_BASE_URL}${endpoint}`
+
+  try {
+    const res = await fetch(url, {
+      ...options,
+      headers: {
+        'Content-Type': 'application/json',
+        ...options?.headers
+      }
+    })
+
+    if (!res.ok) {
+      const error = await res.json().catch(() => ({ message: res.statusText }))
+      throw new Error(error.message || `HTTP ${res.status}: ${res.statusText}`)
+    }
+
+    return res.json()
+  } catch (error) {
+    if (error instanceof Error) {
+      throw error
+    }
+    throw new Error('Network error occurred')
+  }
+}
+
+export async function fetchMetrics(): Promise<Record<string, unknown>> {
+  return apiClient<Record<string, unknown>>('/admin/metrics')
 }
 
 // ============ User Management API ============
 
 export interface User {
-  id: number  // Backend uses int, not string
+  id: number // Backend uses int, not string
   username: string
   email: string
-  role: 'Admin' | 'SuperAdmin'  // Backend uses 'Admin' not 'Staff'
+  role: 'Admin' | 'SuperAdmin' // Backend uses 'Admin' not 'Staff'
   status: 'Active' | 'Locked'
   phoneNumber?: string | null
   address?: string | null
   image?: string | null
-  created_at?: string  // Backend uses snake_case
+  created_at?: string // Backend uses snake_case
 }
 
 export interface CreateUserRequest {
   email: string
   password: string
-  role: 'Admin'  // Backend only allows 'Admin' role
+  role: 'Admin' // Backend only allows 'Admin' role
   status: 'Active' | 'Locked'
   phoneNumber?: string | null
   address?: string | null

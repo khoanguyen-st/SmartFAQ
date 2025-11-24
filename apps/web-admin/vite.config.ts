@@ -18,6 +18,9 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src')
     }
   },
+  build: {
+    chunkSizeWarningLimit: 1024
+  },
   define: {
     __APP_VERSION__: JSON.stringify('0.1.0')
   }

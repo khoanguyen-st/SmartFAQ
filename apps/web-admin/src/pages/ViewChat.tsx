@@ -14,7 +14,7 @@ import TrashIcon from '@/assets/trash-icon.svg?react'
 import PdfNoFill from '@/assets/pdf-no-fill.svg?react'
 import ImageNofill from '@/assets/image-no-fill.svg?react'
 import TxtNoFill from '@/assets/txt-no-fill.svg?react'
-import KnowledgeIcon from '@/assets/knowledge.svg?react'
+import KnowledgeIcon from '@/assets/knowledge-icon.svg?react'
 import UploadedFile from '@/components/viewchat/UploadedFile'
 import { useKnowledgeFiles } from '@/hooks/useKnowledgeFiles'
 import Upload from '@/components/viewchat/Upload'
@@ -50,7 +50,6 @@ function formatHistoryMessage(msg: ChatHistoryMessage): DisplayMessage {
 type ChatMessageProps = {
   message: DisplayMessage
 }
-
 const ChatMessage = ({ message }: ChatMessageProps) => {
   if (message.type === 'system') {
     return (
@@ -137,7 +136,6 @@ const ViewChatPage = () => {
   })
 
   const [isLoading, setIsLoading] = useState(false)
-  const [errorState, setErrorState] = useState<string | null>(null)
 
   const chatContentRef = useRef<HTMLDivElement>(null)
 
@@ -200,6 +198,7 @@ const ViewChatPage = () => {
     if (!sessionId) {
       initSession()
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []) // Empty dependency array ensures this runs only once on mount
 
   useEffect(() => {
@@ -292,7 +291,7 @@ const ViewChatPage = () => {
 
   return (
     <div className="flex h-full w-full border border-[#e5e7eb] bg-white">
-      <div className="] flex h-[calc(100vh-100px)] w-1/2 flex-col">
+      <div className="flex h-[calc(100vh-100px)] w-1/2 flex-col">
         <div className="detail__header flex flex-col items-center px-6 py-4">
           <div className="title-header flex">
             <KnowledgeIcon className="mr-2 h-6 w-6 shrink-0" />
