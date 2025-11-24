@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import { UserPlus } from 'lucide-react'
 import type { User } from '../../types/users'
 import { useUsers } from '@/hooks/useUsers'
@@ -9,12 +10,10 @@ import { UserCardList } from '@/components/users/UserCardList'
 import Pagination from '@/components/users/Pagination'
 import CreateUserDialog from '@/components/users/CreateUserDialog'
 import EditUserDialog from '@/components/users/EditUserDialog'
-
-const LIST_OF_USER_ACCOUNTS = 'List of User Accounts'
-const MANAGE_USER_ACCOUNTS = 'Manage your user accounts'
-const CREATE_NEW_ACCOUNT = 'Create New Account'
+import { LanguageSwitcher } from '@/components/LanguageSwitcher'
 
 const Users: React.FC = () => {
+  const { t } = useTranslation()
   const {
     users,
     loading,
@@ -83,16 +82,19 @@ const Users: React.FC = () => {
     <div className="space-y-4 md:space-y-6">
       <header className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
-          <h1 className="text-xl font-semibold text-slate-900 md:text-2xl lg:text-3xl">{LIST_OF_USER_ACCOUNTS}</h1>
-          <p className="text-xs text-slate-500 md:text-sm">{MANAGE_USER_ACCOUNTS}</p>
+          <h1 className="text-xl font-semibold text-slate-900 md:text-2xl lg:text-3xl">{t('user.pageTitle')}</h1>
+          <p className="text-xs text-slate-500 md:text-sm">{t('user.pageDescription')}</p>
         </div>
-        <button
-          onClick={() => setCreateDialogOpen(true)}
-          className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-blue-800 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-900 md:w-auto"
-        >
-          <UserPlus className="h-4 w-4" />
-          {CREATE_NEW_ACCOUNT}
-        </button>
+        <div className="flex gap-3">
+          <LanguageSwitcher />
+          <button
+            onClick={() => setCreateDialogOpen(true)}
+            className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-blue-800 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-900 md:w-auto"
+          >
+            <UserPlus className="h-4 w-4" />
+            {t('user.createNewAccount')}
+          </button>
+        </div>
       </header>
 
       <SearchBar

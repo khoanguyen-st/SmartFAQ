@@ -1,9 +1,10 @@
 import React from 'react'
+import { useTranslation } from 'react-i18next'
 import { Filter, Search } from 'lucide-react'
 import type { User } from '../../../types/users'
 import type { FilterDropdownProps, SearchBarProps } from '@/interfaces/search-and-filter'
+import { getDepartmentOptions } from '@/constants/options'
 
-const DepartmentOptions = ['Academic Affairs', 'Student Affairs', 'Information Technology']
 const StatusOptions: Array<User['status']> = ['Active', 'Locked']
 
 export const FilterDropdown: React.FC<FilterDropdownProps> = ({
@@ -13,23 +14,27 @@ export const FilterDropdown: React.FC<FilterDropdownProps> = ({
   onToggleStatus,
   onClearFilters
 }) => {
+  const { t } = useTranslation()
   return (
     <div className="absolute top-full right-0 z-20 mt-3 w-64 rounded-xl border border-slate-200 bg-white p-4 text-sm shadow-2xl">
-      <p className="mb-2 text-xs font-semibold text-slate-500 uppercase">Department</p>
+      <p className="mb-2 text-xs font-semibold text-slate-500 uppercase">{t('user.filter.department')}</p>
       <div className="space-y-2">
-        {DepartmentOptions.map(option => (
-          <label key={option} className="flex items-center gap-2 text-slate-600">
-            <input
-              type="checkbox"
-              className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
-              checked={selectedDepartments.includes(option)}
-              onChange={() => onToggleDepartment(option)}
-            />
-            {option}
-          </label>
-        ))}
+        {getDepartmentOptions().map(option => {
+          const translated = t(option)
+          return (
+            <label key={option} className="flex items-center gap-2 text-slate-600">
+              <input
+                type="checkbox"
+                className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                checked={selectedDepartments.includes(translated)}
+                onChange={() => onToggleDepartment(translated)}
+              />
+              {translated}
+            </label>
+          )
+        })}
       </div>
-      <p className="mt-4 mb-2 text-xs font-semibold text-slate-500 uppercase">Status</p>
+      <p className="mt-4 mb-2 text-xs font-semibold text-slate-500 uppercase">{t('user.filter.status')}</p>
       <div className="space-y-2">
         {StatusOptions.map(option => (
           <label key={option} className="flex items-center gap-2 text-slate-600">
@@ -39,12 +44,12 @@ export const FilterDropdown: React.FC<FilterDropdownProps> = ({
               checked={selectedStatuses.includes(option)}
               onChange={() => onToggleStatus(option)}
             />
-            {option}
+            {t(`user.status.${option.toLowerCase()}`)}
           </label>
         ))}
       </div>
       <button type="button" onClick={onClearFilters} className="mt-4 text-sm font-semibold text-blue-600">
-        Clear filters
+        {t('common.clearFilters')}
       </button>
     </div>
   )

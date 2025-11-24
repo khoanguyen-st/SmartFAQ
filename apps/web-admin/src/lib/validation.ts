@@ -1,18 +1,20 @@
+import i18n from './i18n'
+
 export const validateEmail = (email: string): string | null => {
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
   if (!emailRegex.test(email)) {
-    return 'Invalid email format. Please enter a valid email address.'
+    return i18n.t('user.validation.emailInvalid')
   }
 
   return null
 }
 
 export const validatePassword = (password: string): string | null => {
-  if (!password) return 'Password is required'
+  if (!password) return i18n.t('user.validation.passwordRequired')
 
   if (password.length < 8) {
-    return 'Password does not meet security requirements.'
+    return i18n.t('user.validation.passwordRequirements')
   }
 
   const hasUppercase = /[A-Z]/.test(password)
@@ -21,26 +23,26 @@ export const validatePassword = (password: string): string | null => {
   const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(password)
 
   if (!hasUppercase || !hasLowercase || !hasNumber || !hasSpecialChar) {
-    return 'Password does not meet security requirements.'
+    return i18n.t('user.validation.passwordRequirements')
   }
 
   return null
 }
 
 export const validateUsername = (username: string): string | null => {
-  if (!username) return 'Username is required'
-  if (username.length < 3) return 'Username must be at least 3 characters'
+  if (!username) return i18n.t('user.validation.usernameRequired')
+  if (username.length < 3) return i18n.t('user.validation.usernameMinLength')
   return null
 }
 
 export const STATUS_OPTIONS = [
-  { value: 'Active', label: 'Active' },
-  { value: 'Locked', label: 'Locked' }
+  { value: 'Active', label: i18n.t('user.status.active') },
+  { value: 'Locked', label: i18n.t('user.status.locked') }
 ] as const
 
 export const validateDepartments = (departments?: string[]): string | null => {
   if (!departments || departments.length === 0) {
-    return 'At least one department must be assigned.'
+    return i18n.t('user.validation.departmentRequired')
   }
   return null
 }

@@ -1,11 +1,11 @@
 import React from 'react'
+import { useTranslation } from 'react-i18next'
 import type { User } from '../../../types/users'
 import type { UserTableProps } from '@/interfaces/user-table'
-import { UI_MESSAGES, USER_TABLE_HEADERS } from '@/constants/user'
 import { UserActions } from './UserActions'
 
-const getStatusText = (status: User['status']) => {
-  return status === 'Locked' ? 'Inactive' : 'Active'
+const getStatusText = (status: User['status'], t: (key: string) => string) => {
+  return status === 'Locked' ? t('user.status.locked') : t('user.status.active')
 }
 
 const renderStatusBadge = (status: User['status']) => {
@@ -24,12 +24,13 @@ export const UserTable: React.FC<UserTableProps> = ({
   onUnlock,
   onResetPassword
 }) => {
+  const { t } = useTranslation()
   const renderTableBody = () => {
     if (loading) {
       return (
         <tr>
           <td colSpan={8} className="px-6 py-12 text-center text-sm text-slate-500">
-            {UI_MESSAGES.LOADING}
+            {t('common.loading')}
           </td>
         </tr>
       )
@@ -39,7 +40,7 @@ export const UserTable: React.FC<UserTableProps> = ({
       return (
         <tr>
           <td colSpan={8} className="px-6 py-12 text-center text-sm text-slate-500">
-            {UI_MESSAGES.NO_USERS_FOUND}
+            {t('user.noUsersFound')}
           </td>
         </tr>
       )
@@ -60,7 +61,7 @@ export const UserTable: React.FC<UserTableProps> = ({
               {user.departments && user.departments.length > 0 ? user.departments.join(', ') : '—'}
             </td>
             <td className="px-6 py-4 text-center whitespace-nowrap">
-              <span className={renderStatusBadge(user.status)}>{getStatusText(user.status)}</span>
+              <span className={renderStatusBadge(user.status)}>{getStatusText(user.status, t)}</span>
             </td>
             <td className="px-6 py-4 whitespace-nowrap">
               <UserActions
@@ -83,14 +84,14 @@ export const UserTable: React.FC<UserTableProps> = ({
       <table className="w-full">
         <thead className="border-b border-slate-200 bg-slate-50 text-xs text-slate-500 uppercase">
           <tr>
-            <th className="px-6 py-3 text-left whitespace-nowrap">{USER_TABLE_HEADERS.ID}</th>
-            <th className="px-6 py-3 text-left whitespace-nowrap">{USER_TABLE_HEADERS.USERNAME}</th>
-            <th className="px-6 py-3 text-left whitespace-nowrap">{USER_TABLE_HEADERS.EMAIL}</th>
-            <th className="px-6 py-3 text-center whitespace-nowrap">{USER_TABLE_HEADERS.PHONE_NUMBER}</th>
-            <th className="px-6 py-3 text-left whitespace-nowrap">{USER_TABLE_HEADERS.ROLE}</th>
-            <th className="px-6 py-3 text-left whitespace-nowrap">{USER_TABLE_HEADERS.DEPARTMENT}</th>
-            <th className="px-6 py-3 text-center whitespace-nowrap">{USER_TABLE_HEADERS.STATUS}</th>
-            <th className="px-6 py-3 text-center whitespace-nowrap">{USER_TABLE_HEADERS.ACTION}</th>
+            <th className="px-6 py-3 text-left whitespace-nowrap">{t('user.table.id')}</th>
+            <th className="px-6 py-3 text-left whitespace-nowrap">{t('user.table.username')}</th>
+            <th className="px-6 py-3 text-left whitespace-nowrap">{t('user.table.email')}</th>
+            <th className="px-6 py-3 text-center whitespace-nowrap">{t('user.table.phoneNumber')}</th>
+            <th className="px-6 py-3 text-left whitespace-nowrap">{t('user.table.role')}</th>
+            <th className="px-6 py-3 text-left whitespace-nowrap">{t('user.table.department')}</th>
+            <th className="px-6 py-3 text-center whitespace-nowrap">{t('user.table.status')}</th>
+            <th className="px-6 py-3 text-center whitespace-nowrap">{t('user.table.action')}</th>
           </tr>
         </thead>
         <tbody>{renderTableBody()}</tbody>

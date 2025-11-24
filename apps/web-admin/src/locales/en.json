@@ -1,0 +1,125 @@
+{
+  "common": {
+    "loading": "Loading...",
+    "save": "Save",
+    "cancel": "Cancel",
+    "edit": "Edit",
+    "delete": "Delete",
+    "create": "Create",
+    "update": "Update",
+    "search": "Search",
+    "filter": "Filter",
+    "clearFilters": "Clear filters",
+    "close": "Close",
+    "confirm": "Confirm",
+    "yes": "Yes",
+    "no": "No"
+  },
+  "user": {
+    "pageTitle": "List of User Accounts",
+    "pageDescription": "Manage your user accounts",
+    "createNewAccount": "Create New Account",
+    "editUser": "Edit user",
+    "lockUser": "Lock user",
+    "unlockUser": "Unlock user",
+    "resetPassword": "Reset Password",
+    "noUsersFound": "No users found",
+    "lock": "Lock",
+    "unlock": "Unlock",
+    "active": "Active",
+    "locked": "Locked",
+    "status": {
+      "active": "Active",
+      "locked": "Locked"
+    },
+    "table": {
+      "id": "ID",
+      "username": "Username",
+      "email": "Email",
+      "phoneNumber": "Phone Number",
+      "role": "Role",
+      "department": "Department",
+      "status": "Status",
+      "action": "Action"
+    },
+    "card": {
+      "email": "Email:",
+      "phone": "Phone:",
+      "role": "Role:",
+      "department": "Department:"
+    },
+    "filter": {
+      "department": "Department",
+      "status": "Status"
+    },
+    "form": {
+      "username": "Username",
+      "email": "Email",
+      "phoneNumber": "Phone Number",
+      "campus": "Campus",
+      "department": "Department",
+      "role": "Role",
+      "status": "Status",
+      "password": "Password",
+      "confirmPassword": "Confirm Password",
+      "selectCampus": "Select campus",
+      "selectDepartment": "Select department",
+      "selectRole": "Select role",
+      "selectStatus": "Select status"
+    },
+    "dialog": {
+      "createTitle": "Create New Account",
+      "createDescription": "Create account for Student Affairs Department staff.",
+      "editTitle": "Edit User Account",
+      "editDescription": "Update user information and permissions.",
+      "lockTitle": "Lock Account",
+      "lockDescription": "Are you sure you want to lock this account? The user will not be able to log in.",
+      "unlockTitle": "Unlock Account",
+      "unlockDescription": "Are you sure you want to unlock this account? The user will be able to log in again.",
+      "resetPasswordTitle": "Reset Password",
+      "resetPasswordDescription": "Enter a new password for this user account."
+    },
+    "validation": {
+      "usernameRequired": "Username is required",
+      "usernameMinLength": "Username must be at least 3 characters",
+      "emailRequired": "Email is required",
+      "emailInvalid": "Invalid email format. Please enter a valid email address.",
+      "passwordRequired": "Password is required",
+      "passwordMinLength": "Password must be at least 8 characters",
+      "passwordRequirements": "Password does not meet security requirements.",
+      "departmentRequired": "At least one department must be assigned.",
+      "campusRequired": "Campus is required",
+      "roleRequired": "Role is required"
+    },
+    "error": {
+      "createFailed": "Failed to create user",
+      "updateFailed": "Failed to update user",
+      "lockFailed": "Failed to lock user",
+      "unlockFailed": "Failed to unlock user",
+      "resetPasswordFailed": "Failed to reset password",
+      "loadFailed": "Failed to load users"
+    },
+    "success": {
+      "created": "User created successfully",
+      "updated": "User updated successfully",
+      "locked": "User locked successfully",
+      "unlocked": "User unlocked successfully",
+      "passwordReset": "Password reset successfully"
+    }
+  },
+  "campus": {
+    "hanoi": "Hà Nội Campus",
+    "danang": "Đà Nẵng Campus",
+    "hochiminh": "Hồ Chí Minh Campus"
+  },
+  "department": {
+    "academic": "Academic Affairs",
+    "student": "Student Affairs",
+    "it": "Information Technology"
+  },
+  "role": {
+    "admin": "Admin",
+    "staff": "Staff",
+    "manager": "Manager"
+  }
+}
