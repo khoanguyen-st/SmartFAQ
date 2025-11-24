@@ -19,12 +19,10 @@ def create_app() -> FastAPI:
         allow_origins=(
             [
                 # Development
-                "http://localhost:5173",  # web-student dev
-                "http://localhost:5174",  # web-admin dev
-                # Production - Cloudflare Pages
+                "http://localhost:5173",  
+                "http://localhost:5174",  
                 "https://smartfaq-admin.pages.dev",
                 "https://smartfaq-student.pages.dev",
-                # Production - Custom domains
                 "https://admin.smartfaq.dev.devplus.edu.vn",
                 "https://chat.smartfaq.dev.devplus.edu.vn",
             ]

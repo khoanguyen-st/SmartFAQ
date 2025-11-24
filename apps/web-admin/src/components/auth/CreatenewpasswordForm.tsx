@@ -1,5 +1,6 @@
 import { useState, FC } from "react";
 import eyeIcon from "../../assets/icons/eye.svg";
+import eyeOffIcon from "../../assets/icons/eye-off.svg";
 
 interface CreateNewPasswordFormProps {
   onSubmit: (password: string, confirmPassword: string) => Promise<void>;
@@ -41,7 +42,7 @@ const PasswordField: FC<{
           className="absolute top-1/2 right-3 -translate-y-1/2 flex items-center justify-center text-gray-400 hover:text-gray-700"
           aria-label={show ? "Hide password" : "Show password"}
         >
-          <img src={eyeIcon} alt="" className="w-5 h-5" />
+          <img src={show ? eyeOffIcon : eyeIcon} alt="" className="w-5 h-5" />
         </button>
       </div>
     </div>
@@ -69,7 +70,21 @@ const CreateNewPasswordForm: FC<CreateNewPasswordFormProps> = ({ onSubmit, error
   };
 
   return (
-    <div className="bg-white rounded-3xl shadow-xl p-9 w-full max-w-2xl sm:max-w-xl md:max-w-2xl transition-all">
+    <>
+      <style>{`
+        input[type="password"]::-ms-reveal,
+        input[type="password"]::-ms-clear {
+          display: none;
+        }
+        input[type="password"]::-webkit-credentials-auto-fill-button {
+          display: none !important;
+          visibility: hidden !important;
+          pointer-events: none !important;
+          position: absolute;
+          right: 0;
+        }
+      `}</style>
+      <div className="bg-white rounded-3xl shadow-xl p-9 w-full max-w-2xl sm:max-w-xl md:max-w-2xl transition-all">
       <h2 className="text-3xl md:text-4xl font-bold text-gray-800 mb-3 text-center md:text-left">
         Create new password
       </h2>
@@ -119,6 +134,7 @@ const CreateNewPasswordForm: FC<CreateNewPasswordFormProps> = ({ onSubmit, error
         </div>
       </form>
     </div>
+    </>
   );
 };
 

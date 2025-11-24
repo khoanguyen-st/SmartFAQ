@@ -9,10 +9,10 @@ const LoginPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
 
-  const handleLogin = async (username: string, password: string) => {
+  const handleLogin = async (email: string, password: string, campus_id: 'DN' | 'HCM' | 'HN' | 'CT') => {
     setError(null);
     try {
-      const response = await login(username, password);
+      const response = await login({ email, password, campus_id });
       // Lưu token vào localStorage
       localStorage.setItem('access_token', response.access_token);
       // Redirect đến dashboard

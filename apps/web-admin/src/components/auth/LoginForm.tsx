@@ -7,7 +7,7 @@ import eyeOffIcon from "../../assets/icons/eye-off.svg";
 import  ChevronDown  from "../../assets/icons/chevron-down.svg";
 
 interface LoginFormProps {
-  onSubmit: (email: string, password: string) => Promise<void>;
+  onSubmit: (email: string, password: string, campus_id: 'DN' | 'HCM' | 'HN' | 'CT') => Promise<void>;
   error: string | null;
 }
 
@@ -17,13 +17,16 @@ const LoginForm = ({ onSubmit, error }: LoginFormProps) => {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [Campus, setCampus] = useState("");   
+  const [campus_id, setCampus_id] = useState<'DN' | 'HCM' | 'HN' | 'CT'>('HCM');   
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!campus_id) {
+      return;
+    }
     setIsLoading(true);
     try {
-      await onSubmit(email, password);
+      await onSubmit(email, password, campus_id);
     } finally {
       setIsLoading(false);
     }
@@ -40,21 +43,17 @@ const LoginForm = ({ onSubmit, error }: LoginFormProps) => {
       <div className="relative">
         <select
           id="campus"
-          value={Campus}
-          onChange={(e) => setCampus(e.target.value)}
+          value={campus_id}
+          onChange={(e) => setCampus_id(e.target.value as 'DN' | 'HCM' | 'HN' | 'CT')}
           className="w-full px-4 py-2 border border-gray-300 rounded-lg 
                     focus:ring-2 focus:ring-blue-600 focus:border-blue-600 
                     outline-none appearance-none pr-10"   
+          required
         >
-
-        <option value="" disabled>
-        Select campus
-        </option>
-
-          <option >Đà Nẵng</option>
-          <option >Cần Thơ</option>
-          <option >Hà Nội</option>
-          <option >Hồ Chí Minh</option>
+          <option value="HCM">Hồ Chí Minh</option>
+          <option value="DN">Đà Nẵng</option>
+          <option value="HN">Hà Nội</option>
+          <option value="CT">Cần Thơ</option>
         </select>
 
         <span className="absolute inset-y-0 right-3 flex items-center pointer-events-none">

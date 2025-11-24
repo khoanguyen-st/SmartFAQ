@@ -8,7 +8,8 @@ from typing import Optional
 
 import bcrypt
 from jose import jwt
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select, delete
 
 from .config import settings
 from ..models.token_blacklist import TokenBlacklist
@@ -30,16 +31,6 @@ def verify_password(password: str, hashed_password: str) -> bool:
         return bcrypt.checkpw(password_bytes, hashed_bytes)
     except Exception:
         return False
-# @lru_cache(maxsize=1)
-# def get_admin_hash() -> str:
-#     return pwd_context.hash("admin")
-
-
-# async def authenticate_user(username: str, password: str) -> Optional[User]:
-#     admin_hash = get_admin_hash()
-#     if username == "admin" and pwd_context.verify(password, admin_hash):
-#         return User(username="admin", password_hash=admin_hash, role="SUPER_ADMIN", is_active=True)
-#     return None
 
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
@@ -76,43 +67,45 @@ def _extract_token_expiration(token: str) -> datetime:
     return datetime.utcnow()
 
 
-def add_token_to_blacklist(token: str, db: Session | None = None) -> None:
+async def add_token_to_blacklist(token: str, db: AsyncSession | None = None) -> None:
     """Add token to blacklist (in-memory and database)."""
     expires_at = _extract_token_expiration(token)
 
     if db:
         token_hash = _hash_token(token)
-        record = db.query(TokenBlacklist).filter(TokenBlacklist.token_hash == token_hash).first()
+        result = await db.execute(select(TokenBlacklist).filter(TokenBlacklist.token_hash == token_hash))
+        record = result.scalar_one_or_none()
         if record:
             record.revoked_at = datetime.utcnow()
             record.expires_at = expires_at
         else:
             db.add(TokenBlacklist(token_hash=token_hash, expires_at=expires_at))
-        db.commit()
+        await db.commit()
 
     _token_blacklist.add(token)
 
 
-def is_token_blacklisted(token: str, db: Session | None = None) -> bool:
+async def is_token_blacklisted(token: str, db: AsyncSession | None = None) -> bool:
     """Check if token is blacklisted."""
     if db:
         token_hash = _hash_token(token)
-        record = db.query(TokenBlacklist).filter(TokenBlacklist.token_hash == token_hash).first()
+        result = await db.execute(select(TokenBlacklist).filter(TokenBlacklist.token_hash == token_hash))
+        record = result.scalar_one_or_none()
         if record:
             if record.expires_at <= datetime.utcnow():
-                db.delete(record)
-                db.commit()
+                await db.delete(record)
+                await db.commit()
             else:
                 return True
 
     return token in _token_blacklist
 
 
-def clear_token_blacklist(db: Session | None = None) -> None:
+async def clear_token_blacklist(db: AsyncSession | None = None) -> None:
     """Clear all blacklisted tokens."""
     if db:
-        db.query(TokenBlacklist).delete()
-        db.commit()
+        await db.execute(delete(TokenBlacklist))
+        await db.commit()
     _token_blacklist.clear()
 
 

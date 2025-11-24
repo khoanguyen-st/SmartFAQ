@@ -1,9 +1,8 @@
-"""Authentication service logic."""
-
 from datetime import datetime
 from typing import Optional
 
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
 
 from ..core.security import (
     add_token_to_blacklist,
@@ -25,6 +24,12 @@ class InvalidCredentialsError(Exception):
 class UserNotFoundError(Exception):
     """Raised when user is not found."""
 
+class InvalidCampusError(Exception):
+    """Raised when campus_id does not match user's campus."""
+
+class InvalidPasswordError(Exception):
+    """Raised when password is incorrect."""
+
 class InvalidTokenError(Exception):
     """Raised when token is invalid or expired."""
 
@@ -37,15 +42,13 @@ class InactiveAccountError(Exception):
 class AuthService:
     """Business logic for authenticating admin users."""
 
-    def __init__(self, db: Session) -> None:
+    def __init__(self, db: AsyncSession) -> None:
         self.db = db
 
-    def login(self, email: str, password: str, campus_id: str) -> str:
+    async def login(self, email: str, password: str, campus_id: str) -> str:
         """Authenticate user and return JWT token."""
-        user = self._authenticate_user(email, password, campus_id)
-        if not user:
-            raise InvalidCredentialsError
-
+        user = await self._authenticate_user(email, password, campus_id)
+        
         token = create_access_token(
             data={
                 "sub": user.email,
@@ -57,100 +60,114 @@ class AuthService:
         )
         return token
 
-    def _authenticate_user(self, email: str, password: str, campus_id: str) -> Optional[User]:
+    async def _authenticate_user(self, email: str, password: str, campus_id: str) -> User:
         """Internal method to authenticate user."""
-        user: Optional[User] = (
-            self.db.query(User).filter(User.email == email).first()
-        )
+        result = await self.db.execute(select(User).filter(User.email == email))
+        user: Optional[User] = result.scalar_one_or_none()
+        
+        # Check if user exists
         if not user:
-            return None
+            raise UserNotFoundError
+        
+        # Check if account is active
         if not user.is_active:
             raise InactiveAccountError 
 
+        # Check if campus matches
         if user.campus_id != campus_id:
-            return None
+            raise InvalidCampusError
+        
+        # Check if account is locked
         self.check_account_locked(user)
+        
+        # Verify password
         if verify_password(password, user.password_hash):
-            self.reset_failed_attempts(user)
-            self.db.commit()
-            self.db.refresh(user)
+            await self.reset_failed_attempts(user)
+            await self.db.commit()
+            await self.db.refresh(user)
             return user
-        self.increment_failed_attempts(user)
-        self.db.commit()
-        self.db.refresh(user)
+        
+        # Password is incorrect
+        await self.increment_failed_attempts(user)
+        await self.db.commit()
+        await self.db.refresh(user)
         if user.is_locked:
             raise AccountLockedError
-        return None
+        raise InvalidPasswordError
 
     def check_account_locked(self, user: User) -> None:
         """Check if user account is locked."""
         if user.is_locked:
             raise AccountLockedError
-    def increment_failed_attempts(self, user: User) -> None:
+
+    async def increment_failed_attempts(self, user: User) -> None:
         """Increment failed login attempts and lock account if threshold reached."""
         user.failed_attempts += 1
         if user.failed_attempts >= 5 and user.role != "ADMIN":
             user.is_locked = True
             user.locked_until = datetime.utcnow()
-            admin_user = self.db.query(User).filter(
-                User.role == "ADMIN",
-                User.is_active == True
-            ).first()
+            result = await self.db.execute(
+                select(User).filter(
+                    User.role == "ADMIN",
+                    User.is_active == True
+                )
+            )
+            admin_user = result.scalar_one_or_none()
             if admin_user:
                 admin_email = admin_user.notification_email or admin_user.email
                 # TODO: Send email notification to admin_email about locked account
-                # Email content should include: locked username (user.username), timestamp, etc.
-                # Example: f"Account {user.username} has been locked due to 5 failed login attempts."
         self.db.add(user)
 
-    def reset_failed_attempts(self, user: User) -> None:
+    async def reset_failed_attempts(self, user: User) -> None:
         """Reset failed login attempts."""
         user.failed_attempts = 0
         user.is_locked = False
         user.locked_until = None
         self.db.add(user)
 
-    def forgot_password(self, email: str) -> str:
+    async def forgot_password(self, email: str) -> str:
         """Generate password reset token for user."""
-        user: User | None = self.db.query(User).filter(User.email == email).first()
+        result = await self.db.execute(select(User).filter(User.email == email))
+        user: User | None = result.scalar_one_or_none()
         if not user:
             raise UserNotFoundError
         reset_token = create_reset_token(user_id=user.id, email=user.email)
-        admin_user = self.db.query(User).filter(
-            User.role == "ADMIN",
-            User.is_active == True
-        ).first()
+        result = await self.db.execute(
+            select(User).filter(
+                User.role == "ADMIN",
+                User.is_active == True
+            )
+        )
+        admin_user = result.scalar_one_or_none()
         if admin_user:
             admin_email = admin_user.notification_email or admin_user.email
-            # TODO: Send reset_token via email to:
-            #   - user.email (the user requesting reset)
-            #   - admin_email (notify admin about password reset request)
-            # Email to user should contain reset link with token
-            # Email to admin should notify about password reset request for user.username
+            # TODO: Send reset_token via email
         return reset_token
 
-    def reset_password(self, token: str, new_password: str) -> None:
+    async def reset_password(self, token: str, new_password: str) -> None:
         """Reset user password using reset token."""
         token_payload = verify_reset_token(token)
         if not token_payload:
             raise InvalidTokenError
-        user: User | None = self.db.query(User).filter(User.id == token_payload["user_id"]).first()
+        result = await self.db.execute(select(User).filter(User.id == token_payload["user_id"]))
+        user: User | None = result.scalar_one_or_none()
         if not user:
             raise InvalidTokenError
         if not validate_password_strength(new_password):
             raise WeakPasswordError
         user.password_hash = hash_password(new_password)
-        self.reset_failed_attempts(user)
-        self.db.commit()
+        await self.reset_failed_attempts(user)
+        await self.db.commit()
 
-    def logout(self, token: str) -> None:
+    async def logout(self, token: str) -> None:
         """Blacklist token on logout."""
-        add_token_to_blacklist(token, self.db)
+        await add_token_to_blacklist(token, self.db)
 
-    def unlock_account(self, user_id: int) -> None:
+    async def unlock_account(self, user_id: int) -> None:
         """Unlock user account (Admin only)."""
-        user: User | None = self.db.query(User).filter(User.id == user_id).first()
+        result = await self.db.execute(select(User).filter(User.id == user_id))
+        user: User | None = result.scalar_one_or_none()
         if not user:
             raise UserNotFoundError
-        self.reset_failed_attempts(user)
-        self.db.commit()
+        await self.reset_failed_attempts(user)
+        await self.db.commit()
