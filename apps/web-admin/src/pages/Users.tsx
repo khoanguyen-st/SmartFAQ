@@ -4,7 +4,7 @@ import type { User } from '../../types/users'
 import { useUsers } from '../hooks/useUsers'
 import { useUserFilters, usePagination } from '../hooks/useUseFilters'
 import { SearchBar, FilterDropdown } from '../components/users/SearchAndFilter'
-import { UserTableRows } from '../components/users/UserTable'
+import { UserTable } from '../components/users/UserTable'
 import { UserCardList } from '../components/users/UserCardList'
 import Pagination from '../components/users/Pagination'
 import CreateUserDialog from '../components/users/CreateUserDialog'
@@ -112,34 +112,16 @@ const Users: React.FC = () => {
 
       <div className="rounded-xl border border-slate-200 bg-white shadow-sm">
         {/* Table view for desktop (>= 768px) */}
-        <div className="hidden overflow-x-auto md:block">
-          <table className="w-full">
-            <thead className="border-b border-slate-200 bg-slate-50 text-xs text-slate-500 uppercase">
-              <tr>
-                <th className="px-6 py-3 text-left whitespace-nowrap">ID</th>
-                <th className="px-6 py-3 text-left whitespace-nowrap">Username</th>
-                <th className="px-6 py-3 text-left whitespace-nowrap">Email</th>
-                <th className="px-6 py-3 text-center whitespace-nowrap">Phone Number</th>
-                <th className="px-6 py-3 text-left whitespace-nowrap">Role</th>
-                <th className="px-6 py-3 text-left whitespace-nowrap">Department</th>
-                <th className="px-6 py-3 text-center whitespace-nowrap">Status</th>
-                <th className="px-6 py-3 text-center whitespace-nowrap">Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              <UserTableRows
-                users={paginatedUsers}
-                loading={loading}
-                page={page}
-                pageSize={pageSize}
-                onEdit={handleEdit}
-                onLock={lockUser}
-                onUnlock={unlockUser}
-                onResetPassword={resetPassword}
-              />
-            </tbody>
-          </table>
-        </div>
+        <UserTable
+          users={paginatedUsers}
+          loading={loading}
+          page={page}
+          pageSize={pageSize}
+          onEdit={handleEdit}
+          onLock={lockUser}
+          onUnlock={unlockUser}
+          onResetPassword={resetPassword}
+        />
 
         {/* Card view for mobile (< 768px) */}
         <div className="space-y-4 p-4 md:hidden">

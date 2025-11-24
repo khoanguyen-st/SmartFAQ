@@ -1,9 +1,34 @@
 export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8000'
 
-export async function fetchMetrics() {
-  const res = await fetch(`${API_BASE_URL}/admin/metrics`)
-  if (!res.ok) throw new Error('Failed to load metrics')
-  return res.json()
+// API client with error handling
+async function apiClient<T>(endpoint: string, options?: RequestInit): Promise<T> {
+  const url = `${API_BASE_URL}${endpoint}`
+
+  try {
+    const res = await fetch(url, {
+      ...options,
+      headers: {
+        'Content-Type': 'application/json',
+        ...options?.headers
+      }
+    })
+
+    if (!res.ok) {
+      const error = await res.json().catch(() => ({ message: res.statusText }))
+      throw new Error(error.message || `HTTP ${res.status}: ${res.statusText}`)
+    }
+
+    return res.json()
+  } catch (error) {
+    if (error instanceof Error) {
+      throw error
+    }
+    throw new Error('Network error occurred')
+  }
+}
+
+export async function fetchMetrics(): Promise<Record<string, unknown>> {
+  return apiClient<Record<string, unknown>>('/admin/metrics')
 }
 
 // ============ User Management API ============
@@ -46,7 +71,7 @@ export interface UpdateUserRequest {
 export async function fetchUsers(): Promise<User[]> {
   const res = await fetch(`${API_BASE_URL}/api/admin/users`, {
     headers: {
-      'Content-Type': 'application/json',
+      'Content-Type': 'application/json'
       // Add auth token from localStorage/session if needed
       // 'Authorization': `Bearer ${token}`
     }
@@ -63,7 +88,7 @@ export async function createUser(data: CreateUserRequest): Promise<User> {
   const res = await fetch(`${API_BASE_URL}/api/admin/users`, {
     method: 'POST',
     headers: {
-      'Content-Type': 'application/json',
+      'Content-Type': 'application/json'
     },
     body: JSON.stringify(data)
   })

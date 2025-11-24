@@ -23,7 +23,7 @@ interface UserTableProps {
   onResetPassword: (userId: number) => void
 }
 
-export const UserTableRows: React.FC<UserTableProps> = ({
+export const UserTable: React.FC<UserTableProps> = ({
   users,
   loading,
   page,
@@ -33,53 +33,75 @@ export const UserTableRows: React.FC<UserTableProps> = ({
   onUnlock,
   onResetPassword
 }) => {
-  if (loading) {
-    return (
-      <tr>
-        <td colSpan={8} className="px-6 py-12 text-center text-sm text-slate-500">
-          Loading...
-        </td>
-      </tr>
-    )
-  }
+  const renderTableBody = () => {
+    if (loading) {
+      return (
+        <tr>
+          <td colSpan={8} className="px-6 py-12 text-center text-sm text-slate-500">
+            Loading...
+          </td>
+        </tr>
+      )
+    }
 
-  if (users.length === 0) {
+    if (users.length === 0) {
+      return (
+        <tr>
+          <td colSpan={8} className="px-6 py-12 text-center text-sm text-slate-500">
+            No users found
+          </td>
+        </tr>
+      )
+    }
+
     return (
-      <tr>
-        <td colSpan={8} className="px-6 py-12 text-center text-sm text-slate-500">
-          No users found
-        </td>
-      </tr>
+      <>
+        {users.map((user, index) => (
+          <tr key={user.id} className="border-b border-slate-100 text-sm text-slate-700 last:border-b-0">
+            <td className="px-6 py-4 whitespace-nowrap">{(page - 1) * pageSize + index + 1}</td>
+            <td className="px-6 py-4 whitespace-nowrap">
+              <div className="font-medium text-slate-900">{user.username}</div>
+            </td>
+            <td className="px-6 py-4 whitespace-nowrap">{user.email}</td>
+            <td className="px-6 py-4 text-center whitespace-nowrap">{user.phoneNumber}</td>
+            <td className="px-6 py-4 whitespace-nowrap">{user.role}</td>
+            <td className="px-6 py-4 whitespace-nowrap">{user.department ?? '—'}</td>
+            <td className="px-6 py-4 text-center whitespace-nowrap">
+              <span className={renderStatusBadge(user.status)}>{getStatusText(user.status)}</span>
+            </td>
+            <td className="px-6 py-4 whitespace-nowrap">
+              <UserActions
+                user={user}
+                onEdit={onEdit}
+                onLock={onLock}
+                onUnlock={onUnlock}
+                onResetPassword={onResetPassword}
+                variant="desktop"
+              />
+            </td>
+          </tr>
+        ))}
+      </>
     )
   }
 
   return (
-    <>
-      {users.map((user, index) => (
-        <tr key={user.id} className="border-b border-slate-100 text-sm text-slate-700 last:border-b-0">
-          <td className="px-6 py-4 whitespace-nowrap">{(page - 1) * pageSize + index + 1}</td>
-          <td className="px-6 py-4 whitespace-nowrap">
-            <div className="font-medium text-slate-900">{user.username}</div>
-          </td>
-          <td className="px-6 py-4 whitespace-nowrap">{user.email}</td>
-          <td className="px-6 py-4 text-center whitespace-nowrap">{user.phoneNumber}</td>
-          <td className="px-6 py-4 whitespace-nowrap">{user.role}</td>
-          <td className="px-6 py-4 whitespace-nowrap">{user.department ?? '—'}</td>
-          <td className="px-6 py-4 text-center whitespace-nowrap">
-            <span className={renderStatusBadge(user.status)}>{getStatusText(user.status)}</span>
-          </td>
-          <td className="px-6 py-4 whitespace-nowrap">
-            <UserActions
-              user={user}
-              onEdit={onEdit}
-              onLock={onLock}
-              onUnlock={onUnlock}
-              onResetPassword={onResetPassword}
-              variant="desktop"
-            />
-          </td>
-        </tr>
-      ))}
-    </>
+    <div className="hidden overflow-x-auto md:block">
+      <table className="w-full">
+        <thead className="border-b border-slate-200 bg-slate-50 text-xs text-slate-500 uppercase">
+          <tr>
+            <th className="px-6 py-3 text-left whitespace-nowrap">ID</th>
+            <th className="px-6 py-3 text-left whitespace-nowrap">Username</th>
+            <th className="px-6 py-3 text-left whitespace-nowrap">Email</th>
+            <th className="px-6 py-3 text-center whitespace-nowrap">Phone Number</th>
+            <th className="px-6 py-3 text-left whitespace-nowrap">Role</th>
+            <th className="px-6 py-3 text-left whitespace-nowrap">Department</th>
+            <th className="px-6 py-3 text-center whitespace-nowrap">Status</th>
+            <th className="px-6 py-3 text-center whitespace-nowrap">Action</th>
+          </tr>
+        </thead>
+        <tbody>{renderTableBody()}</tbody>
+      </table>
+    </div>
   )
 }

@@ -1,5 +1,5 @@
 import React from 'react'
-import { Filter } from 'lucide-react'
+import { Filter, Search } from 'lucide-react'
 import type { User } from '../../../types/users'
 
 const DepartmentOptions = ['Academic Affairs', 'Student Affairs', 'Information Technology']
@@ -75,29 +75,29 @@ export const SearchBar: React.FC<SearchBarProps> = ({
   renderFilterDropdown
 }) => {
   return (
-    <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm md:px-6">
-      <div className="flex flex-col gap-3 md:flex-row md:items-center md:gap-4">
+    <div className="rounded-lg border border-slate-200 bg-white shadow-sm">
+      <div className="relative flex items-center">
         <input
           type="text"
           placeholder="Enter to Search..."
           value={searchQuery}
           onChange={e => onSearchChange(e.target.value)}
-          className="flex-1 border-none bg-transparent text-sm text-slate-600 outline-none placeholder:text-slate-400"
+          className="flex-1 border-none bg-transparent px-4 py-3 text-sm text-slate-600 outline-none placeholder:text-slate-400 md:px-6"
         />
-        <div className="flex items-center gap-4">
-          <button type="button" aria-label="Search" className="text-slate-400 hover:text-slate-600">
-            <Filter className="h-4 w-4" />
+        <div className="absolute right-4 flex items-center gap-3 md:right-6">
+          <button type="button" aria-label="Search" className="flex items-center text-[#637381] hover:text-slate-600">
+            <Search className="h-6 w-6" strokeWidth={2.5} />
           </button>
-          <span className="h-6 w-px bg-slate-200" aria-hidden="true" />
+          <div className="h-6 w-[0.5px] bg-[#637381]" aria-hidden="true" />
           <div className="relative" ref={filterRef}>
             <button
               type="button"
               onClick={onToggleFilter}
-              className={`text-slate-400 transition hover:text-slate-600 ${filterOpen ? 'text-blue-600' : ''}`}
+              className={`flex items-center text-[#637381] transition hover:text-slate-600 ${filterOpen ? 'text-blue-600' : ''}`}
               aria-haspopup="true"
               aria-expanded={filterOpen}
             >
-              <Filter className="h-4 w-4" />
+              <Filter className="h-6 w-6" strokeWidth={2.5} />
             </button>
             {filterOpen && renderFilterDropdown()}
           </div>

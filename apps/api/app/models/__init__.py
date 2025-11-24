@@ -1,5 +1,6 @@
 """Database models package."""
 
+from .chat import ChatMessage, ChatRole, ChatSession
 from .config import Base
 from .config_entry import ConfigEntry
 from .document import Document
@@ -16,4 +17,7 @@ __all__ = [
     "QueryLog",
     "FallbackLog",
     "ConfigEntry",
+    "ChatSession",
+    "ChatMessage",
+    "ChatRole",
 ]

@@ -1,13 +1,19 @@
 from __future__ import annotations
 
+import logging
 from typing import Any, Dict, Optional, Sequence, Union
 
+from google.api_core import exceptions as google_exceptions
 from langchain_core.documents import Document
+from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
 from langchain_core.output_parsers import StrOutputParser
-from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_google_genai import ChatGoogleGenerativeAI
 
 from app.core.config import settings
+from app.rag.utils.language import normalize_language_code
+
+logger = logging.getLogger(__name__)
 
 
 def _clip(text: str, max_chars: int) -> str:
@@ -17,7 +23,6 @@ def _clip(text: str, max_chars: int) -> str:
 
 
 def _doc_to_text(doc: Union[Document, Dict[str, Any]], idx: int) -> str:
-    # Hỗ trợ cả Document và dict {"text": "...", "metadata": {...}}
     if isinstance(doc, Document):
         content = doc.page_content or ""
         meta = doc.metadata or {}
@@ -44,39 +49,61 @@ class LLMWrapper:
         max_context_chars: int = 8000,
         max_tokens: Optional[int] = None,
     ):
-        # ---- Model init (Gemini via langchain-google-genai) ----
         llm_model = model or settings.LLM_MODEL
         llm_temperature = temperature if temperature is not None else settings.LLM_TEMPERATURE
         llm_max_tokens = max_tokens or settings.LLM_MAX_TOKENS
 
-        # Initialize Gemini model
-        # Make sure GOOGLE_API_KEY is set in environment
         self.llm = ChatGoogleGenerativeAI(
             model=llm_model,
             temperature=llm_temperature,
             max_output_tokens=llm_max_tokens,
             google_api_key=settings.GOOGLE_API_KEY,
-            # Optional: add timeout if needed
-            # timeout=30,
+            max_retries=2,
         )
 
+        logger.info(f"LLM initialized with model: {llm_model}")
+
         # ---- Prompt ----
-        # Để context ở một message riêng -> dễ kiểm soát và thay thế
         self.system_prompt = (
             "Bạn là trợ lý AI của Đại học Greenwich Việt Nam.\n"
             "Nhiệm vụ: Trả lời câu hỏi của sinh viên dựa trên thông tin được cung cấp.\n\n"
             "Quy tắc:\n"
-            "1. LUÔN trả lời bằng tiếng Việt.\n"
-            "2. CHỈ sử dụng thông tin từ context được cung cấp.\n"
-            '3. Nếu không tìm thấy thông tin, trả lời: "Tôi không tìm thấy thông tin về vấn đề này".\n'
+            "1. Trả lời bằng cùng ngôn ngữ với câu hỏi của người dùng.\n"
+            "2. CHỈ sử dụng thông tin từ context được cung cấp để trả lời nội dung chính.\n"
+            '3. Nếu context không chứa thông tin phù hợp, trả lời: "Tôi không tìm thấy thông tin về vấn đề này" bằng ngôn ngữ của người dùng.\n'
             "4. Trả lời ngắn gọn, rõ ràng, thân thiện.\n"
             "5. Nếu có link/email/số điện thoại trong context, hãy đưa vào câu trả lời.\n"
+            "6. Nếu câu hỏi mang tính chào hỏi hoặc xã giao, hãy đáp lại lịch sự và đề nghị hỗ trợ thêm.\n"
         )
 
         self.prompt = ChatPromptTemplate.from_messages(
             [
                 ("system", self.system_prompt),
+                (
+                    "system",
+                    "Target language code: {target_language}. Always respond entirely in this language. "
+                    "If the code is 'auto', detect the question's language and match it.",
+                ),
                 ("system", "Context:\n{context}"),
+                ("human", "{question}"),
+            ]
+        )
+        self.direct_prompt = ChatPromptTemplate.from_messages(
+            [
+                (
+                    "system",
+                    "Bạn là trợ lý AI thân thiện của Đại học Greenwich Việt Nam. "
+                    "Luôn trả lời ngắn gọn, rõ ràng, thân thiện. "
+                    "Trả lời bằng cùng ngôn ngữ với câu hỏi của người dùng. "
+                    "Nếu câu hỏi chỉ là lời chào hoặc xã giao, hãy đáp lại phù hợp và hỏi xem bạn có thể hỗ trợ gì thêm. "
+                    "Chỉ cung cấp thông tin về Greenwich khi câu hỏi liên quan.",
+                ),
+                (
+                    "system",
+                    "Target language code: {target_language}. Always respond entirely in this language. "
+                    "If the code is 'auto', detect and mirror the question's language.",
+                ),
+                MessagesPlaceholder(variable_name="history"),
                 ("human", "{question}"),
             ]
         )
@@ -84,6 +111,7 @@ class LLMWrapper:
         # ---- Chain ----
         self.parser = StrOutputParser()
         self.chain = self.prompt | self.llm | self.parser
+        self.direct_chain = self.direct_prompt | self.llm | self.parser
 
         # ---- Params ----
         self.max_context_chars = max_context_chars
@@ -96,32 +124,42 @@ class LLMWrapper:
         """
         Ghép context với nguồn, có clip để tránh vượt giới hạn.
         """
-        # Chỉ lấy tối đa N nguồn để giữ prompt gọn
         pieces = []
         for i, ctx in enumerate(contexts[:max_sources], start=1):
             pieces.append(_doc_to_text(ctx, i))
         joined = "\n\n".join(pieces).strip()
         return _clip(joined, self.max_context_chars)
 
-    def _fallback_no_context(self) -> str:
+    @staticmethod
+    def _resolve_language(language: str | None) -> str:
+        return normalize_language_code(language, default="auto")
+
+    def _fallback_no_context(self, language: str | None = None) -> str:
+        code = self._resolve_language(language)
+        if code == "en":
+            return "I couldn't find information about this topic."
         return "Tôi không tìm thấy thông tin về vấn đề này"
 
     def generate_answer(
         self,
         question: str,
         contexts: Sequence[Union[Document, Dict[str, Any]]],
+        *,
+        target_language: str | None = None,
     ) -> str:
+        lang = self._resolve_language(target_language)
         if not contexts:
-            return self._fallback_no_context()
+            return self._fallback_no_context(lang)
 
         context_text = self.format_contexts(contexts)
         if not context_text.strip():
-            return self._fallback_no_context()
+            return self._fallback_no_context(lang)
 
         return self.chain.invoke(
             {
                 "context": context_text,
                 "question": question.strip(),
+                "target_language": lang,
             }
         )
 
@@ -129,17 +167,83 @@ class LLMWrapper:
         self,
         question: str,
         contexts: Sequence[Union[Document, Dict[str, Any]]],
+        *,
+        target_language: str | None = None,
     ) -> str:
+        lang = self._resolve_language(target_language)
         if not contexts:
-            return self._fallback_no_context()
+            return self._fallback_no_context(lang)
 
         context_text = self.format_contexts(contexts)
         if not context_text.strip():
-            return self._fallback_no_context()
+            return self._fallback_no_context(lang)
 
-        return await self.chain.ainvoke(
-            {
-                "context": context_text,
-                "question": question.strip(),
-            }
-        )
+        try:
+            return await self.chain.ainvoke(
+                {
+                    "context": context_text,
+                    "question": question.strip(),
+                    "target_language": lang,
+                }
+            )
+        except google_exceptions.ResourceExhausted as e:
+            logger.error(f"Gemini API quota exceeded: {e}")
+            raise RuntimeError(
+                "API quota exceeded. Please try again later or contact support."
+            ) from e
+        except Exception as e:
+            logger.error(f"Error generating answer: {e}")
+            raise
+
+    async def generate_direct_answer_async(
+        self,
+        question: str,
+        history: Optional[Sequence[BaseMessage | Dict[str, Any] | str]] = None,
+        *,
+        target_language: str | None = None,
+    ) -> str:
+        """
+        Invoke the underlying Gemini chat model without any retrieval context.
+        """
+        lang = self._resolve_language(target_language)
+
+        clean_question = question.strip()
+        if not clean_question:
+            return self._fallback_no_context(lang)
+
+        formatted_history: list[BaseMessage] = []
+        if history:
+            for item in history:
+                message: BaseMessage | None = None
+                if isinstance(item, BaseMessage):
+                    message = item
+                elif isinstance(item, dict):
+                    role = str(item.get("role", "")).lower()
+                    content = item.get("content") or item.get("text") or ""
+                    if not content:
+                        continue
+                    if role == "assistant":
+                        message = AIMessage(content=content)
+                    else:
+                        message = HumanMessage(content=content)
+                elif isinstance(item, str):
+                    message = HumanMessage(content=item)
+                if message is not None:
+                    formatted_history.append(message)
+
+        try:
+            return await self.direct_chain.ainvoke(
+                {
+                    "history": formatted_history,
+                    "question": clean_question,
+                    "target_language": lang,
+                }
+            )
+        except google_exceptions.ResourceExhausted as e:
+            logger.error(f"Gemini API quota exceeded: {e}")
+            raise RuntimeError(
+                "API quota exceeded. Please try again later or contact support."
+            ) from e
+        except Exception as e:
+            logger.error(f"Error generating direct answer: {e}")
+            raise
