@@ -37,7 +37,7 @@ def verify_password(password: str, hashed_password: str) -> bool:
 
 @lru_cache(maxsize=1)
 def get_admin_hash() -> str:
-    return hash_password("admin")
+    return pwd_context.hash("admin")
 
 
 async def authenticate_user(username: str, password: str) -> Optional[User]:

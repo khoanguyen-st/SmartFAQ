@@ -1,5 +1,5 @@
 import { useState, useCallback } from "react";
-import UploadModal from "./UploadModal";
+
 import {
   Line,
   LineChart,
@@ -28,6 +28,7 @@ const TrendsChart = () => {
   const openModal = useCallback(() => setIsModalOpen(true), []);
   const closeModal = useCallback(() => setIsModalOpen(false), []);
 
+const TrendsChart = () => {
   return (
     <>
       <section className="rounded-2xl bg-white p-6 shadow-lg shadow-slate-900/10">
@@ -62,9 +63,8 @@ const TrendsChart = () => {
         </div>
       </section>
 
-      <UploadModal isOpen={isModalOpen} onClose={closeModal} />
     </>
   );
 };
-
+}
 export default TrendsChart

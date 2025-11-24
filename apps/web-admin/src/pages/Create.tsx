@@ -59,6 +59,7 @@ const CreateNewPassword = () => {
             src={Creategif}
             alt="Create new password illustration"
             className="w-72 sm:w-96 md:w-[500px] lg:w-[600px] object-contain"
+            style={{ transform: `rotateY(180deg)` }}
           />
         </div>
       </main>

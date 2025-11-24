@@ -69,7 +69,7 @@ const CreateNewPasswordForm: FC<CreateNewPasswordFormProps> = ({ onSubmit, error
   };
 
   return (
-    <div className="bg-white rounded-3xl shadow-xl p-10 w-full max-w-3xl sm:max-w-xl md:max-w-2xl transition-all">
+    <div className="bg-white rounded-3xl shadow-xl p-9 w-full max-w-2xl sm:max-w-xl md:max-w-2xl transition-all">
       <h2 className="text-3xl md:text-4xl font-bold text-gray-800 mb-3 text-center md:text-left">
         Create new password
       </h2>

@@ -1,32 +1,18 @@
 FROM node:20-alpine
 
-WORKDIR /workspace
+WORKDIR /app
 
-# Enable yarn via corepack (Node 20+ có sẵn)
 RUN corepack enable
 
-# Copy dependency files first (for better caching)
-COPY apps/web-admin/package.json apps/web-admin/yarn.lock ./apps/web-admin/
-COPY packages/ui/package.json ./packages/ui/
-COPY packages/config ./packages/config/
+# Copy package files for caching
+COPY package.json yarn.lock* ./
 
-# Install dependencies cho packages/ui trước
-WORKDIR /workspace/packages/ui
-RUN yarn install --frozen-lockfile
-
-# Install dependencies cho web-admin
-WORKDIR /workspace/apps/web-admin
+# Install dependencies
 RUN yarn install --frozen-lockfile
 
 # Copy source code
-WORKDIR /workspace
-COPY packages/ui ./packages/ui
-COPY apps/web-admin ./apps/web-admin
-
-# Set working directory
-WORKDIR /workspace/apps/web-admin
+COPY . .
 
 EXPOSE 5173
 
-# Development server
 CMD ["yarn", "dev", "--host", "0.0.0.0", "--port", "5173"]
