@@ -4,6 +4,7 @@ import hashlib
 import re
 import time
 from datetime import datetime, timedelta
+from functools import lru_cache
 from typing import Optional
 
 import bcrypt
@@ -13,7 +14,6 @@ from sqlalchemy.orm import Session
 from .config import settings
 from ..models.token_blacklist import TokenBlacklist
 from ..models.user import User
-from .config import settings
 
 
 def hash_password(password: str) -> str:
@@ -47,22 +47,99 @@ async def authenticate_user(username: str, password: str) -> Optional[User]:
 
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
-    """Create JWT access token (default: 8 hours)."""
+    """Create JWT access token (default: 5 minutes)."""
     if expires_delta is None:
-        expires_delta = timedelta(seconds=28800) 
+        expires_delta = timedelta(minutes=5) 
 
     now_ts = int(time.time())
     expire_ts = now_ts + int(expires_delta.total_seconds())
 
     payload = {
         **data,
+        "type": "access",
         "exp": expire_ts,
         "iat": now_ts,
     }
     return jwt.encode(payload, settings.jwt_secret, algorithm="HS256")
 
-    payload = {**data, "exp": expire_ts, "iat": now_ts}
+
+def create_refresh_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
+    """Create JWT refresh token (default: 24 hours) with login_time."""
+    if expires_delta is None:
+        expires_delta = timedelta(hours=24)
+
+    now_ts = int(time.time())
+    expire_ts = now_ts + int(expires_delta.total_seconds())
+  
+    login_time = data.get("login_time", now_ts)
+
+    payload = {
+        **data,
+        "type": "refresh",
+        "login_time": login_time,
+        "exp": expire_ts,
+        "iat": now_ts,
+    }
     return jwt.encode(payload, settings.jwt_secret, algorithm="HS256")
+
+
+def verify_refresh_token(token: str) -> dict | None:
+    """
+    Verify and decode refresh token.
+    Also checks if token was issued within 24 hours of login_time.
+    Returns None if token is invalid, expired, or more than 24 hours from login_time.
+    """
+    try:
+        payload = jwt.decode(token, settings.jwt_secret, algorithms=["HS256"])
+        
+     
+        if payload.get("type") != "refresh":
+            return None
+        
+        login_time = payload.get("login_time")
+        if login_time is None:
+            return None
+        
+        now_ts = int(time.time())
+        hours_since_login = (now_ts - login_time) / 3600
+        
+        if hours_since_login > 24:
+            return None  
+        
+        return payload
+    except jwt.ExpiredSignatureError:
+        return None
+    except jwt.JWTError:
+        return None
+
+
+def get_token_remaining_time(token: str) -> int | None:
+    """
+    Get remaining time in seconds until token expires.
+    Returns None if token is invalid or expired.
+    """
+    try:
+        payload = jwt.get_unverified_claims(token)
+        exp = payload.get("exp")
+        if exp is None:
+            return None
+        
+        now_ts = int(time.time())
+        remaining = exp - now_ts
+        return remaining if remaining > 0 else None
+    except Exception:
+        return None
+
+
+def should_refresh_token(token: str, threshold_seconds: int = 60) -> bool:
+    """
+    Check if access token should be refreshed (less than threshold_seconds remaining).
+    Default threshold is 60 seconds (1 minute).
+    """
+    remaining = get_token_remaining_time(token)
+    if remaining is None:
+        return True
+    return remaining < threshold_seconds
 
 _token_blacklist: set[str] = set()
 

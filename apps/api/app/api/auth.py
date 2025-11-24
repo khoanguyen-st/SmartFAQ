@@ -5,10 +5,12 @@ from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 
 from ..core.database import get_db
+from ..core.db import get_session
 from ..core.users import get_current_user
 from ..schemas import (
     ForgotPasswordRequest,
     LogoutResponse,
+    RefreshTokenRequest,
     ResetPasswordRequest,
     Token,
     UserLogin,
@@ -30,7 +32,7 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
 def login(payload: UserLogin, db: Session = Depends(get_session)) -> Token:
     service = AuthService(db)
     try:
-        token = service.login(payload.email, payload.password, payload.campus_id)
+        access_token, refresh_token = service.login(payload.email, payload.password, payload.campus_id)
     except AccountLockedError:
         raise HTTPException(
             status_code=423,
@@ -46,13 +48,37 @@ def login(payload: UserLogin, db: Session = Depends(get_session)) -> Token:
             status_code=401,
             detail={"error": "Invalid email or password."}
         )
-    return Token(access_token=token)
+    return Token(access_token=access_token, refresh_token=refresh_token)
+
+
+@router.post("/refresh", response_model=Token)
+def refresh_token(payload: RefreshTokenRequest, db: Session = Depends(get_session)) -> Token:
+    """Refresh access token using refresh token."""
+    service = AuthService(db)
+    try:
+        access_token = service.refresh_access_token(payload.refresh_token)
+    except InvalidTokenError:
+        raise HTTPException(
+            status_code=401,
+            detail={"error": "Invalid or expired refresh token. Please login again."}
+        )
+    except InactiveAccountError:
+        raise HTTPException(
+            status_code=403,
+            detail={"error": "Account is inactive. Please contact administrator."}
+        )
+    except AccountLockedError:
+        raise HTTPException(
+            status_code=423,
+            detail={"error": "Account locked. Please contact Super Admin."}
+        )
+    return Token(access_token=access_token, refresh_token=payload.refresh_token)
 
 @router.post("/logout", response_model=LogoutResponse)
 def logout(
     current_token: str = Depends(oauth2_scheme),
     current_user=Depends(get_current_user),
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_session),
 ) -> LogoutResponse:
     service = AuthService(db)
     service.logout(current_token)

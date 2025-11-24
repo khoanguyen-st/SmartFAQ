@@ -6,8 +6,9 @@ from jose import JWTError, jwt
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from .config import settings
 from .database import get_db
-from .security import is_token_blacklisted
+from .security import is_token_blacklisted, should_refresh_token
 from ..models.user import User
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
@@ -22,6 +23,20 @@ async def get_current_user(
 
     try:
         payload = jwt.decode(token, settings.jwt_secret, algorithms=["HS256"])
+        if payload.get("type") != "access":
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED, 
+                detail="Invalid token type. Access token required."
+            )
+        
+        if should_refresh_token(token, threshold_seconds=60):
+            pass
+            
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, 
+            detail="Token expired. Please refresh your token using /auth/refresh endpoint."
+        )
     except JWTError as exc:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token"
