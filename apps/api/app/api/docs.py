@@ -7,7 +7,7 @@ import os
 
 from ..core.db import get_session
 from ..services import dms
-from ..api import schemas
+from . import schemas
 
 router = APIRouter()
 

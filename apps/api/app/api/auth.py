@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 
-from ..core.database import get_db
+from ..core.db import get_session
 from ..core.security import (
     add_token_to_blacklist,
     create_access_token,
@@ -29,7 +29,7 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
 
 
 @router.post("/login", response_model=Token)
-def login(payload: UserLogin, db: Session = Depends(get_db)) -> Token:
+def login(payload: UserLogin, db: Session = Depends(get_session)) -> Token:
     service = AuthService(db)
 
     try:
@@ -60,7 +60,7 @@ def login(payload: UserLogin, db: Session = Depends(get_db)) -> Token:
 
 
 @router.post("/logout", response_model=LogoutResponse, status_code=status.HTTP_200_OK)
-def logout(
+async def logout(
     current_token: str = Depends(oauth2_scheme),
     current_user=Depends(get_current_user),
 ) -> LogoutResponse:
@@ -69,7 +69,7 @@ def logout(
 
 
 @router.post("/forgot-password")
-def forgot_password(payload: ForgotPasswordRequest, db: Session = Depends(get_db)) -> dict:
+def forgot_password(payload: ForgotPasswordRequest, db: Session = Depends(get_session)) -> dict:
     user: User | None = db.query(User).filter(User.email == payload.email).first()
 
     if not user:
@@ -88,7 +88,7 @@ def forgot_password(payload: ForgotPasswordRequest, db: Session = Depends(get_db
 
 
 @router.post("/reset-password")
-def reset_password(payload: ResetPasswordRequest, db: Session = Depends(get_db)) -> dict:
+def reset_password(payload: ResetPasswordRequest, db: Session = Depends(get_session)) -> dict:
     token_payload = verify_reset_token(payload.token)
     if not token_payload:
         raise HTTPException(

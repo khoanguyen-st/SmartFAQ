@@ -9,7 +9,7 @@ const KPIGrid = () => {
   return (
     <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
       {kpis.map(kpi => (
-        <div key={kpi.title} className="rounded-2xl bg-white p-6 shadow-lg shadow-slate-900/10">
+        <div key={kpi.title} className={`rounded-2xl p-6 shadow-lg shadow-slate-900/10 ${kpi.title === 'Avg Response Time' ? 'bg-green-500' : 'bg-white'}`}>
           <p className="text-sm text-slate-600">{kpi.title}</p>
           <p className="mt-2 text-3xl font-semibold text-slate-900">{kpi.value}</p>
         </div>
