@@ -1,0 +1,27 @@
+# Environment files with sensitive data
+.env.dev
+.env.prod
+.env.uat
+
+# Secret files
+services-dev/secrets/
+services-prod/secrets/
+services-uat/secrets/
+
+# Helm charts dependencies
+postgres/charts/
+postgres/Chart.lock
+redis/charts/
+redis/Chart.lock
+
+# Kustomize build output
+kustomization-output.yaml
+
+# Temporary files
+*.tmp
+*.bak
+*.swp
+
+# OS files
+.DS_Store
+Thumbs.db

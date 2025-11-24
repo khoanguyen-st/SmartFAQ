@@ -27,7 +27,5 @@ class DocumentVersion(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
     document: Mapped["Document"] = relationship(
-        "Document",
-        back_populates="versions",
-        foreign_keys=[document_id],
+        "Document", back_populates="versions", foreign_keys=[document_id]
     )

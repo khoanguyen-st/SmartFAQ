@@ -1,7 +1,9 @@
 # Commit message format: type(scope): message
-# Example: feat(api): add new endpoint
-#          fix(web-admin): resolve styling issue
-#          docs: update README
+# Scope is optional and can use () or [] without a space.
+# Examples:
+#   feat(api): add new endpoint
+#   fix[web-admin]: resolve styling issue
+#   docs: update README
 
 commit_msg=$(cat "$1")
 
@@ -10,8 +12,8 @@ if echo "$commit_msg" | grep -qE "^Merge"; then
   exit 0
 fi
 
-# Check format
-if ! echo "$commit_msg" | grep -qE "^(feat|fix|docs|style|refactor|test|chore|perf|ci|build|revert)(\(.+\))?: .+"; then
+# Check format: allow optional scope in () or [] and optional space before it
+if ! echo "$commit_msg" | grep -qE "^(feat|fix|docs|style|refactor|test|chore|perf|ci|build|revert)([[:space:]]*(\\(.+\\)|\\[.+\\]))?: .+"; then
   echo "❌ Invalid commit message format!"
   echo ""
   echo "Format: type(scope): message"

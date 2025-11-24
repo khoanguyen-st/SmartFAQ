@@ -14,6 +14,7 @@ from .config import settings
 from ..models.token_blacklist import TokenBlacklist
 
 
+<<<<<<< HEAD
 def hash_password(password: str) -> str:
     """Hash password using bcrypt (12 rounds)."""
     password_bytes = password.encode("utf-8")
@@ -30,6 +31,18 @@ def verify_password(password: str, hashed_password: str) -> bool:
         return bcrypt.checkpw(password_bytes, hashed_bytes)
     except Exception:
         return False
+=======
+@lru_cache(maxsize=1)
+def get_admin_hash() -> str:
+    return pwd_context.hash("admin")
+
+
+async def authenticate_user(username: str, password: str) -> Optional[User]:
+    admin_hash = get_admin_hash()
+    if username == "admin" and pwd_context.verify(password, admin_hash):
+        return User(username="admin", password_hash=admin_hash, role="SUPER_ADMIN", is_active=True)
+    return None
+>>>>>>> c9830a2e982ac42f9012c4efa52f1e2f36fc456a
 
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:

@@ -16,12 +16,11 @@ services:
 
   web-student:
     build:
-      context: ./
-      dockerfile: apps/web-student/Dockerfile
+      context: ./apps/web-student
+      dockerfile: Dockerfile
     env_file: ./.env.docker
     volumes:
-      - ./apps/web-student/src:/workspace/apps/web-student/src
-      - ./packages/ui/src:/workspace/packages/ui/src
+      - ./apps/web-student/src:/app/src
     ports:
       - "${WEB_STUDENT_PORT_EXTERNAL:-5173}:5173"
     depends_on:
@@ -29,12 +28,11 @@ services:
 
   web-admin:
     build:
-      context: ./
-      dockerfile: apps/web-admin/Dockerfile
+      context: ./apps/web-admin
+      dockerfile: Dockerfile
     env_file: ./.env.docker
     volumes:
-      - ./apps/web-admin/src:/workspace/apps/web-admin/src
-      - ./packages/ui/src:/workspace/packages/ui/src
+      - ./apps/web-admin/src:/app/src
     ports:
       - "${WEB_ADMIN_PORT_EXTERNAL:-5174}:5173"
     depends_on:
