@@ -1,9 +1,9 @@
-import { useState, useMemo, useCallback, useEffect } from 'react'
+import { ArrowLeft, ArrowRight } from 'lucide-react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import plusUrl from '../assets/icons/plus.svg'
+import DeleteConfirmationModal from '../components/uploaded/DeleteFolderModal'
 import DocumentCard from '../components/uploaded/DocumentCard'
 import UploadCard from '../components/uploaded/UploadCard'
-import PlusIcon from '../assets/icon/plus.svg?react'
-import { ArrowRight, ArrowLeft } from 'lucide-react'
-import DeleteConfirmationModal from '../components/uploaded/DeleteConfirmationModal'
 
 interface IDocument {
   id: number
@@ -152,7 +152,8 @@ const UploadedPage = () => {
         {currentDocuments.map(doc => (
           <DocumentCard
             key={doc.id}
-            doc={doc}
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            doc={doc as any}
             onDelete={handleOpenDeleteModal}
             onView={handleViewDocument}
             onReupload={handleReuploadDocument}
@@ -222,7 +223,7 @@ const UploadedPage = () => {
             onClick={onUploadClick}
             className="flex cursor-pointer items-center gap-2 rounded-lg bg-[#003087] px-4 py-2 font-medium text-white transition-colors hover:bg-blue-800 sm:min-w-[150px]"
           >
-            <PlusIcon />
+            <img src={plusUrl} alt="plus" className="h-4 w-4" />
             <span className="hidden sm:block">Upload New Document</span>
           </button>
         </div>

@@ -22,7 +22,6 @@
 
     /* Path mapping */
     "types": ["vite/client"],
-    "lib": ["DOM", "ES2022"],
     "baseUrl": "./src",
     "paths": {
       "@/*": ["./*"]
@@ -30,4 +29,5 @@
   },
   "include": ["src", "vite.config.ts"],
   "exclude": ["node_modules", "dist"]
+  
 }

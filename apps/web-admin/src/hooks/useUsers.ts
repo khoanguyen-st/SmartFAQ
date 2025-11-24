@@ -1,108 +1,91 @@
-import { useState, useEffect, useCallback } from 'react'
-import { User, fetchUsers, lockUser, unlockUser, resetUserPassword } from '@/lib/api'
+import { useState, useCallback, useEffect } from 'react'
+import { apiClient } from '../lib/apt.client'
+import type { User, CreateUserRequest } from '../../types/users'
 
-interface UseUsersOptions {
-  autoLoad?: boolean
+const normalizeUser = (user: User): User => {
+  const normalizedStatus = String(user.status).toLowerCase() === 'locked' ? 'Locked' : 'Active'
+  return { ...user, status: normalizedStatus as User['status'] }
 }
 
-interface UseUsersReturn {
-  users: User[]
-  loading: boolean
-  error: string | null
-  actionLoading: number | null
-  loadUsers: () => Promise<void>
-  handleLockUser: (userId: number) => Promise<void>
-  handleUnlockUser: (userId: number) => Promise<void>
-  handleResetPassword: (userId: number) => Promise<void>
-}
-
-export function useUsers({ autoLoad = true }: UseUsersOptions = {}): UseUsersReturn {
+export const useUsers = () => {
   const [users, setUsers] = useState<User[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [actionLoading, setActionLoading] = useState<number | null>(null)
+  const [page, setPage] = useState(1)
+  const [pageSize, setPageSize] = useState(10)
+  const [totalRecords, setTotalRecords] = useState(0)
 
   const loadUsers = useCallback(async () => {
+    setLoading(true)
     try {
-      setLoading(true)
+      const res = await apiClient.listUsers({ page, pageSize })
+      const normalized = res.data.map(normalizeUser)
+      setUsers(normalized)
+      setTotalRecords(res.metadata?.total ?? res.data.length)
       setError(null)
-      const data = await fetchUsers()
-      setUsers(data)
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to load users'
       setError(message)
-      throw err
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [page, pageSize])
 
   useEffect(() => {
-    if (autoLoad) {
-      loadUsers()
-    }
-  }, [autoLoad, loadUsers])
+    loadUsers()
+  }, [loadUsers])
 
-  const handleLockUser = useCallback(
-    async (userId: number) => {
-      if (!confirm('Are you sure you want to lock this user account?')) return
-
-      setActionLoading(userId)
-      try {
-        await lockUser(userId)
-        await loadUsers()
-      } catch (err) {
-        const message = err instanceof Error ? err.message : 'Failed to lock user'
-        alert(message)
-      } finally {
-        setActionLoading(null)
-      }
+  const createUser = useCallback(
+    async (payload: CreateUserRequest) => {
+      await apiClient.createUser(payload)
+      await loadUsers()
     },
     [loadUsers]
   )
 
-  const handleUnlockUser = useCallback(
-    async (userId: number) => {
-      if (!confirm('Are you sure you want to unlock this user account?')) return
-
-      setActionLoading(userId)
-      try {
-        await unlockUser(userId)
-        await loadUsers()
-      } catch (err) {
-        const message = err instanceof Error ? err.message : 'Failed to unlock user'
-        alert(message)
-      } finally {
-        setActionLoading(null)
-      }
+  const updateUser = useCallback(
+    async (userId: number, payload: Partial<User>) => {
+      await apiClient.updateUser(userId, payload)
+      await loadUsers()
     },
     [loadUsers]
   )
 
-  const handleResetPassword = useCallback(async (userId: number) => {
-    if (!confirm("Are you sure you want to reset this user's password? An email will be sent to the user.")) return
+  const lockUser = useCallback(
+    async (userId: number) => {
+      await apiClient.lockUser(userId)
+      await loadUsers()
+    },
+    [loadUsers]
+  )
 
-    setActionLoading(userId)
-    try {
-      const result = await resetUserPassword(userId)
-      alert(result.message || 'Password reset email sent successfully')
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to reset password'
-      alert(message)
-      throw err
-    } finally {
-      setActionLoading(null)
-    }
+  const unlockUser = useCallback(
+    async (userId: number) => {
+      await apiClient.unlockUser(userId)
+      await loadUsers()
+    },
+    [loadUsers]
+  )
+
+  const resetPassword = useCallback(async (userId: number) => {
+    await apiClient.resetUserPassword(userId)
+    alert('Password reset email sent successfully')
   }, [])
 
   return {
     users,
     loading,
     error,
-    actionLoading,
-    loadUsers,
-    handleLockUser,
-    handleUnlockUser,
-    handleResetPassword
+    page,
+    pageSize,
+    totalRecords,
+    setPage,
+    setPageSize,
+    createUser,
+    updateUser,
+    lockUser,
+    unlockUser,
+    resetPassword,
+    refreshUsers: loadUsers
   }
 }

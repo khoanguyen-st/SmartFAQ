@@ -1,4 +1,4 @@
-import type { User, UserListResponse, UserQuery, CreateUserRequest } from '../types/users'
+import type { User, UserListResponse, UserQuery, CreateUserRequest } from '../../types/users'
 
 // Simulate API delay
 const delay = (ms: number = 500) => new Promise(resolve => setTimeout(resolve, ms))

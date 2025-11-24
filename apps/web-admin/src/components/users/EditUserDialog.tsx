@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import type { User } from '../../types/users'
+import type { User } from '../../../types/users'
 
 interface Props {
   open: boolean

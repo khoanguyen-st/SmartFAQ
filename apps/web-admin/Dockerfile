@@ -4,13 +4,8 @@ WORKDIR /app
 
 RUN corepack enable
 
-# Copy workspace root files
-COPY package.json yarn.lock ./
-
-# Copy dependency files first (for better caching)
-COPY apps/web-admin/package.json ./apps/web-admin/
-COPY packages/ui/package.json ./packages/ui/
-COPY packages/config ./packages/config/
+# Copy package files for caching
+COPY package.json yarn.lock* ./
 
 # Install dependencies
 RUN yarn install --frozen-lockfile

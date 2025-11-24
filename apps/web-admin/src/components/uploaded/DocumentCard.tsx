@@ -1,9 +1,9 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react'
+import pdfUrl from '@/assets/icons/pdf.svg'
+import reloadUrl from '@/assets/icons/reload.svg'
+import trashUrl from '@/assets/icons/trash.svg'
+import viewUrl from '@/assets/icons/view.svg'
 import { MoreVertical } from 'lucide-react'
-import PdfIcon from '../../assets/icon/pdf.svg?react'
-import ReloadIcon from '../../assets/icon/reload.svg?react'
-import TrashIcon from '../../assets/icon/trash.svg?react'
-import ViewIcon from '../../assets/icon/view.svg?react'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
 
 interface IDocument {
   id: number
@@ -76,7 +76,7 @@ const DocumentCard = ({ doc, onDelete, onView, onReupload }: DocumentCardProps) 
     <div className="w-full cursor-pointer rounded-lg border border-gray-200 bg-white p-4 shadow-sm transition-shadow hover:shadow-md">
       <div className="mb-3 flex items-start justify-between">
         <div className="rounded-xl bg-[#FEF2F2] p-2">
-          <PdfIcon className="h-6 w-6 text-red-500" />
+          <img src={pdfUrl} alt="pdf" className="h-6 w-6" />
         </div>
 
         <div className="relative" ref={menuRef}>
@@ -93,15 +93,15 @@ const DocumentCard = ({ doc, onDelete, onView, onReupload }: DocumentCardProps) 
               onClick={e => e.stopPropagation()}
             >
               <MenuItem onClick={() => handleAction('View')}>
-                <ViewIcon />
+                <img src={viewUrl} alt="view" className="mr-2 h-4 w-4" />
                 View document
               </MenuItem>
               <MenuItem onClick={() => handleAction('Re-upload')}>
                 {' '}
-                <ReloadIcon /> Re-upload
+                <img src={reloadUrl} alt="reload" className="mr-2 h-4 w-4" /> Re-upload
               </MenuItem>
               <MenuItem onClick={() => handleAction('Delete')} className="text-red-600 hover:bg-red-50">
-                <TrashIcon />
+                <img src={trashUrl} alt="delete" className="mr-2 h-4 w-4" />
                 Delete document
               </MenuItem>
             </div>

@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react'
-import type { CreateUserRequest } from '../../types/users'
+import type { CreateUserRequest } from '../../../types/users'
 
 const CAMPUS_OPTIONS = ['Hà Nội Campus', 'Đà Nẵng Campus', 'Hồ Chí Minh Campus']
 const DEPARTMENT_OPTIONS = ['Academic Affairs', 'Student Affairs', 'Information Technology']
@@ -37,7 +37,7 @@ export const CreateUserDialog: React.FC<Props> = ({ open, onClose, onSubmit, onS
       await onSubmit?.(formData)
       onSuccess?.()
       onClose()
-      setFormData(prev => ({ ...prev, username: '', email: '' }))
+      setFormData((prev: typeof formData) => ({ ...prev, username: '', email: '' }))
     } catch {
       /* ignore */
     } finally {
