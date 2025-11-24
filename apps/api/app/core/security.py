@@ -1,5 +1,3 @@
-"""Security helpers for authentication and authorization."""
-
 import hashlib
 import re
 import time
@@ -17,7 +15,6 @@ from ..models.user import User
 
 
 def hash_password(password: str) -> str:
-    """Hash password using bcrypt (12 rounds)."""
     password_bytes = password.encode("utf-8")
     salt = bcrypt.gensalt(rounds=12)
     hashed = bcrypt.hashpw(password_bytes, salt)
@@ -25,7 +22,6 @@ def hash_password(password: str) -> str:
 
 
 def verify_password(password: str, hashed_password: str) -> bool:
-    """Verify password against hash."""
     try:
         password_bytes = password.encode("utf-8")
         hashed_bytes = hashed_password.encode("utf-8")
@@ -47,7 +43,6 @@ async def authenticate_user(username: str, password: str) -> Optional[User]:
 
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
-    """Create JWT access token (default: 5 minutes)."""
     if expires_delta is None:
         expires_delta = timedelta(minutes=5) 
 
@@ -64,7 +59,6 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -
 
 
 def create_refresh_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
-    """Create JWT refresh token (default: 24 hours) with login_time."""
     if expires_delta is None:
         expires_delta = timedelta(hours=24)
 
@@ -84,11 +78,6 @@ def create_refresh_token(data: dict, expires_delta: Optional[timedelta] = None) 
 
 
 def verify_refresh_token(token: str) -> dict | None:
-    """
-    Verify and decode refresh token.
-    Also checks if token was issued within 24 hours of login_time.
-    Returns None if token is invalid, expired, or more than 24 hours from login_time.
-    """
     try:
         payload = jwt.decode(token, settings.jwt_secret, algorithms=["HS256"])
         
@@ -114,10 +103,6 @@ def verify_refresh_token(token: str) -> dict | None:
 
 
 def get_token_remaining_time(token: str) -> int | None:
-    """
-    Get remaining time in seconds until token expires.
-    Returns None if token is invalid or expired.
-    """
     try:
         payload = jwt.get_unverified_claims(token)
         exp = payload.get("exp")
@@ -132,10 +117,6 @@ def get_token_remaining_time(token: str) -> int | None:
 
 
 def should_refresh_token(token: str, threshold_seconds: int = 60) -> bool:
-    """
-    Check if access token should be refreshed (less than threshold_seconds remaining).
-    Default threshold is 60 seconds (1 minute).
-    """
     remaining = get_token_remaining_time(token)
     if remaining is None:
         return True
@@ -160,7 +141,6 @@ def _extract_token_expiration(token: str) -> datetime:
 
 
 def add_token_to_blacklist(token: str, db: Session | None = None) -> None:
-    """Add token to blacklist (in-memory and database)."""
     expires_at = _extract_token_expiration(token)
 
     if db:
@@ -177,7 +157,6 @@ def add_token_to_blacklist(token: str, db: Session | None = None) -> None:
 
 
 def is_token_blacklisted(token: str, db: Session | None = None) -> bool:
-    """Check if token is blacklisted."""
     if db:
         token_hash = _hash_token(token)
         record = db.query(TokenBlacklist).filter(TokenBlacklist.token_hash == token_hash).first()
@@ -192,7 +171,6 @@ def is_token_blacklisted(token: str, db: Session | None = None) -> bool:
 
 
 def clear_token_blacklist(db: Session | None = None) -> None:
-    """Clear all blacklisted tokens."""
     if db:
         db.query(TokenBlacklist).delete()
         db.commit()
@@ -200,7 +178,6 @@ def clear_token_blacklist(db: Session | None = None) -> None:
 
 
 def create_reset_token(user_id: int, email: str, expires_delta: Optional[timedelta] = None) -> str:
-    """Create password reset token (default: 1 hour)."""
     if expires_delta is None:
         expires_delta = timedelta(hours=1)
     now_ts = int(time.time())
@@ -217,7 +194,6 @@ def create_reset_token(user_id: int, email: str, expires_delta: Optional[timedel
 
 
 def verify_reset_token(token: str) -> dict | None:
-    """Verify and decode password reset token."""
     try:
         payload = jwt.decode(token, settings.jwt_secret, algorithms=["HS256"])
         if payload.get("type") != "password_reset":
@@ -230,16 +206,6 @@ def verify_reset_token(token: str) -> dict | None:
 
 
 def validate_password_strength(password: str) -> bool:
-    """
-    Validate password complexity rules (AC 7.5).
-    
-    Rules:
-        - Minimum 8 characters
-        - Contains uppercase letter
-        - Contains lowercase letter
-        - Contains digit
-        - Contains special character
-    """
     pattern = re.compile(
         r"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_\-+=\[{\]};:'\",<.>/?\\|`~]).{8,}$"
     )
