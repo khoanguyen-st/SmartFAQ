@@ -57,6 +57,11 @@ class Settings(BaseSettings):
     UPLOAD_DIR: str = Field("./uploads", alias="UPLOAD_DIR")
     UPLOAD_MAX_MB: int = Field(50, alias="UPLOAD_MAX_MB")
 
+    # Google Cloud Storage (optional)
+    # GCS_ENABLED: bool = Field(True, alias="GCS_ENABLED")
+    # GCS_BUCKET: str = Field("", alias="GCS_BUCKET")
+    # GOOGLE_APPLICATION_CREDENTIALS: str = Field("Storage-document.json", alias="GOOGLE_APPLICATION_CREDENTIALS")
+
     # Celery
     CELERY_BROKER_URL: str = Field("redis://localhost:6379/0", alias="CELERY_BROKER_URL")
     CELERY_RESULT_BACKEND: str = Field("redis://localhost:6379/0", alias="CELERY_RESULT_BACKEND")

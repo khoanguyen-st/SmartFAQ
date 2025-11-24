@@ -4,11 +4,20 @@ import sys
 import os
 from logging.config import fileConfig
 from dotenv import load_dotenv
+from pathlib import Path
+import sys
 
 from sqlalchemy import engine_from_config, pool
 from alembic import context
 
-# Load .env so DATABASE_URL (if any) is available
+# Ensure the application package is importable
+BASE_DIR = Path(__file__).resolve().parents[1]
+if str(BASE_DIR) not in sys.path:
+    sys.path.insert(0, str(BASE_DIR))
+
+from app.models import Base  # noqa: E402
+
+# Load environment variables from .env file
 load_dotenv()
 
 # Alembic config
@@ -23,13 +32,19 @@ if database_url:
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-# -- make sure Alembic can import your app package --
-# Adjust this path if your package root is elsewhere.
-# Here we assume your project layout puts package 'app' under:
-#  D:\SmartFAQ\SmartFAQ\apps\api  (where you run alembic)
-project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
-if project_root not in sys.path:
-    sys.path.insert(0, project_root)
+# add your model's MetaData object here
+# for 'autogenerate' support
+# from myapp import mymodel
+# target_metadata = mymodel.Base.metadata
+# Try to import the project's SQLAlchemy Base to provide metadata for autogenerate
+try:
+    # import the declarative base from the app models package
+    from app.models import Base  # type: ignore
+
+    target_metadata = Base.metadata
+except Exception:
+    # If import fails (e.g., environment not configured), fall back to None.
+    target_metadata = None
 
 # Import your Base (the declarative base) so autogenerate can inspect models.
 # Adjust the import path if Base lives somewhere else.

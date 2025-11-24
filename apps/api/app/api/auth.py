@@ -1,117 +1,96 @@
-"""Authentication endpoints."""
+"""Authentication endpoints (clean version)."""
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 
 from ..core.database import get_db
-from ..core.security import (
-    add_token_to_blacklist,
-    create_access_token,
-    create_reset_token,
-    hash_password,
-    validate_password_strength,
-    verify_reset_token,
-)
 from ..core.users import get_current_user
-from ..models.user import User
 from ..schemas import (
     ForgotPasswordRequest,
     LogoutResponse,
     ResetPasswordRequest,
     Token,
     UserLogin,
+    UserMe,
 )
-from ..services.auth_service import AccountLockedError, AuthService
+from ..services.auth_service import (
+    AccountLockedError,
+    AuthService,
+    InvalidCredentialsError,
+    InvalidTokenError,
+    InactiveAccountError,  
+    UserNotFoundError,
+    WeakPasswordError,
+)
 
 router = APIRouter()
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
-
-
 @router.post("/login", response_model=Token)
-def login(payload: UserLogin, db: Session = Depends(get_db)) -> Token:
+def login(payload: UserLogin, db: Session = Depends(get_session)) -> Token:
     service = AuthService(db)
-
     try:
-        user = service.authenticate_user(payload.username, payload.password)
+        token = service.login(payload.email, payload.password, payload.campus_id)
     except AccountLockedError:
         raise HTTPException(
-            status_code=status.HTTP_423_LOCKED,
-            detail={
-                "error": "Account locked due to multiple failed login attempts. Please contact Super Admin."
-            },
+            status_code=423,
+            detail={"error": "Account locked due to multiple failed login attempts. Please contact Super Admin."}
         )
-
-    if not user:
+    except InactiveAccountError:  
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail={"error": "Invalid username or password."},
+            status_code=403,
+            detail={"error": "Account is inactive. Please contact administrator."}
         )
-
-    token = create_access_token(
-        data={
-            "sub": user.username,
-            "user_id": user.id,
-            "username": user.username,
-            "role": user.role,
-        },
-    )
+    except InvalidCredentialsError:
+        raise HTTPException(
+            status_code=401,
+            detail={"error": "Invalid email or password."}
+        )
     return Token(access_token=token)
 
-
-@router.post("/logout", response_model=LogoutResponse, status_code=status.HTTP_200_OK)
+@router.post("/logout", response_model=LogoutResponse)
 def logout(
     current_token: str = Depends(oauth2_scheme),
     current_user=Depends(get_current_user),
+    db: Session = Depends(get_db),
 ) -> LogoutResponse:
-    add_token_to_blacklist(current_token)
+    service = AuthService(db)
+    service.logout(current_token)
     return LogoutResponse()
 
+@router.get("/me", response_model=UserMe)
+def get_me(current_user=Depends(get_current_user)) -> UserMe:
+    """Get current user information."""
+    return UserMe.model_validate(current_user)
 
 @router.post("/forgot-password")
 def forgot_password(payload: ForgotPasswordRequest, db: Session = Depends(get_db)) -> dict:
-    user: User | None = db.query(User).filter(User.email == payload.email).first()
-
-    if not user:
+    service = AuthService(db)
+    try:
+        reset_token = service.forgot_password(payload.email)
+    except UserNotFoundError:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail={"error": "Email not found. Please contact the Super Admin."},
+            status_code=404,
+            detail={"error": "Email not found. Please contact the Super Admin."}
         )
-
-    reset_token = create_reset_token(user_id=user.id, email=user.email)
-
-    # TODO: send reset_token via email to Super Admin and the user.
     return {
-        "message": "Password reset link sent to your registered email.",
+        "message": "A password reset link has been sent to your registered email.",
         "reset_token": reset_token,
     }
 
-
 @router.post("/reset-password")
 def reset_password(payload: ResetPasswordRequest, db: Session = Depends(get_db)) -> dict:
-    token_payload = verify_reset_token(payload.token)
-    if not token_payload:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail={"error": "Invalid or expired reset token."},
-        )
-
-    user: User | None = db.query(User).filter(User.id == token_payload["user_id"]).first()
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail={"error": "Invalid or expired reset token."},
-        )
-
-    if not validate_password_strength(payload.new_password):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail={"error": "Password does not meet security requirements."},
-        )
-
-    user.password_hash = hash_password(payload.new_password)
     service = AuthService(db)
-    service.reset_failed_attempts(user)
-    db.commit()
-
+    try:
+        service.reset_password(payload.token, payload.new_password)
+    except InvalidTokenError:
+        raise HTTPException(
+            status_code=400,
+            detail={"error": "Invalid or expired reset token."}
+        )
+    except WeakPasswordError:
+        raise HTTPException(
+            status_code=400,
+            detail={"error": "Password does not meet security requirements."}
+        )
     return {"message": "Password reset successful."}
