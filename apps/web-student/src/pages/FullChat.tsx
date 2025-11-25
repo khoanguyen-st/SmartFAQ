@@ -81,7 +81,7 @@ const FullChat = () => {
             onClick={() => setMessages([])}
         >
             <DeleteIcon className="h-5 w-5 fill-current transition-colors" />
-            <span className="hidden text-sm font-medium sm:inline-block">Clear Chat</span>
+            <span className="hidden text-sm font-normal sm:inline-block">Clear Chat</span>
         </button>
       </header>
 
