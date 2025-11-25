@@ -1,9 +1,9 @@
 import { ArrowLeft, ArrowRight } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import plusUrl from '../assets/icons/plus.svg'
-import DeleteConfirmationModal from '../components/uploaded/DeleteFolderModal'
-import DocumentCard from '../components/uploaded/DocumentCard'
-import UploadCard from '../components/uploaded/UploadCard'
+import plusUrl from '@/assets/icons/plus.svg'
+import DeleteConfirmationModal from '@/components/uploaded/DeleteFolderModal'
+import DocumentCard from '@/components/uploaded/DocumentCard'
+import UploadCard from '@/components/uploaded/UploadCard'
 import { UI } from '@/constants'
 
 interface IDocument {

@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { UserPlus } from 'lucide-react'
-import type { User } from '../../types/users'
+import type { User } from '@/types/users'
 import { useUsers } from '@/hooks/useUsers'
 import { useUserFilters, usePagination } from '@/hooks/useUseFilters'
 import { SearchBar, FilterDropdown } from '@/components/users/SearchAndFilter'

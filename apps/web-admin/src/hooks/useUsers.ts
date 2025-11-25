@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect } from 'react'
 import { UserService } from '@/services/user.services'
-import type { User, CreateUserRequest } from '../../types/users'
+import type { User, CreateUserRequest } from '@/types/users'
 
 export const useUsers = () => {
   const [users, setUsers] = useState<User[]>([])

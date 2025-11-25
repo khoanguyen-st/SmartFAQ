@@ -1,4 +1,4 @@
-import type { CreateUserRequest } from '../../types/users'
+import type { CreateUserRequest } from '@/types/users'
 
 export interface CreateUserDialogProps {
   open: boolean

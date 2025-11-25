@@ -1,5 +1,5 @@
 import { useMemo, useEffect } from 'react'
-import type { User } from '../../types/users'
+import type { User } from '@/types/users'
 
 interface UseUserFiltersProps {
   users: User[]

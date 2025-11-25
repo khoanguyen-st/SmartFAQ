@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 
-import { fetchMetrics } from '../lib/api'
+import { fetchMetrics } from '@/lib/api'
 
 export const useMetrics = () => {
   const [data, setData] = useState<Record<string, unknown> | null>(null)

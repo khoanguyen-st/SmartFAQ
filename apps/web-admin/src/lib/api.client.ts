@@ -1,5 +1,5 @@
 import { mockApi } from './api.mock'
-import type { UserListResponse, UserQuery, User, CreateUserRequest } from '../../types/users'
+import type { UserListResponse, UserQuery, User, CreateUserRequest } from '@/types/users'
 
 const USE_MOCK = import.meta.env.VITE_USE_MOCK_API === 'true'
 

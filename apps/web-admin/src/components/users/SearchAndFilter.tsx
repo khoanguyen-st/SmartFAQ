@@ -1,7 +1,7 @@
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { Filter, Search } from 'lucide-react'
-import type { User } from '../../../types/users'
+import type { User } from '@/types/users'
 import type { FilterDropdownProps, SearchBarProps } from '@/interfaces/search-and-filter'
 import { getDepartmentOptions } from '@/constants/options'
 

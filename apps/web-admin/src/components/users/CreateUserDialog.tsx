@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { CreateUserRequest } from '../../../types/users'
+import type { CreateUserRequest } from '@/types/users'
 import type { CreateUserDialogProps } from '@/interfaces/create-user-dialog'
 import { validateDepartments } from '@/lib/validation'
 import { getCampusOptions, getDepartmentOptions } from '@/constants/options'

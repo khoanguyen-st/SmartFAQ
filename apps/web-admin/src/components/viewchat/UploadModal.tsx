@@ -1,9 +1,9 @@
 import { MAX_FILES, MAX_SIZE, formatBytes, mapFiles, validateFiles } from '@/lib/files'
 import React, { useEffect, useRef, useState } from 'react'
-import iUrl from '../../assets/icons/i.svg'
-import uploadUrl from '../../assets/icons/upload.svg'
-import { getFileIcon } from '../../lib/icons'
-import { uploadKnowledgeFiles } from '../../services/document.services'
+import iUrl from '@/assets/icons/i.svg'
+import uploadUrl from '@/assets/icons/upload.svg'
+import { getFileIcon } from '@/lib/icons'
+import { uploadKnowledgeFiles } from '@/services/document.services'
 import InformationModal from './InformationModal'
 export interface FileItem {
   id: string

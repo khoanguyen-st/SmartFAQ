@@ -1,5 +1,5 @@
 import { apiClient } from '@/lib/api.client'
-import type { User, CreateUserRequest, UserQuery, UserListResponse } from '../../types/users'
+import type { User, CreateUserRequest, UserQuery, UserListResponse } from '@/types/users'
 import { validateDepartments } from '@/lib/validation'
 
 const normalizeUser = (user: User): User => {

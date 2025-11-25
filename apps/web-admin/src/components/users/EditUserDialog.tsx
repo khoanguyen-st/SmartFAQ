@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { User } from '../../../types/users'
+import type { User } from '@/types/users'
 import type { EditUserDialogProps } from '@/interfaces/edit-user-dialog'
 import { validateDepartments } from '@/lib/validation'
 import { getCampusOptions, getDepartmentOptions } from '@/constants/options'

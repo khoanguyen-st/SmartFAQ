@@ -1,6 +1,6 @@
 import React from 'react'
 import { useTranslation } from 'react-i18next'
-import type { User } from '../../../types/users'
+import type { User } from '@/types/users'
 import type { UserTableProps } from '@/interfaces/user-table'
 import { UserActions } from './UserActions'
 import { CSS_CLASSES } from '@/constants'
