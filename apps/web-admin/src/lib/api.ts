@@ -32,10 +32,22 @@ export interface LoginResponse {
   token_type?: string
 }
 
-export async function login(username: string, password: string): Promise<LoginResponse> {
+// Thêm type cho campus code
+export type CampusCode = "DN" | "HCM" | "HN" | "CT";
+
+// Update login function để nhận email, password, và campus_id
+export async function login(
+  email: string, 
+  password: string, 
+  campusId: CampusCode
+): Promise<LoginResponse> {
   return apiCall('/auth/login', {
     method: 'POST',
-    body: JSON.stringify({ username, password }),
+    body: JSON.stringify({ 
+      email, 
+      password, 
+      campus_id: campusId 
+    }),
   })
 }
 

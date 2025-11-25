@@ -5,14 +5,18 @@ import logo from "../assets/icons/logo.svg";
 import loginGif from "../assets/icons/login.gif";
 import { login } from "../lib/api";
 
+// Thêm type cho campus code
+type CampusCode = "DN" | "HCM" | "HN" | "CT";
+
 const LoginPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
 
-  const handleLogin = async (username: string, password: string) => {
+  // Update handler để nhận campusId
+  const handleLogin = async (email: string, password: string, campusId: CampusCode) => {
     setError(null);
     try {
-      const response = await login(username, password);
+      const response = await login(email, password, campusId);
       // Lưu token vào localStorage
       localStorage.setItem('access_token', response.access_token);
       // Redirect đến dashboard
@@ -27,7 +31,7 @@ const LoginPage: React.FC = () => {
     <div className="min-h-screen flex flex-col bg-gray-50">
       <header className="p-6">
         <div className="flex items-center space-x-3">
-            <img src={logo} alt="App Logo" className="w-10 h-10 object-contain" />          
+          <img src={logo} alt="App Logo" className="w-10 h-10 object-contain" />          
           <span className="text-2xl font-bold text-gray-800">
             Greenwich Smart FAQ
           </span>
