@@ -1,8 +1,12 @@
+import asyncio
 import logging
 import os
 from contextlib import asynccontextmanager
+from tempfile import NamedTemporaryFile
 from typing import Any
 
+import cloudinary
+from cloudinary.uploader import destroy, upload
 from fastapi import UploadFile
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -13,7 +17,15 @@ from ..core.database import AsyncSessionLocal
 from ..models.document import Document
 from ..models.document_version import DocumentVersion
 from ..rag.document_processor import DocumentProcessor
-from ..rag.vector_store import upsert_documents
+from ..rag.vector_store import delete_by_document_id, upsert_documents
+
+cloudinary.config(
+    cloud_name=settings.CLOUDINARY_CLOUD_NAME,
+    api_key=settings.CLOUDINARY_API_KEY,
+    api_secret=settings.CLOUDINARY_API_SECRET,
+)
+
+logger = logging.getLogger(__name__)
 
 
 class UploadTooLarge(Exception):
@@ -37,45 +49,30 @@ ALLOWED_EXTS = {
 }
 
 
-async def save_uploaded_file(file: UploadFile) -> tuple[str, int, str]:
-    """Save uploaded file to disk and return (file_path, size, format)."""
-    upload_dir = settings.UPLOAD_DIR
-    os.makedirs(upload_dir, exist_ok=True)
+def upload_to_cloudinary(content: bytes, filename: str) -> tuple[str, int, str]:
+    size = len(content)
+    max_bytes = int(settings.UPLOAD_MAX_MB) * 1024 * 1024
+    if size > max_bytes:
+        raise UploadTooLarge(f"uploaded file exceeds max size of {settings.UPLOAD_MAX_MB} MB")
 
-    orig_name = os.path.basename(file.filename or "upload.bin")
+    orig_name = os.path.basename(filename or "upload.bin")
     _, ext = os.path.splitext(orig_name)
     ext = ext.lower()
 
     if ext not in ALLOWED_EXTS:
         raise InvalidFileType(f"file type '{ext}' is not allowed")
 
-    dest_path = os.path.join(upload_dir, orig_name)
+    fmt = ext.lstrip(".")
 
-    max_bytes = int(settings.UPLOAD_MAX_MB) * 1024 * 1024
-    written = 0
-    CHUNK = 1024 * 64
-
-    logging.info("upload start: %s -> %s", orig_name, dest_path)
+    logger.info("upload start: %s to Cloudinary", orig_name)
 
     try:
-        with open(dest_path, "wb") as fh:
-            while True:
-                chunk = await file.read(CHUNK)
-                if not chunk:
-                    break
-                written += len(chunk)
-                if written > max_bytes:
-                    raise UploadTooLarge(
-                        f"uploaded file exceeds max size of {settings.UPLOAD_MAX_MB} MB"
-                    )
-                fh.write(chunk)
-
-        logging.info("upload complete: %d bytes", written)
-        return dest_path, written, ext.lstrip(".")
-
+        result = upload(content, folder=settings.CLOUDINARY_FOLDER_DOCUMENT, resource_type="raw")
+        public_id = result["public_id"]
+        uploaded_size = result["bytes"]
+        logger.info("upload complete: %d bytes", uploaded_size)
+        return public_id, uploaded_size, fmt
     except Exception as exc:
-        if os.path.exists(dest_path):
-            os.remove(dest_path)
         raise exc
 
 
@@ -87,7 +84,6 @@ async def create_document_record(
     file_size: int | None = None,
     format: str | None = None,
 ) -> int:
-    """Create Document + DocumentVersion (optional)."""
     doc = Document(
         title=title,
         language="en",
@@ -117,7 +113,6 @@ async def create_document_record(
 
 @asynccontextmanager
 async def async_session_scope():
-    """Async context manager for database session with rollback on error."""
     async with AsyncSessionLocal() as session:
         try:
             yield session
@@ -128,26 +123,45 @@ async def async_session_scope():
 
 
 async def enqueue_single_document(file: UploadFile, uploaded_by=None) -> dict:
-    """Upload a single file and create document record."""
-    file_path, size, fmt = await save_uploaded_file(file)
 
-    async with async_session_scope() as db:
-        doc_id = await create_document_record(
-            db,
-            title=file.filename,
-            uploaded_by=None,
-            file_path=file_path,
-            file_size=size,
-            format=fmt,
-        )
+    content = await file.read()
+    orig_name = file.filename or "upload.bin"
+    _, ext = os.path.splitext(orig_name)
 
+    with NamedTemporaryFile(suffix=ext, delete=False) as tmp:
+        tmp.write(content)
+        tmp.flush()
+        temp_path = tmp.name
+
+    try:
         processor = DocumentProcessor()
-        split_docs = processor.process_document(
-            file_path, str(doc_id), metadata={"title": file.filename}
-        )
-        upsert_documents(split_docs)
+        split_docs = processor.process_document(temp_path, str(0), metadata={"title": orig_name})
 
-        return {"document_id": doc_id, "file_path": file_path}
+        public_id, size, fmt = await asyncio.to_thread(upload_to_cloudinary, content, orig_name)
+
+        async with async_session_scope() as db:
+            doc_id = await create_document_record(
+                db,
+                title=orig_name,
+                uploaded_by=None,
+                file_path=public_id,
+                file_size=size,
+                format=fmt,
+            )
+
+            for sd in split_docs:
+                if "document_id" in sd.metadata:
+                    sd.metadata["document_id"] = str(doc_id)
+                else:
+                    sd.metadata["source"] = str(doc_id)
+
+            upsert_documents(split_docs)
+
+            return {"document_id": doc_id, "public_id": public_id}
+
+    finally:
+        if os.path.exists(temp_path):
+            os.remove(temp_path)
 
 
 async def enqueue_multiple_documents(files: list[UploadFile]) -> list[dict]:
@@ -248,12 +262,18 @@ async def update_document(doc_id: int, updates: dict[str, Any], db: AsyncSession
 
 
 async def delete_document(doc_id: int, db: AsyncSession) -> bool:
-    stmt = select(Document).where(Document.id == doc_id)
+    stmt = select(Document).options(selectinload(Document.versions)).where(Document.id == doc_id)
     result = await db.execute(stmt)
     doc = result.scalar_one_or_none()
 
     if not doc:
         return False
+
+    delete_by_document_id(str(doc.id))
+
+    for v in doc.versions:
+        if v.file_path:
+            destroy(v.file_path, resource_type="raw")
 
     await db.delete(doc)
     await db.commit()
