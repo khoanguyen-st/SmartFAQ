@@ -1,14 +1,14 @@
-import { FormEvent, useEffect, useRef, useState } from 'react'
+// import { FormEvent, useEffect, useRef, useState } from 'react'
 
-import { SmartButton } from '@/components/ui'
-import { useI18n, availableLanguages } from '../lib/i18n'
-import { useChat } from '../hooks/useChat'
-import { cn } from '@/lib/utils'
+// import { SmartButton } from '@/components/ui'
+// import { useI18n, availableLanguages } from '../lib/i18n'
+// import { useChat } from '../hooks/useChat'
+// import { cn } from '@/lib/utils'
 import ChatWidget from '@/components/Chatbot/ChatWidget'
 
-const quickPrompts = ['Admission requirements', 'Tuition fees', 'Academic calendar', 'Student services']
+// const quickPrompts = ['Admission requirements', 'Tuition fees', 'Academic calendar', 'Student services']
 
-const MAX_MESSAGE_LENGTH = 500
+// const MAX_MESSAGE_LENGTH = 500
 
 const ChatPage = () => {
   // const { t, lang, setLang } = useI18n()
@@ -36,7 +36,7 @@ const ChatPage = () => {
   // const remaining = MAX_MESSAGE_LENGTH - input.length
 
   return (
-    <div className="flex min-h-screen flex-col bg-gradient-to-b from-slate-50 to-indigo-50 px-6 pb-8">
+    <div className="flex min-h-screen flex-col bg-linear-to-b from-slate-50 to-indigo-50 px-6 pb-8">
       {/* <header className="mx-auto flex w-full max-w-4xl flex-col gap-4 pt-8 pb-4 md:flex-row md:items-center md:justify-between">
         <div>
           <h1 className="text-primary-700 text-3xl font-bold">Greenwich SmartFAQ</h1>
