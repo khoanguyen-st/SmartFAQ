@@ -63,7 +63,6 @@ export const useUsers = () => {
 
   const resetPassword = useCallback(async (userId: number) => {
     await UserService.resetUserPassword(userId)
-    alert('Password reset email sent successfully')
   }, [])
 
   return {

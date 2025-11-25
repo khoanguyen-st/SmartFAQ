@@ -10,6 +10,8 @@ import { UserCardList } from '@/components/users/UserCardList'
 import Pagination from '@/components/users/Pagination'
 import CreateUserDialog from '@/components/users/CreateUserDialog'
 import EditUserDialog from '@/components/users/EditUserDialog'
+import ConfirmDialog from '@/components/users/ConfirmDialog'
+import Toast from '@/components/Toast'
 import { LanguageSwitcher } from '@/components/LanguageSwitcher'
 
 const Users: React.FC = () => {
@@ -37,6 +39,14 @@ const Users: React.FC = () => {
   const [createDialogOpen, setCreateDialogOpen] = useState(false)
   const [editDialogOpen, setEditDialogOpen] = useState(false)
   const [selectedUser, setSelectedUser] = useState<User | null>(null)
+  const [confirmDialog, setConfirmDialog] = useState<{
+    open: boolean
+    type: 'lock' | 'unlock' | 'resetPassword'
+    userId: string
+    username: string
+  } | null>(null)
+  const [actionLoading, setActionLoading] = useState(false)
+  const [toast, setToast] = useState<{ type: 'success' | 'error' | 'warning'; message: string } | null>(null)
   const filterRef = useRef<HTMLDivElement>(null)
 
   const filteredUsers = useUserFilters({ users, searchQuery, selectedDepartments, selectedStatuses })
@@ -68,6 +78,71 @@ const Users: React.FC = () => {
   const handleEdit = (user: User) => {
     setSelectedUser(user)
     setEditDialogOpen(true)
+  }
+
+  const handleLock = (userId: number) => {
+    const user = users.find(u => u.id === userId)
+    if (user) {
+      setConfirmDialog({
+        open: true,
+        type: 'lock',
+        userId: userId.toString(),
+        username: user.username
+      })
+    }
+  }
+
+  const handleUnlock = (userId: number) => {
+    const user = users.find(u => u.id === userId)
+    if (user) {
+      setConfirmDialog({
+        open: true,
+        type: 'unlock',
+        userId: userId.toString(),
+        username: user.username
+      })
+    }
+  }
+
+  const handleResetPassword = (userId: number) => {
+    const user = users.find(u => u.id === userId)
+    if (user) {
+      setConfirmDialog({
+        open: true,
+        type: 'resetPassword',
+        userId: userId.toString(),
+        username: user.username
+      })
+    }
+  }
+
+  const handleConfirmAction = async () => {
+    if (!confirmDialog) return
+
+    setActionLoading(true)
+    try {
+      const userId = parseInt(confirmDialog.userId)
+      switch (confirmDialog.type) {
+        case 'lock':
+          await lockUser(userId)
+          setToast({ type: 'success', message: 'User locked successfully' })
+          break
+        case 'unlock':
+          await unlockUser(userId)
+          setToast({ type: 'success', message: 'User unlocked successfully' })
+          break
+        case 'resetPassword':
+          await resetPassword(userId)
+          setToast({ type: 'success', message: 'Password reset email sent successfully' })
+          break
+      }
+      setConfirmDialog(null)
+    } catch (error) {
+      console.error('Action failed:', error)
+      setToast({ type: 'error', message: 'An error occurred. Please try again.' })
+    } finally {
+      setActionLoading(false)
+    }
   }
 
   const handleClearFilters = () => {
@@ -122,9 +197,9 @@ const Users: React.FC = () => {
           page={page}
           pageSize={pageSize}
           onEdit={handleEdit}
-          onLock={lockUser}
-          onUnlock={unlockUser}
-          onResetPassword={resetPassword}
+          onLock={handleLock}
+          onUnlock={handleUnlock}
+          onResetPassword={handleResetPassword}
         />
 
         {/* Card view for mobile (< 768px) */}
@@ -135,9 +210,9 @@ const Users: React.FC = () => {
             page={page}
             pageSize={pageSize}
             onEdit={handleEdit}
-            onLock={lockUser}
-            onUnlock={unlockUser}
-            onResetPassword={resetPassword}
+            onLock={handleLock}
+            onUnlock={handleUnlock}
+            onResetPassword={handleResetPassword}
           />
         </div>
       </div>
@@ -170,6 +245,17 @@ const Users: React.FC = () => {
         onSubmit={updateUser}
         onSuccess={() => {}}
       />
+
+      <ConfirmDialog
+        open={confirmDialog?.open || false}
+        type={confirmDialog?.type || 'lock'}
+        username={confirmDialog?.username}
+        onConfirm={handleConfirmAction}
+        onCancel={() => setConfirmDialog(null)}
+        loading={actionLoading}
+      />
+
+      {toast && <Toast type={toast.type} message={toast.message} onClose={() => setToast(null)} />}
 
       {error && <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">{error}</div>}
     </div>

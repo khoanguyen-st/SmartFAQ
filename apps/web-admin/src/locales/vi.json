@@ -77,7 +77,8 @@
       "unlockTitle": "Mở khóa Tài khoản",
       "unlockDescription": "Bạn có chắc chắn muốn mở khóa tài khoản này? Người dùng sẽ có thể đăng nhập lại.",
       "resetPasswordTitle": "Đặt lại Mật khẩu",
-      "resetPasswordDescription": "Nhập mật khẩu mới cho tài khoản người dùng này."
+      "resetPasswordDescription": "Bạn có chắc chắn muốn đặt lại mật khẩu cho tài khoản này? Mật khẩu mới sẽ được gửi đến email của họ.",
+      "targetUser": "Người dùng"
     },
     "validation": {
       "usernameRequired": "Tên đăng nhập là bắt buộc",

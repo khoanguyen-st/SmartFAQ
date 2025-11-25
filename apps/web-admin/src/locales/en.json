@@ -77,7 +77,8 @@
       "unlockTitle": "Unlock Account",
       "unlockDescription": "Are you sure you want to unlock this account? The user will be able to log in again.",
       "resetPasswordTitle": "Reset Password",
-      "resetPasswordDescription": "Enter a new password for this user account."
+      "resetPasswordDescription": "Are you sure you want to reset the password for this account? A new password will be sent to their email.",
+      "targetUser": "User"
     },
     "validation": {
       "usernameRequired": "Username is required",
