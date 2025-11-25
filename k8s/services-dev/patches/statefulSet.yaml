@@ -12,7 +12,8 @@ spec:
     spec:
       initContainers:
         - name: db-migration
-          image: asia-southeast1-docker.pkg.dev/enspara/smartfaq/smartfaq-api@sha256:0ad4e9a9dcc35bc20569569c6e8a4d4d736c50b8deec8362cb46371b054425e1
+          image: asia-southeast1-docker.pkg.dev/enspara/smartfaq/smartfaq-api:dev-latest
+          imagePullPolicy: Always
           command:
             - python
             - -c
@@ -23,7 +24,7 @@ spec:
               import subprocess
 
               print("Checking database connection...")
-              conn_str = os.environ['DATABASE_URL']
+              conn_str = os.environ['DATABASE_URL'].replace('postgresql+psycopg://', 'postgresql://').replace('postgresql+psycopg_async://', 'postgresql://')
               max_retries = 30
               retry = 0
 
@@ -66,10 +67,19 @@ spec:
               cpu: "250m"
       containers:
         - name: smartfaq-api
-          image: asia-southeast1-docker.pkg.dev/enspara/smartfaq/smartfaq-api@sha256:0ad4e9a9dcc35bc20569569c6e8a4d4d736c50b8deec8362cb46371b054425e1
+          image: asia-southeast1-docker.pkg.dev/enspara/smartfaq/smartfaq-api:dev-latest
+          imagePullPolicy: Always
           env:
             - name: UVICORN_WORKERS
               value: "2"
+            - name: TRANSFORMERS_CACHE
+              value: "/app/.cache/transformers"
+            - name: HF_HOME
+              value: "/app/.cache/huggingface"
+            - name: HF_HUB_CACHE
+              value: "/app/.cache/huggingface/hub"
+            - name: CHROMA_URL
+              value: "/app/.cache/chroma"
           envFrom:
             - secretRef:
                 name: smartfaq-api-env
