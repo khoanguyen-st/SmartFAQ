@@ -39,6 +39,10 @@ jobs:
           pip install -e .
           pip install pytest ruff
 
+      - name: Check migration heads
+        run: |
+          python scripts/check_migrations.py --check --verbose
+
       - name: Run linting
         run: |
           ruff check . || echo "Linting completed with warnings"
