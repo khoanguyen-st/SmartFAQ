@@ -1,5 +1,19 @@
 @import 'tailwindcss';
 
+:root {
+  color-scheme: light;
+  font-family: 'Inter', system-ui, sans-serif;
+  --color-white: #fff;
+  --color-black: #000;
+  --color-blue: #003087;
+  --color-dark: #111827;
+  --color-dark-1: #1f2937;
+  --color-dark-2: #6b7280;
+  --color-gray-1: #f3f4f6;
+  --color-gray-2: #f9fafb;
+  --color-gray-3: #e5e7eb;
+}
+
 @theme {
   --color-primary-50: #f0fdf4;
   --color-primary-100: #dcfce7;
@@ -14,6 +28,82 @@
   --color-primary-950: #022c22;
 
   --font-family-sans: Inter, system-ui, sans-serif;
+}
+
+
+
+.chat__content{
+  flex-grow: 1;
+  padding: 24px 24px 72px 24px;
+  overflow: auto;
+  scrollbar-width: none;
+}
+
+
+.chat__content::-webkit-scrollbar-track {
+  margin-top: 20px ;
+  margin-bottom: 20px ;
+}
+
+
+.message {
+  max-width: 500px;
+  text-align: start;
+  padding: 16px;
+  margin-bottom: 16px;
+  font-size: 14px;
+  font-weight: 400;
+}
+
+.message--receiver {
+  align-self: flex-end;
+  border-radius: 16px 0 16px 16px;
+  background: var(--color-blue);
+  color: var(--color-white);
+}
+
+.message--sender {
+  align-self: flex-start;
+  border-radius: 0 16px 16px 16px;
+  background: var(--color-gray-1);
+  color: var(--color-dark);
+}
+
+.chat__footer {
+  position: fixed;
+  bottom: 0;
+  width: 100%;
+  background: transparent;
+  backdrop-filter: blur(5px);
+  
+}
+
+.Chat__footer-input {
+  background: white;
+  display: flex;
+  align-items: center;
+  text-align: start;
+  outline: none;
+  color: var(--color-dark);
+  border: 1px solid var(--color-blue);
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+  padding: 12px 40px 10px 16px;
+}
+
+.Chat__footer-input:focus {
+  outline: none;
+  border: 1px solid var(--color-dark);
+}
+
+.Chat__footer-input::placeholder {
+  color: var(--color-dark);
+}
+
+.open-button {
+  position: fixed;
+  bottom: 40px;
+  right: 40px;
 }
 
 @layer base {
