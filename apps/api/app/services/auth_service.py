@@ -7,10 +7,12 @@ from sqlalchemy import select
 from ..core.security import (
     add_token_to_blacklist,
     create_access_token,
+    create_refresh_token,
     create_reset_token,
     hash_password,
     validate_password_strength,
     verify_password,
+    verify_refresh_token,
     verify_reset_token,
 )
 from ..models.user import User
@@ -45,20 +47,26 @@ class AuthService:
     def __init__(self, db: AsyncSession) -> None:
         self.db = db
 
-    async def login(self, email: str, password: str, campus_id: str) -> str:
-        """Authenticate user and return JWT token."""
+    async def login(self, email: str, password: str, campus_id: str) -> tuple[str, str]:
+        """Authenticate user and return JWT access token and refresh token."""
         user = await self._authenticate_user(email, password, campus_id)
+
+        import time
+        login_time = int(time.time())
         
-        token = create_access_token(
-            data={
-                "sub": user.email,
-                "user_id": user.id,
-                "email": user.email,
-                "role": user.role,
-                "campus_id": user.campus_id,
-            }
+        user_data = {
+            "sub": str(user.id),  # Use user_id as subject instead of email
+            "user_id": user.id,
+            "role": user.role,
+            "campus_id": user.campus_id,
+        }
+        
+        access_token = create_access_token(data=user_data)
+        refresh_token = create_refresh_token(
+            data={**user_data, "login_time": login_time}
         )
-        return token
+        
+        return access_token, refresh_token
 
     async def _authenticate_user(self, email: str, password: str, campus_id: str) -> User:
         """Internal method to authenticate user."""
@@ -171,3 +179,35 @@ class AuthService:
             raise UserNotFoundError
         await self.reset_failed_attempts(user)
         await self.db.commit()
+
+    async def refresh_access_token(self, refresh_token: str) -> str:
+        """
+        Refresh access token using refresh token.
+        Returns new access token if refresh token is valid and within 24h of login.
+        """
+        payload = verify_refresh_token(refresh_token)
+        if not payload:
+            raise InvalidTokenError
+        user_id = payload.get("user_id")
+        if not user_id:
+            raise InvalidTokenError
+        
+        result = await self.db.execute(select(User).filter(User.id == user_id))
+        user: User | None = result.scalar_one_or_none()
+        if not user:
+            raise InvalidTokenError
+        if not user.is_active:
+            raise InactiveAccountError
+        if user.is_locked:
+            raise AccountLockedError
+        
+        access_token = create_access_token(
+            data={
+                "sub": str(user.id),  
+                "user_id": user.id,
+                "role": user.role,
+                "campus_id": user.campus_id,
+            }
+        )
+        
+        return access_token

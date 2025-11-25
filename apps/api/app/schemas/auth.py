@@ -33,17 +33,37 @@ class Token(BaseModel):
     Schema for login response body (AC 2.1).
     
     Fields:
-        access_token: JWT access token (valid for 8 hours)
+        access_token: JWT access token (valid for 5 minutes)
+        refresh_token: JWT refresh token (valid for 24 hours)
         token_type: Token type (default: "bearer")
     """
-    access_token: str = Field(..., description="JWT access token")
+    access_token: str = Field(..., description="JWT access token (5 minutes)")
+    refresh_token: str = Field(..., description="JWT refresh token (24 hours)")
     token_type: str = Field(default="bearer", description="Token type")
     
     class Config:
         json_schema_extra = {
             "example": {
                 "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+                "refresh_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
                 "token_type": "bearer"
+            }
+        }
+
+
+class RefreshTokenRequest(BaseModel):
+    """
+    Schema for refresh token request.
+    
+    Fields:
+        refresh_token: JWT refresh token (required)
+    """
+    refresh_token: str = Field(..., description="JWT refresh token")
+    
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "refresh_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
             }
         }
 

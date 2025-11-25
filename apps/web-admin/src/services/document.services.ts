@@ -62,7 +62,7 @@ const DOCS_BASE_URL = `${API_BASE_URL}/api/docs`
 
 export const fetchKnowledgeFiles = async (): Promise<IUploadedFile[]> => {
   try {
-    const response = await fetch(`${DOCS_BASE_URL}/`)
+    const response = await fetch(`${DOCS_BASE_URL}`)
     if (!response.ok) {
       const errorText = await response.text()
       console.error(`API Error - Status: ${response.status} on GET /api/docs/`, errorText)
@@ -109,7 +109,7 @@ export const uploadKnowledgeFiles = async (files: File[]): Promise<IUploadedFile
   })
 
   try {
-    const response = await fetch(`${DOCS_BASE_URL}/`, {
+    const response = await fetch(`${DOCS_BASE_URL}`, {
       method: 'POST',
       body: formData
     })

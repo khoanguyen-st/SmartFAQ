@@ -5,6 +5,7 @@ from .auth import (
     UserLogin,
     ForgotPasswordRequest,
     ResetPasswordRequest,
+    RefreshTokenRequest,
     LogoutResponse,
     UserMe,
     UnlockAccountResponse,
@@ -15,9 +16,8 @@ __all__ = [
     "Token",
     "ForgotPasswordRequest",
     "ResetPasswordRequest",
+    "RefreshTokenRequest",
     "LogoutResponse",
     "UserMe",
     "UnlockAccountResponse"
 ]
-
-

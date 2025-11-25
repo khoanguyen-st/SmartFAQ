@@ -2,11 +2,13 @@ from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
+
 from ..core.database import get_db
 from ..core.users import get_current_user
 from ..schemas import (
     ForgotPasswordRequest,
     LogoutResponse,
+    RefreshTokenRequest,
     ResetPasswordRequest,
     Token,
     UserLogin,
@@ -31,7 +33,7 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
 async def login(payload: UserLogin, db: AsyncSession = Depends(get_db)) -> Token:
     service = AuthService(db)
     try:
-        token = await service.login(payload.email, payload.password, payload.campus_id)
+        access_token, refresh_token = await service.login(payload.email, payload.password, payload.campus_id)
     except AccountLockedError:
         raise HTTPException(
             status_code=423,
@@ -62,7 +64,31 @@ async def login(payload: UserLogin, db: AsyncSession = Depends(get_db)) -> Token
             status_code=401,
             detail={"error": "Invalid email or password."}
         )
-    return Token(access_token=token)
+    return Token(access_token=access_token, refresh_token=refresh_token)
+
+
+@router.post("/refresh", response_model=Token)
+async def refresh_token(payload: RefreshTokenRequest, db: AsyncSession = Depends(get_db)) -> Token:
+    """Refresh access token using refresh token."""
+    service = AuthService(db)
+    try:
+        access_token = await service.refresh_access_token(payload.refresh_token)
+    except InvalidTokenError:
+        raise HTTPException(
+            status_code=401,
+            detail={"error": "Invalid or expired refresh token. Please login again."}
+        )
+    except InactiveAccountError:
+        raise HTTPException(
+            status_code=403,
+            detail={"error": "Account is inactive. Please contact administrator."}
+        )
+    except AccountLockedError:
+        raise HTTPException(
+            status_code=423,
+            detail={"error": "Account locked. Please contact Super Admin."}
+        )
+    return Token(access_token=access_token, refresh_token=payload.refresh_token)
 
 @router.post("/logout", response_model=LogoutResponse)
 async def logout(
