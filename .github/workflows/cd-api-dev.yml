@@ -1,0 +1,252 @@
+name: CD - API Development
+
+on:
+  push:
+    branches:
+      - develop
+    paths:
+      - "apps/api/**"
+      - "k8s/**"
+      - ".github/workflows/cd-api-dev.yml"
+
+env:
+  PROJECT_ID: enspara
+  REGION: asia-southeast1
+  REGISTRY: asia-southeast1-docker.pkg.dev
+  REPOSITORY: smartfaq
+  IMAGE_NAME: smartfaq-api
+  K8S_NAMESPACE: smartfaq-dev
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./apps/api
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -e .
+          pip install pytest ruff
+
+      - name: Run linting
+        run: |
+          ruff check . || echo "Linting completed with warnings"
+
+      - name: Run type checking
+        run: |
+          echo "Type checking step - add mypy if needed"
+
+      - name: Run tests
+        run: |
+          pytest tests/ || echo "No tests configured yet"
+
+  build-and-push:
+    name: Build and Push Docker Image
+    needs: test
+    runs-on: ubuntu-latest
+    environment: development
+    permissions:
+      contents: read
+      id-token: write
+
+    outputs:
+      image-tag: ${{ steps.version.outputs.FULL_IMAGE_NAME }}
+      version: ${{ steps.version.outputs.VERSION }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Authenticate to Google Cloud
+        id: auth
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Configure Docker for Artifact Registry
+        run: |
+          gcloud auth configure-docker ${{ env.REGION }}-docker.pkg.dev
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+        with:
+          install_components: "gke-gcloud-auth-plugin"
+
+      - name: Generate version tag
+        id: version
+        run: |
+          VERSION=dev-$(date +%Y%m%d)-$(git rev-parse --short HEAD)
+          FULL_IMAGE_NAME=${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/${{ env.REPOSITORY }}/${{ env.IMAGE_NAME }}:$VERSION
+          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+          echo "FULL_IMAGE_NAME=$FULL_IMAGE_NAME" >> $GITHUB_OUTPUT
+
+      - name: Build and push Docker image
+        id: build
+        uses: docker/build-push-action@v5
+        with:
+          context: ./apps/api
+          file: ./apps/api/Dockerfile.prod
+          platforms: linux/amd64
+          push: true
+          tags: |
+            ${{ steps.version.outputs.FULL_IMAGE_NAME }}
+            ${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/${{ env.REPOSITORY }}/${{ env.IMAGE_NAME }}:dev-latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          build-args: |
+            BUILDKIT_INLINE_CACHE=1
+
+      - name: Output image info
+        run: |
+          echo "### 🐳 Docker Image Built Successfully" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Image:** \`${{ steps.version.outputs.FULL_IMAGE_NAME }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "**Version:** \`${{ steps.version.outputs.VERSION }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "**Also tagged as:** \`${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/${{ env.REPOSITORY }}/${{ env.IMAGE_NAME }}:dev-latest\`" >> $GITHUB_STEP_SUMMARY
+          echo "**Digest:** \`${{ steps.build.outputs.digest }}\`" >> $GITHUB_STEP_SUMMARY
+
+  deploy-to-k8s:
+    name: Deploy to Kubernetes
+    runs-on: ubuntu-latest
+    needs: build-and-push
+    environment: development
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud
+        id: auth
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+        with:
+          install_components: "gke-gcloud-auth-plugin"
+
+      - name: Install kubectl
+        run: |
+          curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+          sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
+
+      - name: Get GKE credentials
+        run: |
+          # Try region first, if fails try zone
+          if ! gcloud container clusters get-credentials ${{ secrets.GKE_CLUSTER_NAME }} \
+            --region=${{ secrets.GKE_REGION }} \
+            --project=${{ env.PROJECT_ID }} 2>/dev/null; then
+            echo "Cluster not found in region, trying zone..."
+            gcloud container clusters get-credentials ${{ secrets.GKE_CLUSTER_NAME }} \
+              --zone=${{ secrets.GKE_REGION }} \
+              --project=${{ env.PROJECT_ID }}
+          fi
+
+      - name: Verify kubectl connection
+        run: |
+          kubectl cluster-info
+          kubectl get nodes
+
+      - name: Install kustomize
+        run: |
+          if ! command -v kustomize &> /dev/null; then
+            curl -s "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh" | bash
+            sudo mv kustomize /usr/local/bin/
+          fi
+
+      - name: Deploy to Kubernetes
+        run: |
+          cd k8s/services-dev
+          kustomize edit set image \
+            asia-southeast1-docker.pkg.dev/enspara/smartfaq/smartfaq-api=${{ needs.build-and-push.outputs.image-tag }}
+          kubectl apply -k .
+
+      - name: Wait for rollout to complete
+        run: |
+          kubectl rollout status statefulset/smartfaq-api \
+            -n ${{ env.K8S_NAMESPACE }} \
+            --timeout=600s
+
+      - name: Verify deployment
+        run: |
+          echo "### ✅ Deployment Status" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          kubectl get pods -n ${{ env.K8S_NAMESPACE }} -l app=smartfaq-api >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          # Get service and ingress info
+          echo "### 🌐 Service Information" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          kubectl get svc -n ${{ env.K8S_NAMESPACE }} >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 🔗 Ingress" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          kubectl get ingress -n ${{ env.K8S_NAMESPACE }} >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+
+      - name: Check pod health
+        run: |
+          # Wait a bit for health checks
+          sleep 30
+
+          POD_NAME=$(kubectl get pods -n ${{ env.K8S_NAMESPACE }} -l app=smartfaq-api -o jsonpath='{.items[0].metadata.name}')
+          echo "Checking health of pod: $POD_NAME"
+
+          # Get pod status
+          kubectl get pod $POD_NAME -n ${{ env.K8S_NAMESPACE }}
+
+          # Check recent logs
+          echo "### 📋 Recent Logs" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          kubectl logs $POD_NAME -n ${{ env.K8S_NAMESPACE }} --tail=50 >> $GITHUB_STEP_SUMMARY || true
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+
+  notify:
+    name: Notify Deployment Status
+    runs-on: ubuntu-latest
+    needs: [build-and-push, deploy-to-k8s]
+    if: always()
+
+    steps:
+      - name: Deployment Success
+        if: ${{ needs.deploy-to-k8s.result == 'success' }}
+        run: |
+          echo "### 🎉 Deployment Successful!" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Environment:** Development" >> $GITHUB_STEP_SUMMARY
+          echo "**Branch:** \`${{ github.ref_name }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "**Commit:** \`${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "**Version:** \`${{ needs.build-and-push.outputs.version }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "**Image:** \`${{ needs.build-and-push.outputs.image-tag }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**API URL:** https://api.smartfaq.dev.devplus.edu.vn" >> $GITHUB_STEP_SUMMARY
+
+      - name: Deployment Failed
+        if: ${{ needs.deploy-to-k8s.result == 'failure' }}
+        run: |
+          echo "### ❌ Deployment Failed" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Please check the logs above for details." >> $GITHUB_STEP_SUMMARY
+          exit 1

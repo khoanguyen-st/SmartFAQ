@@ -1,0 +1,128 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: smartfaq-api
+spec:
+  serviceName: smartfaq-api
+  replicas: 1
+  selector:
+    matchLabels:
+      app: smartfaq-api
+  template:
+    spec:
+      initContainers:
+        - name: db-migration
+          image: asia-southeast1-docker.pkg.dev/enspara/smartfaq/smartfaq-api:dev-latest
+          imagePullPolicy: Always
+          command:
+            - python
+            - -c
+            - |
+              import psycopg
+              import time
+              import os
+              import subprocess
+
+              print("Checking database connection...")
+              conn_str = os.environ['DATABASE_URL'].replace('postgresql+psycopg://', 'postgresql://').replace('postgresql+psycopg_async://', 'postgresql://')
+              max_retries = 30
+              retry = 0
+
+              while retry < max_retries:
+                  try:
+                      conn = psycopg.connect(conn_str)
+                      conn.close()
+                      print('Database connected successfully')
+                      break
+                  except Exception as e:
+                      retry += 1
+                      print(f'Waiting for database... ({retry}/{max_retries}): {e}')
+                      time.sleep(5)
+              else:
+                  print(f'Failed to connect to database after {max_retries} retries')
+                  exit(1)
+
+              print("Running migrations...")
+              result = subprocess.run(['alembic', 'upgrade', 'head'], capture_output=True, text=True)
+              print(result.stdout)
+              if result.stderr:
+                  print(result.stderr)
+              if result.returncode != 0:
+                  print(f"Migration failed with code {result.returncode}")
+                  exit(result.returncode)
+
+              print("Init container completed successfully")
+          envFrom:
+            - secretRef:
+                name: smartfaq-api-env
+          volumeMounts:
+            - name: tmp-volume
+              mountPath: /tmp
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "100m"
+            limits:
+              memory: "512Mi"
+              cpu: "250m"
+      containers:
+        - name: smartfaq-api
+          image: asia-southeast1-docker.pkg.dev/enspara/smartfaq/smartfaq-api:dev-latest
+          imagePullPolicy: Always
+          env:
+            - name: UVICORN_WORKERS
+              value: "2"
+            - name: TRANSFORMERS_CACHE
+              value: "/app/.cache/transformers"
+            - name: HF_HOME
+              value: "/app/.cache/huggingface"
+            - name: HF_HUB_CACHE
+              value: "/app/.cache/huggingface/hub"
+            - name: CHROMA_URL
+              value: "/app/.cache/chroma"
+          envFrom:
+            - secretRef:
+                name: smartfaq-api-env
+          volumeMounts:
+            - name: storage-volume
+              mountPath: /app/uploads
+            - name: tmp-volume
+              mountPath: /tmp
+            - name: model-cache-volume
+              mountPath: /app/.cache
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsNonRoot: true
+            runAsGroup: 1000
+            runAsUser: 1000
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+          resources:
+            requests:
+              memory: 2.5Gi
+              cpu: "1.5"
+            limits:
+              memory: 4Gi
+              cpu: "3"
+      volumes:
+        - name: tmp-volume
+          emptyDir: {}
+  volumeClaimTemplates:
+    - metadata:
+        name: storage-volume
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        storageClassName: standard-rwo
+        resources:
+          requests:
+            storage: 10Gi
+    - metadata:
+        name: model-cache-volume
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        storageClassName: standard-rwo
+        resources:
+          requests:
+            storage: 2Gi

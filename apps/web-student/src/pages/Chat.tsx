@@ -1,7 +1,6 @@
 import { FormEvent, useEffect, useRef, useState } from 'react'
 
-import { SmartButton } from '@smartfaq/ui'
-
+import { SmartButton } from '@/components/ui'
 import { useI18n, availableLanguages } from '../lib/i18n'
 import { useChat } from '../hooks/useChat'
 import { cn } from '@/lib/utils'
@@ -46,7 +45,7 @@ const ChatPage = () => {
         <select
           value={lang}
           onChange={event => setLang(event.target.value as (typeof availableLanguages)[number])}
-          className="max-w-[160px] rounded-lg border border-indigo-200 bg-white px-2 py-2"
+          className="max-w-40 rounded-lg border border-indigo-200 bg-white px-2 py-2"
         >
           {availableLanguages.map(value => (
             <option key={value} value={value}>
@@ -70,7 +69,7 @@ const ChatPage = () => {
 
         <section
           ref={listRef}
-          className="relative flex max-h-[520px] min-h-[320px] flex-1 flex-col gap-4 overflow-y-auto rounded-2xl bg-white p-6 shadow-lg shadow-slate-900/8"
+          className="relative flex max-h-[520px] min-h-80 flex-1 flex-col gap-4 overflow-y-auto rounded-2xl bg-white p-6 shadow-lg shadow-slate-900/8"
         >
           {history.map(message => (
             <div
