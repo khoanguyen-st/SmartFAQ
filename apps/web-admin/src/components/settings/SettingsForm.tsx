@@ -1,21 +1,23 @@
-import { FormEvent, useState } from "react";
+import { FormEvent, useState } from 'react'
 
 const defaultValues = {
   confidenceThreshold: 60,
   topK: 5,
   maxWords: 300,
-  fallbackChannels: ["Email"],
-  quickActions: ["Admission requirements", "Tuition fees"],
-  welcomeText: "Welcome to Greenwich SmartFAQ",
-};
+  fallbackChannels: ['Email'],
+  quickActions: ['Admission requirements', 'Tuition fees'],
+  welcomeText: 'Welcome to Greenwich SmartFAQ'
+}
 
 const SettingsForm = () => {
-  const [values, setValues] = useState(defaultValues);
+  const [values, setValues] = useState(defaultValues)
 
   const handleSubmit = (event: FormEvent) => {
-    event.preventDefault();
+    event.preventDefault()
     // TODO: wire to API
-  };
+    // eslint-disable-next-line no-console
+    console.info('Submitted settings', values)
+  }
 
   return (
     <form
@@ -27,13 +29,13 @@ const SettingsForm = () => {
         <input
           type="number"
           value={values.confidenceThreshold}
-          onChange={(event) =>
-            setValues((prev) => ({
+          onChange={event =>
+            setValues(prev => ({
               ...prev,
-              confidenceThreshold: Number(event.target.value),
+              confidenceThreshold: Number(event.target.value)
             }))
           }
-          className="rounded-lg border border-indigo-200 px-3.5 py-2.5 text-base font-normal focus:border-primary-600 focus:outline-none focus:ring-2 focus:ring-primary-600/20"
+          className="focus:border-primary-600 focus:ring-primary-600/20 rounded-lg border border-indigo-200 px-3.5 py-2.5 text-base font-normal focus:ring-2 focus:outline-none"
         />
       </label>
       <label className="flex flex-col gap-2 text-sm text-slate-700">
@@ -41,10 +43,8 @@ const SettingsForm = () => {
         <input
           type="number"
           value={values.topK}
-          onChange={(event) =>
-            setValues((prev) => ({ ...prev, topK: Number(event.target.value) }))
-          }
-          className="rounded-lg border border-indigo-200 px-3.5 py-2.5 text-base font-normal focus:border-primary-600 focus:outline-none focus:ring-2 focus:ring-primary-600/20"
+          onChange={event => setValues(prev => ({ ...prev, topK: Number(event.target.value) }))}
+          className="focus:border-primary-600 focus:ring-primary-600/20 rounded-lg border border-indigo-200 px-3.5 py-2.5 text-base font-normal focus:ring-2 focus:outline-none"
         />
       </label>
       <label className="flex flex-col gap-2 text-sm text-slate-700">
@@ -52,33 +52,31 @@ const SettingsForm = () => {
         <input
           type="number"
           value={values.maxWords}
-          onChange={(event) =>
-            setValues((prev) => ({
+          onChange={event =>
+            setValues(prev => ({
               ...prev,
-              maxWords: Number(event.target.value),
+              maxWords: Number(event.target.value)
             }))
           }
-          className="rounded-lg border border-indigo-200 px-3.5 py-2.5 text-base font-normal focus:border-primary-600 focus:outline-none focus:ring-2 focus:ring-primary-600/20"
+          className="focus:border-primary-600 focus:ring-primary-600/20 rounded-lg border border-indigo-200 px-3.5 py-2.5 text-base font-normal focus:ring-2 focus:outline-none"
         />
       </label>
       <label className="col-span-full flex flex-col gap-2 text-sm text-slate-700">
         Welcome Message
         <textarea
           value={values.welcomeText}
-          onChange={(event) =>
-            setValues((prev) => ({ ...prev, welcomeText: event.target.value }))
-          }
-          className="min-h-[120px] resize-y rounded-lg border border-indigo-200 px-3.5 py-2.5 text-base font-normal focus:border-primary-600 focus:outline-none focus:ring-2 focus:ring-primary-600/20"
+          onChange={event => setValues(prev => ({ ...prev, welcomeText: event.target.value }))}
+          className="focus:border-primary-600 focus:ring-primary-600/20 min-h-[120px] resize-y rounded-lg border border-indigo-200 px-3.5 py-2.5 text-base font-normal focus:ring-2 focus:outline-none"
         />
       </label>
       <button
         type="submit"
-        className="col-span-full cursor-pointer justify-self-end rounded-full border-none bg-primary-600 px-6 py-2.5 text-base font-semibold text-white hover:bg-primary-700"
+        className="bg-primary-600 hover:bg-primary-700 col-span-full cursor-pointer justify-self-end rounded-full border-none px-6 py-2.5 text-base font-semibold text-white"
       >
         Save Settings
       </button>
     </form>
-  );
-};
+  )
+}
 
-export default SettingsForm;
+export default SettingsForm

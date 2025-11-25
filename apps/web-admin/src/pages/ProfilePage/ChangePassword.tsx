@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+
 import { useTranslation } from 'react-i18next';
 import {
   Modal,
@@ -19,11 +20,13 @@ const style = {
   top: '50%',
   left: '50%',
   transform: 'translate(-50%, -50%)',
-  width: 750,
+  width: { xs: '90%', sm: 600, md: 750 }, 
   bgcolor: 'background.paper',
   borderRadius: 2,
   boxShadow: 24,
-  p: 4,
+  p: { xs: 3, md: 4 }, 
+  maxHeight: '90vh', 
+  overflowY: 'auto',
 };
 
 interface ChangePasswordProps {
@@ -100,14 +103,12 @@ const ChangePassword: React.FC<ChangePasswordProps> = ({ open, onClose }) => {
 
     let hasClientError = false;
 
-
     if (newPassword && !passwordRegex.test(newPassword)) {
       setNewPasswordError(
         'Mật khẩu phải có ít nhất 8 ký tự, 1 chữ hoa, 1 chữ thường, 1 số, và 1 ký tự đặc biệt.',
       );
       hasClientError = true;
     }
-
 
     if (newPassword !== confirmPassword) {
       setConfirmPasswordError('Mật khẩu xác nhận không trùng khớp.');
@@ -144,12 +145,13 @@ const ChangePassword: React.FC<ChangePasswordProps> = ({ open, onClose }) => {
           variant="h5"
           component="h2"
           fontWeight="bold"
+          sx={{ fontSize: { xs: '1.25rem', md: '1.5rem' } }}
         >
           {t('Change Password')}
         </Typography>
         <Typography
           id="change-password-modal-description"
-          sx={{ mt: 1, mb: 3, color: 'text.secondary' }}
+          sx={{ mt: 1, mb: 3, color: 'text.secondary', fontSize: { xs: '0.875rem', md: '1rem' } }}
         >
           {t('Secure your account with a new password.')}
         </Typography>
@@ -193,7 +195,6 @@ const ChangePassword: React.FC<ChangePasswordProps> = ({ open, onClose }) => {
               label={t('New Password')}
               type={showNewPassword ? 'text' : 'password'}
               value={newPassword}
-
               onChange={handleNewPasswordChange}
               error={!!newPasswordError}
               helperText={newPasswordError}
@@ -222,7 +223,6 @@ const ChangePassword: React.FC<ChangePasswordProps> = ({ open, onClose }) => {
               label={t('Confirm Password')}
               type={showConfirmPassword ? 'text' : 'password'}
               value={confirmPassword}
-            
               onChange={handleConfirmPasswordChange}
               error={!!confirmPasswordError}
               helperText={confirmPasswordError}
@@ -253,6 +253,7 @@ const ChangePassword: React.FC<ChangePasswordProps> = ({ open, onClose }) => {
               sx={{ mt: 3 }}
             >
               <button
+                type="button"
                 onClick={handleCloseAndReset}
                 className="ring-2 ring-gray-300 text-gray-700 px-4 py-2 rounded-xl font-medium hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-100 focus:ring-opacity-50 text-sm"
               >
