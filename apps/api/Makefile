@@ -30,6 +30,18 @@ migrate:  ## Chạy database migrations
 migrate-create:  ## Tạo migration mới (sử dụng: make migrate-create MSG="message")
 	alembic revision --autogenerate -m "$(MSG)"
 
+migrate-check:  ## Kiểm tra multiple migration heads
+	@command -v python3 >/dev/null 2>&1 && python3 scripts/check_migrations.py --check || echo "Error: python3 not found. Please install Python 3.11+"
+
+migrate-merge:  ## Tự động merge multiple migration heads
+	@command -v python3 >/dev/null 2>&1 && python3 scripts/check_migrations.py --auto-merge || echo "Error: python3 not found. Please install Python 3.11+"
+
+migrate-history:  ## Xem lịch sử migrations
+	@command -v python3 >/dev/null 2>&1 && python3 scripts/check_migrations.py --show-history || echo "Error: python3 not found. Please install Python 3.11+"
+
+migrate-validate:  ## Validate migration chain
+	@command -v python3 >/dev/null 2>&1 && python3 scripts/check_migrations.py --validate || echo "Error: python3 not found. Please install Python 3.11+"
+
 lint:  ## Chạy linter
 	ruff check app/
 
