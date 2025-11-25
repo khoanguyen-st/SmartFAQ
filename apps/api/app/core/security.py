@@ -170,13 +170,6 @@ def is_token_blacklisted(token: str, db: Session | None = None) -> bool:
     return token in _token_blacklist
 
 
-def clear_token_blacklist(db: Session | None = None) -> None:
-    if db:
-        db.query(TokenBlacklist).delete()
-        db.commit()
-    _token_blacklist.clear()
-
-
 def create_reset_token(user_id: int, email: str, expires_delta: Optional[timedelta] = None) -> str:
     if expires_delta is None:
         expires_delta = timedelta(hours=1)
