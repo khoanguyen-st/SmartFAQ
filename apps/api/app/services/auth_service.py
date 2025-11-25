@@ -52,9 +52,8 @@ class AuthService:
         login_time = int(time.time())
         
         user_data = {
-            "sub": user.email,
+            "sub": str(user.id),  # Use user_id as subject instead of email
             "user_id": user.id,
-            "email": user.email,
             "role": user.role,
             "campus_id": user.campus_id,
         }
@@ -186,9 +185,8 @@ class AuthService:
         
         access_token = create_access_token(
             data={
-                "sub": user.email,
+                "sub": str(user.id),  
                 "user_id": user.id,
-                "email": user.email,
                 "role": user.role,
                 "campus_id": user.campus_id,
             }
