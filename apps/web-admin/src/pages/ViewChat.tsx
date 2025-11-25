@@ -16,7 +16,6 @@ import trashUrl from '@/assets/icons/trash-icon.svg'
 import txtNoFillUrl from '@/assets/icons/txt-no-fill.svg'
 import KnowledgeSidebar from '@/components/viewchat/KnowledgeSidebar'
 import UploadModal from '@/components/viewchat/UploadModal'
-
 import { UploadedFileHandle } from '@/components/viewchat/UploadedFile'
 
 type ImgCompProps = React.ImgHTMLAttributes<HTMLImageElement>
