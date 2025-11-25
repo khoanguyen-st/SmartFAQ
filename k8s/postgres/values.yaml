@@ -1,0 +1,50 @@
+auth:
+  enablePostgresUser: true
+  postgresPassword: CHANGE_ME_IN_PRODUCTION
+  username: "postgres"
+  password: CHANGE_ME_IN_PRODUCTION
+  database: "smartfaq"
+
+primary:
+  persistence:
+    enabled: true
+    storageClass: "standard-rwo"
+    size: 20Gi
+    accessModes:
+      - ReadWriteOnce
+
+  resources:
+    requests:
+      memory: 512Mi
+      cpu: 250m
+    limits:
+      memory: 2Gi
+      cpu: "1"
+
+  securityContext:
+    enabled: true
+    fsGroup: 1001
+    runAsUser: 1001
+
+  containerSecurityContext:
+    enabled: true
+    runAsUser: 1001
+    runAsNonRoot: true
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+        - ALL
+
+backup:
+  enabled: true
+  cronjob:
+    schedule: "0 2 * * *" # Daily at 2 AM
+
+metrics:
+  enabled: true
+  serviceMonitor:
+    enabled: true
+
+networkPolicy:
+  enabled: true
+  allowExternal: false

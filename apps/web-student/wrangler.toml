@@ -1,0 +1,8 @@
+name = "smartfaq-student"
+compatibility_date = "2025-11-21"
+
+# Cloudflare Pages configuration
+pages_build_output_dir = "dist"
+
+[build]
+command = "yarn build"

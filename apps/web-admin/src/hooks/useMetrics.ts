@@ -9,7 +9,7 @@ export const useMetrics = () => {
   useEffect(() => {
     setLoading(true)
     fetchMetrics()
-      .then(setData)
+      .then((metrics: Record<string, unknown>) => setData(metrics))
       .catch(error => console.error(error))
       .finally(() => setLoading(false))
   }, [])

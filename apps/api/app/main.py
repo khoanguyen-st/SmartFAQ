@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+
 from .api import admin, auth, chat, docs, fallback
 from .core.config import settings
 
@@ -11,15 +12,24 @@ def create_app() -> FastAPI:
         docs_url="/docs/openapi",
         redoc_url="/docs/redoc",
     )
-    
-    origins = settings.cors_allow_origins
 
+    # Configure CORS
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=origins,       # Specifies the allowed origins
-        allow_credentials=True,    # Allows cookies (if you use them)
-        allow_methods=["*"],         # Allows all methods (GET, POST, OPTIONS, etc.)
-        allow_headers=["*"],         # Allows all headers
+        allow_origins=[
+            # Development
+            "http://localhost:5173",  # web-student dev
+            "http://localhost:5174",  # web-admin dev
+            # Production - Cloudflare Pages
+            "https://smartfaq-admin.pages.dev",
+            "https://smartfaq-student.pages.dev",
+            # Production - Custom domains
+            "https://admin.smartfaq.dev.devplus.edu.vn",
+            "https://chat.smartfaq.dev.devplus.edu.vn",
+        ],
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
     )
 
     app.include_router(auth.router, prefix="/api/auth", tags=["auth"])

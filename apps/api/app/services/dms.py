@@ -1,15 +1,15 @@
-"""Document management service (clean version)."""
-
 import logging
 import os
+from contextlib import asynccontextmanager
 from typing import Any
-from uuid import uuid4
 
 from fastapi import UploadFile
-from sqlalchemy.orm import Session
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from ..core.config import settings
-from ..core.db import session_scope
+from ..core.database import AsyncSessionLocal
 from ..models.document import Document
 from ..models.document_version import DocumentVersion
 from ..rag.document_processor import DocumentProcessor
@@ -28,12 +28,17 @@ class UserNotFound(Exception):
     pass
 
 
-ALLOWED_EXTS = {".pdf", ".txt", ".docx", ".md", ".png", ".jpg", ".jpeg"}
+ALLOWED_EXTS = {
+    ".md",
+    ".doc",
+    ".docx",
+    ".txt",
+    ".pdf",
+}
 
 
 async def save_uploaded_file(file: UploadFile) -> tuple[str, int, str]:
     """Save uploaded file to disk and return (file_path, size, format)."""
-
     upload_dir = settings.UPLOAD_DIR
     os.makedirs(upload_dir, exist_ok=True)
 
@@ -44,8 +49,7 @@ async def save_uploaded_file(file: UploadFile) -> tuple[str, int, str]:
     if ext not in ALLOWED_EXTS:
         raise InvalidFileType(f"file type '{ext}' is not allowed")
 
-    unique_name = f"{uuid4().hex}{ext}"
-    dest_path = os.path.join(upload_dir, unique_name)
+    dest_path = os.path.join(upload_dir, orig_name)
 
     max_bytes = int(settings.UPLOAD_MAX_MB) * 1024 * 1024
     written = 0
@@ -75,8 +79,8 @@ async def save_uploaded_file(file: UploadFile) -> tuple[str, int, str]:
         raise exc
 
 
-def create_document_record(
-    db: Session,
+async def create_document_record(
+    db: AsyncSession,
     title: str,
     uploaded_by: int | None,
     file_path: str | None = None,
@@ -84,7 +88,6 @@ def create_document_record(
     format: str | None = None,
 ) -> int:
     """Create Document + DocumentVersion (optional)."""
-
     doc = Document(
         title=title,
         language="en",
@@ -92,7 +95,7 @@ def create_document_record(
         created_by=uploaded_by,
     )
     db.add(doc)
-    db.flush()
+    await db.flush()
 
     if file_path:
         dv = DocumentVersion(
@@ -104,7 +107,7 @@ def create_document_record(
             uploaded_by=uploaded_by,
         )
         db.add(dv)
-        db.flush()
+        await db.flush()
 
         doc.current_version_id = dv.id
         db.add(doc)
@@ -112,61 +115,24 @@ def create_document_record(
     return doc.id
 
 
+@asynccontextmanager
+async def async_session_scope():
+    """Async context manager for database session with rollback on error."""
+    async with AsyncSessionLocal() as session:
+        try:
+            yield session
+            await session.commit()
+        except Exception:
+            await session.rollback()
+            raise
+
+
 async def enqueue_single_document(file: UploadFile, uploaded_by=None) -> dict:
     """Upload a single file and create document record."""
     file_path, size, fmt = await save_uploaded_file(file)
-    # # If configured, upload the saved file to Google Cloud Storage and use the
-    # # GCS URI as the stored file_path. We perform this before creating the DB
-    # # record so the database stores the cloud location.
-    # if settings.GCS_ENABLED:
-    #     if not settings.GCS_BUCKET:
-    #         # misconfiguration
-    #         try:
-    #             os.remove(file_path)
-    #         except Exception:
-    #             pass
-    #         raise RuntimeError("GCS_ENABLED is True but GCS_BUCKET is not configured")
 
-    #     try:
-    #         try:
-    #             from google.cloud import storage
-    #         except Exception as imp_err:  # pragma: no cover - environment dependent
-    #             # remove local file to avoid orphaned files
-    #             try:
-    #                 os.remove(file_path)
-    #             except Exception:
-    #                 pass
-    #             raise RuntimeError(
-    #                 "google-cloud-storage package is required for GCS uploads: pip install google-cloud-storage"
-    #             ) from imp_err
-
-    #         client = storage.Client()
-    #         bucket = client.bucket(settings.GCS_BUCKET)
-    #         basename = os.path.basename(file_path)
-    #         blob_name = f"documents/{basename}"
-    #         blob = bucket.blob(blob_name)
-    #         blob.upload_from_filename(file_path)
-    #         cloud_uri = f"gs://{settings.GCS_BUCKET}/{blob_name}"
-    #         # remove local file after successful upload
-    #         try:
-    #             os.remove(file_path)
-    #         except Exception:
-    #             logging.warning("failed to remove local temp file after GCS upload: %s", file_path)
-
-    #         file_path = cloud_uri
-    #         logging.info("uploaded file to GCS: %s", cloud_uri)
-    #     except Exception:
-    #         # ensure local file cleaned up on failure and re-raise
-    #         try:
-    #             if os.path.exists(file_path):
-    #                 os.remove(file_path)
-    #         except Exception:
-    #             logging.exception("failed to cleanup local file after GCS upload error: %s", file_path)
-    #         logging.exception("GCS upload failed for %s", file.filename)
-    #         raise
-
-    with session_scope() as db:
-        doc_id = create_document_record(
+    async with async_session_scope() as db:
+        doc_id = await create_document_record(
             db,
             title=file.filename,
             uploaded_by=None,
@@ -175,7 +141,6 @@ async def enqueue_single_document(file: UploadFile, uploaded_by=None) -> dict:
             format=fmt,
         )
 
-        # Process and upsert to vector DB
         processor = DocumentProcessor()
         split_docs = processor.process_document(
             file_path, str(doc_id), metadata={"title": file.filename}
@@ -197,16 +162,23 @@ async def enqueue_multiple_documents(files: list[UploadFile]) -> list[dict]:
     return results
 
 
-def create_metadata_document(data: dict[str, Any], db: Session) -> dict:
+async def create_metadata_document(data: dict[str, Any], db: AsyncSession) -> dict:
     doc = Document(**data)
     db.add(doc)
-    db.commit()
-    db.refresh(doc)
+    await db.commit()
+    await db.refresh(doc)
     return {"id": doc.id, "title": doc.title}
 
 
-def list_documents(db: Session) -> list[dict[str, Any]]:
-    rows = db.query(Document).order_by(Document.created_at.desc()).all()
+async def list_documents(db: AsyncSession) -> list[dict[str, Any]]:
+    stmt = (
+        select(Document)
+        .options(selectinload(Document.current_version))
+        .order_by(Document.created_at.desc())
+    )
+    result = await db.execute(stmt)
+    rows = result.scalars().all()
+
     return [
         {
             "id": d.id,
@@ -224,10 +196,15 @@ def list_documents(db: Session) -> list[dict[str, Any]]:
     ]
 
 
-def get_document(doc_id: int, db: Session):
-    d = db.query(Document).filter(Document.id == doc_id).first()
+async def get_document(doc_id: int, db: AsyncSession):
+    stmt = select(Document).where(Document.id == doc_id)
+    result = await db.execute(stmt)
+    d = result.scalar_one_or_none()
+
     if not d:
         return None
+
+    await db.refresh(d, ["versions", "current_version"])
 
     versions = [
         {
@@ -255,23 +232,29 @@ def get_document(doc_id: int, db: Session):
     }
 
 
-def update_document(doc_id: int, updates: dict[str, Any], db: Session) -> bool:
-    doc = db.query(Document).filter(Document.id == doc_id).first()
+async def update_document(doc_id: int, updates: dict[str, Any], db: AsyncSession) -> bool:
+    stmt = select(Document).where(Document.id == doc_id)
+    result = await db.execute(stmt)
+    doc = result.scalar_one_or_none()
+
     if not doc:
         return False
 
     for k, v in updates.items():
         setattr(doc, k, v)
 
-    db.commit()
+    await db.commit()
     return True
 
 
-def delete_document(doc_id: int, db: Session) -> bool:
-    doc = db.query(Document).filter(Document.id == doc_id).first()
+async def delete_document(doc_id: int, db: AsyncSession) -> bool:
+    stmt = select(Document).where(Document.id == doc_id)
+    result = await db.execute(stmt)
+    doc = result.scalar_one_or_none()
+
     if not doc:
         return False
 
-    db.delete(doc)
-    db.commit()
+    await db.delete(doc)
+    await db.commit()
     return True

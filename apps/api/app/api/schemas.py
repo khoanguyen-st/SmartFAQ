@@ -1,6 +1,4 @@
-"""Pydantic schemas for API payloads and responses."""
-
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 
 class DocumentCreate(BaseModel):
@@ -38,10 +36,4 @@ class DocumentOut(BaseModel):
     current_version_id: int | None
     versions: list[DocumentVersionOut] | None = None
 
-    class Config:
-        # Pydantic v2 renamed `orm_mode` to `from_attributes`.
-        # Keep both for compatibility: prefer `from_attributes` when available.
-        try:
-            from_attributes = True  # type: ignore
-        except Exception:
-            orm_mode = True
+    model_config = ConfigDict(from_attributes=True)

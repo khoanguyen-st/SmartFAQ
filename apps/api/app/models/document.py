@@ -30,8 +30,7 @@ class Document(Base):
 =======
 
     current_version_id: Mapped[int | None] = mapped_column(
-        ForeignKey("document_versions.id"),
-        nullable=True
+        ForeignKey("document_versions.id"), nullable=True
     )
 
 >>>>>>> feat/SF-33

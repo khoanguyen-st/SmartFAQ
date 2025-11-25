@@ -19,6 +19,13 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -e ".[dev]"
+      - name: Check migration heads
+        run: |
+          python scripts/check_migrations.py --check || {
+            echo "::error::Multiple migration heads detected! Please merge them before pushing."
+            echo "Run: make migrate-merge"
+            exit 1
+          }
       - name: Lint
         run: ruff check .
       - name: Tests
@@ -37,7 +44,6 @@ jobs:
           cache: "yarn"
       - name: Install dependencies
         run: yarn install --frozen-lockfile
-        working-directory: apps/${{ matrix.app }}
       - name: Lint
         run: yarn lint
         working-directory: apps/${{ matrix.app }}

@@ -15,4 +15,6 @@ class ConfigEntry(Base):
     key: Mapped[str] = mapped_column(String(120), unique=True, nullable=False)
     value_json: Mapped[str] = mapped_column(Text, nullable=False)
     updated_by: Mapped[int | None] = mapped_column(Integer, nullable=True)
-    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
+    )
