@@ -13,7 +13,7 @@ from sqlalchemy import select
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.rag.utils.language import detect_language_simple, normalize_language_code
+from app.rag.language import detect_language_enhanced
 
 from ..core.config import settings
 from ..core.database import get_db
@@ -21,7 +21,6 @@ from ..core.input_validation import UnsafeInputError, ensure_safe_text
 from ..core.rate_limiter import RateLimiter
 from ..models.chat import ChatMessage, ChatRole, ChatSession
 from ..models.query_log import QueryLog
-from ..rag.llm import LLMWrapper
 from ..rag.orchestrator import RAGOrchestrator
 
 router = APIRouter()
@@ -32,23 +31,11 @@ if not logger.handlers:
 
 _rag_orchestrator: Optional[RAGOrchestrator] = None
 
-
 def get_rag_orchestrator() -> RAGOrchestrator:
     global _rag_orchestrator
     if _rag_orchestrator is None:
         _rag_orchestrator = RAGOrchestrator()
     return _rag_orchestrator
-
-
-_llm_wrapper: Optional[LLMWrapper] = None
-
-
-def get_llm_wrapper() -> LLMWrapper:
-    global _llm_wrapper
-    if _llm_wrapper is None:
-        _llm_wrapper = LLMWrapper()
-    return _llm_wrapper
-
 
 _FEEDBACK_MESSAGES: dict[str, str] = {
     "en": "Feedback recorded. Thank you!",
@@ -69,10 +56,8 @@ READ_RATE_LIMITER = RateLimiter(
     error_detail="Too many chat requests. Try again shortly.",
 )
 
-
 def _now() -> datetime:
     return datetime.now(timezone.utc)
-
 
 def _confidence_to_percent(value: float | Decimal | None) -> int:
     if value is None:
@@ -81,7 +66,6 @@ def _confidence_to_percent(value: float | Decimal | None) -> int:
     if numeric <= 1.0:
         numeric *= 100.0
     return int(round(numeric))
-
 
 def _format_sources(sources: list[dict[str, Any]] | None) -> list["ChatSource"]:
     formatted: list[ChatSource] = []
@@ -95,7 +79,6 @@ def _format_sources(sources: list[dict[str, Any]] | None) -> list["ChatSource"]:
             )
         )
     return formatted
-
 
 class ChatQuery(BaseModel):
     question: str = Field(..., min_length=1, max_length=1024)
@@ -115,14 +98,11 @@ class ChatQuery(BaseModel):
         except UnsafeInputError as exc:
             raise ValueError(str(exc)) from exc
 
-
 class ChatSource(BaseModel):
     title: str
     chunk_id: str | None = Field(default=None, alias="chunkId")
     relevance: float | None = None
-
     model_config = ConfigDict(populate_by_name=True)
-
 
 class ChatQueryResponse(BaseModel):
     answer: str
@@ -131,45 +111,36 @@ class ChatQueryResponse(BaseModel):
     language: str
     fallback: bool
     chat_id: str = Field(alias="chatId")
-
     model_config = ConfigDict(populate_by_name=True)
-
 
 class NewSessionRequest(BaseModel):
     user_agent: str | None = Field(default=None, alias="userAgent", max_length=255)
     language: str | None = Field(default=None, max_length=10)
-
     model_config = ConfigDict(populate_by_name=True)
-
 
 class NewSessionResponse(BaseModel):
     sessionId: str
     message: str
-
 
 class FeedbackRequest(BaseModel):
     chat_id: str = Field(..., alias="chatId")
     session_id: str = Field(..., alias="sessionId")
     feedback: Literal["up", "down"]
     comment: str | None = None
-
     model_config = ConfigDict(populate_by_name=True)
 
     @field_validator("comment")
     @classmethod
     def _validate_comment(cls, value: str | None) -> str | None:
-        if value is None:
-            return None
+        if value is None: return None
         try:
             return ensure_safe_text(value, field_name="comment", max_length=1000)
         except UnsafeInputError as exc:
             raise ValueError(str(exc)) from exc
 
-
 class FeedbackResponse(BaseModel):
     status: str
     message: str
-
 
 class ChatHistoryMessage(BaseModel):
     role: str
@@ -178,28 +149,22 @@ class ChatHistoryMessage(BaseModel):
     chat_id: str | None = Field(default=None, alias="chatId")
     confidence: int | None = None
     fallback: bool | None = None
-
     model_config = ConfigDict(populate_by_name=True)
-
 
 class ChatHistoryResponse(BaseModel):
     sessionId: str
     messages: list[ChatHistoryMessage]
 
-
 class ChatSourcesResponse(BaseModel):
     chat_id: str = Field(alias="chatId")
     sources: list[ChatSource]
-
     model_config = ConfigDict(populate_by_name=True)
-
 
 class ChatConfidenceResponse(BaseModel):
     chat_id: str = Field(alias="chatId")
     confidence: int
     threshold: int
     fallback_triggered: bool = Field(alias="fallbackTriggered")
-
     model_config = ConfigDict(populate_by_name=True)
 
 
@@ -248,36 +213,24 @@ async def query_chat(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Session not found.",
         )
-
-    stripped_lang = None
-    if getattr(payload, "language", None):
-        stripped_lang = (payload.language or "").strip()
+    stripped_lang = (payload.language or "").strip()
 
     if stripped_lang:
-        norm = normalize_language_code(stripped_lang, default="en")
+        norm = bool(stripped_lang, default="en")
         session.language = "vi" if norm == "vi" else "en"
     else:
-        detected = detect_language_simple(getattr(payload, "question", "") or "")
-        session.language = "vi" if detected == "vi" else "en"
-
-    history_stmt = (
-        select(ChatMessage)
-        .where(ChatMessage.session_id == session.id)
-        .order_by(ChatMessage.created_at.desc())
-        .limit(10)
-    )
-    history_result = await db.execute(history_stmt)
-    history_records = list(history_result.scalars())
-    history_records.reverse()
+        question_text = getattr(payload, "question", "") or ""
+        detected_lang, _ = detect_language_enhanced(question_text)
+        session.language = "vi" if detected_lang == "vi" else "en"
 
     try:
         t0 = time.perf_counter()
         orchestrator = get_rag_orchestrator()
+
         rag_response = await orchestrator.query(
             question=payload.question,
             user_id=session.id,
             top_k=5,
-            where=None,
             return_top_sources=5,
             response_language=session.language,
         )
@@ -292,10 +245,10 @@ async def query_chat(
 
     if not isinstance(rag_response, dict):
         internal_id = str(uuid4())
-        logger.error("Invalid RAG response shape [%s]: %s", internal_id, str(rag_response))
+        logger.error("Invalid RAG response shape [%s]", internal_id)
         raise HTTPException(
             status_code=status.HTTP_502_BAD_GATEWAY,
-            detail=f"Invalid answer structure from RAG. reference={internal_id}",
+            detail=f"Invalid answer structure. reference={internal_id}",
         )
 
     answer = rag_response.get("answer", "")
@@ -367,10 +320,7 @@ async def get_history(
     await READ_RATE_LIMITER(request)
     session = await db.get(ChatSession, session_id)
     if not session:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Session not found.",
-        )
+        raise HTTPException(status_code=404, detail="Session not found.")
 
     stmt = (
         select(ChatMessage)
@@ -385,19 +335,17 @@ async def get_history(
     messages: list[ChatHistoryMessage] = []
     for message in records:
         timestamp = message.created_at.replace(tzinfo=None).isoformat(timespec="seconds") + "Z"
-        confidence = (
-            _confidence_to_percent(message.confidence) if message.confidence is not None else None
-        )
+        confidence = _confidence_to_percent(message.confidence) if message.confidence is not None else None
         fallback = message.fallback if message.role == ASSISTANT_ROLE else None
-        entry = ChatHistoryMessage(
+
+        messages.append(ChatHistoryMessage(
             role=message.role,
             text=message.text,
             timestamp=timestamp,
             chat_id=message.id if message.role == ASSISTANT_ROLE else None,
             confidence=confidence,
             fallback=fallback,
-        )
-        messages.append(entry)
+        ))
 
     return ChatHistoryResponse(sessionId=session.id, messages=messages)
 
@@ -411,18 +359,14 @@ async def submit_feedback(
     await READ_RATE_LIMITER(request)
     message = await db.get(ChatMessage, payload.chat_id)
     if not message or message.session_id != payload.session_id:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Chat response not found.",
-        )
+        raise HTTPException(status_code=404, detail="Chat response not found.")
 
     message.feedback = payload.feedback
     message.feedback_comment = payload.comment
 
     if message.query_log_id:
         log = await db.get(QueryLog, message.query_log_id)
-        if log:
-            log.feedback = payload.feedback
+        if log: log.feedback = payload.feedback
 
     session_language = "vi"
     session = await db.get(ChatSession, message.session_id)
@@ -433,14 +377,11 @@ async def submit_feedback(
         await db.commit()
     except SQLAlchemyError as exc:
         await db.rollback()
-        logger.exception("Failed to record feedback for chat %s", payload.chat_id)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to record feedback.",
-        ) from exc
+        logger.exception("Feedback error")
+        raise HTTPException(status_code=500, detail="Failed to record feedback.")
 
-    message_key = session_language if session_language in _FEEDBACK_MESSAGES else "en"
-    return FeedbackResponse(status="success", message=_FEEDBACK_MESSAGES[message_key])
+    msg_key = session_language if session_language in _FEEDBACK_MESSAGES else "en"
+    return FeedbackResponse(status="success", message=_FEEDBACK_MESSAGES[msg_key])
 
 
 @router.get("/sources/{chat_id}", response_model=ChatSourcesResponse)
@@ -452,10 +393,7 @@ async def get_sources(
     await READ_RATE_LIMITER(request)
     message = await db.get(ChatMessage, chat_id)
     if not message or message.role != ASSISTANT_ROLE:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Chat response not found.",
-        )
+        raise HTTPException(status_code=404, detail="Chat response not found.")
     return ChatSourcesResponse(chat_id=chat_id, sources=_format_sources(message.sources))
 
 
@@ -468,10 +406,7 @@ async def get_confidence(
     await READ_RATE_LIMITER(request)
     message = await db.get(ChatMessage, chat_id)
     if not message or message.role != ASSISTANT_ROLE:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Chat response not found.",
-        )
+        raise HTTPException(status_code=404, detail="Chat response not found.")
 
     return ChatConfidenceResponse(
         chat_id=chat_id,

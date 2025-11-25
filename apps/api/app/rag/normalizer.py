@@ -1,126 +1,160 @@
 from __future__ import annotations
-
-import logging
+from typing import Any, Dict, Optional
 import re
-from typing import Dict, Optional
+import logging
+import unicodedata
 
-from google.api_core import exceptions as google_exceptions
-from langchain_core.output_parsers import StrOutputParser
-from langchain_google_genai import ChatGoogleGenerativeAI
-
-from app.core.config import settings
-from app.rag.constants import MAX_NORMALIZER_INPUT_LENGTH
-from app.rag.prompts import get_normalization_prompt
-from app.rag.question_understanding import QuestionNormalizer
-from app.rag.utils.llm_json import invoke_json_llm
+from app.rag.llm import LLMWrapper
+from app.rag.language import detect_language_enhanced
 
 logger = logging.getLogger(__name__)
 
 
-class RuleBasedNormalizer(QuestionNormalizer):
-    def __init__(self):
-        try:
-            self.ai_llm = ChatGoogleGenerativeAI(
-                model=settings.LLM_MODEL,
-                temperature=0.1,
-                max_output_tokens=512,
-                google_api_key=settings.GOOGLE_API_KEY,
-            )
-            self.ai_parser = StrOutputParser()
-        except Exception as e:
-            logger.warning(f"Failed to initialize AI components: {e}. Will use fallback only.")
-            self.ai_llm = None
-            self.ai_parser = None
+def remove_accents(s: str) -> str:
+    if not s:
+        return ""
+    nfkd = unicodedata.normalize("NFKD", s)
+    return "".join([c for c in nfkd if not unicodedata.combining(c)]).lower()
 
-    def normalize(self, question: str) -> str:
-        if not question:
+
+class SmartNormalizer:
+    def __init__(self, llm_wrapper: LLMWrapper):
+        self.llm_wrapper = llm_wrapper
+        self.cache: Dict[str, Dict[str, Any]] = {}
+
+        self.abbrev_map = {
+            "cntt": "công nghệ thông tin",
+            "qtkd": "quản trị kinh doanh",
+            "ctsv": "công tác sinh viên",
+            "ts": "tuyển sinh",
+            "sv": "sinh viên",
+            "gv": "giảng viên",
+            "dh": "đại học",
+            "hs": "hồ sơ",
+            "nv": "ngành nghề",
+            "cn": "chuyên ngành",
+        }
+
+    def _capitalize_first_char(self, text: str) -> str:
+        if not text:
             return ""
-        if not question.strip():
+        t = text.strip()
+        if not t:
             return ""
-        if len(question) > MAX_NORMALIZER_INPUT_LENGTH:
-            logger.debug(
-                "Truncating question from %s to %s chars",
-                len(question),
-                MAX_NORMALIZER_INPUT_LENGTH,
-            )
-            question = question[:MAX_NORMALIZER_INPUT_LENGTH]
-        ai_normalized: Optional[str] = None
+        return t[0].upper() + t[1:]
+
+    def _cache_get(self, text: str) -> Optional[Dict[str, Any]]:
+        key = text.strip().lower()
+        return self.cache.get(key)
+
+    def _cache_set(self, text: str, result: Dict[str, Any]) -> None:
+        key = text.strip().lower()
+        self.cache[key] = result
+
+    def _rule_based(self, text: str) -> Dict[str, Any]:
+        det = detect_language_enhanced(text)
+        if isinstance(det, (tuple, list)) and det:
+            lang = det[0]
+        elif isinstance(det, str):
+            lang = det
+        else:
+            lang = "other"
+
+        t = text.strip().lower()
+        cleaned = re.sub(r"\s+", " ", t)
+
+        tokens = cleaned.split()
+        changed = False
+        expanded_tokens = []
+
+        for tok in tokens:
+            raw = remove_accents(tok)
+            if raw in self.abbrev_map:
+                expanded_tokens.append(self.abbrev_map[raw])
+                changed = True
+            else:
+                expanded_tokens.append(tok)
+
+        result_raw = " ".join(expanded_tokens).strip()
+        result = self._capitalize_first_char(result_raw)
+
+        return {
+            "normalized_text": result,
+            "language": lang,
+            "changed": changed or (result_raw != t)
+        }
+
+    def _need_llm(self, text: str, rule_output: Dict[str, Any]) -> bool:
+        if not text or not text.strip():
+            return False
+
+        if not rule_output["changed"]:
+            return True
+
+        if len(text) <= 4:
+            return True
+
+        if not re.search(r"[a-zA-Z]", text):
+            return True
+
+        return False
+
+    async def _llm_normalize(self, text: str) -> Dict[str, Any]:
         try:
-            ai_normalized = self._normalize_with_ai(question)
-        except google_exceptions.ResourceExhausted as exc:
-            logger.warning(
-                "Quota exhausted in normalization: %s. Using basic cleaning fallback.", exc
-            )
-        except Exception as exc:
-            logger.warning("AI-based normalization failed: %s. Using basic cleaning fallback.", exc)
-        if ai_normalized:
-            return ai_normalized
-        logger.warning("AI-based normalization failed. Using basic cleaning fallback.")
-        return self._normalize_basic_cleaning(question)
+            try:
+                from app.rag.prompts import get_normalization_prompt
+                prompt = get_normalization_prompt()
+                data = await self.llm_wrapper.invoke_json(prompt, text)
+            except Exception:
+                prompt = (
+                    "Normalize the following user query. Detect language (vi or en) and return JSON with keys "
+                    "'normalized_text' and 'language'. Text:\n\n" + text
+                )
+                raw = await self.llm_wrapper.generate(prompt) if hasattr(self.llm_wrapper, "generate") else await self.llm_wrapper.agenerate(prompt)
+                if isinstance(raw, str) and "\t" in raw:
+                    lang, norm = raw.split("\t", 1)
+                    data = {"normalized_text": norm.strip(), "language": lang.strip().lower()}
+                else:
+                    data = {"normalized_text": text, "language": "en"}
+            if not data or "normalized_text" not in data:
+                return {"normalized_text": text, "language": "en"}
 
-    def _normalize_with_ai(self, question: str) -> Optional[str]:
-        """Normalize question using Gemini AI with retry logic."""
-        prompt = self._build_normalization_prompt()
-        result = invoke_json_llm(
-            self.ai_llm,
-            self.ai_parser,
-            system_prompt=prompt,
-            question=question,
-            logger=logger,
-            log_ctx="Normalization",
-        )
-        if not result:
-            return None
-        normalized_text = result.get("normalized_text", "")
-        if not isinstance(normalized_text, str):
-            logger.debug("Invalid normalized_text type: %s", type(normalized_text))
-            return None
-        normalized_text = normalized_text.strip()
-        if not normalized_text:
-            return None
-        return normalized_text
-
-    def _normalize_basic_cleaning(self, question: str) -> str:
-        """Minimal fallback: perform basic text cleaning when AI fails."""
-        try:
-            normalized = question.strip()
-            normalized = re.sub(r"\s+", " ", normalized)
-
-            trailing_punct = ""
-            if normalized.endswith(("?", "!")):
-                trailing_punct = normalized[-1]
-                normalized = normalized[:-1]
-
-            normalized = normalized.strip(".,;:")
-
-            if trailing_punct:
-                normalized = normalized + trailing_punct
-
-            normalized = re.sub(r"\s+", " ", normalized).strip()
-
-            if trailing_punct and not normalized.endswith(trailing_punct):
-                normalized = normalized + trailing_punct
-
-            if question and question[0].isupper():
-                normalized = normalized.capitalize()
-
-            return normalized
+            return {
+                "normalized_text": self._capitalize_first_char(data.get("normalized_text", text)),
+                "language": data.get("language", "en")
+            }
         except Exception as e:
-            logger.error(f"Basic cleaning error: {e}", exc_info=True)
-            return question.strip()
+            logger.error(f"LLM Normalize Error: {e}")
+            return {"normalized_text": text, "language": "en"}
 
-    def _build_normalization_prompt(self) -> str:
-        """Build prompt for AI-based normalization."""
-        return get_normalization_prompt()
+    async def understand(self, question: str) -> Dict[str, Any]:
+        clean_q = self._capitalize_first_char(question)
+        result = {"normalized_text": clean_q, "language": "en"}
 
-    def get_spell_corrections(self) -> Dict[str, str]:
-        """Return empty dictionary as AI now handles spell correction."""
-        return {}
+        if not clean_q:
+            return result
 
-    def get_abbreviations(self) -> Dict[str, str]:
-        """Return empty dictionary as AI now handles abbreviation expansion."""
-        return {}
+        cached = self._cache_get(clean_q)
+        if cached:
+            return cached
 
-    def get_synonyms(self) -> Dict[str, str]:
-        """Return empty dictionary as AI now handles synonym normalization."""
-        return {}
+        rule_res = self._rule_based(clean_q)
+        text_after_rule = rule_res["normalized_text"]
+
+        if self._need_llm(clean_q, rule_res):
+            llm_res = await self._llm_normalize(clean_q)
+            final = {
+                "normalized_text": llm_res["normalized_text"],
+                "language": llm_res["language"]
+            }
+        else:
+            final = {
+                "normalized_text": text_after_rule,
+                "language": rule_res["language"]
+            }
+
+        self._cache_set(clean_q, final)
+        return final
+
+
+UnifiedNormalizer = SmartNormalizer
