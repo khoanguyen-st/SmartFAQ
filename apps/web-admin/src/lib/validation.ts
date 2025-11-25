@@ -1,9 +1,8 @@
 import i18n from './i18n'
+import { VALIDATION_RULES } from '@/constants/validation'
 
 export const validateEmail = (email: string): string | null => {
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-
-  if (!emailRegex.test(email)) {
+  if (!VALIDATION_RULES.EMAIL.REGEX.test(email)) {
     return i18n.t('user.validation.emailInvalid')
   }
 
@@ -13,14 +12,14 @@ export const validateEmail = (email: string): string | null => {
 export const validatePassword = (password: string): string | null => {
   if (!password) return i18n.t('user.validation.passwordRequired')
 
-  if (password.length < 8) {
+  if (password.length < VALIDATION_RULES.PASSWORD.MIN_LENGTH) {
     return i18n.t('user.validation.passwordRequirements')
   }
 
-  const hasUppercase = /[A-Z]/.test(password)
-  const hasLowercase = /[a-z]/.test(password)
-  const hasNumber = /\d/.test(password)
-  const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(password)
+  const hasUppercase = VALIDATION_RULES.PASSWORD.REGEX.UPPERCASE.test(password)
+  const hasLowercase = VALIDATION_RULES.PASSWORD.REGEX.LOWERCASE.test(password)
+  const hasNumber = VALIDATION_RULES.PASSWORD.REGEX.NUMBER.test(password)
+  const hasSpecialChar = VALIDATION_RULES.PASSWORD.REGEX.SPECIAL_CHAR.test(password)
 
   if (!hasUppercase || !hasLowercase || !hasNumber || !hasSpecialChar) {
     return i18n.t('user.validation.passwordRequirements')
@@ -31,7 +30,7 @@ export const validatePassword = (password: string): string | null => {
 
 export const validateUsername = (username: string): string | null => {
   if (!username) return i18n.t('user.validation.usernameRequired')
-  if (username.length < 3) return i18n.t('user.validation.usernameMinLength')
+  if (username.length < VALIDATION_RULES.USERNAME.MIN_LENGTH) return i18n.t('user.validation.usernameMinLength')
   return null
 }
 

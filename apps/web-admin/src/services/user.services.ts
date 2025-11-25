@@ -1,4 +1,4 @@
-import { apiClient } from '@/lib/apt.client'
+import { apiClient } from '@/lib/api.client'
 import type { User, CreateUserRequest, UserQuery, UserListResponse } from '../../types/users'
 import { validateDepartments } from '@/lib/validation'
 

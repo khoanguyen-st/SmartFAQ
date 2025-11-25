@@ -3,15 +3,15 @@ import { useTranslation } from 'react-i18next'
 import type { User } from '../../../types/users'
 import type { UserCardListProps } from '@/interfaces/user-card-list'
 import { UserActions } from './UserActions'
+import { CSS_CLASSES } from '@/constants'
 
 const getStatusText = (status: User['status'], t: (key: string) => string) => {
   return status === 'Locked' ? t('user.status.locked') : t('user.status.active')
 }
 
 const renderStatusBadge = (status: User['status']) => {
-  const base = 'inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold'
-  if (status === 'Locked') return `${base} bg-red-50 text-red-600`
-  return `${base} bg-emerald-50 text-emerald-600`
+  if (status === 'Locked') return `${CSS_CLASSES.BADGE_BASE} ${CSS_CLASSES.BADGE_LOCKED}`
+  return `${CSS_CLASSES.BADGE_BASE} ${CSS_CLASSES.BADGE_ACTIVE}`
 }
 
 export const UserCardList: React.FC<UserCardListProps> = ({

@@ -4,6 +4,7 @@ import plusUrl from '../assets/icons/plus.svg'
 import DeleteConfirmationModal from '../components/uploaded/DeleteFolderModal'
 import DocumentCard from '../components/uploaded/DocumentCard'
 import UploadCard from '../components/uploaded/UploadCard'
+import { UI } from '@/constants'
 
 interface IDocument {
   id: number
@@ -103,8 +104,7 @@ const UploadedPage = () => {
     const DOCUMENTS_PER_ROW =
       window.innerWidth >= 1280 ? 5 : window.innerWidth >= 1024 ? 4 : window.innerWidth >= 640 ? 2 : 1
 
-    const MAX_ROWS = 3
-    const maxItemsOnGrid = MAX_ROWS * DOCUMENTS_PER_ROW
+    const maxItemsOnGrid = UI.MAX_ROWS_UPLOADED_DOCS * DOCUMENTS_PER_ROW
 
     const itemsOnPage = currentPage === 1 ? currentDocuments.length + 1 : currentDocuments.length
 

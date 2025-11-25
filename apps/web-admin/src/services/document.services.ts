@@ -1,4 +1,5 @@
-import { API_BASE_URL } from '../lib/api'
+import { API_BASE_URL } from '@/lib/api'
+import { FILE_UPLOAD } from '@/constants/files'
 
 export interface IUploadedFile {
   id: string
@@ -81,13 +82,11 @@ export const fetchKnowledgeFiles = async (): Promise<IUploadedFile[]> => {
 }
 
 export const uploadKnowledgeFiles = async (files: File[]): Promise<IUploadedFile[]> => {
-  const MAX_FILE_SIZE = 50 * 1024 * 1024
-
-  const ALLOWED_EXTENSIONS = ['pdf', 'doc', 'docx', 'txt', 'md']
+  const ALLOWED_EXTENSIONS = FILE_UPLOAD.ALLOWED_EXTENSIONS.map(ext => ext.replace('.', ''))
 
   for (const file of files) {
-    if (file.size > MAX_FILE_SIZE) {
-      throw new Error(`File "${file.name}" exceeds ${MAX_FILE_SIZE / (1024 * 1024)}MB limit`)
+    if (file.size > FILE_UPLOAD.MAX_FILE_SIZE_DOCUMENT) {
+      throw new Error(`File "${file.name}" exceeds ${FILE_UPLOAD.MAX_FILE_SIZE_DOCUMENT / (1024 * 1024)}MB limit`)
     }
 
     const extension = file.name.split('.').pop()?.toLowerCase()

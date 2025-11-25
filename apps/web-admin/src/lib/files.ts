@@ -1,20 +1,13 @@
-export const MAX_FILES = 20
-export const MAX_SIZE = 1000 * 1024 * 1024
+import { FILE_UPLOAD, FILE_UPLOAD_ERRORS } from '@/constants/files'
 
-const allowedExtensions = ['.pdf', '.doc', '.docx', '.txt', '.md']
+export const MAX_FILES = FILE_UPLOAD.MAX_FILES
+export const MAX_SIZE = FILE_UPLOAD.MAX_SIZE
 
-export const SUPPORTED_TYPES = [
-  'application/pdf',
-  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-  'text/plain',
-  'text/markdown',
-  'text/x-markdown'
-]
+export const SUPPORTED_TYPES = FILE_UPLOAD.SUPPORTED_MIME_TYPES
 
 export const formatBytes = (bytes: number) => {
-  const sizes = ['Bytes', 'KB', 'MB']
-  const i = Math.floor(Math.log(bytes) / Math.log(1024))
-  return `${(bytes / Math.pow(1024, i)).toFixed(2)} ${sizes[i]}`
+  const i = Math.floor(Math.log(bytes) / Math.log(FILE_UPLOAD.BYTES_PER_KB))
+  return `${(bytes / Math.pow(FILE_UPLOAD.BYTES_PER_KB, i)).toFixed(2)} ${FILE_UPLOAD.BYTE_UNITS[i]}`
 }
 
 export const mapFiles = (newFiles: File[]) => {
@@ -32,12 +25,12 @@ export const validateFiles = (
   existingNames: string[] = []
 ): { valid: File[]; error: string | null } => {
   if (currentCount + files.length > MAX_FILES) {
-    return { valid: [], error: `You can upload up to ${MAX_FILES} files only.` }
+    return { valid: [], error: FILE_UPLOAD_ERRORS.MAX_FILES_EXCEEDED(MAX_FILES) }
   }
 
   const sizeValid = files.filter(f => f.size <= MAX_SIZE)
   if (sizeValid.length < files.length) {
-    return { valid: sizeValid, error: 'Some files were rejected (max 10MB each).' }
+    return { valid: sizeValid, error: FILE_UPLOAD_ERRORS.SIZE_EXCEEDED }
   }
 
   const seenNames = new Set<string>()
@@ -51,23 +44,23 @@ export const validateFiles = (
     }
   }
   if (duplicatesInBatch.length > 0) {
-    return { valid: [], error: 'Duplicate file detected. Please upload unique files only.' }
+    return { valid: [], error: FILE_UPLOAD_ERRORS.DUPLICATE_FILE }
   }
 
   const duplicateFiles = files.filter(f => existingNames.includes(f.name.toLowerCase()))
   if (duplicateFiles.length > 0) {
-    return { valid: [], error: 'Duplicate file detected. Please upload unique files only.' }
+    return { valid: [], error: FILE_UPLOAD_ERRORS.DUPLICATE_FILE }
   }
 
   const typeValid = sizeValid.filter(f => {
-    const mimeOk = SUPPORTED_TYPES.includes(f.type)
+    const mimeOk = (SUPPORTED_TYPES as readonly string[]).includes(f.type)
     const ext = f.name.substring(f.name.lastIndexOf('.')).toLowerCase()
-    const extOk = allowedExtensions.includes(ext)
+    const extOk = (FILE_UPLOAD.ALLOWED_EXTENSIONS as readonly string[]).includes(ext)
     return mimeOk || extOk
   })
 
   if (typeValid.length < sizeValid.length) {
-    return { valid: typeValid, error: ' Unsupported file type, only supported formats: PDF, DOCX, MD, TXT' }
+    return { valid: typeValid, error: FILE_UPLOAD_ERRORS.UNSUPPORTED_TYPE }
   }
 
   return { valid: typeValid, error: null }

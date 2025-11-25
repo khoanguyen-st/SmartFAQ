@@ -1,7 +1,6 @@
 import React from 'react'
 import type { PaginationProps } from '@/interfaces/pagination'
-
-const MOCK_TOTAL = 50
+import { UI, PAGINATION } from '@/constants'
 
 export const Pagination: React.FC<PaginationProps & { className?: string }> = ({
   currentPage,
@@ -12,10 +11,9 @@ export const Pagination: React.FC<PaginationProps & { className?: string }> = ({
   onPageSizeChange,
   className = ''
 }) => {
-  const effectiveTotal = totalCount ?? (totalPages ? totalPages * pageSize : MOCK_TOTAL)
+  const effectiveTotal = totalCount ?? (totalPages ? totalPages * pageSize : UI.MOCK_TOTAL_USERS)
   const pages = totalPages ?? Math.max(1, Math.ceil(effectiveTotal / pageSize))
-  const maxDisplayPages = 5
-  const displayedPages = Array.from({ length: maxDisplayPages }, (_, index) => index + 1)
+  const displayedPages = Array.from({ length: PAGINATION.MAX_DISPLAY_PAGES }, (_, index) => index + 1)
   const start = (currentPage - 1) * pageSize + 1
   const end = Math.min(currentPage * pageSize, effectiveTotal > 0 ? effectiveTotal : 5)
   const endLabel = end.toString().padStart(2, '0')
