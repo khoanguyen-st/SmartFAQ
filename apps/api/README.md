@@ -310,6 +310,39 @@ documents = processor.process_document(
 6. Update DB status to "active"
 ```
 
+## 🗄️ Database Migrations
+
+### Quick Commands
+
+```bash
+cd apps/api
+
+# Check migration status
+make migrate-check
+
+# Run migrations
+make migrate
+
+# Create new migration
+make migrate-create MSG="add new field"
+
+# Auto-merge multiple heads
+make migrate-merge
+
+# View migration history
+make migrate-history
+```
+
+### Migration Conflict Detection
+
+Hệ thống tự động phát hiện và xử lý migration conflicts qua:
+
+- ✅ **Pre-push hook**: Block push nếu có multiple heads
+- ✅ **CI check**: Fail CI nếu phát hiện conflict
+- ✅ **Auto-merge**: Script tự động merge heads
+
+📚 **Chi tiết:** Xem [MIGRATION_AUTO_CHECK.md](MIGRATION_AUTO_CHECK.md)
+
 ## 🧪 Testing
 
 ### Run All Tests
