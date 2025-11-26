@@ -1,6 +1,12 @@
 from __future__ import annotations
-from typing import List, Optional, Any
+
+from typing import Optional
+
 from pydantic import BaseModel, Field
+
+
+class IntentResult(BaseModel):
+    is_greeting: bool = False
 
 
 SUPPORTED_INTENTS = {
@@ -15,19 +21,43 @@ SUPPORTED_INTENTS = {
     "greeting",
     "non_rag",
     "out_of_scope",
-    "other"
+    "other",
 }
 
 BLACKLIST_KEYWORDS = [
-    "duy tan", "dtu", "dt university", "dai hoc duy tan",
-    "fpt", "fpt university", "dai hoc fpt",
-    "rmit", "dai hoc rmit",
-    "ton duc thang", "tdtu",
-    "hutech", "van lang", "kinh te", "ueh", "neu", "ftu", "ngoai thuong",
-    "bach khoa", "hust", "hcmut",
-    "nhan van", "ussh", "su pham", "y duoc",
-    "ngoai ngu", "ulis", "hanu", "dai hoc nn",
-    "thoi tiet", "weather", "code", "java code"
+    "duy tan",
+    "dtu",
+    "dt university",
+    "dai hoc duy tan",
+    "fpt",
+    "fpt university",
+    "dai hoc fpt",
+    "rmit",
+    "dai hoc rmit",
+    "ton duc thang",
+    "tdtu",
+    "hutech",
+    "van lang",
+    "kinh te",
+    "ueh",
+    "neu",
+    "ftu",
+    "ngoai thuong",
+    "bach khoa",
+    "hust",
+    "hcmut",
+    "nhan van",
+    "ussh",
+    "su pham",
+    "y duoc",
+    "ngoai ngu",
+    "ulis",
+    "hanu",
+    "dai hoc nn",
+    "thoi tiet",
+    "weather",
+    "code",
+    "java code",
 ]
 
 
@@ -38,6 +68,7 @@ class Intent(BaseModel):
     language: str = "en"
     metadata: dict = Field(default_factory=dict)
 
+
 class Entity(BaseModel):
     type: str
     value: str
@@ -45,8 +76,10 @@ class Entity(BaseModel):
     start_pos: Optional[int] = None
     end_pos: Optional[int] = None
 
+
 class GuardrailResponse(BaseModel):
     """Model cho phản hồi từ Guardrail Check"""
+
     status: str
     reason_code: Optional[str] = None
     reason_desc: Optional[str] = None

@@ -31,11 +31,13 @@ if not logger.handlers:
 
 _rag_orchestrator: Optional[RAGOrchestrator] = None
 
+
 def get_rag_orchestrator() -> RAGOrchestrator:
     global _rag_orchestrator
     if _rag_orchestrator is None:
         _rag_orchestrator = RAGOrchestrator()
     return _rag_orchestrator
+
 
 _FEEDBACK_MESSAGES: dict[str, str] = {
     "en": "Feedback recorded. Thank you!",
@@ -56,8 +58,10 @@ READ_RATE_LIMITER = RateLimiter(
     error_detail="Too many chat requests. Try again shortly.",
 )
 
+
 def _now() -> datetime:
     return datetime.now(timezone.utc)
+
 
 def _confidence_to_percent(value: float | Decimal | None) -> int:
     if value is None:
@@ -66,6 +70,7 @@ def _confidence_to_percent(value: float | Decimal | None) -> int:
     if numeric <= 1.0:
         numeric *= 100.0
     return int(round(numeric))
+
 
 def _format_sources(sources: list[dict[str, Any]] | None) -> list["ChatSource"]:
     formatted: list[ChatSource] = []
@@ -79,6 +84,7 @@ def _format_sources(sources: list[dict[str, Any]] | None) -> list["ChatSource"]:
             )
         )
     return formatted
+
 
 class ChatQuery(BaseModel):
     question: str = Field(..., min_length=1, max_length=1024)
@@ -98,11 +104,13 @@ class ChatQuery(BaseModel):
         except UnsafeInputError as exc:
             raise ValueError(str(exc)) from exc
 
+
 class ChatSource(BaseModel):
     title: str
     chunk_id: str | None = Field(default=None, alias="chunkId")
     relevance: float | None = None
     model_config = ConfigDict(populate_by_name=True)
+
 
 class ChatQueryResponse(BaseModel):
     answer: str
@@ -111,16 +119,20 @@ class ChatQueryResponse(BaseModel):
     language: str
     fallback: bool
     chat_id: str = Field(alias="chatId")
+    latency_ms: int | None = Field(default=None, alias="latencyMs")
     model_config = ConfigDict(populate_by_name=True)
+
 
 class NewSessionRequest(BaseModel):
     user_agent: str | None = Field(default=None, alias="userAgent", max_length=255)
     language: str | None = Field(default=None, max_length=10)
     model_config = ConfigDict(populate_by_name=True)
 
+
 class NewSessionResponse(BaseModel):
     sessionId: str
     message: str
+
 
 class FeedbackRequest(BaseModel):
     chat_id: str = Field(..., alias="chatId")
@@ -132,15 +144,18 @@ class FeedbackRequest(BaseModel):
     @field_validator("comment")
     @classmethod
     def _validate_comment(cls, value: str | None) -> str | None:
-        if value is None: return None
+        if value is None:
+            return None
         try:
             return ensure_safe_text(value, field_name="comment", max_length=1000)
         except UnsafeInputError as exc:
             raise ValueError(str(exc)) from exc
 
+
 class FeedbackResponse(BaseModel):
     status: str
     message: str
+
 
 class ChatHistoryMessage(BaseModel):
     role: str
@@ -151,14 +166,17 @@ class ChatHistoryMessage(BaseModel):
     fallback: bool | None = None
     model_config = ConfigDict(populate_by_name=True)
 
+
 class ChatHistoryResponse(BaseModel):
     sessionId: str
     messages: list[ChatHistoryMessage]
+
 
 class ChatSourcesResponse(BaseModel):
     chat_id: str = Field(alias="chatId")
     sources: list[ChatSource]
     model_config = ConfigDict(populate_by_name=True)
+
 
 class ChatConfidenceResponse(BaseModel):
     chat_id: str = Field(alias="chatId")
@@ -231,7 +249,8 @@ async def query_chat(
             question=payload.question,
             top_k=5,
         )
-        latency_ms = int((time.perf_counter() - t0) * 1000)
+        latency_api_ms = int((time.perf_counter() - t0) * 1000)
+        logger.debug(f"API Endpoint Latency: {latency_api_ms}ms")
     except Exception as exc:
         internal_id = str(uuid4())
         logger.exception("RAGOrchestrator.query failed [%s]", internal_id)
@@ -252,6 +271,7 @@ async def query_chat(
     confidence_raw = rag_response.get("confidence", 0.0)
     fallback_triggered = bool(rag_response.get("fallback_triggered", False))
     sources: list[dict[str, Any]] = rag_response.get("sources", []) or []
+    latency_ms = rag_response.get("latency_ms")
 
     question_message = ChatMessage(
         id=str(uuid4()),
@@ -304,6 +324,9 @@ async def query_chat(
         language=session.language,
         fallback=fallback_triggered,
         chat_id=response_message.id,
+        latency_ms=(
+            int(latency_ms) if latency_ms is not None else None
+        ),  # Trả về latency_ms trong JSON response
     )
 
 
@@ -332,17 +355,21 @@ async def get_history(
     messages: list[ChatHistoryMessage] = []
     for message in records:
         timestamp = message.created_at.replace(tzinfo=None).isoformat(timespec="seconds") + "Z"
-        confidence = _confidence_to_percent(message.confidence) if message.confidence is not None else None
+        confidence = (
+            _confidence_to_percent(message.confidence) if message.confidence is not None else None
+        )
         fallback = message.fallback if message.role == ASSISTANT_ROLE else None
 
-        messages.append(ChatHistoryMessage(
-            role=message.role,
-            text=message.text,
-            timestamp=timestamp,
-            chat_id=message.id if message.role == ASSISTANT_ROLE else None,
-            confidence=confidence,
-            fallback=fallback,
-        ))
+        messages.append(
+            ChatHistoryMessage(
+                role=message.role,
+                text=message.text,
+                timestamp=timestamp,
+                chat_id=message.id if message.role == ASSISTANT_ROLE else None,
+                confidence=confidence,
+                fallback=fallback,
+            )
+        )
 
     return ChatHistoryResponse(sessionId=session.id, messages=messages)
 
@@ -363,7 +390,8 @@ async def submit_feedback(
 
     if message.query_log_id:
         log = await db.get(QueryLog, message.query_log_id)
-        if log: log.feedback = payload.feedback
+        if log:
+            log.feedback = payload.feedback
 
     session_language = "vi"
     session = await db.get(ChatSession, message.session_id)
@@ -372,7 +400,7 @@ async def submit_feedback(
 
     try:
         await db.commit()
-    except SQLAlchemyError as exc:
+    except SQLAlchemyError:
         await db.rollback()
         logger.exception("Feedback error")
         raise HTTPException(status_code=500, detail="Failed to record feedback.")

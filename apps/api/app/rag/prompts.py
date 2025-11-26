@@ -1,5 +1,6 @@
 from typing import Optional
 
+
 def get_intent_detection_prompt() -> str:
     return """Bạn là AI phân loại ý định (Intent Classifier) cho hệ thống FAQ của Đại học Greenwich Việt Nam.
 
@@ -37,7 +38,10 @@ OUTPUT FORMAT (JSON ONLY)
 }}}}
 """
 
-def get_entity_extraction_prompt(intent_label: Optional[str] = None, intent_confidence: Optional[float] = None) -> str:
+
+def get_entity_extraction_prompt(
+    intent_label: Optional[str] = None, intent_confidence: Optional[float] = None
+) -> str:
     ctx = f"CONTEXT: Intent '{intent_label}' ({intent_confidence})." if intent_label else ""
     return f"""Bạn là chuyên gia trích xuất thực thể (NER). {ctx}
 Entities: program, campus, degree_level, semester, language_cert, financial_type, date_deadline.
@@ -46,6 +50,7 @@ Language Rules: Vi->vi, En->en, Other->other (empty entities).
 OUTPUT JSON:
 {{{{ "entities": [ {{{{ "type": "...", "value": "...", "confidence": 0.9, "start_pos": 0, "end_pos": 5 }}}} ], "language": "vi" }}}}
 """
+
 
 def get_normalization_prompt() -> str:
     return """NLP Cleaner.
@@ -58,6 +63,7 @@ OUTPUT JSON:
 {{{{ "normalized_text": "...", "language": "vi" }}}}
 """
 
+
 def get_guardrail_prompt() -> str:
     return """Content Safety Guardrail for Greenwich University Vietnam.
 Categories:
@@ -69,3 +75,16 @@ Categories:
 OUTPUT JSON:
 {{{{ "status": "allowed" | "blocked", "reason_code": "competitor" | "toxic" | "irrelevant", "reason_desc": "..." }}}}
 """
+
+
+def get_greeting_intent_prompt():
+    return (
+        "You are an intent classifier for a university FAQ chatbot. "
+        "Determine if the user message is a greeting (hello, hi, hey, chao, xin chao, alo, yo, etc.) "
+        "with no informational question.\n\n"
+        "Return ONLY valid JSON with this exact shape:\n"
+        "{{\n"
+        '  "is_greeting": true or false\n'
+        "}}\n\n"
+        "User message:\n{input}"
+    )
