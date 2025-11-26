@@ -92,15 +92,17 @@ const QueryLogTable = () => {
                 </td>
               </tr>
             )}
-            {!loading && !error && filtered.map(log => (
-              <tr key={log.id} className="border-b border-slate-100 hover:bg-slate-50">
-                <td className="px-3 py-3">{new Date(log.timestamp).toLocaleString()}</td>
-                <td className="px-3 py-3">{log.question}</td>
-                <td className="px-3 py-3">{(log.confidence * 100).toFixed(1)}%</td>
-                <td className="px-3 py-3">{log.fallback ? 'Yes' : 'No'}</td>
-                <td className="px-3 py-3">{log.lang}</td>
-              </tr>
-            ))}
+            {!loading &&
+              !error &&
+              filtered.map(log => (
+                <tr key={log.id} className="border-b border-slate-100 hover:bg-slate-50">
+                  <td className="px-3 py-3">{new Date(log.timestamp).toLocaleString()}</td>
+                  <td className="px-3 py-3">{log.question}</td>
+                  <td className="px-3 py-3">{(log.confidence * 100).toFixed(1)}%</td>
+                  <td className="px-3 py-3">{log.fallback ? 'Yes' : 'No'}</td>
+                  <td className="px-3 py-3">{log.lang}</td>
+                </tr>
+              ))}
           </tbody>
         </table>
       </div>

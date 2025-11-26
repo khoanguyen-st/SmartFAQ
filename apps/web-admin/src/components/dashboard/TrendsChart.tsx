@@ -1,45 +1,36 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback } from 'react'
 
-import {
-  Line,
-  LineChart,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from "recharts";
+import { Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 
 interface ChartData {
-  period: string;
-  questions: number;
+  period: string
+  questions: number
 }
 
 const data: ChartData[] = [
-  { period: "Mon", questions: 0 },
-  { period: "Tue", questions: 0 },
-  { period: "Wed", questions: 0 },
-  { period: "Thu", questions: 0 },
-  { period: "Fri", questions: 0 },
-];
+  { period: 'Mon', questions: 0 },
+  { period: 'Tue', questions: 0 },
+  { period: 'Wed', questions: 0 },
+  { period: 'Thu', questions: 0 },
+  { period: 'Fri', questions: 0 }
+]
 
 const TrendsChart = () => {
-  const [_isModalOpen, setIsModalOpen] = useState(false);
+  const [_isModalOpen, setIsModalOpen] = useState(false)
 
-  const openModal = useCallback(() => setIsModalOpen(true), []);
-  const _closeModal = useCallback(() => setIsModalOpen(false), []);
+  const openModal = useCallback(() => setIsModalOpen(true), [])
+  const _closeModal = useCallback(() => setIsModalOpen(false), [])
 
   return (
     <>
       <section className="rounded-2xl bg-white p-6 shadow-lg shadow-slate-900/10">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-semibold text-slate-900">
-            Weekly Activity
-          </h2>
+        <div className="mb-4 flex items-center justify-between">
+          <h2 className="text-xl font-semibold text-slate-900">Weekly Activity</h2>
           <button
             onClick={openModal}
             className="rounded-full bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-md transition duration-150 ease-in-out hover:bg-indigo-700"
           >
-             Upload Document
+            Upload Document
           </button>
         </div>
 
@@ -51,18 +42,13 @@ const TrendsChart = () => {
               <XAxis dataKey="period" stroke="#94a3b8" />
               <YAxis stroke="#94a3b8" />
               <Tooltip cursor={false} />
-              <Line
-                type="monotone"
-                dataKey="questions"
-                stroke="#059669"
-                strokeWidth={2}
-              />
+              <Line type="monotone" dataKey="questions" stroke="#059669" strokeWidth={2} />
             </LineChart>
           </ResponsiveContainer>
         </div>
       </section>
     </>
-  );
-};
+  )
+}
 
-export default TrendsChart;
+export default TrendsChart
