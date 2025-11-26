@@ -1,31 +1,39 @@
 import { useMetrics } from '@/hooks/useMetrics'
 
+interface KPI {
+  title: string
+  value: string
+}
+
 const KPIGrid = () => {
   const { data, loading } = useMetrics()
 
-  const kpis = [
+  const kpis: KPI[] = [
     {
       title: 'Questions Today',
-      value: data?.questions_today ?? '0'
+      value: data?.questions_today != null ? String(data.questions_today) : '0'
     },
     {
       title: 'Avg Response Time',
-      value: data?.avg_response_time_ms ? `${data.avg_response_time_ms} ms` : '0 ms'
+      value: data?.avg_response_time_ms != null ? `${String(data.avg_response_time_ms)} ms` : '0 ms'
     },
     {
       title: 'Fallback Rate',
-      value: data?.fallback_rate ? `${(data.fallback_rate * 100).toFixed(1)}%` : '0%'
+      value:
+        data?.fallback_rate && typeof data.fallback_rate === 'number'
+          ? `${(data.fallback_rate * 100).toFixed(1)}%`
+          : '0%'
     },
     {
       title: 'Active Documents',
-      value: data?.active_documents ?? '0'
+      value: data?.active_documents != null ? String(data.active_documents) : '0'
     }
   ]
 
   return (
     <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
       {kpis.map(kpi => (
-        <div key={kpi.title} className={`bg-white'} rounded-2xl p-6 shadow-lg shadow-slate-900/10`}>
+        <div key={kpi.title} className="rounded-2xl bg-white p-6 shadow-lg shadow-slate-900/10">
           <p className="text-sm text-slate-600">{kpi.title}</p>
           <p className="mt-2 text-3xl font-semibold text-slate-900">{loading ? '...' : kpi.value}</p>
         </div>
