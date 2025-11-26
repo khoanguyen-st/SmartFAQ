@@ -7,6 +7,9 @@ from urllib.parse import quote
 
 logger = logging.getLogger(__name__)
 
+DEFAULT_SOURCE_NAME = "Unknown Source"
+DEFAULT_PAGE = None
+
 
 class ResponseFormatter:
     def __init__(self, document_preview_url: Optional[str] = None):
@@ -74,8 +77,8 @@ class ResponseFormatter:
             return text
         source_pages = {}
         for source in sources:
-            source_name = source.get("source") or "Unknown"
-            page = source.get("page")
+            source_name = source.get("source", DEFAULT_SOURCE_NAME)
+            page = source.get("page", DEFAULT_PAGE)
             if source_name not in source_pages:
                 source_pages[source_name] = set()
             if page is not None:
