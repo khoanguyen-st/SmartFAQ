@@ -30,7 +30,9 @@
   --font-family-sans: Inter, system-ui, sans-serif;
 }
 
+.chat {
 
+}
 
 .chat__content{
   flex-grow: 1;
@@ -47,12 +49,23 @@
 
 
 .message {
-  max-width: 500px;
+  display: flex;
+  flex-direction: column;
+  max-width: 75%;
   text-align: start;
   padding: 16px;
   margin-bottom: 16px;
+  line-height: 20px;
   font-size: 14px;
   font-weight: 400;
+}
+
+.message p {
+  white-space: pre-wrap;
+}
+
+.message__actions {
+
 }
 
 .message--receiver {
@@ -69,13 +82,18 @@
   color: var(--color-dark);
 }
 
+
 .chat__footer {
-  position: fixed;
+  position: absolute;
   bottom: 0;
   width: 100%;
   background: transparent;
-  backdrop-filter: blur(5px);
-  
+  backdrop-filter: blur(2px);
+}
+
+.chat__footer-form {
+  overflow: hidden;
+  transition: all 0.3s ease-in-out;
 }
 
 .Chat__footer-input {
@@ -85,7 +103,7 @@
   text-align: start;
   outline: none;
   color: var(--color-dark);
-  border: 1px solid var(--color-blue);
+  border: 1px solid var(--color-gray-3);
   -ms-overflow-style: none;
   scrollbar-width: none;
   padding: 12px 40px 10px 16px;
@@ -93,11 +111,14 @@
 
 .Chat__footer-input:focus {
   outline: none;
-  border: 1px solid var(--color-dark);
+  border: 1px solid var(--color-dark-2);
 }
 
-.Chat__footer-input::placeholder {
-  color: var(--color-dark);
+.Chat__footer-input:focus ~ label
+, .Chat__footer-input:valid ~ label  {
+ user-select: none;
+ opacity: 0;
+ transition: all 0.15s ease-in-out;
 }
 
 .open-button {

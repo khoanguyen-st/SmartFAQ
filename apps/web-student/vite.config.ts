@@ -4,11 +4,11 @@ import tailwindcss from '@tailwindcss/vite'
 import path from 'node:path'
 import svgr from 'vite-plugin-svgr'
 import { fileURLToPath } from 'node:url'
-
+import cssInjecrByJsPlugin from 'vite-plugin-css-injected-by-js'
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
 export default defineConfig({
-  plugins: [react(), tailwindcss(), svgr()],
+  plugins: [react(), tailwindcss(), svgr(), cssInjecrByJsPlugin()],
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src')
@@ -19,8 +19,7 @@ export default defineConfig({
     // Thêm dòng này để tránh lỗi "process is not defined" khi chạy trên trình duyệt khách
     'process.env': {} 
   },
-  
-  // --- CẤU HÌNH BUILD WIDGET ---
+
   build: {
     lib: {
       // Đường dẫn tới file entry widget (bạn cần đảm bảo file này tồn tại như bước 1)
