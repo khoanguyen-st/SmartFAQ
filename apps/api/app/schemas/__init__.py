@@ -10,6 +10,13 @@ from .auth import (
     UserLogin,
     UserMe,
 )
+from .schemas import (
+    DocumentCreate,
+    DocumentOut,
+    DocumentUpdate,
+    DocumentVersionOut,
+    UserOut,
+)
 
 __all__ = [
     "UserLogin",
@@ -20,4 +27,9 @@ __all__ = [
     "LogoutResponse",
     "UserMe",
     "UnlockAccountResponse",
+    "DocumentCreate",
+    "DocumentOut",
+    "DocumentUpdate",
+    "DocumentVersionOut",
+    "UserOut",
 ]
