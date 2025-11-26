@@ -11,5 +11,3 @@ class Entity(BaseModel):
     confidence: float = Field(..., ge=0.0, le=1.0, description="Confidence score [0.0, 1.0]")
     start_pos: Optional[int] = Field(None, description="Start position in original text")
     end_pos: Optional[int] = Field(None, description="End position in original text")
-
-

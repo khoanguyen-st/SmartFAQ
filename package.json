@@ -3,30 +3,31 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
+  "packageManager": "yarn@1.22.22",
   "workspaces": [
-    "apps/*",
-    "packages/*"
+    "apps/*"
   ],
   "scripts": {
     "prepare": "husky",
-    "lint": "yarn workspaces foreach -pt run lint",
-    "format": "yarn workspaces foreach -pt run format",
-    "format:check": "yarn workspaces foreach -pt run format:check",
-    "lint:web": "eslint --config packages/config/eslint.config.js",
-    "format:prettier": "prettier --write"
+    "lint": "yarn workspace @smartfaq/web-student lint && yarn workspace @smartfaq/web-admin lint",
+    "format": "yarn workspace @smartfaq/web-student format && yarn workspace @smartfaq/web-admin format",
+    "format:check": "yarn workspace @smartfaq/web-student format:check && yarn workspace @smartfaq/web-admin format:check"
   },
   "devDependencies": {
     "husky": "^9.1.7",
     "lint-staged": "^15.2.11"
   },
   "lint-staged": {
-    "apps/web-{student,admin}/src/**/*.{ts,tsx}": [
-      "yarn lint:web --fix --max-warnings=0",
-      "yarn format:prettier"
+    "apps/web-student/src/**/*.{ts,tsx}": [
+      "yarn --cwd apps/web-student lint --fix --max-warnings=0",
+      "prettier --write"
+    ],
+    "apps/web-admin/src/**/*.{ts,tsx}": [
+      "yarn --cwd apps/web-admin lint --fix --max-warnings=0",
+      "prettier --write"
     ],
     "apps/api/app/**/*.py": [
-      "ruff check --fix",
-      "black"
+      "node scripts/lint-python.cjs"
     ]
   }
 }

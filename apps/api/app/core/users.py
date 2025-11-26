@@ -27,5 +27,4 @@ async def get_current_user(token: str = Depends(oauth2_scheme)) -> User:
 
     ADMIN_HASH = get_admin_hash()
 
-    # TODO: replace with database lookup and RBAC enforcement
     return User(username=username, password_hash=ADMIN_HASH, role="SUPER_ADMIN", is_active=True)

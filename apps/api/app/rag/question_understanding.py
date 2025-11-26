@@ -1,23 +1,28 @@
 from __future__ import annotations
-from abc import ABC, abstractmethod
+
 import logging
+from abc import ABC, abstractmethod
 from typing import Any, Dict, List, Optional
+
 from app.rag.constants import MAX_QUESTION_LENGTH
 from app.rag.validations import Entity, Intent, NormalizedQuestion
 
 logger = logging.getLogger(__name__)
+
 
 class IntentDetector(ABC):
     @abstractmethod
     def detect(self, question: str, context: Optional[Dict[str, Any]] = None) -> Intent:
         raise NotImplementedError
 
+
 class EntityExtractor(ABC):
     @abstractmethod
     def extract(self, question: str, intent: Optional[Intent] = None) -> List[Entity]:
         raise NotImplementedError
 
-class QuestionNormalizer(ABC):   
+
+class QuestionNormalizer(ABC):
     @abstractmethod
     def normalize(self, question: str) -> str:
         raise NotImplementedError
@@ -26,7 +31,7 @@ class QuestionNormalizer(ABC):
         normalization_failed: bool = False,
         intent_detection_failed: bool = False,
         entity_extraction_failed: bool = False,
-        language: str = "en"
+        language: str = "en",
     ) -> str:
         if language == "vi":
             if normalization_failed or intent_detection_failed:
@@ -36,6 +41,7 @@ class QuestionNormalizer(ABC):
             if normalization_failed or intent_detection_failed:
                 return "I'm not sure what you mean. Could you please clarify?"
             return "Could you please rephrase your question?"
+
 
 class QuestionUnderstanding:
     def __init__(
@@ -47,23 +53,30 @@ class QuestionUnderstanding:
     ):
         if intent_detector is None:
             from app.rag.intent_detector import RuleBasedIntentDetector
+
             intent_detector = RuleBasedIntentDetector()
         if entity_extractor is None:
             from app.rag.entity_extractor import RuleBasedEntityExtractor
+
             entity_extractor = RuleBasedEntityExtractor()
         if normalizer is None:
             from app.rag.normalizer import RuleBasedNormalizer
+
             normalizer = RuleBasedNormalizer()
         self.intent_detector = intent_detector
         self.entity_extractor = entity_extractor
         self.normalizer = normalizer
         self.language_detector = language_detector
-    
-    def understand(self, question: str, context: Optional[Dict[str, Any]] = None) -> NormalizedQuestion:
+
+    def understand(
+        self, question: str, context: Optional[Dict[str, Any]] = None
+    ) -> NormalizedQuestion:
         stripped_question = self._validate_question(question)
         metadata = self._init_metadata(question)
 
-        normalized_question, normalization_failed = self._run_normalization(question, stripped_question, metadata)
+        normalized_question, normalization_failed = self._run_normalization(
+            question, stripped_question, metadata
+        )
         intent, intent_detection_failed, detected_language = self._run_intent_detection(
             normalized_question,
             context,
@@ -75,7 +88,9 @@ class QuestionUnderstanding:
             metadata,
         )
 
-        language = self._resolve_language(intent, intent_detection_failed, detected_language, metadata)
+        language = self._resolve_language(
+            intent, intent_detection_failed, detected_language, metadata
+        )
         metadata["entities_count"] = len(entities)
         self._update_clarification_flag(
             normalization_failed,
@@ -94,7 +109,7 @@ class QuestionUnderstanding:
             language=language,
             metadata=metadata,
         )
-    
+
     def _validate_question(self, question: str) -> str:
         if not question:
             logger.warning("Empty question received")
@@ -143,7 +158,7 @@ class QuestionUnderstanding:
             else:
                 metadata["processing_steps"].append("normalization")
                 normalization_failed = False
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             logger.error("Normalization failed: %s", exc, exc_info=True)
             metadata["errors"].append(
                 {"step": "normalization", "error": str(exc), "error_type": type(exc).__name__}
@@ -193,9 +208,11 @@ class QuestionUnderstanding:
                     intent.label,
                     intent.confidence,
                 )
-                metadata["warnings"].append(f"Low confidence intent: {intent.label} ({intent.confidence})")
+                metadata["warnings"].append(
+                    f"Low confidence intent: {intent.label} ({intent.confidence})"
+                )
             return intent, False, detected_language
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             logger.error("Intent detection failed: %s", exc, exc_info=True)
             metadata["errors"].append(
                 {"step": "intent_detection", "error": str(exc), "error_type": type(exc).__name__}
@@ -235,7 +252,7 @@ class QuestionUnderstanding:
 
             metadata["processing_steps"].append("entity_extraction")
             return valid_entities, False
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             logger.error("Entity extraction failed: %s", exc, exc_info=True)
             metadata["errors"].append(
                 {"step": "entity_extraction", "error": str(exc), "error_type": type(exc).__name__}
@@ -258,7 +275,9 @@ class QuestionUnderstanding:
                 metadata["language_detection_method"] = "fallback_default"
 
         metadata["detected_language"] = language
-        metadata["language_source"] = "intent_metadata" if not intent_detection_failed else "fallback"
+        metadata["language_source"] = (
+            "intent_metadata" if not intent_detection_failed else "fallback"
+        )
         return language
 
     def _update_clarification_flag(
@@ -282,7 +301,7 @@ class QuestionUnderstanding:
             metadata["suggestion"] = "I'm not sure what you mean. Could you please clarify?"
         else:
             metadata["clarification_needed"] = False
-    
+
     def __repr__(self) -> str:
         return (
             f"QuestionUnderstanding("

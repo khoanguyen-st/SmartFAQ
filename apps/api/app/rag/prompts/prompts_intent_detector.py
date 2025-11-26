@@ -13,14 +13,14 @@ This module contains the system prompt for intent detection, which instructs the
 def get_intent_detection_prompt() -> str:
     """
     Get the system prompt for intent detection.
-    
+
     This prompt instructs the AI to:
     - Detect the user's intent from their question
     - Classify questions into specific intents
     - Detect language (Vietnamese with/without diacritics or English)
     - Determine if question is in-domain (related to university)
     - Provide reasoning for the classification
-    
+
     Returns:
         str: Complete system prompt for intent detection
     """

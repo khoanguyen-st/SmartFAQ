@@ -21,8 +21,10 @@
         "react": "^19.0.0-rc",
         "react-dom": "^19.0.0-rc",
         "react-i18next": "~15.0.0",
+        "react-markdown": "^10.1.0",
         "react-router-dom": "~6.26.0",
         "tailwind-merge": "^2.5.5",
+        "vite-inject-css": "^3.1.0",
         "zod": "~3.23.8"
     },
     "devDependencies": {
@@ -44,6 +46,7 @@
         "tailwindcss": "^4.1.16",
         "typescript": "~5.4.5",
         "vite": "^5.2.0",
+        "vite-plugin-css-injected-by-js": "^3.5.2",
         "vite-plugin-svgr": "^4.5.0"
     }
 }

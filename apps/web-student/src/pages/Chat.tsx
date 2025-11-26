@@ -1,4 +1,4 @@
-import ChatWidget from "@/components/Chatbot/ChatWidget"
+import ChatWidget from '@/components/Chatbot/ChatWidget'
 
 const ChatPage = () => {
   return (
