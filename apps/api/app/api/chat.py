@@ -229,10 +229,7 @@ async def query_chat(
 
         rag_response = await orchestrator.query(
             question=payload.question,
-            user_id=session.id,
             top_k=5,
-            return_top_sources=5,
-            response_language=session.language,
         )
         latency_ms = int((time.perf_counter() - t0) * 1000)
     except Exception as exc:
