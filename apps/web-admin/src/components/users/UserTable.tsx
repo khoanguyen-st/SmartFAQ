@@ -50,14 +50,14 @@ export const UserTable: React.FC<UserTableProps> = ({
       <>
         {users.map((user, index) => (
           <tr key={user.id} className="border-b border-slate-100 text-sm text-slate-700 last:border-b-0">
-            <td className="px-6 py-4 whitespace-nowrap">{(page - 1) * pageSize + index + 1}</td>
-            <td className="px-6 py-4 whitespace-nowrap">
+            <td className="px-6 py-4 text-center whitespace-nowrap">{(page - 1) * pageSize + index + 1}</td>
+            <td className="px-6 py-4 text-center whitespace-nowrap">
               <div className="font-medium text-slate-900">{user.username}</div>
             </td>
-            <td className="px-6 py-4 whitespace-nowrap">{user.email}</td>
+            <td className="px-6 py-4 text-center whitespace-nowrap">{user.email}</td>
             <td className="px-6 py-4 text-center whitespace-nowrap">{user.phoneNumber}</td>
-            <td className="px-6 py-4 whitespace-nowrap">{user.role}</td>
-            <td className="px-6 py-4 whitespace-nowrap">
+            <td className="px-6 py-4 text-center whitespace-nowrap">{user.role}</td>
+            <td className="px-6 py-4 text-center whitespace-nowrap">
               {user.departments && user.departments.length > 0 ? user.departments.join(', ') : '—'}
             </td>
             <td className="px-6 py-4 text-center whitespace-nowrap">
@@ -84,12 +84,12 @@ export const UserTable: React.FC<UserTableProps> = ({
       <table className="w-full">
         <thead className="border-b border-slate-200 bg-slate-50 text-xs text-slate-500 uppercase">
           <tr>
-            <th className="px-6 py-3 text-left whitespace-nowrap">{t('user.table.id')}</th>
-            <th className="px-6 py-3 text-left whitespace-nowrap">{t('user.table.username')}</th>
-            <th className="px-6 py-3 text-left whitespace-nowrap">{t('user.table.email')}</th>
+            <th className="px-6 py-3 text-center whitespace-nowrap">{t('user.table.id')}</th>
+            <th className="px-6 py-3 text-center whitespace-nowrap">{t('user.table.username')}</th>
+            <th className="px-6 py-3 text-center whitespace-nowrap">{t('user.table.email')}</th>
             <th className="px-6 py-3 text-center whitespace-nowrap">{t('user.table.phoneNumber')}</th>
-            <th className="px-6 py-3 text-left whitespace-nowrap">{t('user.table.role')}</th>
-            <th className="px-6 py-3 text-left whitespace-nowrap">{t('user.table.department')}</th>
+            <th className="px-6 py-3 text-center whitespace-nowrap">{t('user.table.role')}</th>
+            <th className="px-6 py-3 text-center whitespace-nowrap">{t('user.table.department')}</th>
             <th className="px-6 py-3 text-center whitespace-nowrap">{t('user.table.status')}</th>
             <th className="px-6 py-3 text-center whitespace-nowrap">{t('user.table.action')}</th>
           </tr>
