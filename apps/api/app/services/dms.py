@@ -56,7 +56,7 @@ def upload_to_cloudinary(content: bytes, filename: str) -> tuple[str, int, str]:
         raise UploadTooLarge(f"uploaded file exceeds max size of {settings.UPLOAD_MAX_MB} MB")
 
     orig_name = os.path.basename(filename or "upload.bin")
-    _, ext = os.path.splitext(orig_name)
+    base_name, ext = os.path.splitext(orig_name)
     ext = ext.lower()
 
     if ext not in ALLOWED_EXTS:
@@ -64,10 +64,17 @@ def upload_to_cloudinary(content: bytes, filename: str) -> tuple[str, int, str]:
 
     fmt = ext.lstrip(".")
 
-    logger.info("upload start: %s to Cloudinary", orig_name)
+    file_public_id = f"{base_name}"
+
+    logger.info("upload start: %s to Cloudinary (Public ID: %s)", orig_name, file_public_id)
 
     try:
-        result = upload(content, folder=settings.CLOUDINARY_FOLDER_DOCUMENT, resource_type="raw")
+        result = upload(
+            content,
+            public_id=file_public_id,
+            folder=settings.CLOUDINARY_FOLDER_DOCUMENT,
+            resource_type="raw",
+        )
         public_id = result["public_id"]
         uploaded_size = result["bytes"]
         logger.info("upload complete: %d bytes", uploaded_size)
@@ -79,7 +86,6 @@ def upload_to_cloudinary(content: bytes, filename: str) -> tuple[str, int, str]:
 async def create_document_record(
     db: AsyncSession,
     title: str,
-    uploaded_by: int | None,
     file_path: str | None = None,
     file_size: int | None = None,
     format: str | None = None,
@@ -88,7 +94,6 @@ async def create_document_record(
         title=title,
         language="en",
         status="ACTIVE",
-        created_by=uploaded_by,
     )
     db.add(doc)
     await db.flush()
@@ -100,7 +105,6 @@ async def create_document_record(
             file_path=file_path,
             file_size=file_size,
             format=format or "bin",
-            uploaded_by=uploaded_by,
         )
         db.add(dv)
         await db.flush()
@@ -122,45 +126,71 @@ async def async_session_scope():
             raise
 
 
-async def enqueue_single_document(file: UploadFile, uploaded_by=None) -> dict:
-
+async def enqueue_single_document(file: UploadFile) -> dict:
     content = await file.read()
     orig_name = file.filename or "upload.bin"
     _, ext = os.path.splitext(orig_name)
 
-    with NamedTemporaryFile(suffix=ext, delete=False) as tmp:
-        tmp.write(content)
-        tmp.flush()
-        temp_path = tmp.name
+    public_id = None
+    temp_path = None
 
     try:
+        public_id, size, fmt = await asyncio.to_thread(upload_to_cloudinary, content, orig_name)
+
+        with NamedTemporaryFile(suffix=ext, delete=False) as tmp:
+            tmp.write(content)
+            tmp.flush()
+            temp_path = tmp.name
+
         processor = DocumentProcessor()
         split_docs = processor.process_document(temp_path, str(0), metadata={"title": orig_name})
 
-        public_id, size, fmt = await asyncio.to_thread(upload_to_cloudinary, content, orig_name)
+        try:
+            async with async_session_scope() as db:
+                doc_id = await create_document_record(
+                    db,
+                    title=orig_name,
+                    file_path=public_id,
+                    file_size=size,
+                    format=fmt,
+                )
 
-        async with async_session_scope() as db:
-            doc_id = await create_document_record(
-                db,
-                title=orig_name,
-                uploaded_by=None,
-                file_path=public_id,
-                file_size=size,
-                format=fmt,
-            )
+                for sd in split_docs:
+                    if "document_id" in sd.metadata:
+                        sd.metadata["document_id"] = str(doc_id)
+                    else:
+                        sd.metadata["source"] = str(doc_id)
 
-            for sd in split_docs:
-                if "document_id" in sd.metadata:
-                    sd.metadata["document_id"] = str(doc_id)
-                else:
-                    sd.metadata["source"] = str(doc_id)
+                await asyncio.to_thread(upsert_documents, split_docs)
 
-            upsert_documents(split_docs)
+        except Exception:
+            logger.exception("Failed to save document or index chunks for %s", orig_name)
+            if public_id:
+                try:
+                    await asyncio.to_thread(destroy, public_id, resource_type="raw")
+                    logger.info("Cleaned up Cloudinary file after DB/index failure: %s", public_id)
+                except Exception as cleanup_exc:
+                    logger.error(
+                        "Failed to delete Cloudinary file %s after DB/index error: %s",
+                        public_id,
+                        cleanup_exc,
+                    )
+            raise
 
-            return {"document_id": doc_id, "public_id": public_id}
+        return {"document_id": doc_id, "public_id": public_id}
 
+    except Exception as exc:
+        if public_id:
+            try:
+                await asyncio.to_thread(destroy, public_id, resource_type="raw")
+                logger.info("Cleaned up orphaned Cloudinary file: %s", public_id)
+            except Exception as cleanup_exc:
+                logger.error(
+                    "Failed to delete Cloudinary file %s after error: %s", public_id, cleanup_exc
+                )
+        raise exc
     finally:
-        if os.path.exists(temp_path):
+        if temp_path and os.path.exists(temp_path):
             os.remove(temp_path)
 
 
@@ -169,7 +199,7 @@ async def enqueue_multiple_documents(files: list[UploadFile]) -> list[dict]:
     results = []
     for file in files:
         try:
-            r = await enqueue_single_document(file, uploaded_by=None)
+            r = await enqueue_single_document(file)
             results.append(r)
         except Exception as exc:
             results.append({"filename": file.filename, "error": str(exc)})
@@ -269,12 +299,27 @@ async def delete_document(doc_id: int, db: AsyncSession) -> bool:
     if not doc:
         return False
 
-    delete_by_document_id(str(doc.id))
+    try:
+        await asyncio.to_thread(delete_by_document_id, str(doc.id))
 
-    for v in doc.versions:
-        if v.file_path:
-            destroy(v.file_path, resource_type="raw")
+        cloudinary_delete_tasks = []
+        for v in doc.versions:
+            if v.file_path:
+                task = asyncio.to_thread(destroy, v.file_path, resource_type="raw")
+                cloudinary_delete_tasks.append(task)
 
-    await db.delete(doc)
-    await db.commit()
-    return True
+        if cloudinary_delete_tasks:
+            await asyncio.gather(*cloudinary_delete_tasks)
+
+        await db.delete(doc)
+        await db.commit()
+
+        return True
+    except Exception as exc:
+        logger.exception("Failed to delete document %s: %s", doc_id, exc)
+        try:
+            await db.rollback()
+        except Exception as rb_exc:
+            logger.exception("Failed to rollback after delete failure for %s: %s", doc_id, rb_exc)
+
+        return False

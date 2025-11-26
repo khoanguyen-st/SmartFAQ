@@ -1,60 +1,46 @@
-"""User schemas."""
-
 from datetime import datetime
+from typing import Optional
 
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr
 
 
 class UserBase(BaseModel):
-    username: str = Field(
-        ...,
-        min_length=3,
-        max_length=150,
-        description="Username must be between 3 and 150 characters",
-    )
-    email: EmailStr = Field(..., description="Valid email address")
-    phone: str | None = Field(None, max_length=50, description="Phone number (optional)")
-    address: str | None = Field(None, max_length=255, description="Address (optional)")
-    image: str | None = Field(None, max_length=255, description="Image URL (optional)")
-    notification_email: str | None = Field(
-        None, max_length=500, description="Notification email (optional)"
-    )
-    campus_id: str = Field(..., max_length=10, description="Campus ID")
-    role: str = Field(..., max_length=50, description="User role")
+    username: str
+    email: EmailStr
+    phone: Optional[str] = None
+    address: Optional[str] = None
+    image: Optional[str] = None
+    campus: str
+    role: str
+
+    class Config:
+        from_attributes = True
 
 
 class UserCreate(UserBase):
-    password: str = Field(..., min_length=8, description="Password must be at least 8 characters")
+    password: str
+    role: str
 
 
 class UserUpdate(BaseModel):
-    username: str | None = Field(
-        None,
-        min_length=3,
-        max_length=150,
-        description="Username must be between 3 and 150 characters",
-    )
-    email: EmailStr | None = Field(None, description="Valid email address")
-    phone: str | None = Field(None, max_length=50, description="Phone number (optional)")
-    address: str | None = Field(None, max_length=255, description="Address (optional)")
-    image: str | None = Field(None, max_length=255, description="Image URL (optional)")
-    notification_email: str | None = Field(
-        None, max_length=500, description="Notification email (optional)"
-    )
-    campus_id: str | None = Field(None, max_length=10, description="Campus ID")
-    password: str | None = Field(
-        None, min_length=8, description="Password must be at least 8 characters"
-    )
-    role: str | None = Field(None, max_length=50, description="User role")
-    is_active: bool | None = Field(None, description="Active status")
+    username: Optional[str] = None
+    email: Optional[EmailStr] = None
+    phone: Optional[str] = None
+    address: Optional[str] = None
+    image: Optional[str] = None
+    campus: Optional[str] = None
+    role: Optional[str] = None
+    password: Optional[str] = None
 
 
 class UserOut(UserBase):
     id: int
-    is_active: bool
     failed_attempts: int
+    locked_until: Optional[datetime]
     is_locked: bool
     created_at: datetime
 
-    class Config:
-        from_attributes = True
+
+class TokenData(BaseModel):
+    user_id: Optional[int] = None
+    role: Optional[str] = None
