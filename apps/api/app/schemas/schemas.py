@@ -1,4 +1,8 @@
-from pydantic import BaseModel, ConfigDict
+"""Pydantic schemas for API payloads and responses."""
+
+from typing import Optional
+
+from pydantic import BaseModel, ConfigDict, EmailStr
 
 
 class DocumentCreate(BaseModel):
@@ -36,4 +40,29 @@ class DocumentOut(BaseModel):
     current_version_id: int | None
     versions: list[DocumentVersionOut] | None = None
 
+    class Config:
+        try:
+            from_attributes = True
+        except Exception:
+            orm_mode = True
+
+
+class UserOut(BaseModel):
+    username: str
+    email: EmailStr
+    phone: Optional[str] = None
+    address: Optional[str] = None
+    image: Optional[str] = None
+
+    class Config:
+        try:
+            from_attributes = True
+        except Exception:
+            orm_mode = True
+
+
+class UserUpdate(BaseModel):
+    username: Optional[str] = None
+    phone: Optional[str] = None
+    address: Optional[str] = None
     model_config = ConfigDict(from_attributes=True)
