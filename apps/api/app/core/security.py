@@ -1,5 +1,3 @@
-"""Security helpers for authentication and authorization."""
-
 import hashlib
 import re
 import time
@@ -34,29 +32,99 @@ def verify_password(password: str, hashed_password: str) -> bool:
 
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
-    """Create JWT access token (default: 8 hours)."""
+    """Create JWT access token (default: 5 minutes)."""
     if expires_delta is None:
-        expires_delta = timedelta(seconds=28800) 
+        expires_delta = timedelta(minutes=5)
 
     now_ts = int(time.time())
     expire_ts = now_ts + int(expires_delta.total_seconds())
 
     payload = {
         **data,
+        "type": "access",
         "exp": expire_ts,
         "iat": now_ts,
     }
     return jwt.encode(payload, settings.jwt_secret, algorithm="HS256")
 
 
+def create_refresh_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
+    """Create JWT refresh token (default: 24 hours)."""
+    if expires_delta is None:
+        expires_delta = timedelta(hours=24)
+
+    now_ts = int(time.time())
+    expire_ts = now_ts + int(expires_delta.total_seconds())
+    login_time = data.get("login_time", now_ts)
+
+    payload = {
+        **data,
+        "type": "refresh",
+        "login_time": login_time,
+        "exp": expire_ts,
+        "iat": now_ts,
+    }
+    return jwt.encode(payload, settings.jwt_secret, algorithm="HS256")
+
+
+def verify_refresh_token(token: str) -> dict | None:
+    """Verify and decode refresh token."""
+    try:
+        payload = jwt.decode(token, settings.jwt_secret, algorithms=["HS256"])
+
+        if payload.get("type") != "refresh":
+            return None
+
+        login_time = payload.get("login_time")
+        if login_time is None:
+            return None
+
+        now_ts = int(time.time())
+        hours_since_login = (now_ts - login_time) / 3600
+
+        if hours_since_login > 24:
+            return None
+
+        return payload
+    except jwt.ExpiredSignatureError:
+        return None
+    except jwt.JWTError:
+        return None
+
+
+def get_token_remaining_time(token: str) -> int | None:
+    """Get remaining time until token expiration in seconds."""
+    try:
+        payload = jwt.get_unverified_claims(token)
+        exp = payload.get("exp")
+        if exp is None:
+            return None
+
+        now_ts = int(time.time())
+        remaining = exp - now_ts
+        return remaining if remaining > 0 else None
+    except Exception:
+        return None
+
+
+def should_refresh_token(token: str, threshold_seconds: int = 60) -> bool:
+    """Check if token should be refreshed (remaining time < threshold)."""
+    remaining = get_token_remaining_time(token)
+    if remaining is None:
+        return True
+    return remaining < threshold_seconds
+
+
 _token_blacklist: set[str] = set()
 
 
 def _hash_token(token: str) -> str:
+    """Hash token using SHA256."""
     return hashlib.sha256(token.encode("utf-8")).hexdigest()
 
 
 def _extract_token_expiration(token: str) -> datetime:
+    """Extract expiration time from JWT token."""
     try:
         claims = jwt.get_unverified_claims(token)
         exp = claims.get("exp")
@@ -73,7 +141,9 @@ async def add_token_to_blacklist(token: str, db: AsyncSession | None = None) -> 
 
     if db:
         token_hash = _hash_token(token)
-        result = await db.execute(select(TokenBlacklist).filter(TokenBlacklist.token_hash == token_hash))
+        result = await db.execute(
+            select(TokenBlacklist).filter(TokenBlacklist.token_hash == token_hash)
+        )
         record = result.scalar_one_or_none()
         if record:
             record.revoked_at = datetime.utcnow()
@@ -89,7 +159,9 @@ async def is_token_blacklisted(token: str, db: AsyncSession | None = None) -> bo
     """Check if token is blacklisted."""
     if db:
         token_hash = _hash_token(token)
-        result = await db.execute(select(TokenBlacklist).filter(TokenBlacklist.token_hash == token_hash))
+        result = await db.execute(
+            select(TokenBlacklist).filter(TokenBlacklist.token_hash == token_hash)
+        )
         record = result.scalar_one_or_none()
         if record:
             if record.expires_at <= datetime.utcnow():
@@ -101,18 +173,11 @@ async def is_token_blacklisted(token: str, db: AsyncSession | None = None) -> bo
     return token in _token_blacklist
 
 
-async def clear_token_blacklist(db: AsyncSession | None = None) -> None:
-    """Clear all blacklisted tokens."""
-    if db:
-        await db.execute(delete(TokenBlacklist))
-        await db.commit()
-    _token_blacklist.clear()
-
-
 def create_reset_token(user_id: int, email: str, expires_delta: Optional[timedelta] = None) -> str:
     """Create password reset token (default: 1 hour)."""
     if expires_delta is None:
         expires_delta = timedelta(hours=1)
+
     now_ts = int(time.time())
     expire_ts = now_ts + int(expires_delta.total_seconds())
 
@@ -141,14 +206,8 @@ def verify_reset_token(token: str) -> dict | None:
 
 def validate_password_strength(password: str) -> bool:
     """
-    Validate password complexity rules (AC 7.5).
-    
-    Rules:
-        - Minimum 8 characters
-        - Contains uppercase letter
-        - Contains lowercase letter
-        - Contains digit
-        - Contains special character
+    Validate password complexity rules.
+    Rules: Minimum 8 characters, uppercase, lowercase, digit, special character.
     """
     pattern = re.compile(
         r"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_\-+=\[{\]};:'\",<.>/?\\|`~]).{8,}$"

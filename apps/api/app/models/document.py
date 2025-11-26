@@ -37,6 +37,7 @@ class Document(Base):
         cascade="all, delete-orphan",
         primaryjoin="Document.id == DocumentVersion.document_id",
         foreign_keys="DocumentVersion.document_id",
+        order_by="DocumentVersion.version_no",
     )
 
     current_version: Mapped["DocumentVersion | None"] = relationship(
