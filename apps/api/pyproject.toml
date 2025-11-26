@@ -26,6 +26,7 @@ dependencies = [
   "pydantic-settings>=2.4,<2.5",
   "python-jose[cryptography]>=3.3,<3.4",
   "passlib[bcrypt]>=1.7,<1.8",
+  "email-validator>=2.0,<3.0",
   
   # LangChain Core (chỉ giữ những gì thực sự dùng)
   "langchain>=1.0,<1.1",
