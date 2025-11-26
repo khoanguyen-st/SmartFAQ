@@ -1,10 +1,13 @@
 from __future__ import annotations
+
 import logging
 from typing import Dict
+
 from app.rag.llm import LLMWrapper
 from app.rag.prompts import get_guardrail_prompt
 
 logger = logging.getLogger(__name__)
+
 
 class GuardrailService:
     def __init__(self, llm_wrapper: LLMWrapper):
@@ -32,7 +35,18 @@ class GuardrailService:
         q = question.lower()
 
         if code == "competitor":
-            if any(w in q for w in ["học phí", "hoc phi", "điểm chuẩn", "diem chuan", "admission", "major", "ngành"]):
+            if any(
+                w in q
+                for w in [
+                    "học phí",
+                    "hoc phi",
+                    "điểm chuẩn",
+                    "diem chuan",
+                    "admission",
+                    "major",
+                    "ngành",
+                ]
+            ):
                 return {
                     "status": "blocked",
                     "vi": "Xin lỗi, tôi chỉ hỗ trợ thông tin về Đại học Greenwich Việt Nam.",

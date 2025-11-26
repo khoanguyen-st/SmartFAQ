@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-import logging
 import json
+import logging
 from typing import Any, Dict, Optional, Sequence, Union
 
 from google.api_core import exceptions as google_exceptions
@@ -15,10 +15,12 @@ from app.core.config import settings
 
 logger = logging.getLogger(__name__)
 
+
 def _clip(text: str, max_chars: int) -> str:
     if len(text) <= max_chars:
         return text
     return text[: max_chars - 3] + "..."
+
 
 def _doc_to_text(doc: Union[Document, Dict[str, Any]], idx: int) -> str:
     if isinstance(doc, Document):
@@ -32,6 +34,7 @@ def _doc_to_text(doc: Union[Document, Dict[str, Any]], idx: int) -> str:
     page = meta.get("page")
     page_info = f" (trang {page})" if page else ""
     return f"[Nguồn {idx} - {source}{page_info}]\n{content}"
+
 
 class LLMWrapper:
     def __init__(
@@ -176,7 +179,8 @@ class LLMWrapper:
                 elif isinstance(item, dict):
                     role = str(item.get("role", "")).lower()
                     content = item.get("content") or item.get("text") or ""
-                    if not content: continue
+                    if not content:
+                        continue
                     if role == "assistant":
                         message = AIMessage(content=content)
                     else:
