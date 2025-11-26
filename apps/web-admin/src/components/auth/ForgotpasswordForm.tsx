@@ -17,7 +17,8 @@ const ForgotPasswordForm = ({ onSubmit, error }: ForgotPasswordFormProps) => {
     try {
       setLoading(true);
       await onSubmit(email);
-    } catch (err) {
+    } catch {
+      // Error is handled by parent component via error prop
     } finally {
       setLoading(false);
     }

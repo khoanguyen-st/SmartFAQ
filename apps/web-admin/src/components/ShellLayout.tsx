@@ -25,7 +25,7 @@ const ShellLayout = () => {
     try {
       await logout()
       navigate('/login')
-    } catch (err) {
+    } catch {
       // Even if logout fails, clear token and redirect
       localStorage.removeItem('access_token')
       navigate('/login')

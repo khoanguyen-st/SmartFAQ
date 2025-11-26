@@ -23,12 +23,11 @@ const data: ChartData[] = [
 ];
 
 const TrendsChart = () => {
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [_isModalOpen, setIsModalOpen] = useState(false);
 
   const openModal = useCallback(() => setIsModalOpen(true), []);
-  const closeModal = useCallback(() => setIsModalOpen(false), []);
+  const _closeModal = useCallback(() => setIsModalOpen(false), []);
 
-const TrendsChart = () => {
   return (
     <>
       <section className="rounded-2xl bg-white p-6 shadow-lg shadow-slate-900/10">
@@ -62,9 +61,8 @@ const TrendsChart = () => {
           </ResponsiveContainer>
         </div>
       </section>
-
     </>
   );
 };
-}
-export default TrendsChart
+
+export default TrendsChart;
