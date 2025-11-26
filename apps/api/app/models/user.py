@@ -18,7 +18,7 @@ class User(Base):
     email: Mapped[str] = mapped_column(String(255), unique=True, index=True, nullable=False)
     password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
     role: Mapped[str] = mapped_column(String(50), default="STAFF", nullable=False)
-    campus_id: Mapped[str] = mapped_column(String(10), default="HCM", nullable=False)
+    campus_id: Mapped[str] = mapped_column(String(10), default="HCM", nullable=True)
     notification_email: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
     is_active: Mapped[bool] = mapped_column(default=True, nullable=False)
     is_locked: Mapped[bool] = mapped_column(default=False, nullable=False)
