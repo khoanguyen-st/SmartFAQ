@@ -17,6 +17,3 @@ class TokenBlacklist(Base):
     token_hash: Mapped[str] = mapped_column(String(128), unique=True, nullable=False, index=True)
     revoked_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
     expires_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
-
-
-

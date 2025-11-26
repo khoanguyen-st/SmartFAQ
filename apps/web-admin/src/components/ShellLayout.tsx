@@ -25,7 +25,7 @@ const ShellLayout = () => {
     try {
       await logout()
       navigate('/login')
-    } catch (err) {
+    } catch {
       // Even if logout fails, clear token and redirect
       localStorage.removeItem('access_token')
       navigate('/login')
@@ -35,7 +35,7 @@ const ShellLayout = () => {
     <div className="flex min-h-screen bg-[#eff3fb] text-slate-900">
       <aside className="flex w-60 flex-col bg-slate-900 px-4 py-6 text-slate-50">
         <div className="mb-6 text-lg font-semibold">SmartFAQ Admin</div>
-        <nav className="flex flex-col gap-2 flex-1">
+        <nav className="flex flex-1 flex-col gap-2">
           {navItems.map(item => (
             <NavLink
               key={item.path}
@@ -53,7 +53,7 @@ const ShellLayout = () => {
         </nav>
         <button
           onClick={handleLogout}
-          className="mt-auto rounded-lg px-3.5 py-2 text-sm transition-colors duration-200 bg-transparent hover:bg-red-600/20 text-red-400 hover:text-red-300"
+          className="mt-auto rounded-lg bg-transparent px-3.5 py-2 text-sm text-red-400 transition-colors duration-200 hover:bg-red-600/20 hover:text-red-300"
         >
           Logout
         </button>

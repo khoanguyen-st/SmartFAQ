@@ -1,20 +1,26 @@
 from __future__ import annotations
+
 import logging
 from typing import Any, Dict, Optional, Sequence, Union
+
 from google.api_core import exceptions as google_exceptions
 from langchain_core.documents import Document
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_google_genai import ChatGoogleGenerativeAI
+
 from app.core.config import settings
 from app.rag.utils.language import normalize_language_code
+
 logger = logging.getLogger(__name__)
+
 
 def _clip(text: str, max_chars: int) -> str:
     if len(text) <= max_chars:
         return text
     return text[: max_chars - 3] + "..."
+
 
 def _doc_to_text(doc: Union[Document, Dict[str, Any]], idx: int) -> str:
     if isinstance(doc, Document):

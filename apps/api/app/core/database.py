@@ -2,15 +2,13 @@ from __future__ import annotations
 
 from typing import AsyncGenerator
 
+from sqlalchemy import create_engine
 from sqlalchemy.ext.asyncio import (
     AsyncEngine,
     AsyncSession,
     async_sessionmaker,
     create_async_engine,
 )
-
-from .config import settings
-from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 from .config import settings
@@ -46,6 +44,8 @@ async def get_db() -> AsyncGenerator[AsyncSession, None]:
     """FastAPI dependency that yields an async database session."""
     async with AsyncSessionLocal() as session:
         yield session
+
+
 __all__ = ["engine", "AsyncSessionLocal", "get_db"]
 
 # def get_db():

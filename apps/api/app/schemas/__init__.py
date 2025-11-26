@@ -1,13 +1,14 @@
 """Pydantic schemas package."""
 
 from .auth import (
-    Token,
-    UserLogin,
     ForgotPasswordRequest,
-    ResetPasswordRequest,
     LogoutResponse,
-    UserMe,
+    RefreshTokenRequest,
+    ResetPasswordRequest,
+    Token,
     UnlockAccountResponse,
+    UserLogin,
+    UserMe,
 )
 
 __all__ = [
@@ -15,9 +16,8 @@ __all__ = [
     "Token",
     "ForgotPasswordRequest",
     "ResetPasswordRequest",
+    "RefreshTokenRequest",
     "LogoutResponse",
     "UserMe",
-    "UnlockAccountResponse"
+    "UnlockAccountResponse",
 ]
-
-

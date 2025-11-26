@@ -1,8 +1,6 @@
-"""Admin endpoints for metrics and logs."""
-
 from fastapi import APIRouter, Depends
 
-from ..core.users import get_current_user
+from ..core.dependency import get_current_user
 from ..services import metrics
 
 router = APIRouter()
