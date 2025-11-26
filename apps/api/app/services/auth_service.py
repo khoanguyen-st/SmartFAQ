@@ -1,9 +1,9 @@
-from datetime import datetime
 import time
+from datetime import datetime
 from typing import Optional
 
-from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..core.security import (
     add_token_to_blacklist,
@@ -103,11 +103,12 @@ class AuthService:
             user.is_locked = True
             user.locked_until = datetime.utcnow()
             result = await self.db.execute(
-                select(User).filter(User.role == "ADMIN", User.is_active == True)
+                select(User).filter(User.role == "ADMIN", User.is_active)
             )
             admin_user = result.scalar_one_or_none()
             if admin_user:
-                admin_email = admin_user.notification_email or admin_user.email
+                # TODO: Send email notification to admin_email about locked account
+                pass
         self.db.add(user)
 
     async def reset_failed_attempts(self, user: User) -> None:
@@ -121,13 +122,16 @@ class AuthService:
         user: User | None = result.scalar_one_or_none()
         if not user:
             raise UserNotFoundError
+
         reset_token = create_reset_token(user_id=user.id, email=user.email)
         result = await self.db.execute(
-            select(User).filter(User.role == "ADMIN", User.is_active == True)
+            select(User).filter(User.role == "ADMIN", User.is_active)
         )
         admin_user = result.scalar_one_or_none()
         if admin_user:
-            admin_email = admin_user.notification_email or admin_user.email
+            # TODO: Send reset_token via email
+            pass
+
         return reset_token
 
     async def reset_password(self, token: str, new_password: str) -> None:

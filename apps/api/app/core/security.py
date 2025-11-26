@@ -6,11 +6,11 @@ from typing import Optional
 
 import bcrypt
 from jose import jwt
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, delete
 
-from .config import settings
 from ..models.token_blacklist import TokenBlacklist
+from .config import settings
 
 
 def hash_password(password: str) -> str:

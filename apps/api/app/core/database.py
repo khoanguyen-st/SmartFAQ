@@ -10,10 +10,6 @@ from sqlalchemy.ext.asyncio import (
 )
 
 from .config import settings
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
-
-from .config import settings
 
 
 def _ensure_async_driver(url: str) -> str:
@@ -21,16 +17,6 @@ def _ensure_async_driver(url: str) -> str:
     Convert sync psycopg DSN into its async variant when needed.
     SQLAlchemy async engine requires the ``psycopg_async`` driver suffix.
     """
-    prefix = "postgresql+psycopg://"
-    async_prefix = "postgresql+psycopg_async://"
-    if url.startswith(async_prefix):
-        return url
-    if url.startswith(prefix):
-        return url.replace(prefix, async_prefix, 1)
-    return url
-
-
-def _ensure_async_driver(url: str) -> str:
     prefix = "postgresql+psycopg://"
     async_prefix = "postgresql+psycopg_async://"
     if url.startswith(async_prefix):

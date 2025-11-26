@@ -1,6 +1,6 @@
+from fastapi import APIRouter, Depends, HTTPException
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.ext.asyncio import AsyncSession
-from fastapi import APIRouter, Depends, HTTPException, status
 
 from ..core.database import get_db
 from ..core.users import get_current_user
@@ -16,13 +16,13 @@ from ..schemas import (
 from ..services.auth_service import (
     AccountLockedError,
     AuthService,
-    InvalidCredentialsError,
-    InvalidTokenError,
     InactiveAccountError,
+    InvalidCampusError,
+    InvalidCredentialsError,
+    InvalidPasswordError,
+    InvalidTokenError,
     UserNotFoundError,
     WeakPasswordError,
-    InvalidCampusError,
-    InvalidPasswordError,
 )
 
 router = APIRouter()
