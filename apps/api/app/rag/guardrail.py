@@ -11,23 +11,58 @@ class GuardrailService:
         self.llm = llm_wrapper
 
     async def check_safety(self, question: str) -> Dict[str, str]:
-        prompt = get_guardrail_prompt()
-        result = await self.llm.invoke_json(prompt, question)
+        try:
+            prompt = get_guardrail_prompt()
+            result = await self.llm.invoke_json(prompt, question)
+        except Exception:
+            return self._refusal("system_fail", question)
 
-        if not result: return self._get_refusal("system_fail")
+        if not result or not isinstance(result, dict):
+            return self._refusal("system_fail", question)
 
         status = result.get("status", "allowed")
         reason = result.get("reason_code")
 
         if status == "blocked":
-            return self._get_refusal(reason)
+            return self._refusal(reason, question)
+
         return {"status": "allowed"}
 
-    def _get_refusal(self, code: str) -> Dict[str, str]:
+    def _refusal(self, code: str, question: str) -> Dict[str, str]:
+        q = question.lower()
+
         if code == "competitor":
-            return {"status": "blocked", "vi": "Xin lỗi, tôi chỉ hỗ trợ thông tin về Đại học Greenwich Việt Nam.", "en": "I only support inquiries related to Greenwich University Vietnam."}
+            if any(w in q for w in ["học phí", "hoc phi", "điểm chuẩn", "diem chuan", "admission", "major", "ngành"]):
+                return {
+                    "status": "blocked",
+                    "vi": "Xin lỗi, tôi chỉ hỗ trợ thông tin về Đại học Greenwich Việt Nam.",
+                    "en": "I only support inquiries related to Greenwich University Vietnam.",
+                }
+            return {"status": "allowed"}
+
         if code == "toxic":
-            return {"status": "blocked", "vi": "Vui lòng sử dụng ngôn ngữ lịch sự.", "en": "Please use polite language."}
+            return {
+                "status": "blocked",
+                "vi": "Vui lòng sử dụng ngôn ngữ lịch sự.",
+                "en": "Please use polite language.",
+            }
+
+        if code == "irrelevant":
+            return {
+                "status": "blocked",
+                "vi": "Xin lỗi, tôi chỉ hỗ trợ thông tin về Đại học Greenwich Việt Nam.",
+                "en": "I only support questions related to Greenwich University Vietnam.",
+            }
+
         if code == "system_fail":
-            return {"status": "blocked", "vi": "Hệ thống an toàn không thể xác minh câu hỏi. Vui lòng thử lại.", "en": "The safety system failed to verify the question. Please try again."}
-        return {"status": "blocked", "vi": "Câu hỏi nằm ngoài phạm vi hỗ trợ.", "en": "This question is outside my scope."}
+            return {
+                "status": "blocked",
+                "vi": "Hệ thống không thể xử lý yêu cầu. Vui lòng thử lại.",
+                "en": "The system failed to process your request. Please try again.",
+            }
+
+        return {
+            "status": "blocked",
+            "vi": "Câu hỏi nằm ngoài phạm vi hỗ trợ.",
+            "en": "This question is outside my scope.",
+        }

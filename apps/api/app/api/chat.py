@@ -216,11 +216,11 @@ async def query_chat(
     stripped_lang = (payload.language or "").strip()
 
     if stripped_lang:
-        norm = bool(stripped_lang, default="en")
-        session.language = "vi" if norm == "vi" else "en"
+        lang = stripped_lang.lower()
+        session.language = "vi" if lang.startswith("vi") else "en"
     else:
         question_text = getattr(payload, "question", "") or ""
-        detected_lang, _ = detect_language_enhanced(question_text)
+        detected_lang = detect_language_enhanced(question_text)
         session.language = "vi" if detected_lang == "vi" else "en"
 
     try:
