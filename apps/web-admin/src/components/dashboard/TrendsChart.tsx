@@ -19,7 +19,6 @@ const TrendsChart = () => {
   const [_isModalOpen, setIsModalOpen] = useState(false)
 
   const openModal = useCallback(() => setIsModalOpen(true), [])
-  const _closeModal = useCallback(() => setIsModalOpen(false), [])
 
   return (
     <>
