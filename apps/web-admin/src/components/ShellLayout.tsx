@@ -5,6 +5,7 @@ import { logout } from '@/lib/api'
 
 const navItems = [
   { path: 'dashboard', label: 'Dashboard' },
+  { path: 'users', label: 'Users' },
   { path: 'logs', label: 'Logs' },
   { path: 'settings', label: 'Settings' },
   { path: 'view-chat', label: 'View  Chat' }

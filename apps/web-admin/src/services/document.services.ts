@@ -1,5 +1,4 @@
 import { API_BASE_URL } from '../lib/api'
-
 export interface IUploadedFile {
   id: string
   name: string

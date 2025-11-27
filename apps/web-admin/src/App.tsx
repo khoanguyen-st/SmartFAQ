@@ -3,6 +3,7 @@ import { Navigate, Route, Routes } from 'react-router-dom'
 import DashboardPage from './pages/Dashboard'
 import LogsPage from './pages/Logs'
 import SettingsPage from './pages/Settings'
+import UsersPage from './pages/Users'
 import LoginPage from './pages/Login'
 import ForgotPasswordPage from './pages/Forgotpassword'
 import CreateNewPasswordPage from './pages/Create'
@@ -18,6 +19,7 @@ const App = () => (
     <Route path="reset-password-success" element={<ResetPasswordSuccessPage />} />
     <Route element={<ShellLayout />} path="/*">
       <Route path="dashboard" element={<DashboardPage />} />
+      <Route path="users" element={<UsersPage />} />
       <Route path="logs" element={<LogsPage />} />
       <Route path="settings" element={<SettingsPage />} />
       <Route path="*" element={<Navigate to="dashboard" replace />} />
