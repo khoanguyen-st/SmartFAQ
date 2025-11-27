@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import time
-from typing import Dict, Optional
+from typing import Any, Dict, List, Optional
 
 from app.rag.guardrail import GuardrailService
 from app.rag.language import detect_language_enhanced
@@ -17,7 +17,9 @@ except Exception:
 
 class RAGOrchestrator:
     def __init__(
-        self, retriever: Optional[Retriever] = None, llm_wrapper: Optional[LLMWrapper] = None
+        self,
+        retriever: Optional[Retriever] = None,
+        llm_wrapper: Optional[LLMWrapper] = None,
     ):
         self.retriever = retriever or Retriever()
         self.llm = llm_wrapper or LLMWrapper()
@@ -43,7 +45,73 @@ class RAGOrchestrator:
             return bool(data.get("is_greeting", False))
         return False
 
-    async def query(self, question: str, top_k: int = 5) -> Dict:
+    async def _rewrite_with_context(
+        self,
+        history: List[Dict[str, str]],
+        question: str,
+        target_lang: str,
+    ) -> str:
+        """
+        Dùng LLM để rewrite câu hỏi thành câu độc lập, dùng history để resolve
+        'nó', 'đó', 'it', 'that', ...
+        history: list các dict {"role": "user"/"assistant", "text": "..."}
+        """
+
+        if not history:
+            return question
+
+        # chỉ lấy vài message gần nhất cho gọn prompt
+        recent = history[-6:]
+
+        history_lines: List[str] = []
+        for msg in recent:
+            role = (msg.get("role") or "").lower()
+            text = (msg.get("text") or "").strip()
+            if not text:
+                continue
+            if role == "user":
+                history_lines.append(f"User: {text}")
+            elif role == "assistant":
+                history_lines.append(f"Assistant: {text}")
+            else:
+                history_lines.append(f"Other: {text}")
+
+        if not history_lines:
+            return question
+
+        history_block = "\n".join(history_lines)
+
+        prompt = (
+            "You are a helper that rewrites user questions into standalone questions for a RAG system.\n"
+            "Use the conversation history to resolve pronouns like 'nó', 'đó', 'cái đó', 'it', 'that', etc.\n"
+            f"The target language is '{target_lang}' ('vi' for Vietnamese, 'en' for English).\n"
+            "Return ONLY JSON with a single key 'rewritten_question'.\n"
+        )
+
+        payload = (
+            f"Conversation history:\n{history_block}\n\n"
+            f"New user question:\n{question}\n\n"
+            "Rewrite the new user question into a standalone, fully specified question.\n"
+        )
+
+        try:
+            data: Any = await self.llm.invoke_json(prompt, payload)
+            if isinstance(data, dict):
+                rq = data.get("rewritten_question")
+                if isinstance(rq, str) and rq.strip():
+                    return rq.strip()
+        except Exception:
+            # Nếu có lỗi thì fallback dùng nguyên câu gốc
+            return question
+
+        return question
+
+    async def query(
+        self,
+        question: str,
+        top_k: int = 5,
+        history: Optional[List[Dict[str, str]]] = None,
+    ) -> Dict:
         t0 = time.time()
         raw_q = (question or "").strip()
         if not raw_q:
@@ -54,6 +122,8 @@ class RAGOrchestrator:
                 "fallback_triggered": True,
                 "latency_ms": int((time.time() - t0) * 1000),
             }
+
+        # Ngôn ngữ: chỉ hỗ trợ vi/en
         lang = detect_language_enhanced(raw_q, llm_wrapper=self.llm)
         if lang not in {"vi", "en"}:
             return {
@@ -65,6 +135,7 @@ class RAGOrchestrator:
             }
         target_lang = "vi" if lang == "vi" else "en"
 
+        # Guardrail
         gr = await self.guardrail.check_safety(raw_q)
         if gr.get("status") == "blocked":
             return {
@@ -75,6 +146,7 @@ class RAGOrchestrator:
                 "latency_ms": int((time.time() - t0) * 1000),
             }
 
+        # Greeting
         is_greeting = await self._detect_greeting_llm(raw_q)
         if is_greeting:
             ans = (
@@ -90,6 +162,7 @@ class RAGOrchestrator:
                 "latency_ms": int((time.time() - t0) * 1000),
             }
 
+        # Kiểm tra retriever có tài liệu không
         try:
             if hasattr(self.retriever, "is_empty") and self.retriever.is_empty():
                 fb = (
@@ -107,14 +180,19 @@ class RAGOrchestrator:
         except Exception:
             pass
 
+        # Rewrite query với history (nếu có)
+        rewritten_q = await self._rewrite_with_context(history or [], raw_q, target_lang)
+
+        # Normalizer (nếu có) chạy trên câu đã rewrite
         if self.normalizer:
             try:
-                norm = await self.normalizer.understand(raw_q)
-                nq = norm.get("normalized_text", raw_q)
+                norm = await self.normalizer.understand(rewritten_q)
+                nq = norm.get("normalized_text", rewritten_q)
             except Exception:
-                nq = raw_q
+                nq = rewritten_q
         else:
-            nq = raw_q
+            nq = rewritten_q
+
         try:
             contexts = self.retriever.retrieve(nq, top_k=top_k, with_score=True)
         except Exception:
@@ -154,7 +232,12 @@ class RAGOrchestrator:
                 "sources": [],
                 "latency_ms": int((time.time() - t0) * 1000),
             }
-        ans = await self.llm.generate_answer_async(nq, contexts, target_language=target_lang)
+
+        ans = await self.llm.generate_answer_async(
+            nq,
+            contexts,
+            target_language=target_lang,
+        )
         source_payload = [
             {
                 "source": c.get("source") or c["metadata"].get("source"),

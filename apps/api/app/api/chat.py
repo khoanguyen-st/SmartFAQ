@@ -231,6 +231,7 @@ async def query_chat(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Session not found.",
         )
+
     stripped_lang = (payload.language or "").strip()
 
     if stripped_lang:
@@ -245,10 +246,24 @@ async def query_chat(
         t0 = time.perf_counter()
         orchestrator = get_rag_orchestrator()
 
+        # LẤY HISTORY TỪ DB CHO PHIÊN NÀY
+        stmt = (
+            select(ChatMessage)
+            .where(ChatMessage.session_id == payload.session_id)
+            .order_by(ChatMessage.created_at.asc())
+        )
+        result = await db.execute(stmt)
+        past_msgs = list(result.scalars())
+
+        # Chỉ lấy những field cần thiết, giữ role/text
+        history = [{"role": msg.role, "text": msg.text} for msg in past_msgs]
+
         rag_response = await orchestrator.query(
             question=payload.question,
             top_k=5,
+            history=history,  # truyền history vào orchestrator
         )
+
         latency_api_ms = int((time.perf_counter() - t0) * 1000)
         logger.debug(f"API Endpoint Latency: {latency_api_ms}ms")
     except Exception as exc:
@@ -324,9 +339,7 @@ async def query_chat(
         language=session.language,
         fallback=fallback_triggered,
         chat_id=response_message.id,
-        latency_ms=(
-            int(latency_ms) if latency_ms is not None else None
-        ),  # Trả về latency_ms trong JSON response
+        latency_ms=(int(latency_ms) if latency_ms is not None else None),
     )
 
 
