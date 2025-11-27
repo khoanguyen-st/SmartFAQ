@@ -1,7 +1,6 @@
 import React, { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { CreateUserDialogProps } from '@/interfaces/create-user-dialog'
-import { getDepartmentOptions } from '@/constants/options'
 import type { UserStatus } from '@/types/users';
 
 export const CreateUserDialog: React.FC<CreateUserDialogProps> = ({ open, onClose, onSubmit, onSuccess }) => {

@@ -23,7 +23,7 @@ export const useUsers = () => {
     } finally {
       setLoading(false)
     }
-  }, [page, pageSize])
+  }, [])
 
   useEffect(() => {
     loadUsers()
