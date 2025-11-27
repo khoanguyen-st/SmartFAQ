@@ -12,6 +12,7 @@ services:
       - db
       - redis
       - chroma
+      - mongo
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 
   web-student:
@@ -68,7 +69,21 @@ services:
     ports:
       - "${CHROMA_PORT_EXTERNAL:-8001}:8000"
 
+  mongo:
+    image: mongo:7.0
+    env_file: ./.env.docker
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_USERNAME:-smartfaq}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD:-smartfaq}
+      MONGO_INITDB_DATABASE: ${MONGO_DB:-smartfaq}
+    volumes:
+      - mongo-data:/data/db
+    ports:
+      - "${MONGO_PORT_EXTERNAL:-27017}:27017"
+    command: ["--bind_ip_all"]
+
 volumes:
   smartfaq-db:
   redis-data:
   chroma-data:
+  mongo-data:
