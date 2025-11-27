@@ -1,24 +1,18 @@
 from __future__ import annotations
 
-import logging
 import time
-from typing import Any, Dict, List, Optional, Sequence
+from typing import Dict, Optional
 
-from langchain_core.documents import Document
-from langchain_core.output_parsers import StrOutputParser
-from langchain_core.runnables import RunnablePassthrough
-
-from app.core.config import settings
+from app.rag.guardrail import GuardrailService
+from app.rag.language import detect_language_enhanced
 from app.rag.llm import LLMWrapper
+from app.rag.prompts import get_greeting_intent_prompt
 from app.rag.retriever import Retriever
 
-logger = logging.getLogger(__name__)
-
-
-def _clip(text: str, max_chars: int = 8000) -> str:
-    if len(text) <= max_chars:
-        return text
-    return text[: max_chars - 3] + "..."
+try:
+    from app.rag.normalizer import UnifiedNormalizer
+except Exception:
+    UnifiedNormalizer = None
 
 
 class RAGOrchestrator:
@@ -26,188 +20,147 @@ class RAGOrchestrator:
         self, retriever: Optional[Retriever] = None, llm_wrapper: Optional[LLMWrapper] = None
     ):
         self.retriever = retriever or Retriever()
-        self.llm_wrapper = llm_wrapper or LLMWrapper()
+        self.llm = llm_wrapper or LLMWrapper()
+        self.guardrail = GuardrailService(self.llm)
 
-    async def query(
-        self,
-        question: str,
-        user_id: Optional[str] = None,
-        *,
-        top_k: int = 5,
-        where: Optional[Dict[str, Any]] = None,
-        search_type: str = "similarity",
-        return_top_sources: int = 3,
-        response_language: str = "en",
-    ) -> Dict[str, Any]:
-        t0 = time.time()
-
-        # 1) Retrieve
         try:
-            contexts = self.retriever.retrieve(
-                query=question,
-                top_k=top_k,
-                where=where,
-                with_score=True,
-            )
-        except Exception as e:
-            logger.exception("Retriever failed: %s", e)
-            error_msg = (
-                "Xin lỗi, hệ thống tìm kiếm tài liệu gặp lỗi. Vui lòng thử lại sau."
-                if response_language == "vi"
-                else "Sorry, the document search system failed. Please try again later."
-            )
+            self.normalizer = UnifiedNormalizer(self.llm)
+        except Exception:
+            self.normalizer = None
+
+    async def _detect_greeting_llm(self, text: str) -> bool:
+        cleaned = (text or "").strip()
+        if not cleaned:
+            return False
+
+        prompt = get_greeting_intent_prompt()
+        try:
+            data = await self.llm.invoke_json(prompt, cleaned)
+        except Exception:
+            return False
+
+        if isinstance(data, dict):
+            return bool(data.get("is_greeting", False))
+        return False
+
+    async def query(self, question: str, top_k: int = 5) -> Dict:
+        t0 = time.time()
+        raw_q = (question or "").strip()
+        if not raw_q:
             return {
-                "answer": error_msg,
-                "confidence": 0.0,
+                "answer": "Please input a valid question.",
+                "confidence": 0,
                 "sources": [],
                 "fallback_triggered": True,
                 "latency_ms": int((time.time() - t0) * 1000),
-                "error": str(e),
+            }
+        lang = detect_language_enhanced(raw_q, llm_wrapper=self.llm)
+        target_lang = "vi" if lang == "vi" else "en"
+        gr = await self.guardrail.check_safety(raw_q)
+        if gr.get("status") == "blocked":
+            return {
+                "answer": gr[target_lang],
+                "confidence": 1,
+                "fallback_triggered": False,
+                "sources": [],
+                "latency_ms": int((time.time() - t0) * 1000),
             }
 
-        if not isinstance(contexts, list):
-            contexts = []
+        is_greeting = await self._detect_greeting_llm(raw_q)
+        if is_greeting:
+            ans = (
+                "Chào bạn, tôi có thể hỗ trợ gì cho bạn?"
+                if target_lang == "vi"
+                else "Hello! How can I assist you today?"
+            )
+            return {
+                "answer": ans,
+                "confidence": 1,
+                "fallback_triggered": False,
+                "sources": [],
+                "latency_ms": int((time.time() - t0) * 1000),
+            }
 
-        logger.debug("Retrieved %d contexts for question=%s", len(contexts), question)
+        try:
+            if hasattr(self.retriever, "is_empty") and self.retriever.is_empty():
+                fb = (
+                    "Hiện hệ thống chưa có tài liệu nào để trả lời."
+                    if target_lang == "vi"
+                    else "The system does not have any documents yet."
+                )
+                return {
+                    "answer": fb,
+                    "confidence": 0,
+                    "fallback_triggered": True,
+                    "sources": [],
+                    "latency_ms": int((time.time() - t0) * 1000),
+                }
+        except Exception:
+            pass
 
-        # 2) Confidence (retriever-level)
-        confidence = self.retriever.calculate_confidence(contexts)
-
-        threshold = float(getattr(settings, "CONFIDENCE_THRESHOLD", 0.65))
-
-        answer: str = ""
-        fallback_triggered = False
-        sources_to_return: List[Dict[str, Any]] = []
-
-        is_vi = response_language == "vi"
-        fallback_text = (
-            "Tôi không tìm thấy thông tin về vấn đề này"
-            if is_vi
-            else "I could not find information about that."
-        )
-        error_text = (
-            "Xin lỗi, hệ thống đang gặp sự cố. Vui lòng thử lại sau."
-            if is_vi
-            else "Sorry, the system encountered an error. Please try again later."
-        )
+        if self.normalizer:
+            try:
+                norm = await self.normalizer.understand(raw_q)
+                nq = norm.get("normalized_text", raw_q)
+            except Exception:
+                nq = raw_q
+        else:
+            nq = raw_q
+        try:
+            contexts = self.retriever.retrieve(nq, top_k=top_k, with_score=True)
+        except Exception:
+            return {
+                "answer": "System Error",
+                "confidence": 0,
+                "fallback_triggered": True,
+                "sources": [],
+                "latency_ms": int((time.time() - t0) * 1000),
+            }
 
         if not contexts:
-            logger.info("No contexts found for question=%s -> hard fallback", question)
-            answer = fallback_text
-            fallback_triggered = True
-            sources_to_return = []
-        else:
-            logger.debug("Retriever confidence=%.4f threshold=%.4f", confidence, threshold)
-
-            if confidence >= threshold:
-                try:
-                    raw = await self.llm_wrapper.generate_answer_async(
-                        question, contexts, target_language=response_language
-                    )
-                except Exception as e:
-                    logger.exception("LLM generation failed on confident path: %s", e)
-                    return {
-                        "answer": error_text,
-                        "confidence": 0.0,
-                        "sources": [],
-                        "fallback_triggered": True,
-                        "latency_ms": int((time.time() - t0) * 1000),
-                        "error": str(e),
-                    }
-                answer = raw or ""
-                sources_to_return = contexts[:return_top_sources]
-            else:
-                logger.info(
-                    "Retriever confidence too low (%.4f < %.4f) for question=%s -> fallback (no sources)",
-                    confidence,
-                    threshold,
-                    question,
-                )
-                answer = fallback_text
-                fallback_triggered = True
-                sources_to_return = []
-
-        if is_vi:
-            llm_fallback_markers = [
-                "tôi không tìm thấy thông tin",
-                "không tìm thấy thông tin",
-            ]
-        else:
-            llm_fallback_markers = [
-                "could not find",
-                "no information",
-                "i do not know",
-                "i don't know",
-            ]
-
-        normalized_answer = (answer or "").strip().lower()
-        if sources_to_return and (
-            normalized_answer == ""
-            or any(marker in normalized_answer for marker in llm_fallback_markers)
-        ):
-            logger.warning(
-                "LLM returned fallback-like answer despite contexts present. question=%s retriever_confidence=%.4f top_context_preview=%s",
-                question,
-                confidence,
-                (sources_to_return[0].get("text") or "")[:300] if sources_to_return else None,
+            fb = (
+                "Tôi không tìm thấy thông tin."
+                if target_lang == "vi"
+                else "I could not find information."
             )
-            fallback_triggered = True
-            sources_to_return = []
-            confidence = 0.0
-            answer = fallback_text
-
-        sources_list: List[Dict[str, Any]] = []
-        for c in sources_to_return or []:
-            md = c.get("metadata", {}) or {}
-            sources_list.append(
-                {
-                    "document_id": md.get("document_id"),
-                    "chunk_id": md.get("chunk_id"),
-                    "chunk_index": md.get("chunk_index"),
-                    "source": md.get("source") or md.get("uri") or md.get("url"),
-                    "page": md.get("page"),
-                    "score": c.get("score"),
-                    "text_preview": (c.get("text") or "")[:500],
-                }
-            )
-
-        latency_ms = int((time.time() - t0) * 1000)
-        return {
-            "answer": answer,
-            "confidence": round(float(confidence), 4),
-            "sources": sources_list,
-            "fallback_triggered": bool(fallback_triggered),
-            "latency_ms": latency_ms,
-        }
-
-    def build_rag_chain(
-        self,
-        *,
-        k: int = 5,
-        where: Optional[Dict[str, Any]] = None,
-        search_type: str = "similarity",
-        max_context_chars: int = 8000,
-    ):
-        retriever = self.retriever.get_langchain_retriever(
-            k=k, where=where, search_type=search_type
-        )
-
-        def format_docs(docs: Sequence[Document]) -> str:
-            parts: List[str] = []
-            for i, d in enumerate(docs, start=1):
-                src = d.metadata.get("source") or "N/A"
-                page = d.metadata.get("page")
-                page_info = f" (trang {page})" if page else ""
-                parts.append(f"[Nguồn {i} - {src}{page_info}]\n{d.page_content}")
-            return _clip("\n\n".join(parts), max_chars=max_context_chars)
-
-        rag_chain = (
-            {
-                "context": retriever | format_docs,
-                "question": RunnablePassthrough(),
+            return {
+                "answer": fb,
+                "confidence": 0,
+                "fallback_triggered": True,
+                "sources": [],
+                "latency_ms": int((time.time() - t0) * 1000),
             }
-            | self.llm_wrapper.prompt
-            | self.llm_wrapper.llm
-            | StrOutputParser()
-        )
-        return rag_chain
+
+        conf = self.retriever.calculate_confidence(contexts)
+        if conf < 0.65:
+            fb = (
+                "Tôi không tìm thấy thông tin."
+                if target_lang == "vi"
+                else "I could not find information."
+            )
+            return {
+                "answer": fb,
+                "confidence": conf,
+                "fallback_triggered": True,
+                "sources": [],
+                "latency_ms": int((time.time() - t0) * 1000),
+            }
+        ans = await self.llm.generate_answer_async(nq, contexts, target_language=target_lang)
+        source_payload = [
+            {
+                "source": c.get("source") or c["metadata"].get("source"),
+                "page": c.get("page") or c["metadata"].get("page"),
+                "chunk_id": c.get("chunk_id"),
+                "text_preview": c.get("text_preview"),
+                "score": c.get("score"),
+            }
+            for c in contexts
+        ]
+
+        return {
+            "answer": ans,
+            "confidence": conf,
+            "fallback_triggered": False,
+            "sources": source_payload,
+            "latency_ms": int((time.time() - t0) * 1000),
+        }
