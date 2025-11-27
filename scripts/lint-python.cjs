@@ -40,7 +40,8 @@ const command = process.env.LINT_COMMAND || 'both';
 try {
   if (command === 'ruff' || command === 'both') {
     console.log('Running ruff...');
-    execSync(`"${ruffPath}" check --fix ${files.join(' ')}`, { 
+    const quotedFiles = files.map(f => `"${f}"`).join(' ');
+    execSync(`"${ruffPath}" check --fix ${quotedFiles}`, { 
       stdio: 'inherit',
       shell: true 
     });
@@ -48,7 +49,8 @@ try {
   
   if (command === 'black' || command === 'both') {
     console.log('Running black...');
-    execSync(`"${blackPath}" ${files.join(' ')}`, { 
+    const quotedFiles = files.map(f => `"${f}"`).join(' ');
+    execSync(`"${blackPath}" ${quotedFiles}`, { 
       stdio: 'inherit',
       shell: true 
     });
