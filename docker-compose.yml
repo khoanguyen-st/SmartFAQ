@@ -20,7 +20,7 @@ services:
       dockerfile: Dockerfile
     env_file: ./.env.docker
     volumes:
-      - ./apps/web-student/src:/app/src
+      - ./apps/web-student/src:/app/src:cached
     ports:
       - "${WEB_STUDENT_PORT_EXTERNAL:-5173}:5173"
     depends_on:
@@ -32,7 +32,7 @@ services:
       dockerfile: Dockerfile
     env_file: ./.env.docker
     volumes:
-      - ./apps/web-admin/src:/app/src
+      - ./apps/web-admin/src:/app/src:cached
     ports:
       - "${WEB_ADMIN_PORT_EXTERNAL:-5174}:5173"
     depends_on:

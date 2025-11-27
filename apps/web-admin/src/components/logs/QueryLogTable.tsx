@@ -1,4 +1,5 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
+import { fetchLogs } from '@/lib/api'
 
 interface QueryLog {
   id: string
@@ -9,13 +10,30 @@ interface QueryLog {
   timestamp: string
 }
 
-const sample: QueryLog[] = []
-
 const QueryLogTable = () => {
   const [search, setSearch] = useState('')
+  const [logs, setLogs] = useState<QueryLog[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    const loadLogs = async () => {
+      try {
+        setLoading(true)
+        const data = await fetchLogs()
+        setLogs(data)
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to load logs')
+      } finally {
+        setLoading(false)
+      }
+    }
+    loadLogs()
+  }, [])
+
   const filtered = useMemo(() => {
-    return sample.filter(log => log.question.toLowerCase().includes(search.toLowerCase()))
-  }, [search])
+    return logs.filter(log => log.question.toLowerCase().includes(search.toLowerCase()))
+  }, [logs, search])
 
   return (
     <div className="flex flex-col gap-5 rounded-2xl bg-white p-6 shadow-lg shadow-slate-900/10">
@@ -53,13 +71,38 @@ const QueryLogTable = () => {
             </tr>
           </thead>
           <tbody>
-            {filtered.length === 0 && (
+            {loading && (
+              <tr>
+                <td colSpan={5} className="py-6 text-center text-slate-400">
+                  Loading...
+                </td>
+              </tr>
+            )}
+            {!loading && error && (
+              <tr>
+                <td colSpan={5} className="py-6 text-center text-red-400">
+                  {error}
+                </td>
+              </tr>
+            )}
+            {!loading && !error && filtered.length === 0 && (
               <tr>
                 <td colSpan={5} className="py-6 text-center text-slate-400">
                   No log entries yet.
                 </td>
               </tr>
             )}
+            {!loading &&
+              !error &&
+              filtered.map(log => (
+                <tr key={log.id} className="border-b border-slate-100 hover:bg-slate-50">
+                  <td className="px-3 py-3">{new Date(log.timestamp).toLocaleString()}</td>
+                  <td className="px-3 py-3">{log.question}</td>
+                  <td className="px-3 py-3">{(log.confidence * 100).toFixed(1)}%</td>
+                  <td className="px-3 py-3">{log.fallback ? 'Yes' : 'No'}</td>
+                  <td className="px-3 py-3">{log.lang}</td>
+                </tr>
+              ))}
           </tbody>
         </table>
       </div>

@@ -1,7 +1,8 @@
-import { NavLink } from 'react-router-dom'
+import { useEffect } from 'react'
+import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { useState, useCallback, useMemo } from 'react'
-import type { ReactNode } from 'react'
 import { cn } from '@/lib/utils'
+import { logout } from '@/lib/api'
 import Education from '../assets/icon/education.svg?react'
 import UserIcon from '../assets/icon/user.svg?react'
 import { Menu, X } from 'lucide-react'
@@ -14,14 +15,36 @@ const navItems = [
   { path: 'view-chat', label: 'View Chat' }
 ]
 
-const ShellLayout = ({ children }: { children: ReactNode }) => {
+const ShellLayout = () => {
+  const navigate = useNavigate()
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
+
+  useEffect(() => {
+    // Check if user is authenticated
+    const token = localStorage.getItem('access_token')
+    if (!token) {
+      navigate('/login')
+    }
+  }, [navigate])
+
   const toggleSidebar = useCallback(() => setIsSidebarOpen(prev => !prev), [])
+
   const handleNavigation = useCallback(() => {
     if (isSidebarOpen) {
       setIsSidebarOpen(false)
     }
   }, [isSidebarOpen])
+
+  const handleLogout = useCallback(async () => {
+    try {
+      await logout()
+      navigate('/login')
+    } catch {
+      // Even if logout fails, clear token and redirect
+      localStorage.removeItem('access_token')
+      navigate('/login')
+    }
+  }, [navigate])
 
   const Sidebar = useMemo(
     () => (
@@ -60,9 +83,15 @@ const ShellLayout = ({ children }: { children: ReactNode }) => {
             </NavLink>
           ))}
         </nav>
+        <button
+          onClick={handleLogout}
+          className="mt-auto rounded-lg bg-transparent px-3.5 py-2 text-sm text-red-400 transition-colors duration-200 hover:bg-red-600/20 hover:text-red-300"
+        >
+          Logout
+        </button>
       </aside>
     ),
-    [isSidebarOpen, toggleSidebar, handleNavigation]
+    [isSidebarOpen, toggleSidebar, handleNavigation, handleLogout]
   )
 
   return (
@@ -95,7 +124,9 @@ const ShellLayout = ({ children }: { children: ReactNode }) => {
             </div>
           </div>
         </header>
-        <div className="flex flex-col gap-6">{children}</div>
+        <div className="flex flex-col gap-6">
+          <Outlet />
+        </div>
       </main>
     </div>
   )

@@ -1,5 +1,5 @@
 """Service layer exports."""
 
-from . import dms, fallback, metrics
+from . import auth_service, dms, fallback, metrics
 
-__all__ = ["dms", "fallback", "metrics"]
+__all__ = ["auth_service", "dms", "fallback", "metrics"]
