@@ -119,20 +119,31 @@ def _detect_vi_no_accent(tokens: list[str]) -> bool:
     return False
 
 
+def _is_likely_english(tokens: list[str]) -> bool:
+    """Heuristic đơn giản nhận diện tiếng Anh."""
+    if not tokens:
+        return False
+
+    if not any(tok in _en_common_words for tok in tokens):
+        return False
+
+    ascii_tokens = sum(1 for t in tokens if re.fullmatch(r"[a-z0-9]+", t))
+    ratio = ascii_tokens / len(tokens)
+    return ratio >= 0.8
+
+
 def detect_language_enhanced(text: str, llm_wrapper=None, async_: bool = False) -> str:
     if not text or not text.strip():
         return "en"
-
     s = text.lower()
-
     if _has_diacritics(s):
         return "vi"
-
     tokens = _tokenize(s)
     if _detect_vi_no_accent(tokens):
         return "vi"
-
-    return "en"
+    if _is_likely_english(tokens):
+        return "en"
+    return "unsupported"
 
 
 def normalize_text(
