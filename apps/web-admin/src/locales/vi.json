@@ -1,0 +1,126 @@
+{
+  "common": {
+    "loading": "Đang tải...",
+    "save": "Lưu",
+    "cancel": "Hủy",
+    "edit": "Sửa",
+    "delete": "Xóa",
+    "create": "Tạo",
+    "update": "Cập nhật",
+    "search": "Tìm kiếm",
+    "filter": "Lọc",
+    "clearFilters": "Xóa bộ lọc",
+    "close": "Đóng",
+    "confirm": "Xác nhận",
+    "yes": "Có",
+    "no": "Không"
+  },
+  "user": {
+    "pageTitle": "Danh sách Tài khoản Người dùng",
+    "pageDescription": "Quản lý tài khoản người dùng của bạn",
+    "createNewAccount": "Tạo Tài khoản Mới",
+    "editUser": "Sửa người dùng",
+    "lockUser": "Khóa người dùng",
+    "unlockUser": "Mở khóa người dùng",
+    "resetPassword": "Đặt lại Mật khẩu",
+    "noUsersFound": "Không tìm thấy người dùng",
+    "lock": "Khóa",
+    "unlock": "Mở khóa",
+    "active": "Hoạt động",
+    "locked": "Đã khóa",
+    "status": {
+      "active": "Hoạt động",
+      "locked": "Đã khóa"
+    },
+    "table": {
+      "id": "ID",
+      "username": "Tên đăng nhập",
+      "email": "Email",
+      "phoneNumber": "Số điện thoại",
+      "role": "Vai trò",
+      "department": "Phòng ban",
+      "status": "Trạng thái",
+      "action": "Thao tác"
+    },
+    "card": {
+      "email": "Email:",
+      "phone": "Điện thoại:",
+      "role": "Vai trò:",
+      "department": "Phòng ban:"
+    },
+    "filter": {
+      "department": "Phòng ban",
+      "status": "Trạng thái"
+    },
+    "form": {
+      "username": "Tên đăng nhập",
+      "email": "Email",
+      "phoneNumber": "Số điện thoại",
+      "campus": "Cơ sở",
+      "department": "Phòng ban",
+      "role": "Vai trò",
+      "status": "Trạng thái",
+      "password": "Mật khẩu",
+      "confirmPassword": "Xác nhận mật khẩu",
+      "selectCampus": "Chọn cơ sở",
+      "selectDepartment": "Chọn phòng ban",
+      "selectRole": "Chọn vai trò",
+      "selectStatus": "Chọn trạng thái"
+    },
+    "dialog": {
+      "createTitle": "Tạo Tài khoản Mới",
+      "createDescription": "Tạo tài khoản cho nhân viên phòng Công tác Sinh viên.",
+      "editTitle": "Sửa Tài khoản Người dùng",
+      "editDescription": "Cập nhật thông tin và quyền của người dùng.",
+      "lockTitle": "Khóa Tài khoản",
+      "lockDescription": "Bạn có chắc chắn muốn khóa tài khoản này? Người dùng sẽ không thể đăng nhập.",
+      "unlockTitle": "Mở khóa Tài khoản",
+      "unlockDescription": "Bạn có chắc chắn muốn mở khóa tài khoản này? Người dùng sẽ có thể đăng nhập lại.",
+      "resetPasswordTitle": "Đặt lại Mật khẩu",
+      "resetPasswordDescription": "Bạn có chắc chắn muốn đặt lại mật khẩu cho tài khoản này? Mật khẩu mới sẽ được gửi đến email của họ.",
+      "targetUser": "Người dùng"
+    },
+    "validation": {
+      "usernameRequired": "Tên đăng nhập là bắt buộc",
+      "usernameMinLength": "Tên đăng nhập phải có ít nhất 3 ký tự",
+      "emailRequired": "Email là bắt buộc",
+      "emailInvalid": "Định dạng email không hợp lệ. Vui lòng nhập địa chỉ email hợp lệ.",
+      "passwordRequired": "Mật khẩu là bắt buộc",
+      "passwordMinLength": "Mật khẩu phải có ít nhất 8 ký tự",
+      "passwordRequirements": "Mật khẩu không đáp ứng yêu cầu bảo mật.",
+      "departmentRequired": "Phải được chọn ít nhất một phòng ban.",
+      "campusRequired": "Cơ sở là bắt buộc",
+      "roleRequired": "Vai trò là bắt buộc"
+    },
+    "error": {
+      "createFailed": "Tạo người dùng thất bại",
+      "updateFailed": "Cập nhật người dùng thất bại",
+      "lockFailed": "Khóa người dùng thất bại",
+      "unlockFailed": "Mở khóa người dùng thất bại",
+      "resetPasswordFailed": "Đặt lại mật khẩu thất bại",
+      "loadFailed": "Tải danh sách người dùng thất bại"
+    },
+    "success": {
+      "created": "Tạo người dùng thành công",
+      "updated": "Cập nhật người dùng thành công",
+      "locked": "Khóa người dùng thành công",
+      "unlocked": "Mở khóa người dùng thành công",
+      "passwordReset": "Đặt lại mật khẩu thành công"
+    }
+  },
+  "campus": {
+    "hanoi": "Cơ sở Hà Nội",
+    "danang": "Cơ sở Đà Nẵng",
+    "hochiminh": "Cơ sở Hồ Chí Minh"
+  },
+  "department": {
+    "academic": "Phòng Đào tạo",
+    "student": "Phòng Công tác Sinh viên",
+    "it": "Phòng Công nghệ Thông tin"
+  },
+  "role": {
+    "admin": "Quản trị viên",
+    "staff": "Nhân viên",
+    "manager": "Quản lý"
+  }
+}
