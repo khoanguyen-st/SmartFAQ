@@ -1,40 +1,55 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
-import App from '../App' // Hoặc component ChatWidget của bạn
-import '../styles.css' // QUAN TRỌNG: Import CSS (Tailwind/Global styles) để style đi theo widget
+import App from '../App' 
 import { MemoryRouter } from 'react-router-dom'
+
+import styleText from '../styles.css?inline' 
 
 const WIDGET_ID = 'my-chat-widget-root'
 
 export const initWidget = () => {
-  // 1. Kiểm tra xem widget đã tồn tại chưa để tránh trùng lặp
   if (document.getElementById(WIDGET_ID)) {
     return
   }
 
-  // 2. Tạo container cho widget
-  const widgetDiv = document.createElement('div')
-  widgetDiv.id = WIDGET_ID
-  document.body.appendChild(widgetDiv)
+  const widgetHost = document.createElement('div')
+  widgetHost.id = WIDGET_ID
+  widgetHost.style.position = 'fixed'; 
+  widgetHost.style.zIndex = '999999';
+  document.body.appendChild(widgetHost)
 
-  // 3. Mount React App vào div vừa tạo
-  const root = ReactDOM.createRoot(widgetDiv)
+
+  const shadowRoot = widgetHost.attachShadow({ mode: 'open' })
+
+  const styleTag = document.createElement('style')
+  styleTag.textContent = styleText
+  shadowRoot.appendChild(styleTag)
+
+  // Tạo điểm Mount cho React bên trong Shadow
+  const mountPoint = document.createElement('div')
+
+  mountPoint.style.fontSize = '16px'; 
+  mountPoint.style.lineHeight = '1.5';
+  mountPoint.className = 'antialiased';
+  
+  shadowRoot.appendChild(mountPoint)
+
+  // Mount React App
+  const root = ReactDOM.createRoot(mountPoint)
   root.render(
     <React.StrictMode>
       <MemoryRouter>
+
         <App />
       </MemoryRouter>
     </React.StrictMode>
   )
 }
 
-// Tự động khởi chạy khi script được load (tùy chọn)
-// window.onload = initWidget;
-// Hoặc gán vào window để trang web chủ tự gọi
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+// Expose ra window
 ;(window as any).ChatWidget = {
   init: initWidget
 }
-// Gọi luôn để test:
+
+// Gọi luôn để test
 initWidget()

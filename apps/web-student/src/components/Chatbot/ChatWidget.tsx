@@ -11,7 +11,11 @@ const ChatWidget = () => {
 
   const handleExpand = () => {
     if (sessionId) {
-      const url = `/chat?sessionId=${sessionId}`
+      // localhost:5173
+      // https://your-domain.com
+      const HOST_URL = 'http://localhost:5173'
+
+      const url = `${HOST_URL}/chat?sessionId=${sessionId}`
       window.open(url, '_blank')
     }
   }
