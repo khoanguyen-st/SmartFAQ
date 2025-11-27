@@ -49,6 +49,14 @@ class Settings(BaseSettings):
     UPLOAD_DIR: str = Field("./uploads", alias="UPLOAD_DIR")
     UPLOAD_MAX_MB: int = Field(50, alias="UPLOAD_MAX_MB")
 
+    # Cloud Storage
+    CLOUDINARY_CLOUD_NAME: str = Field("", alias="CLOUDINARY_CLOUD_NAME")
+    CLOUDINARY_API_KEY: str = Field("", alias="CLOUDINARY_API_KEY")
+    CLOUDINARY_API_SECRET: str = Field("", alias="CLOUDINARY_API_SECRET")
+    CLOUDINARY_FOLDER_IMAGE: str = Field("Assets", alias="CLOUDINARY_FOLDER_IMAGE")
+    CLOUDINARY_FOLDER_DOCUMENT: str = Field("Documents", alias="CLOUDINARY_FOLDER_DOCUMENT")
+
+    # Celery
     CELERY_BROKER_URL: str = Field("redis://localhost:6379/0", alias="CELERY_BROKER_URL")
     CELERY_RESULT_BACKEND: str = Field("redis://localhost:6379/0", alias="CELERY_RESULT_BACKEND")
 
