@@ -12,18 +12,12 @@ export const Pagination: React.FC<PaginationProps & { className?: string }> = ({
   className = ''
 }) => {
   const effectiveTotal = totalCount ?? (totalPages ? totalPages * pageSize : UI.MOCK_TOTAL_USERS)
-  const pages = totalPages ?? Math.max(1, Math.ceil(effectiveTotal / pageSize))
-  const displayedPages = Array.from({ length: PAGINATION.MAX_DISPLAY_PAGES }, (_, index) => index + 1)
-  const start = (currentPage - 1) * pageSize + 1
-  const end = Math.min(currentPage * pageSize, effectiveTotal > 0 ? effectiveTotal : 5)
-  const endLabel = end.toString().padStart(2, '0')
+  const pages = 1;
+  const start = 1;
+  const end = effectiveTotal;
+  const endLabel = end.toString().padStart(2, '0');
   const containerClass =
-    `flex flex-wrap items-center justify-end gap-4 px-6 py-4 text-sm text-slate-500 ${className}`.trim()
-
-  const changePage = (pageValue: number) => {
-    if (pageValue < 1 || pageValue > pages || pageValue === currentPage) return
-    onPageChange(pageValue)
-  }
+    `flex flex-wrap items-center justify-end gap-4 px-6 py-4 text-sm text-slate-500 ${className}`.trim();
 
   return (
     <div className={containerClass}>
@@ -33,38 +27,10 @@ export const Pagination: React.FC<PaginationProps & { className?: string }> = ({
       <div className="flex items-center gap-2">
         <button
           type="button"
-          onClick={() => changePage(currentPage - 1)}
-          disabled={currentPage === 1}
-          className="h-9 w-9 rounded-lg border border-slate-200 text-base text-slate-500 transition enabled:hover:border-blue-200 enabled:hover:text-blue-600 disabled:opacity-40"
-          aria-label="Previous page"
+          className="h-9 w-9 rounded-lg border border-blue-600 bg-blue-600 text-white shadow text-sm font-medium"
+          disabled
         >
-          ‹
-        </button>
-        {displayedPages.map(p => {
-          const isActive = p === currentPage
-          return (
-            <button
-              key={p}
-              type="button"
-              onClick={() => changePage(p)}
-              className={`h-9 w-9 rounded-lg border text-sm font-medium transition ${
-                isActive
-                  ? 'border-blue-600 bg-blue-600 text-white shadow'
-                  : 'border-slate-200 text-slate-600 hover:border-blue-200 hover:text-blue-600'
-              }`}
-            >
-              {p}
-            </button>
-          )
-        })}
-        <button
-          type="button"
-          onClick={() => changePage(currentPage + 1)}
-          disabled={currentPage === pages}
-          className="h-9 w-9 rounded-lg border border-slate-200 text-base text-slate-500 transition enabled:hover:border-blue-200 enabled:hover:text-blue-600 disabled:opacity-40"
-          aria-label="Next page"
-        >
-          ›
+          1
         </button>
       </div>
       <select
@@ -76,7 +42,7 @@ export const Pagination: React.FC<PaginationProps & { className?: string }> = ({
         <option value={10}>10 / pages</option>
       </select>
     </div>
-  )
+  );
 }
 
 export default Pagination
