@@ -7,7 +7,7 @@ import txtUrl from '@/assets/icons/txt.svg'
 import { MAX_SIZE } from '@/lib/files'
 import { cn } from '@/lib/utils'
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useState } from 'react'
-import { API_BASE_URL } from '@/lib/api'
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8000'
 import { IUploadedFile, deleteKnowledgeFile, fetchKnowledgeFiles } from '@/services/document.services'
 import DeleteConfirmationModal from './DeleteConfirmationModal'
 

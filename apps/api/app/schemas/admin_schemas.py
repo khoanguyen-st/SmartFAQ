@@ -16,9 +16,6 @@ class UserBase(BaseModel):
     phone: str | None = Field(None, max_length=50, description="Phone number (optional)")
     address: str | None = Field(None, max_length=255, description="Address (optional)")
     image: str | None = Field(None, max_length=255, description="Image URL (optional)")
-    notification_email: str | None = Field(
-        None, max_length=500, description="Notification email (optional)"
-    )
     campus_id: str = Field(..., max_length=10, description="Campus ID")
     role: str = Field(..., max_length=50, description="User role")
 
@@ -38,9 +35,6 @@ class UserUpdate(BaseModel):
     phone: str | None = Field(None, max_length=50, description="Phone number (optional)")
     address: str | None = Field(None, max_length=255, description="Address (optional)")
     image: str | None = Field(None, max_length=255, description="Image URL (optional)")
-    notification_email: str | None = Field(
-        None, max_length=500, description="Notification email (optional)"
-    )
     campus_id: str | None = Field(None, max_length=10, description="Campus ID")
     password: str | None = Field(
         None, min_length=8, description="Password must be at least 8 characters"

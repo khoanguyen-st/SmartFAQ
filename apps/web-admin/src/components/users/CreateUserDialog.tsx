@@ -1,67 +1,63 @@
 import React, { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { CreateUserRequest } from '@/types/users'
 import type { CreateUserDialogProps } from '@/interfaces/create-user-dialog'
-import { validateDepartments } from '@/lib/validation'
-import { getCampusOptions, getDepartmentOptions } from '@/constants/options'
+import { getDepartmentOptions } from '@/constants/options'
+import type { UserStatus } from '@/types/users';
 
 export const CreateUserDialog: React.FC<CreateUserDialogProps> = ({ open, onClose, onSubmit, onSuccess }) => {
-  const { t } = useTranslation()
-  const [formData, setFormData] = useState<CreateUserRequest>({
+  const { t } = useTranslation();
+  type CreateUserPayload = {
+    username: string;
+    email: string;
+    password: string;
+    role: string;
+    campus_id: string;
+    status: UserStatus;
+  };
+  const [formData, setFormData] = useState<CreateUserPayload>({
     username: '',
     email: '',
-    campus: '',
-    departments: [],
-    phoneNumber: '0224576981',
-    role: 'Staff',
-    status: 'Active'
-  })
+    password: '',
+    role: '',
+    campus_id: '',
+    status: 'Active',
+  });
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [campusOpen, setCampusOpen] = useState(false)
-  const [departmentOpen, setDepartmentOpen] = useState(false)
 
   const isSubmitDisabled = useMemo(() => {
-    return !formData.email || !formData.username || !formData.campus || !formData.departments?.length
-  }, [formData])
+    return (
+      !formData.email ||
+      !formData.username ||
+      !formData.password ||
+      formData.password.length < 8 ||
+      !formData.role ||
+      !formData.campus_id
+    );
+  }, [formData]);
 
-  const toggleDepartment = (dept: string) => {
-    const current = formData.departments || []
-    const updated = current.includes(dept) ? current.filter((d: string) => d !== dept) : [...current, dept]
-    setFormData({ ...formData, departments: updated })
-  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setError(null)
-
-    const deptError = validateDepartments(formData.departments)
-    if (deptError) {
-      setError(deptError)
-      return
-    }
-
-    if (isSubmitDisabled) return
-    setLoading(true)
+    setError(null);
     try {
-      await onSubmit?.(formData)
-      onSuccess?.()
-      onClose()
+      await onSubmit?.(formData);
+      onSuccess?.();
+      onClose();
       setFormData({
         username: '',
         email: '',
-        campus: '',
-        departments: [],
-        phoneNumber: '0224576981',
-        role: 'Staff',
-        status: 'Active'
-      })
-      setError(null)
+        password: '',
+        role: '',
+        campus_id: '',
+        status: 'Active',
+      });
+      setError(null);
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : t('user.error.createFailed'))
-      console.error('Failed to create user:', err)
+      setError(err instanceof Error ? err.message : t('user.error.createFailed'));
+      console.error('Failed to create user:', err);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
   }
 
@@ -79,114 +75,66 @@ export const CreateUserDialog: React.FC<CreateUserDialogProps> = ({ open, onClos
             <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">{error}</div>
           )}
           <div>
-            <label className="mb-1 block text-sm font-medium text-slate-700">{t('user.form.email')} *</label>
+            <label className="mb-1 block text-sm font-medium text-slate-700">Email *</label>
             <input
               required
               type="email"
               value={formData.email}
               onChange={e => setFormData({ ...formData, email: e.target.value })}
-              placeholder={t('user.form.email')}
+              placeholder="Email"
               className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm focus:border-blue-500 focus:outline-none"
             />
           </div>
           <div>
-            <label className="mb-1 block text-sm font-medium text-slate-700">{t('user.form.username')} *</label>
+            <label className="mb-1 block text-sm font-medium text-slate-700">Username *</label>
             <input
               required
               value={formData.username}
               onChange={e => setFormData({ ...formData, username: e.target.value })}
-              placeholder={t('user.form.username')}
+              placeholder="Username"
               className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm focus:border-blue-500 focus:outline-none"
             />
           </div>
-          <div className="relative">
-            <label className="mb-1 block text-sm font-medium text-slate-700">{t('user.form.campus')} *</label>
-            <button
-              type="button"
-              onClick={() => setCampusOpen(o => !o)}
-              className="flex w-full items-center justify-between rounded-xl border border-slate-200 px-4 py-2.5 text-left text-sm text-slate-600 focus:border-blue-500 focus:outline-none"
-              aria-haspopup="listbox"
-              aria-expanded={campusOpen}
-            >
-              <span>
-                {formData.campus
-                  ? t(getCampusOptions().find(k => t(k) === formData.campus) || '')
-                  : t('user.form.selectCampus')}
-              </span>
-              <span className="text-slate-400">▾</span>
-            </button>
-            {campusOpen && (
-              <div className="absolute left-0 z-10 mt-2 w-full rounded-xl border border-slate-200 bg-white p-4 shadow-xl">
-                <ul className="space-y-3 text-sm" role="listbox">
-                  {getCampusOptions().map(option => {
-                    const translated = t(option)
-                    const checked = formData.campus === translated
-                    return (
-                      <li key={option} className="flex items-center gap-3">
-                        <input
-                          type="checkbox"
-                          className="h-4 w-4 border-slate-300 text-blue-600 focus:ring-blue-500"
-                          checked={checked}
-                          onChange={() => {
-                            setFormData({ ...formData, campus: checked ? '' : translated })
-                          }}
-                        />
-                        <label
-                          onClick={() => setFormData({ ...formData, campus: checked ? '' : translated })}
-                          className="cursor-pointer text-slate-700 select-none"
-                        >
-                          {translated}
-                        </label>
-                      </li>
-                    )
-                  })}
-                </ul>
-              </div>
-            )}
+          <div>
+            <label className="mb-1 block text-sm font-medium text-slate-700">Mật khẩu *</label>
+            <input
+              required
+              type="password"
+              value={formData.password}
+              minLength={8}
+              onChange={e => setFormData({ ...formData, password: e.target.value })}
+              placeholder="Nhập mật khẩu (tối thiểu 8 ký tự)"
+              className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm focus:border-blue-500 focus:outline-none"
+            />
           </div>
-          <div className="relative">
-            <label className="mb-1 block text-sm font-medium text-slate-700">{t('user.form.department')} *</label>
-            <button
-              type="button"
-              onClick={() => setDepartmentOpen(o => !o)}
-              className="flex w-full items-center justify-between rounded-xl border border-slate-200 px-4 py-2.5 text-left text-sm text-slate-600 focus:border-blue-500 focus:outline-none"
-              aria-haspopup="listbox"
-              aria-expanded={departmentOpen}
-            >
-              <span>
-                {formData.departments && formData.departments.length > 0
-                  ? formData.departments.join(', ')
-                  : t('user.form.selectDepartment')}
-              </span>
-              <span className="text-slate-400">▾</span>
-            </button>
-            {departmentOpen && (
-              <div className="absolute left-0 z-10 mt-2 w-full rounded-xl border border-slate-200 bg-white p-4 shadow-xl">
-                <ul className="space-y-3 text-sm" role="listbox">
-                  {getDepartmentOptions().map(option => {
-                    const translated = t(option)
-                    const checked = formData.departments?.includes(translated) || false
-                    return (
-                      <li key={option} className="flex items-center gap-3">
-                        <input
-                          type="checkbox"
-                          className="h-4 w-4 border-slate-300 text-blue-600 focus:ring-blue-500"
-                          checked={checked}
-                          onChange={() => toggleDepartment(translated)}
-                        />
-                        <label
-                          onClick={() => toggleDepartment(translated)}
-                          className="cursor-pointer text-slate-700 select-none"
-                        >
-                          {translated}
-                        </label>
-                      </li>
-                    )
-                  })}
-                </ul>
-              </div>
-            )}
+          <div>
+            <label className="mb-1 block text-sm font-medium text-slate-700">Vai trò *</label>
+            <input
+              required
+              value={formData.role}
+              onChange={e => setFormData({ ...formData, role: e.target.value })}
+              placeholder="admin, staff..."
+              className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm focus:border-blue-500 focus:outline-none"
+            />
           </div>
+          <div>
+            <label className="mb-1 block text-sm font-medium text-slate-700">Campus *</label>
+            <select
+              required
+              value={formData.campus_id}
+              onChange={e => setFormData({ ...formData, campus_id: e.target.value })}
+              className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm focus:border-blue-500 focus:outline-none"
+            >
+              <option value="" disabled>
+                Chọn campus
+              </option>
+              <option value="HANOI">Hà Nội</option>
+              <option value="HCM">Hồ Chí Minh</option>
+              <option value="DANANG">Đà Nẵng</option>
+              <option value="CANTHO">Cần Thơ</option>
+            </select>
+          </div>
+
 
           <div className="mt-6 flex items-center justify-end gap-3">
             <button
