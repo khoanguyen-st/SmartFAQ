@@ -1,48 +1,33 @@
 {
-  "name": "@smartfaq/web-admin",
+  "name": "smartfaq-monorepo",
   "version": "0.1.0",
   "private": true,
   "type": "module",
+  "packageManager": "yarn@1.22.22",
+  "workspaces": [
+    "apps/*"
+  ],
   "scripts": {
-    "dev": "vite",
-    "build": "tsc -b && vite build",
-    "preview": "vite preview",
-    "lint": "eslint src --max-warnings=0",
-    "format": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json,css,md}\"",
-    "format:check": "prettier --check \"src/**/*.{ts,tsx,js,jsx,json,css,md}\""
-  },
-  "dependencies": {
-    "clsx": "^2.1.1",
-    "i18next": "^25.6.3",
-    "lucide-react": "^0.548.0",
-    "react": "^19.0.0-rc",
-    "react-dom": "^19.0.0-rc",
-    "react-i18next": "^16.3.5",
-    "react-router-dom": "~6.26.0",
-    "recharts": "^2.12.7",
-    "tailwind-merge": "^2.5.5"
+    "prepare": "husky",
+    "lint": "yarn workspace @smartfaq/web-student lint && yarn workspace @smartfaq/web-admin lint",
+    "format": "yarn workspace @smartfaq/web-student format && yarn workspace @smartfaq/web-admin format",
+    "format:check": "yarn workspace @smartfaq/web-student format:check && yarn workspace @smartfaq/web-admin format:check"
   },
   "devDependencies": {
-    "@eslint/js": "^9.5.0",
-    "@tailwindcss/vite": "^4.1.16",
-    "@types/node": "^22.10.2",
-    "@types/react": "^18.3.3",
-    "@types/react-dom": "^18.3.0",
-    "@typescript-eslint/eslint-plugin": "^8.46.2",
-    "@typescript-eslint/parser": "^8.46.2",
-    "@vitejs/plugin-react": "^4.3.1",
-    "autoprefixer": "^10.4.21",
-    "eslint": "^9.5.0",
-    "eslint-plugin-jsx-a11y": "^6.8.0",
-    "eslint-plugin-react": "^7.34.1",
-    "eslint-plugin-react-hooks": "^5.0.0",
-    "globals": "^16.5.0",
-    "postcss": "^8.4.49",
-    "prettier": "^3.3.0",
-    "prettier-plugin-tailwindcss": "^0.6.9",
-    "tailwindcss": "^4.1.16",
-    "typescript": "~5.4.5",
-    "vite": "^5.2.0",
-    "vite-plugin-svgr": "^4.5.0"
+    "husky": "^9.1.7",
+    "lint-staged": "^15.2.11"
+  },
+  "lint-staged": {
+    "apps/web-student/src/**/*.{ts,tsx}": [
+      "yarn --cwd apps/web-student lint --fix --max-warnings=0",
+      "prettier --write"
+    ],
+    "apps/web-admin/src/**/*.{ts,tsx}": [
+      "yarn --cwd apps/web-admin lint --fix --max-warnings=0",
+      "prettier --write"
+    ],
+    "apps/api/app/**/*.py": [
+      "node scripts/lint-python.cjs"
+    ]
   }
 }
