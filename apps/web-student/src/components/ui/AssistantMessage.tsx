@@ -39,7 +39,6 @@ const AssistantMessage = ({ message, sessionId }: AssistantMessageProps) => {
         sessionId: sessionId,
         feedback: apiPayloadValue // Gửi 'up', 'down' hoặc 'reset'
       })
-      console.log(`Feedback updated to: ${apiPayloadValue}`)
     } catch (error) {
       console.error('Feedback error', error)
       // Rollback lại trạng thái cũ nếu lỗi (Optional)

@@ -70,7 +70,7 @@ export const useChat = (initialSessionId?: string | null) => {
 
         setMessages(prev => [...prev, botMsg])
       } catch (err) {
-        setError('Failed to send message.')
+        setError(`Failed to send message : ${err instanceof Error ? err.message : 'Unknown error'}`)
         // Có thể thêm logic rollback tin nhắn user nếu muốn
       } finally {
         setIsLoading(false)

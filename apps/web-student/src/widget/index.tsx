@@ -31,6 +31,8 @@ export const initWidget = () => {
 // Tự động khởi chạy khi script được load (tùy chọn)
 // window.onload = initWidget;
 // Hoặc gán vào window để trang web chủ tự gọi
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 ;(window as any).ChatWidget = {
   init: initWidget
 }
