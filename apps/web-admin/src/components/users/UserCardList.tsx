@@ -1,17 +1,10 @@
 import React from 'react'
 import { useTranslation } from 'react-i18next'
-import type { User } from '@/types/users'
 import type { UserCardListProps } from '@/interfaces/user-card-list'
 import { UserActions } from './UserActions'
 import { CSS_CLASSES } from '@/constants'
 
-export const UserCardList: React.FC<UserCardListProps> = ({
-  users,
-  loading,
-  onEdit,
-  onLock,
-  onUnlock
-}) => {
+export const UserCardList: React.FC<UserCardListProps> = ({ users, loading, onEdit, onLock, onUnlock }) => {
   const { t } = useTranslation()
   if (loading) {
     return <div className="py-12 text-center text-sm text-slate-500">{t('common.loading')}</div>
@@ -23,11 +16,17 @@ export const UserCardList: React.FC<UserCardListProps> = ({
 
   return (
     <>
-      {users.map((user) => (
+      {users.map(user => (
         <div key={user.id} className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
           <div className="mb-3 flex items-center justify-between">
             <div className="text-sm font-bold text-blue-700">#{user.id}</div>
-            <span className={user.is_locked ? `${CSS_CLASSES.BADGE_BASE} ${CSS_CLASSES.BADGE_LOCKED}` : `${CSS_CLASSES.BADGE_BASE} ${CSS_CLASSES.BADGE_ACTIVE}`}>
+            <span
+              className={
+                user.is_locked
+                  ? `${CSS_CLASSES.BADGE_BASE} ${CSS_CLASSES.BADGE_LOCKED}`
+                  : `${CSS_CLASSES.BADGE_BASE} ${CSS_CLASSES.BADGE_ACTIVE}`
+              }
+            >
               {user.is_locked ? t('user.status.locked') : t('user.status.active')}
             </span>
           </div>
@@ -47,14 +46,7 @@ export const UserCardList: React.FC<UserCardListProps> = ({
             </div>
           </div>
           <div className="border-t border-slate-100 pt-3">
-            <UserActions
-              user={user}
-              onEdit={onEdit}
-              onLock={onLock}
-              onUnlock={onUnlock}
-              onResetPassword={onResetPassword}
-              variant="mobile"
-            />
+            <UserActions user={user} onEdit={onEdit} onLock={onLock} onUnlock={onUnlock} variant="mobile" />
           </div>
         </div>
       ))}

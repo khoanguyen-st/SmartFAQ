@@ -1,25 +1,30 @@
 import { Navigate, Route, Routes } from 'react-router-dom'
 
-import UploadedPage from './pages/UploadedDocuments'
 import DashboardPage from './pages/Dashboard'
 import LogsPage from './pages/Logs'
 import SettingsPage from './pages/Settings'
 import UsersPage from './pages/Users'
-import ViewChatPage from './pages/ViewChat'
+import LoginPage from './pages/Login'
+import ForgotPasswordPage from './pages/Forgotpassword'
+import CreateNewPasswordPage from './pages/Create'
+import ResetPasswordSuccessPage from './pages/Resetpasssuccess'
 import ShellLayout from './components/ShellLayout'
 
 const App = () => (
-  <ShellLayout>
-    <Routes>
+  <Routes>
+    <Route path="/" element={<Navigate to="/login" replace />} />
+    <Route path="login" element={<LoginPage />} />
+    <Route path="forgotpassword" element={<ForgotPasswordPage />} />
+    <Route path="create-new-password" element={<CreateNewPasswordPage />} />
+    <Route path="reset-password-success" element={<ResetPasswordSuccessPage />} />
+    <Route element={<ShellLayout />} path="/*">
       <Route path="dashboard" element={<DashboardPage />} />
       <Route path="users" element={<UsersPage />} />
       <Route path="logs" element={<LogsPage />} />
       <Route path="settings" element={<SettingsPage />} />
-      <Route path="uploaded" element={<UploadedPage />} />
-      <Route path="view-chat" element={<ViewChatPage />} />
       <Route path="*" element={<Navigate to="dashboard" replace />} />
-    </Routes>
-  </ShellLayout>
+    </Route>
+  </Routes>
 )
 
 export default App

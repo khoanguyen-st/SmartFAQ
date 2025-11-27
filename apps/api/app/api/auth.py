@@ -1,27 +1,130 @@
-from fastapi import APIRouter, Depends, HTTPException, status
-from pydantic import BaseModel
+from fastapi import APIRouter, Depends, HTTPException
+from fastapi.security import OAuth2PasswordBearer
+from sqlalchemy.ext.asyncio import AsyncSession
 
-from ..core.security import authenticate_user, create_access_token
+from ..core.database import get_db
 from ..core.users import get_current_user
+from ..schemas import (
+    ForgotPasswordRequest,
+    LogoutResponse,
+    RefreshTokenRequest,
+    ResetPasswordRequest,
+    Token,
+    UserLogin,
+    UserMe,
+)
+from ..services.auth_service import (
+    AccountLockedError,
+    AuthService,
+    InactiveAccountError,
+    InvalidCampusError,
+    InvalidPasswordError,
+    InvalidTokenError,
+    UserNotFoundError,
+    WeakPasswordError,
+)
 
 router = APIRouter()
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
 
 
-class LoginRequest(BaseModel):
-    username: str
-    password: str
+@router.post("/login", response_model=Token)
+async def login(payload: UserLogin, db: AsyncSession = Depends(get_db)) -> Token:
+    service = AuthService(db)
+    try:
+        access_token, refresh_token = await service.login(
+            payload.email, payload.password, payload.campus_id
+        )
+    except AccountLockedError:
+        raise HTTPException(
+            status_code=423,
+            detail={
+                "error": "Account locked due to multiple failed login attempts. Please contact Administrator."
+            },
+        )
+    except InactiveAccountError:
+        raise HTTPException(
+            status_code=403, detail={"error": "Account is inactive. Please contact administrator."}
+        )
+    except UserNotFoundError:
+        raise HTTPException(
+            status_code=404, detail={"error": "Email not found. Please check your email address."}
+        )
+    except InvalidCampusError:
+        raise HTTPException(
+            status_code=401, detail={"error": "You do not have access to this campus"}
+        )
+    except InvalidPasswordError:
+        raise HTTPException(
+            status_code=401,
+            detail={"error": "Invalid password. Please check your password and try again."},
+        )
+    return Token(access_token=access_token, refresh_token=refresh_token)
 
 
-@router.post("/login")
-async def login(payload: LoginRequest) -> dict[str, str]:
-    user = await authenticate_user(payload.username, payload.password)
-    if not user:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
+@router.post("/refresh", response_model=Token)
+async def refresh_token(payload: RefreshTokenRequest, db: AsyncSession = Depends(get_db)) -> Token:
+    service = AuthService(db)
+    try:
+        access_token = await service.refresh_access_token(payload.refresh_token)
+    except InvalidTokenError:
+        raise HTTPException(
+            status_code=401,
+            detail={"error": "Invalid or expired refresh token. Please login again."},
+        )
+    except InactiveAccountError:
+        raise HTTPException(
+            status_code=403, detail={"error": "Account is inactive. Please contact administrator."}
+        )
+    except AccountLockedError:
+        raise HTTPException(
+            status_code=423, detail={"error": "Account locked. Please contact Super Admin."}
+        )
+    return Token(access_token=access_token, refresh_token=payload.refresh_token)
 
-    token = create_access_token(subject=user.username)
-    return {"access_token": token, "token_type": "bearer"}
+
+@router.post("/logout", response_model=LogoutResponse)
+async def logout(
+    current_token: str = Depends(oauth2_scheme),
+    current_user=Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> LogoutResponse:
+    service = AuthService(db)
+    await service.logout(current_token)
+    return LogoutResponse()
 
 
-@router.get("/me")
-async def read_current_user(current_user=Depends(get_current_user)) -> dict[str, str]:
-    return {"username": current_user.username, "role": current_user.role}
+@router.get("/me", response_model=UserMe)
+async def get_me(current_user=Depends(get_current_user)) -> UserMe:
+    return UserMe.model_validate(current_user)
+
+
+@router.post("/forgot-password")
+async def forgot_password(
+    payload: ForgotPasswordRequest, db: AsyncSession = Depends(get_db)
+) -> dict:
+    service = AuthService(db)
+    try:
+        reset_token = await service.forgot_password(payload.email)
+    except UserNotFoundError:
+        raise HTTPException(
+            status_code=404, detail={"error": "Email not found. Please contact the Super Admin."}
+        )
+    return {
+        "message": "A password reset link has been sent to your registered email.",
+        "reset_token": reset_token,
+    }
+
+
+@router.post("/reset-password")
+async def reset_password(payload: ResetPasswordRequest, db: AsyncSession = Depends(get_db)) -> dict:
+    service = AuthService(db)
+    try:
+        await service.reset_password(payload.token, payload.new_password)
+    except InvalidTokenError:
+        raise HTTPException(status_code=401, detail={"error": "Invalid or expired reset token."})
+    except WeakPasswordError:
+        raise HTTPException(
+            status_code=400, detail={"error": "Password does not meet security requirements."}
+        )
+    return {"message": "Password reset successful."}
