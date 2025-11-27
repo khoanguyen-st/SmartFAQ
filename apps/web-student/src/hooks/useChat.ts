@@ -1,78 +1,112 @@
-import { useCallback, useState } from 'react'
+import { useState, useEffect, useCallback } from 'react'
+import { startNewChatSession, sendChatMessage, getChatHistory, ChatHistoryMessage } from '@/services/chat.services' // Đổi đường dẫn theo thực tế của bạn
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8000'
+const CUSTOM_WELCOME_MSG = 'Xin chào!\nTôi là trợ lý ảo Greenwich (Smart FAQ)'
 
-interface Message {
-  id: string
-  author: 'user' | 'assistant'
-  content: string
-  timestamp: string
-}
-
-export const useChat = () => {
-  const [history, setHistory] = useState<Message[]>([])
+export const useChat = (initialSessionId?: string | null) => {
+  const [sessionId, setSessionId] = useState<string | null>(initialSessionId || null)
+  const [messages, setMessages] = useState<ChatHistoryMessage[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const sendMessage = useCallback(async (content: string) => {
-    const timestamp = new Date().toLocaleTimeString()
-    const userMessage: Message = {
-      id: crypto.randomUUID(),
-      author: 'user',
-      content,
-      timestamp
+  // 1. Khởi tạo Session (Nếu chưa có ID thì tạo mới, có rồi thì load lịch sử)
+  useEffect(() => {
+    const initSession = async () => {
+      try {
+        setIsLoading(true)
+        if (initialSessionId) {
+          setSessionId(initialSessionId)
+          const history = await getChatHistory(initialSessionId)
+          setMessages(history.messages)
+        } else {
+          localStorage.removeItem('chat_session_id')
+
+          const newSession = await startNewChatSession()
+          setSessionId(newSession.sessionId)
+
+          setMessages([
+            {
+              role: 'system',
+              text: CUSTOM_WELCOME_MSG,
+              timestamp: new Date().toISOString()
+            }
+          ])
+        }
+      } catch (err) {
+        setError('Cannot connect to chat service.')
+        console.error(err)
+      } finally {
+        setIsLoading(false)
+      }
     }
-    setHistory(prev => [...prev, userMessage])
+
+    initSession()
+  }, [initialSessionId])
+
+  // 2. Gửi tin nhắn
+  const sendMessage = useCallback(
+    async (question: string) => {
+      if (!question.trim() || !sessionId) return
+
+      // Optimistic UI: Hiển thị tin nhắn user ngay lập tức
+      const userMsg: ChatHistoryMessage = {
+        role: 'user',
+        text: question,
+        timestamp: new Date().toISOString()
+      }
+      setMessages(prev => [...prev, userMsg])
+      setIsLoading(true)
+
+      try {
+        const response = await sendChatMessage(sessionId, question)
+
+        const botMsg: ChatHistoryMessage = {
+          role: 'assistant',
+          text: response.answer,
+          timestamp: new Date().toISOString(),
+          chatId: response.chatId,
+          confidence: response.confidence
+        }
+
+        setMessages(prev => [...prev, botMsg])
+      } catch (err) {
+        setError(`Failed to send message : ${err instanceof Error ? err.message : 'Unknown error'}`)
+        // Có thể thêm logic rollback tin nhắn user nếu muốn
+      } finally {
+        setIsLoading(false)
+      }
+    },
+    [sessionId]
+  )
+
+  // 3. Delete/Reset Chat
+  const clearChat = async () => {
+    setMessages([])
     setIsLoading(true)
-    setError(null)
-
     try {
-      // Call SmartFAQ API
-      const response = await fetch(`${API_BASE_URL}/api/chat`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          message: content,
-          conversation_id: sessionStorage.getItem('conversation_id') || undefined
-        })
-      })
+      const newSession = await startNewChatSession()
+      setSessionId(newSession.sessionId)
 
-      if (!response.ok) {
-        throw new Error(`API error: ${response.status}`)
-      }
-
-      const data = await response.json()
-
-      // Save conversation ID for session continuity
-      if (data.conversation_id) {
-        sessionStorage.setItem('conversation_id', data.conversation_id)
-      }
-
-      const assistantMessage: Message = {
-        id: crypto.randomUUID(),
-        author: 'assistant',
-        content: data.response || data.message || 'Sorry, I could not process your request.',
-        timestamp: new Date().toLocaleTimeString()
-      }
-      setHistory(prev => [...prev, assistantMessage])
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to send message'
-      setError(errorMessage)
-
-      // Show error message in chat
-      const errorResponse: Message = {
-        id: crypto.randomUUID(),
-        author: 'assistant',
-        content: `Sorry, an error occurred: ${errorMessage}. Please try again.`,
-        timestamp: new Date().toLocaleTimeString()
-      }
-      setHistory(prev => [...prev, errorResponse])
+      setMessages([
+        {
+          role: 'system',
+          text: CUSTOM_WELCOME_MSG,
+          timestamp: new Date().toISOString()
+        }
+      ])
+    } catch (e) {
+      console.error(e)
     } finally {
       setIsLoading(false)
     }
-  }, [])
+  }
 
-  return { history, sendMessage, isLoading, error }
+  return {
+    sessionId,
+    messages,
+    isLoading,
+    error,
+    sendMessage,
+    clearChat
+  }
 }
