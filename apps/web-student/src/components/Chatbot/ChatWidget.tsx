@@ -13,7 +13,7 @@ const ChatWidget = () => {
     if (sessionId) {
       // localhost:5173
       // https://your-domain.com
-      const HOST_URL = 'http://localhost:5173'
+      const HOST_URL = import.meta.env.VITE_BASE_URL || 'http://localhost:5173'
 
       const url = `${HOST_URL}/chat?sessionId=${sessionId}`
       window.open(url, '_blank')

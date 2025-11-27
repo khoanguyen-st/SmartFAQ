@@ -1,9 +1,9 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
-import App from '../App' 
+import App from '../App'
 import { MemoryRouter } from 'react-router-dom'
 
-import styleText from '../styles.css?inline' 
+import styleText from '../styles.css?inline'
 
 const WIDGET_ID = 'my-chat-widget-root'
 
@@ -14,10 +14,9 @@ export const initWidget = () => {
 
   const widgetHost = document.createElement('div')
   widgetHost.id = WIDGET_ID
-  widgetHost.style.position = 'fixed'; 
-  widgetHost.style.zIndex = '999999';
+  widgetHost.style.position = 'fixed'
+  widgetHost.style.zIndex = '999999'
   document.body.appendChild(widgetHost)
-
 
   const shadowRoot = widgetHost.attachShadow({ mode: 'open' })
 
@@ -28,10 +27,10 @@ export const initWidget = () => {
   // Tạo điểm Mount cho React bên trong Shadow
   const mountPoint = document.createElement('div')
 
-  mountPoint.style.fontSize = '16px'; 
-  mountPoint.style.lineHeight = '1.5';
-  mountPoint.className = 'antialiased';
-  
+  mountPoint.style.fontSize = '16px'
+  mountPoint.style.lineHeight = '1.5'
+  mountPoint.className = 'antialiased'
+
   shadowRoot.appendChild(mountPoint)
 
   // Mount React App
@@ -39,7 +38,6 @@ export const initWidget = () => {
   root.render(
     <React.StrictMode>
       <MemoryRouter>
-
         <App />
       </MemoryRouter>
     </React.StrictMode>
@@ -47,6 +45,7 @@ export const initWidget = () => {
 }
 
 // Expose ra window
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 ;(window as any).ChatWidget = {
   init: initWidget
 }
