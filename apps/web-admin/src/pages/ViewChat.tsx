@@ -6,6 +6,7 @@ import {
   startNewChatSession
 } from '@/services/chat.services'
 import React, { useEffect, useRef, useState } from 'react'
+import { cn } from '@/lib/utils'
 
 import inforUrl from '@/assets/icons/i-icon.svg'
 import imageNoFillUrl from '@/assets/icons/image-no-fill.svg'
@@ -16,6 +17,7 @@ import trashUrl from '@/assets/icons/trash-icon.svg'
 import txtNoFillUrl from '@/assets/icons/txt-no-fill.svg'
 import KnowledgeSidebar from '@/components/viewchat/KnowledgeSidebar'
 import UploadModal from '@/components/viewchat/UploadModal'
+import sidebarUrl from '@/assets/icons/sidebar.svg'
 import { UploadedFileHandle } from '@/components/viewchat/UploadedFile'
 
 type ImgCompProps = React.ImgHTMLAttributes<HTMLImageElement>
@@ -26,6 +28,7 @@ const PdfNoFill: React.FC<ImgCompProps> = props => <img src={pdfNoFillUrl} alt="
 const SendIcon: React.FC<ImgCompProps> = props => <img src={sendUrl} alt="send" {...props} />
 const TrashIcon: React.FC<ImgCompProps> = props => <img src={trashUrl} alt="trash" {...props} />
 const TxtNoFill: React.FC<ImgCompProps> = props => <img src={txtNoFillUrl} alt="txt" {...props} />
+const SidebarUrl: React.FC<ImgCompProps> = props => <img src={sidebarUrl} alt="sidebar" {...props} />
 
 type DisplayMessage = {
   id: string | number
@@ -122,7 +125,13 @@ const ChatMessage = ({ message }: ChatMessageProps) => {
 const ViewChatPage = () => {
   const uploadedFileRef = useRef<UploadedFileHandle>(null)
 
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true)
+  const [isSidebarOpen, setIsSidebarOpen] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return window.innerWidth >= 1024
+    }
+    return true
+  })
+
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false)
 
   const handleSelectFileClick = () => {
@@ -134,6 +143,12 @@ const ViewChatPage = () => {
 
     if (uploadedFileRef.current) {
       uploadedFileRef.current.refreshFiles()
+    }
+  }
+
+  const handleFilesUploaded = (files: { name: string; size: number; type: string }[]) => {
+    if (uploadedFileRef.current) {
+      uploadedFileRef.current.addPendingFiles(files)
     }
   }
 
@@ -279,7 +294,7 @@ const ViewChatPage = () => {
   }
 
   return (
-    <div className="flex h-[calc(100vh-81px)] w-full border border-[#e5e7eb] bg-white">
+    <div className="relative flex h-[calc(100vh-81px)] w-full border border-[#e5e7eb] bg-white">
       <KnowledgeSidebar
         isSidebarOpen={isSidebarOpen}
         setIsSidebarOpen={setIsSidebarOpen}
@@ -287,27 +302,41 @@ const ViewChatPage = () => {
         uploadedFileRef={uploadedFileRef}
       />
 
-      <div className="chat flex h-full flex-1 flex-col">
-        <div className="chat__header flex items-center justify-between p-6">
-          <div className="chat__title flex w-fit flex-col overflow-hidden text-nowrap text-ellipsis">
-            <div className="title-header flex">
-              <MessIcon className="mr-2 h-6 w-6 shrink-0" />
-              <h1 className="text-[18px] leading-7 font-semibold">Chat with Your Knowledge Base</h1>
+      <div
+        className={cn('chat flex h-full min-w-0 flex-1 flex-col', 'lg:flex', isSidebarOpen ? 'hidden lg:flex' : 'flex')}
+      >
+        <div className="chat__header flex items-center justify-between p-4 sm:p-6">
+          <button
+            onClick={() => setIsSidebarOpen(true)}
+            className="-ml-2 shrink-0 rounded-lg p-2 hover:bg-gray-100 lg:hidden"
+            title="Open sidebar"
+          >
+            <SidebarUrl className="h-5 w-5" />
+          </button>
+          <div className="chat__title flex w-fit min-w-0 flex-1 items-start gap-2 overflow-hidden text-nowrap text-ellipsis sm:flex-col sm:gap-0">
+            <div className="title-header flex min-w-0 flex-1 items-center">
+              <MessIcon className="mr-2 h-5 w-5 shrink-0 sm:h-6 sm:w-6" />
+              <h1 className="truncate text-base leading-6 font-semibold sm:text-[18px] sm:leading-7">
+                Chat with Your Knowledge Base
+              </h1>
             </div>
-            <p className="w-full text-[14px] text-[#6B7280]">Test chatbot responses based on uploaded documents</p>
+            <p className="hidden w-full text-[14px] text-[#6B7280] sm:block">
+              Test chatbot responses based on uploaded documents
+            </p>
           </div>
+
           <button
             type="button"
             onClick={handleClearChat}
             disabled={isLoading}
-            className="chat__clear-button group flex items-center hover:text-red-500 disabled:opacity-50"
+            className="chat__clear-button group ml-2 flex shrink-0 items-center hover:text-red-500 disabled:opacity-50"
           >
-            <TrashIcon className="TrashIcon mr-1 h-[14px] w-[12px] shrink-0 text-[#6B7280] group-hover:text-red-500" />
-            <p className="text-[14px] text-[#6B7280] group-hover:text-red-500">Clear Chat</p>
+            <TrashIcon className="TrashIcon mr-0 h-[14px] w-[12px] shrink-0 text-[#6B7280] group-hover:text-red-500 sm:mr-1" />
+            <p className="hidden text-[14px] text-[#6B7280] group-hover:text-red-500 sm:block">Clear Chat</p>
           </button>
         </div>
 
-        <div ref={chatContentRef} className="chat__content relative flex h-full flex-col overflow-y-auto">
+        <div ref={chatContentRef} className="chat__content relative flex h-full flex-col overflow-y-auto px-3 sm:px-0">
           {messages.map(msg => (
             <ChatMessage key={msg.id} message={msg} />
           ))}
@@ -324,7 +353,7 @@ const ViewChatPage = () => {
           )}
         </div>
 
-        <div className="chat__footer flex h-24 flex-col px-6 py-4">
+        <div className="chat__footer flex min-h-[88px] flex-col px-3 py-3 sm:min-h-24 sm:px-6 sm:py-4">
           <form
             onSubmit={handleSend}
             action=""
@@ -340,25 +369,25 @@ const ViewChatPage = () => {
               onChange={e => setUserText(e.target.value)}
               placeholder={!sessionId ? 'Connecting to chat...' : 'Ask a question about your uploaded documents...'}
               disabled={!sessionId}
-              className="chat__input mr-3 h-[40px] w-full rounded-[8px] border border-[#D1D5DB] p-4 placeholder:text-[14px] placeholder:leading-[20px] disabled:bg-gray-100"
+              className="chat__input mr-2 h-[40px] w-full rounded-[8px] border border-[#D1D5DB] px-3 py-2 text-sm placeholder:text-[13px] placeholder:leading-[20px] disabled:bg-gray-100 sm:mr-3 sm:h-[44px] sm:px-4 sm:placeholder:text-[14px]"
             />
             <button
               type="submit"
               disabled={!sessionId || isLoading || userText.trim().length === 0}
-              className="chat__submit flex h-[40px] w-[48px] items-center justify-center rounded-[8px] bg-[#003087] hover:cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
+              className="chat__submit flex h-[40px] w-[40px] shrink-0 items-center justify-center rounded-[8px] bg-[#003087] hover:cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 sm:h-[44px] sm:w-[48px]"
             >
               <SendIcon className="h-4 w-4 shrink-0" />
             </button>
           </form>
           <div className="chat__note mt-2 flex h-4 items-center">
             <InforIcon className="mr-1 h-3 w-3 shrink-0" />
-            <p className="py-2.5 text-[12px] font-normal text-[#6B7280]">
+            <p className="truncate py-2.5 text-[11px] font-normal text-[#6B7280] sm:text-[12px]">
               Responses are generated based on uploaded documents only
             </p>
           </div>
         </div>
       </div>
-      <UploadModal isOpen={isUploadModalOpen} onClose={handleModalClose} />
+      <UploadModal isOpen={isUploadModalOpen} onClose={handleModalClose} onFilesUploaded={handleFilesUploaded} />
     </div>
   )
 }
