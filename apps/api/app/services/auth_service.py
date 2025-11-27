@@ -80,9 +80,6 @@ class AuthService:
         if user.is_locked:
             raise AccountLockedError
 
-        if not user.is_active:
-            raise InactiveAccountError
-
         if not verify_password(password, user.password_hash):
             await self.increment_failed_attempts(user)
             await self.db.commit()
@@ -105,9 +102,7 @@ class AuthService:
         if user.failed_attempts >= 5 and user.role != "ADMIN":
             user.is_locked = True
             user.locked_until = datetime.utcnow()
-            result = await self.db.execute(
-                select(User).filter(User.role == "ADMIN", User.is_active)
-            )
+            result = await self.db.execute(select(User).filter(User.role == "ADMIN"))
             admin_user = result.scalar_one_or_none()
             if admin_user:
                 pass
@@ -126,7 +121,7 @@ class AuthService:
             raise UserNotFoundError
 
         reset_token = create_reset_token(user_id=user.id, email=user.email)
-        result = await self.db.execute(select(User).filter(User.role == "ADMIN", User.is_active))
+        result = await self.db.execute(select(User).filter(User.role == "ADMIN"))
         admin_user = result.scalar_one_or_none()
         if admin_user:
             pass
@@ -169,8 +164,6 @@ class AuthService:
         user: User | None = result.scalar_one_or_none()
         if not user:
             raise InvalidTokenError
-        if not user.is_active:
-            raise InactiveAccountError
         if user.is_locked:
             raise AccountLockedError
 

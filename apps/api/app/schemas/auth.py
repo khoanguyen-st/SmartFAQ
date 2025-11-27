@@ -82,7 +82,6 @@ class UserMe(BaseModel):
                 "email": "admin@example.com",
                 "campus_id": "HCM",
                 "role": "ADMIN",
-                "is_active": True,
                 "notification_email": "admin@example.com",
                 "created_at": "2025-01-01T00:00:00Z",
             }
@@ -94,7 +93,6 @@ class UserMe(BaseModel):
     email: str = Field(..., description="Email address")
     campus_id: str = Field(..., description="Campus identifier")
     role: str = Field(..., description="User role")
-    is_active: bool = Field(..., description="Account active status")
     notification_email: str | None = Field(None, description="Notification email")
     created_at: datetime = Field(..., description="Account creation date")
 
