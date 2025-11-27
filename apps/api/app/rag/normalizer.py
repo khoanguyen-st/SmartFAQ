@@ -1,11 +1,12 @@
 from __future__ import annotations
-from typing import Any, Dict, Optional
-import re
-import logging
-import unicodedata
 
-from app.rag.llm import LLMWrapper
+import logging
+import re
+import unicodedata
+from typing import Any, Dict, Optional
+
 from app.rag.language import detect_language_enhanced
+from app.rag.llm import LLMWrapper
 
 logger = logging.getLogger(__name__)
 
@@ -81,11 +82,14 @@ class SmartNormalizer:
         return {
             "normalized_text": result,
             "language": lang,
-            "changed": changed or (result_raw != t)
+            "changed": changed or (result_raw != t),
         }
 
     def _need_llm(self, text: str, rule_output: Dict[str, Any]) -> bool:
         if not text or not text.strip():
+            return False
+
+        if rule_output.get("language") not in {"vi", "en"}:
             return False
 
         if not rule_output["changed"]:
@@ -103,6 +107,7 @@ class SmartNormalizer:
         try:
             try:
                 from app.rag.prompts import get_normalization_prompt
+
                 prompt = get_normalization_prompt()
                 data = await self.llm_wrapper.invoke_json(prompt, text)
             except Exception:
@@ -110,7 +115,11 @@ class SmartNormalizer:
                     "Normalize the following user query. Detect language (vi or en) and return JSON with keys "
                     "'normalized_text' and 'language'. Text:\n\n" + text
                 )
-                raw = await self.llm_wrapper.generate(prompt) if hasattr(self.llm_wrapper, "generate") else await self.llm_wrapper.agenerate(prompt)
+                raw = (
+                    await self.llm_wrapper.generate(prompt)
+                    if hasattr(self.llm_wrapper, "generate")
+                    else await self.llm_wrapper.agenerate(prompt)
+                )
                 if isinstance(raw, str) and "\t" in raw:
                     lang, norm = raw.split("\t", 1)
                     data = {"normalized_text": norm.strip(), "language": lang.strip().lower()}
@@ -121,7 +130,7 @@ class SmartNormalizer:
 
             return {
                 "normalized_text": self._capitalize_first_char(data.get("normalized_text", text)),
-                "language": data.get("language", "en")
+                "language": data.get("language", "en"),
             }
         except Exception as e:
             logger.error(f"LLM Normalize Error: {e}")
@@ -143,15 +152,9 @@ class SmartNormalizer:
 
         if self._need_llm(clean_q, rule_res):
             llm_res = await self._llm_normalize(clean_q)
-            final = {
-                "normalized_text": llm_res["normalized_text"],
-                "language": llm_res["language"]
-            }
+            final = {"normalized_text": llm_res["normalized_text"], "language": llm_res["language"]}
         else:
-            final = {
-                "normalized_text": text_after_rule,
-                "language": rule_res["language"]
-            }
+            final = {"normalized_text": text_after_rule, "language": rule_res["language"]}
 
         self._cache_set(clean_q, final)
         return final

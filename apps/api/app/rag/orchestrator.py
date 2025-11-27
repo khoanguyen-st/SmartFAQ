@@ -55,7 +55,16 @@ class RAGOrchestrator:
                 "latency_ms": int((time.time() - t0) * 1000),
             }
         lang = detect_language_enhanced(raw_q, llm_wrapper=self.llm)
+        if lang not in {"vi", "en"}:
+            return {
+                "answer": "please in put Vietnamese or English",
+                "confidence": 0,
+                "fallback_triggered": True,
+                "sources": [],
+                "latency_ms": int((time.time() - t0) * 1000),
+            }
         target_lang = "vi" if lang == "vi" else "en"
+
         gr = await self.guardrail.check_safety(raw_q)
         if gr.get("status") == "blocked":
             return {
