@@ -5,6 +5,7 @@ import DashboardPage from './pages/Dashboard'
 import LogsPage from './pages/Logs'
 import SettingsPage from './pages/Settings'
 import ViewChatPage from './pages/ViewChat'
+import ProfilePage from './pages/Profile'
 import ShellLayout from './components/ShellLayout'
 
 const App = () => (
@@ -15,6 +16,7 @@ const App = () => (
       <Route path="settings" element={<SettingsPage />} />
       <Route path="uploaded" element={<UploadedPage />} />
       <Route path="view-chat" element={<ViewChatPage />} />
+      <Route path="profile" element={<ProfilePage />} />
       <Route path="*" element={<Navigate to="dashboard" replace />} />
     </Routes>
   </ShellLayout>
