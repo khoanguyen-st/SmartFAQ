@@ -54,7 +54,6 @@ async def create_user(data: dict, db: AsyncSession):
 
     new_user = User(
         **data,
-        is_active=True,
         failed_attempts=0,
         is_locked=False,
         locked_until=None,
