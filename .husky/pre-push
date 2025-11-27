@@ -1,0 +1,30 @@
+# Check for multiple migration heads before push
+echo "🔍 Checking for multiple migration heads..."
+
+# Detect Python command (cross-platform compatible)
+if command -v python3 >/dev/null 2>&1; then
+  PYTHON_CMD="python3"
+elif command -v python >/dev/null 2>&1; then
+  PYTHON_CMD="python"
+else
+  echo "⚠️  Python not found - skipping migration check"
+  echo "Please ensure Python is installed and in PATH"
+  exit 0
+fi
+
+cd apps/api
+
+if $PYTHON_CMD scripts/check_migrations.py --check; then
+  echo "✅ Migration check passed"
+else
+  echo ""
+  echo "❌ Multiple migration heads detected!"
+  echo "Please merge them before pushing:"
+  echo "  cd apps/api"
+  echo "  make migrate-merge"
+  echo ""
+  echo "Or run: $PYTHON_CMD scripts/check_migrations.py --auto-merge"
+  exit 1
+fi
+
+cd ../..
