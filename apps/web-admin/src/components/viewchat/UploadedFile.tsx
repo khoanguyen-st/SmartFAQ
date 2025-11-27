@@ -101,7 +101,7 @@ const UploadedFile = forwardRef<UploadedFileHandle, UploadedFileProps>(({ isComp
 
   useEffect(() => {
     refreshFiles()
-  })
+  }, [refreshFiles])
 
   useEffect(() => {
     if (error) {

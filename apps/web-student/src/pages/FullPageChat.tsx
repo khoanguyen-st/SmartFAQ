@@ -29,7 +29,7 @@ const FullPageChat = () => {
           headerAction={
             <button
               onClick={() => window.close()}
-              className="flex items-center rounded-full p-2 font-medium transition hover:bg-gray-100 hover:text-[#F23030] group-hover:text-[#F23030] cursor-pointer"
+              className="flex cursor-pointer items-center rounded-full p-2 font-medium transition group-hover:text-[#F23030] hover:bg-gray-100 hover:text-[#F23030]"
             >
               <CloseIcon height={20} width={20} className="inline-block group-hover:text-[#F23030]" />
             </button>
@@ -37,7 +37,7 @@ const FullPageChat = () => {
           headerAdditionalActions={
             <button
               onClick={handleClear}
-              className="flex items-center rounded-md px-3 py-1 font-medium text-[#F23030] transition hover:bg-gray-100 cursor-pointer"
+              className="flex cursor-pointer items-center rounded-md px-3 py-1 font-medium text-[#F23030] transition hover:bg-gray-100"
             >
               <TrashIcon className="mr-2 inline-block h-4 w-4" />
               Delete Chat

@@ -150,7 +150,7 @@ class NewSessionResponse(BaseModel):
 class FeedbackRequest(BaseModel):
     chat_id: str = Field(..., alias="chatId")
     session_id: str = Field(..., alias="sessionId")
-    feedback: Literal["up", "down", 'reset']
+    feedback: Literal["up", "down", "reset"]
     comment: str | None = None
 
     model_config = ConfigDict(populate_by_name=True)
