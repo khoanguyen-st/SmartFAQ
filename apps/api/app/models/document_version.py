@@ -12,6 +12,7 @@ from .config import Base
 
 if TYPE_CHECKING:
     from .document import Document
+    from .user import User
 
 
 class DocumentVersion(Base):
@@ -23,9 +24,15 @@ class DocumentVersion(Base):
     file_path: Mapped[str] = mapped_column(String(255), nullable=False)
     file_size: Mapped[int | None] = mapped_column(Integer, nullable=True)
     format: Mapped[str] = mapped_column(String(50), nullable=False)
-    uploaded_by: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True)
+
+    uploader_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True)
+
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
     document: Mapped["Document"] = relationship(
         "Document", back_populates="versions", foreign_keys=[document_id]
+    )
+
+    uploader: Mapped["User | None"] = relationship(
+        "User", back_populates="document_version", foreign_keys=[uploader_id]
     )

@@ -144,6 +144,16 @@ def delete_by_metadata(where: Dict[str, Any]) -> None:
     collection.delete(where=where)
 
 
+def delete_by_document_id(document_id: str) -> None:
+    where = {
+        "$or": [
+            {"source": document_id},
+            {"document_id": document_id},
+        ]
+    }
+    delete_by_metadata(where)
+
+
 class VectorStore:
     def __init__(self) -> None:
         self._vs = _get_vectorstore()
@@ -163,6 +173,9 @@ class VectorStore:
 
     def delete_by_metadata(self, where: Dict[str, Any]) -> None:
         delete_by_metadata(where)
+
+    def delete_by_document_id(self, document_id: str) -> None:
+        delete_by_document_id(document_id)
 
     def get_retriever(
         self,

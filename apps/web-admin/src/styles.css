@@ -62,6 +62,7 @@
   text-align: start;
   padding: 16px;
   margin-bottom: 16px;
+  margin-inline: 24px;
 }
 
 .message--receiver {
@@ -142,6 +143,11 @@
 
   .chat__title .MessIcon {
     @apply mr-2;
+  }
+
+  .chat__title h1,
+  .chat__title p {
+    @apply w-fit overflow-hidden text-ellipsis whitespace-nowrap;
   }
 
   .chat__note p {

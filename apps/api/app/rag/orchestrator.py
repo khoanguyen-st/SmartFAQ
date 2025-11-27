@@ -9,6 +9,7 @@ from langchain_core.output_parsers import StrOutputParser
 from langchain_core.runnables import RunnablePassthrough
 
 from app.core.config import settings
+from app.rag.formatter import ResponseFormatter
 from app.rag.llm import LLMWrapper
 from app.rag.retriever import Retriever
 
@@ -27,6 +28,7 @@ class RAGOrchestrator:
     ):
         self.retriever = retriever or Retriever()
         self.llm_wrapper = llm_wrapper or LLMWrapper()
+        self.formatter = ResponseFormatter()
 
     async def query(
         self,
@@ -172,12 +174,17 @@ class RAGOrchestrator:
             )
 
         latency_ms = int((time.time() - t0) * 1000)
+
+        # Format the response
+        formatted = self.formatter.format(answer, sources_list, fallback_triggered)
+
         return {
             "answer": answer,
             "confidence": round(float(confidence), 4),
             "sources": sources_list,
             "fallback_triggered": bool(fallback_triggered),
             "latency_ms": latency_ms,
+            "formatted": formatted,
         }
 
     def build_rag_chain(
