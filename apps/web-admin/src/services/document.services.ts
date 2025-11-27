@@ -1,6 +1,4 @@
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8000'
-import { FILE_UPLOAD } from '@/constants/files'
-
+import { API_BASE_URL } from '../lib/api'
 export interface IUploadedFile {
   id: string
   name: string
@@ -82,11 +80,13 @@ export const fetchKnowledgeFiles = async (): Promise<IUploadedFile[]> => {
 }
 
 export const uploadKnowledgeFiles = async (files: File[]): Promise<IUploadedFile[]> => {
-  const ALLOWED_EXTENSIONS = FILE_UPLOAD.ALLOWED_EXTENSIONS.map(ext => ext.replace('.', ''))
+  const MAX_FILE_SIZE = 50 * 1024 * 1024
+
+  const ALLOWED_EXTENSIONS = ['pdf', 'doc', 'docx', 'txt', 'md']
 
   for (const file of files) {
-    if (file.size > FILE_UPLOAD.MAX_FILE_SIZE_DOCUMENT) {
-      throw new Error(`File "${file.name}" exceeds ${FILE_UPLOAD.MAX_FILE_SIZE_DOCUMENT / (1024 * 1024)}MB limit`)
+    if (file.size > MAX_FILE_SIZE) {
+      throw new Error(`File "${file.name}" exceeds ${MAX_FILE_SIZE / (1024 * 1024)}MB limit`)
     }
 
     const extension = file.name.split('.').pop()?.toLowerCase()

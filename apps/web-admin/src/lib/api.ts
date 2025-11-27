@@ -30,3 +30,4 @@ async function apiClient<T>(endpoint: string, options?: RequestInit): Promise<T>
 export async function fetchMetrics(): Promise<Record<string, unknown>> {
   return apiClient<Record<string, unknown>>('/admin/metrics')
 }
+

@@ -1,4 +1,4 @@
-import QueryLogTable from '@/components/logs/QueryLogTable'
+import QueryLogTable from '../components/logs/QueryLogTable'
 
 const LogsPage = () => {
   return (

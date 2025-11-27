@@ -231,7 +231,15 @@ const Users: React.FC = () => {
       <CreateUserDialog
         open={createDialogOpen}
         onClose={() => setCreateDialogOpen(false)}
-        onSubmit={createUser}
+        onSubmit={(data) => {
+          // Chuyển đổi payload cho đúng type của createUser
+          return createUser({
+            ...data,
+            password: data.password,
+            campus_id: data.campus_id,
+            status: data.status as 'Active' | 'Locked',
+          });
+        }}
         onSuccess={() => {}}
       />
 

@@ -1,8 +1,15 @@
-import type { CreateUserRequest } from '@/types/users'
+export type CreateUserDialogPayload = {
+  username: string;
+  email: string;
+  password: string;
+  role: string;
+  campus_id: string;
+  status: string;
+};
 
 export interface CreateUserDialogProps {
-  open: boolean
-  onClose: () => void
-  onSubmit?: (data: CreateUserRequest) => Promise<void> | void
-  onSuccess?: () => void
+  open: boolean;
+  onClose: () => void;
+  onSubmit?: (data: CreateUserDialogPayload) => Promise<void> | void;
+  onSuccess?: () => void;
 }

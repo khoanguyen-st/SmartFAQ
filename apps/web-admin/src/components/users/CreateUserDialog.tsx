@@ -1,19 +1,11 @@
 import React, { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { CreateUserDialogProps } from '@/interfaces/create-user-dialog'
+import type { CreateUserDialogProps, CreateUserDialogPayload } from '@/interfaces/create-user-dialog'
 import type { UserStatus } from '@/types/users';
 
 export const CreateUserDialog: React.FC<CreateUserDialogProps> = ({ open, onClose, onSubmit, onSuccess }) => {
   const { t } = useTranslation();
-  type CreateUserPayload = {
-    username: string;
-    email: string;
-    password: string;
-    role: string;
-    campus_id: string;
-    status: UserStatus;
-  };
-  const [formData, setFormData] = useState<CreateUserPayload>({
+  const [formData, setFormData] = useState<CreateUserDialogPayload>({
     username: '',
     email: '',
     password: '',
