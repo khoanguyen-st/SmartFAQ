@@ -29,45 +29,50 @@ export const useUsers = () => {
     loadUsers()
   }, [loadUsers])
 
-  type CreateUserFullRequest = CreateUserRequest & { password: string; campus_id: string }
+
   const createUser = useCallback(
-    async (payload: CreateUserFullRequest) => {
+    async (payload: CreateUserRequest & { password: string }) => {
       // Chỉ truyền các trường có giá trị, loại bỏ undefined/rỗng
-      const cleanPayload: CreateUserFullRequest = Object.fromEntries(
+      const cleanPayload = Object.fromEntries(
         Object.entries(payload).filter(([_, value]) => value !== undefined && value !== null && value !== '')
-      ) as CreateUserFullRequest
+      ) as CreateUserRequest & { password: string }
       await AdminService.createUser(cleanPayload)
       await loadUsers()
     },
     [loadUsers]
   )
 
+
   const updateUser = useCallback(
     async (userId: number, payload: Partial<User>) => {
-      await AdminService.updateUser(String(userId), payload)
+      await AdminService.updateUser(userId, payload)
       await loadUsers()
     },
     [loadUsers]
   )
+
 
   const lockUser = useCallback(
     async (userId: number) => {
-      await AdminService.lockUser(String(userId))
+      await AdminService.lockUser(userId)
       await loadUsers()
     },
     [loadUsers]
   )
+
 
   const unlockUser = useCallback(
     async (userId: number) => {
-      await AdminService.unlockUser(String(userId))
+      await AdminService.unlockUser(userId)
       await loadUsers()
     },
     [loadUsers]
   )
 
-  const resetPassword = useCallback(async (userId: number) => {
-    await AdminService.resetUserPassword(String(userId))
+
+  // API không hỗ trợ reset password
+  const resetPassword = useCallback(async (_userId: number) => {
+    throw new Error('Not supported')
   }, [])
 
   return {

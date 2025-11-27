@@ -5,24 +5,12 @@ import type { UserTableProps } from '@/interfaces/user-table'
 import { UserActions } from './UserActions'
 import { CSS_CLASSES } from '@/constants'
 
-const getStatusText = (status: User['status'], t: (key: string) => string) => {
-  return status === 'Locked' ? t('user.status.locked') : t('user.status.active')
-}
-
-const renderStatusBadge = (status: User['status']) => {
-  if (status === 'Locked') return `${CSS_CLASSES.BADGE_BASE} ${CSS_CLASSES.BADGE_LOCKED}`
-  return `${CSS_CLASSES.BADGE_BASE} ${CSS_CLASSES.BADGE_ACTIVE}`
-}
-
 export const UserTable: React.FC<UserTableProps> = ({
   users,
   loading,
-  page,
-  pageSize,
   onEdit,
   onLock,
-  onUnlock,
-  onResetPassword
+  onUnlock
 }) => {
   const { t } = useTranslation()
   const renderTableBody = () => {
@@ -48,20 +36,20 @@ export const UserTable: React.FC<UserTableProps> = ({
 
     return (
       <>
-        {users.map((user, index) => (
+        {users.map((user: User) => (
           <tr key={user.id} className="border-b border-slate-100 text-sm text-slate-700 last:border-b-0">
-            <td className="px-6 py-4 text-center whitespace-nowrap">{(page - 1) * pageSize + index + 1}</td>
+            <td className="px-6 py-4 text-center whitespace-nowrap">{user.id}</td>
             <td className="px-6 py-4 text-center whitespace-nowrap">
               <div className="font-medium text-slate-900">{user.username}</div>
             </td>
             <td className="px-6 py-4 text-center whitespace-nowrap">{user.email}</td>
-            <td className="px-6 py-4 text-center whitespace-nowrap">{user.phoneNumber}</td>
+            <td className="px-6 py-4 text-center whitespace-nowrap">{user.phone || '-'}</td>
             <td className="px-6 py-4 text-center whitespace-nowrap">{user.role}</td>
+            <td className="px-6 py-4 text-center whitespace-nowrap">{user.campus}</td>
             <td className="px-6 py-4 text-center whitespace-nowrap">
-              {user.departments && user.departments.length > 0 ? user.departments.join(', ') : '—'}
-            </td>
-            <td className="px-6 py-4 text-center whitespace-nowrap">
-              <span className={renderStatusBadge(user.status)}>{getStatusText(user.status, t)}</span>
+              <span className={user.is_locked ? `${CSS_CLASSES.BADGE_BASE} ${CSS_CLASSES.BADGE_LOCKED}` : `${CSS_CLASSES.BADGE_BASE} ${CSS_CLASSES.BADGE_ACTIVE}`}> 
+                {user.is_locked ? t('user.status.locked') : t('user.status.active')}
+              </span>
             </td>
             <td className="px-6 py-4 whitespace-nowrap">
               <UserActions
@@ -69,7 +57,6 @@ export const UserTable: React.FC<UserTableProps> = ({
                 onEdit={onEdit}
                 onLock={onLock}
                 onUnlock={onUnlock}
-                onResetPassword={onResetPassword}
                 variant="desktop"
               />
             </td>
@@ -87,9 +74,9 @@ export const UserTable: React.FC<UserTableProps> = ({
             <th className="px-6 py-3 text-center whitespace-nowrap">{t('user.table.id')}</th>
             <th className="px-6 py-3 text-center whitespace-nowrap">{t('user.table.username')}</th>
             <th className="px-6 py-3 text-center whitespace-nowrap">{t('user.table.email')}</th>
-            <th className="px-6 py-3 text-center whitespace-nowrap">{t('user.table.phoneNumber')}</th>
+            <th className="px-6 py-3 text-center whitespace-nowrap">{t('user.table.phone')}</th>
             <th className="px-6 py-3 text-center whitespace-nowrap">{t('user.table.role')}</th>
-            <th className="px-6 py-3 text-center whitespace-nowrap">{t('user.table.department')}</th>
+            <th className="px-6 py-3 text-center whitespace-nowrap">{t('user.table.campus')}</th>
             <th className="px-6 py-3 text-center whitespace-nowrap">{t('user.table.status')}</th>
             <th className="px-6 py-3 text-center whitespace-nowrap">{t('user.table.action')}</th>
           </tr>

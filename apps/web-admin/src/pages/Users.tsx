@@ -28,20 +28,19 @@ const Users: React.FC = () => {
     createUser,
     updateUser,
     lockUser,
-    unlockUser,
-    resetPassword
+    unlockUser
   } = useUsers()
 
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedDepartments, setSelectedDepartments] = useState<string[]>([])
-  const [selectedStatuses, setSelectedStatuses] = useState<User['status'][]>([])
+  const [selectedStatuses, setSelectedStatuses] = useState<string[]>([])
   const [filterOpen, setFilterOpen] = useState(false)
   const [createDialogOpen, setCreateDialogOpen] = useState(false)
   const [editDialogOpen, setEditDialogOpen] = useState(false)
   const [selectedUser, setSelectedUser] = useState<User | null>(null)
   const [confirmDialog, setConfirmDialog] = useState<{
     open: boolean
-    type: 'lock' | 'unlock' | 'resetPassword'
+    type: 'lock' | 'unlock'
     userId: string
     username: string
   } | null>(null)
@@ -104,17 +103,8 @@ const Users: React.FC = () => {
     }
   }
 
-  const handleResetPassword = (userId: number) => {
-    const user = users.find(u => u.id === userId)
-    if (user) {
-      setConfirmDialog({
-        open: true,
-        type: 'resetPassword',
-        userId: userId.toString(),
-        username: user.username
-      })
-    }
-  }
+
+  // Đã loại bỏ reset password
 
   const handleConfirmAction = async () => {
     if (!confirmDialog) return
@@ -130,10 +120,6 @@ const Users: React.FC = () => {
         case 'unlock':
           await unlockUser(userId)
           setToast({ type: 'success', message: 'User unlocked successfully' })
-          break
-        case 'resetPassword':
-          await resetPassword(userId)
-          setToast({ type: 'success', message: 'Password reset email sent successfully' })
           break
       }
       setConfirmDialog(null)
@@ -191,15 +177,13 @@ const Users: React.FC = () => {
 
       <div className="rounded-xl border border-slate-200 bg-white shadow-sm">
         {/* Table view for desktop (>= 768px) */}
+
         <UserTable
           users={paginatedUsers}
           loading={loading}
-          page={page}
-          pageSize={pageSize}
           onEdit={handleEdit}
           onLock={handleLock}
           onUnlock={handleUnlock}
-          onResetPassword={handleResetPassword}
         />
 
         {/* Card view for mobile (< 768px) */}
@@ -207,12 +191,9 @@ const Users: React.FC = () => {
           <UserCardList
             users={paginatedUsers}
             loading={loading}
-            page={page}
-            pageSize={pageSize}
             onEdit={handleEdit}
             onLock={handleLock}
             onUnlock={handleUnlock}
-            onResetPassword={handleResetPassword}
           />
         </div>
       </div>
@@ -228,16 +209,14 @@ const Users: React.FC = () => {
         />
       </div>
 
+
       <CreateUserDialog
         open={createDialogOpen}
         onClose={() => setCreateDialogOpen(false)}
         onSubmit={(data) => {
           // Chuyển đổi payload cho đúng type của createUser
           return createUser({
-            ...data,
-            password: data.password,
-            campus_id: data.campus_id,
-            status: data.status as 'Active' | 'Locked',
+            ...data
           });
         }}
         onSuccess={() => {}}

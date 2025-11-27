@@ -1,4 +1,5 @@
-import type { User, CreateUserRequest } from '@/types/users';
+
+import type { User } from '@/types/users';
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8000';
 
 async function apiClient<T>(endpoint: string, options?: RequestInit): Promise<T> {
@@ -17,41 +18,43 @@ async function apiClient<T>(endpoint: string, options?: RequestInit): Promise<T>
   return res.json();
 }
 
-export async function fetchUsers(): Promise<User[]> {
-  const data = await apiClient<{ items: User[] }>('/api/admin/');
+// Lấy danh sách user (role: staff/admin)
+export async function fetchUsers(role?: string): Promise<User[]> {
+  const params = role ? `?role=${role}` : '';
+  const data = await apiClient<{ items: User[] }>(`/api/user/${params}`);
   return data.items;
 }
 
-export async function createUser(data: CreateUserRequest): Promise<User> {
-  const res = await apiClient<User>('/api/admin/', {
+// Tạo user mới
+export async function createUser(data: Omit<User, 'id' | 'failed_attempts' | 'locked_until' | 'is_locked' | 'created_at'> & { password: string }): Promise<User> {
+  const res = await apiClient<{ item: User }>(`/api/user/`, {
     method: 'POST',
     body: JSON.stringify(data)
   });
-  return res;
+  return res.item;
 }
 
-export async function updateUser(userId: string, data: Partial<User>): Promise<User> {
-  const res = await apiClient<User>(`/api/admin/${userId}`, {
+// Cập nhật user
+export async function updateUser(userId: number, data: Partial<User> & { password?: string }): Promise<boolean> {
+  const res = await apiClient<{ status: string }>(`/api/user/${userId}`, {
     method: 'PUT',
     body: JSON.stringify(data)
   });
-  return res;
+  return res.status === 'ok';
 }
 
-export async function resetUserPassword(userId: string): Promise<{ message: string }> {
-  return apiClient<{ message: string }>(`/api/admin/${userId}/reset-password`, {
-    method: 'POST'
+// Khóa user
+export async function lockUser(userId: number): Promise<boolean> {
+  const res = await apiClient<{ status: string }>(`/api/user/${userId}/lock`, {
+    method: 'PUT'
   });
+  return res.status === 'locked';
 }
 
-export async function lockUser(userId: string): Promise<User> {
-  return apiClient<User>(`/api/admin/${userId}/lock`, {
-    method: 'PATCH'
+// Mở khóa user
+export async function unlockUser(userId: number): Promise<boolean> {
+  const res = await apiClient<{ status: string }>(`/api/user/${userId}/unlock`, {
+    method: 'PUT'
   });
-}
-
-export async function unlockUser(userId: string): Promise<User> {
-  return apiClient<User>(`/api/admin/${userId}/unlock`, {
-    method: 'PATCH'
-  });
+  return res.status === 'unlocked';
 }

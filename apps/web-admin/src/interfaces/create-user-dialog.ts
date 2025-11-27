@@ -1,10 +1,13 @@
+
 export type CreateUserDialogPayload = {
   username: string;
   email: string;
   password: string;
   role: string;
-  campus_id: string;
-  status: string;
+  campus: string;
+  phone?: string;
+  address?: string;
+  image?: string;
 };
 
 export interface CreateUserDialogProps {

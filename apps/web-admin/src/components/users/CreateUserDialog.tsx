@@ -9,8 +9,8 @@ export const CreateUserDialog: React.FC<CreateUserDialogProps> = ({ open, onClos
     email: '',
     password: '',
     role: '',
-    campus_id: '',
-    status: 'Active',
+    campus: '',
+
   });
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -22,7 +22,7 @@ export const CreateUserDialog: React.FC<CreateUserDialogProps> = ({ open, onClos
       !formData.password ||
       formData.password.length < 8 ||
       !formData.role ||
-      !formData.campus_id
+      !formData.campus
     );
   }, [formData]);
 
@@ -39,8 +39,8 @@ export const CreateUserDialog: React.FC<CreateUserDialogProps> = ({ open, onClos
         email: '',
         password: '',
         role: '',
-        campus_id: '',
-        status: 'Active',
+        campus: '',
+
       });
       setError(null);
     } catch (err: unknown) {
@@ -111,8 +111,8 @@ export const CreateUserDialog: React.FC<CreateUserDialogProps> = ({ open, onClos
             <label className="mb-1 block text-sm font-medium text-slate-700">Campus *</label>
             <select
               required
-              value={formData.campus_id}
-              onChange={e => setFormData({ ...formData, campus_id: e.target.value })}
+              value={formData.campus}
+              onChange={e => setFormData({ ...formData, campus: e.target.value })}
               className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm focus:border-blue-500 focus:outline-none"
             >
               <option value="" disabled>
