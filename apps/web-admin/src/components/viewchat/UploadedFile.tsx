@@ -7,8 +7,8 @@ import txtUrl from '@/assets/icons/txt.svg'
 import { MAX_SIZE } from '@/lib/files'
 import { cn } from '@/lib/utils'
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useState } from 'react'
-import { API_BASE_URL } from '@/lib/api'
-import { IUploadedFile, deleteKnowledgeFile, fetchKnowledgeFiles } from '@/services/document.services'
+import { API_BASE_URL } from '../../lib/api'
+import { IUploadedFile, deleteKnowledgeFile, fetchKnowledgeFiles } from '../../services/document.services'
 import DeleteConfirmationModal from './DeleteConfirmationModal'
 
 export interface UploadedFileHandle {
