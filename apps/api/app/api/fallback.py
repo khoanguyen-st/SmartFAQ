@@ -3,7 +3,7 @@
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel, Field
 
-from ..core.dependency import get_current_user
+from ..core.users import get_current_user
 from ..services import fallback
 
 router = APIRouter()

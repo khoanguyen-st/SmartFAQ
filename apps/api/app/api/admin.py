@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends
 
-from ..core.dependency import get_current_user
+from ..core.users import get_current_user
 from ..services import metrics
 
 router = APIRouter()
