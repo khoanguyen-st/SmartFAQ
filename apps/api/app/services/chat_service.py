@@ -1,29 +1,27 @@
-"""Chat use-case service layer."""
-
 from __future__ import annotations
 
 import logging
 import time
 from datetime import datetime, timezone
-from typing import Any
+from typing import Any, cast
 from uuid import uuid4
 
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.constants.chat import ASSISTANT_ROLE, FEEDBACK_MESSAGES, USER_ROLE
-from app.core.config import settings
-from app.core.mongo import get_chat_messages_collection, get_chat_sessions_collection
-from app.models.chat import ChatSession
-from app.rag.orchestrator import RAGOrchestrator
-from app.repositories.chat_messages_repo import (
+from ..constants.chat import FEEDBACK_MESSAGES
+from ..core.config import settings
+from ..core.mongo import get_chat_messages_collection, get_chat_sessions_collection
+from ..models.chat import ChatRole, ChatSession
+from ..rag.orchestrator import RAGOrchestrator
+from ..repositories.chat_messages_repo import (
     find_history,
     find_message,
     insert_messages,
     update_message,
 )
-from app.repositories.chat_sessions_repo import add_session, get_session, update_session_timestamp
-from app.schemas.chat import (
+from ..repositories.chat_sessions_repo import add_session, get_session, update_session_timestamp
+from ..schemas.chat import (
     ChatConfidenceResponse,
     ChatHistoryMessage,
     ChatHistoryResponse,
@@ -35,13 +33,12 @@ from app.schemas.chat import (
     NewSessionRequest,
     NewSessionResponse,
 )
-from app.utils.chat_input_utils import coerce_channel, coerce_language
-from app.utils.chat_response_utils import (
+from ..utils.chat_input_utils import coerce_channel, coerce_language
+from ..utils.chat_response_utils import (
     confidence_to_percent,
     format_sources,
     persistable_sources,
     safe_int,
-    timestamp_to_iso,
 )
 
 logger = logging.getLogger(__name__)
@@ -72,7 +69,7 @@ class ChatService:
         input_language = (payload.language or "").strip() or "en"
         language = coerce_language(input_language, payload.language or "")
         channel = coerce_channel(payload.channel)
-        ua = user_agent
+        ua = (user_agent or "").strip() or "unknown"
         now = self._now()
 
         session = ChatSession(
@@ -186,18 +183,19 @@ class ChatService:
         question_doc = {
             "_id": question_id,
             "sessionId": session.id,
-            "role": USER_ROLE,
+            "role": ChatRole.USER.value,
             "text": payload.question,
             "createdAt": message_time,
         }
         response_doc = {
             "_id": response_id,
             "sessionId": session.id,
-            "role": ASSISTANT_ROLE,
+            "role": ChatRole.ASSISTANT.value,
             "text": answer,
             "confidence": float(confidence_raw) if confidence_raw is not None else None,
             "sources": persistable_sources(sources),
             "queryLog": query_log,
+            "fallback": fallback_triggered,
             "feedback": None,
             "createdAt": message_time,
         }
@@ -219,11 +217,11 @@ class ChatService:
 
         return ChatQueryResponse(
             answer=answer,
-            sources=format_sources(sources),  # type: ignore[arg-type]
+            sources=format_sources(cast(list[dict[str, Any]], sources)),
             confidence=confidence_to_percent(confidence_raw),
             language=session.language,
             fallback=fallback_triggered,
-            chat_id=response_id,
+            chatId=response_id,
         )
 
     async def get_history(self, session_id: str, limit: int) -> ChatHistoryResponse:
@@ -237,25 +235,27 @@ class ChatService:
             logger.exception("Failed to fetch chat history for session %s", session_id)
             raise ChatServiceError(500, "Failed to fetch chat history.") from exc
 
-        records.reverse()
-
         messages: list[ChatHistoryMessage] = []
         for message in records:
-            timestamp = timestamp_to_iso(message.get("createdAt"))
+            created_at = message.get("createdAt") or self._now()
+            if isinstance(created_at, datetime) and created_at.tzinfo is None:
+                created_at = created_at.replace(tzinfo=timezone.utc)
             confidence_raw = message.get("confidence")
             confidence = (
                 confidence_to_percent(confidence_raw) if confidence_raw is not None else None
             )
             fallback_flag = None
-            if message.get("role") == ASSISTANT_ROLE:
+            if message.get("role") == ChatRole.ASSISTANT.value:
                 fallback_flag = message.get("fallback")
                 if fallback_flag is None:
                     fallback_flag = message.get("queryLog", {}).get("fallback")
             entry = ChatHistoryMessage(
-                role=message.get("role"),
-                text=message.get("text"),
-                timestamp=timestamp,
-                chat_id=message.get("_id") if message.get("role") == ASSISTANT_ROLE else None,
+                role=str(message.get("role") or ""),
+                text=str(message.get("text") or ""),
+                timestamp=created_at if isinstance(created_at, datetime) else self._now(),
+                chatId=(
+                    message.get("_id") if message.get("role") == ChatRole.ASSISTANT.value else None
+                ),
                 confidence=confidence,
                 fallback=fallback_flag if fallback_flag is not None else None,
             )
@@ -278,9 +278,6 @@ class ChatService:
             "feedback": payload.feedback,
             "updatedAt": self._now(),
         }
-        if payload.comment:
-            update_doc["feedbackComment"] = payload.comment
-
         try:
             await update_message(self.messages_coll, payload.chat_id, update_doc)
         except Exception as exc:
@@ -306,9 +303,12 @@ class ChatService:
         except Exception as exc:
             logger.exception("Failed to fetch sources for chat %s", chat_id)
             raise ChatServiceError(500, "Failed to load sources.") from exc
-        if not message or message.get("role") != ASSISTANT_ROLE:
+        if not message or message.get("role") != ChatRole.ASSISTANT.value:
             raise ChatServiceError(404, "Chat response not found.")
-        return ChatSourcesResponse(chat_id=chat_id, sources=format_sources(message.get("sources")))
+        return ChatSourcesResponse(
+            chatId=chat_id,
+            sources=format_sources(cast(list[dict[str, Any]], message.get("sources"))),
+        )
 
     async def get_confidence(self, chat_id: str) -> ChatConfidenceResponse:
         try:
@@ -316,7 +316,7 @@ class ChatService:
         except Exception as exc:
             logger.exception("Failed to fetch confidence for chat %s", chat_id)
             raise ChatServiceError(500, "Failed to load confidence.") from exc
-        if not message or message.get("role") != ASSISTANT_ROLE:
+        if not message or message.get("role") != ChatRole.ASSISTANT.value:
             raise ChatServiceError(404, "Chat response not found.")
 
         fallback_flag = message.get("fallback")
@@ -324,10 +324,10 @@ class ChatService:
             fallback_flag = message.get("queryLog", {}).get("fallback")
 
         return ChatConfidenceResponse(
-            chat_id=chat_id,
+            chatId=chat_id,
             confidence=confidence_to_percent(message.get("confidence")),
             threshold=confidence_to_percent(settings.CONFIDENCE_THRESHOLD),
-            fallback_triggered=bool(fallback_flag),
+            fallbackTriggered=bool(fallback_flag),
         )
 
 

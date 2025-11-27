@@ -6,6 +6,8 @@ from datetime import datetime, timezone
 from decimal import Decimal
 from typing import Any
 
+from ..schemas.chat import ChatSource
+
 
 def confidence_to_percent(value: float | Decimal | None) -> int:
     if value is None:
@@ -16,15 +18,14 @@ def confidence_to_percent(value: float | Decimal | None) -> int:
     return int(round(numeric))
 
 
-def format_sources(sources: list[dict[str, Any]] | None) -> list[dict[str, Any]]:
-    formatted: list[dict[str, Any]] = []
+def format_sources(sources: list[dict[str, Any]] | None) -> list[ChatSource]:
+    formatted: list[ChatSource] = []
     for src in sources or []:
         relevance_raw = src.get("score")
         if relevance_raw is None:
             relevance_raw = src.get("relevance")
         chunk_id = src.get("chunk_id") or src.get("chunkId")
-        if chunk_id is None:
-            chunk_id = src.get("chunkId") or src.get("chunk_id")
+
         title = (
             src.get("title")
             or src.get("docTitle")
@@ -33,12 +34,13 @@ def format_sources(sources: list[dict[str, Any]] | None) -> list[dict[str, Any]]
             or src.get("docId")
             or "Unknown source"
         )
+
         formatted.append(
-            {
-                "title": title,
-                "chunkId": chunk_id,
-                "relevance": float(relevance_raw) if relevance_raw is not None else None,
-            }
+            ChatSource(
+                title=title,
+                chunkId=chunk_id,
+                relevance=float(relevance_raw) if relevance_raw is not None else None,
+            )
         )
     return formatted
 

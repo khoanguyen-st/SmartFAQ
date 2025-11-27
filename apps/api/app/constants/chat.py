@@ -1,8 +1,14 @@
-"""Chat-related constants."""
-
 from __future__ import annotations
 
-from app.models.chat import Channel, ChatRole
+from enum import Enum
+
+from ..models.chat import Channel, ChatRole, Language
+
+
+class FeedbackStatus(str, Enum):
+    UP = "up"
+    DOWN = "down"
+
 
 FEEDBACK_MESSAGES: dict[str, str] = {
     "en": "Feedback recorded. Thank you!",
@@ -10,13 +16,13 @@ FEEDBACK_MESSAGES: dict[str, str] = {
 }
 
 CHANNEL_CANONICAL = {channel.value for channel in Channel}
-
-USER_ROLE = ChatRole.USER.value
-ASSISTANT_ROLE = ChatRole.ASSISTANT.value
+CHATROLE = {role.value: role for role in ChatRole}
+LANGUAGE_CANONICAL = {language.value for language in Language}
 
 __all__ = [
     "FEEDBACK_MESSAGES",
     "CHANNEL_CANONICAL",
-    "USER_ROLE",
-    "ASSISTANT_ROLE",
+    "CHATROLE",
+    "LANGUAGE_CANONICAL",
+    "FeedbackStatus",
 ]

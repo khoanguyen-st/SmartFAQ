@@ -1,13 +1,12 @@
-"""Pydantic schemas for chat endpoints."""
-
 from __future__ import annotations
 
-from typing import Literal
+from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
-from app.core.input_validation import UnsafeInputError, ensure_safe_text
-from app.utils.chat_input_utils import validate_channel_input
+from ..constants.chat import FeedbackStatus
+from ..core.input_validation import UnsafeInputError, ensure_safe_text
+from ..utils.chat_input_utils import validate_channel_input
 
 
 class ChatQuery(BaseModel):
@@ -57,8 +56,13 @@ class NewSessionRequest(BaseModel):
 
     @field_validator("channel")
     @classmethod
-    def _validate_channel(cls, value: str | None) -> str | None:
+    def validate_channel(cls, value: str | None) -> str | None:
         return validate_channel_input(value) if value is not None else None
+
+    @field_validator("language")
+    @classmethod
+    def validate_language(cls, value: str | None) -> str | None:
+        return value
 
 
 class NewSessionResponse(BaseModel):
@@ -69,20 +73,9 @@ class NewSessionResponse(BaseModel):
 class FeedbackRequest(BaseModel):
     chat_id: str = Field(..., alias="chatId")
     session_id: str = Field(..., alias="sessionId")
-    feedback: Literal["up", "down"]
-    comment: str | None = None
+    feedback: FeedbackStatus
 
     model_config = ConfigDict(populate_by_name=True)
-
-    @field_validator("comment")
-    @classmethod
-    def _validate_comment(cls, value: str | None) -> str | None:
-        if value is None:
-            return None
-        try:
-            return ensure_safe_text(value, field_name="comment", max_length=1000)
-        except UnsafeInputError as exc:
-            raise ValueError(str(exc)) from exc
 
 
 class FeedbackResponse(BaseModel):
@@ -93,7 +86,7 @@ class FeedbackResponse(BaseModel):
 class ChatHistoryMessage(BaseModel):
     role: str
     text: str
-    timestamp: str
+    timestamp: datetime
     chat_id: str | None = Field(default=None, alias="chatId")
     confidence: int | None = None
     fallback: bool | None = None
@@ -128,6 +121,7 @@ __all__ = [
     "ChatQueryResponse",
     "NewSessionRequest",
     "NewSessionResponse",
+    "FeedbackStatus",
     "FeedbackRequest",
     "FeedbackResponse",
     "ChatHistoryMessage",

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.chat import ChatSession
+from ..models.chat import ChatSession
 
 
 async def get_session(db: AsyncSession, session_id: str) -> ChatSession | None:

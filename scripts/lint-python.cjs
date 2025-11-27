@@ -13,12 +13,13 @@ const fs = require('fs');
 const isWindows = process.platform === 'win32';
 
 // -------------------------------------------------------
-// Optional: Conda override (ONLY when user sets CONDA_LINT=1)
+// Auto-detect Conda environment or use CONDA_LINT=1 override
 // -------------------------------------------------------
 let condaRuff = null;
 let condaBlack = null;
 
-if (process.env.CONDA_LINT === '1' && process.env.CONDA_PREFIX) {
+// Auto-detect if CONDA_PREFIX exists (user is in conda env)
+if (process.env.CONDA_PREFIX) {
   const condaBin = path.join(
     process.env.CONDA_PREFIX,
     isWindows ? 'Scripts' : 'bin'
@@ -30,7 +31,7 @@ if (process.env.CONDA_LINT === '1' && process.env.CONDA_PREFIX) {
   if (fs.existsSync(condaRuff) && fs.existsSync(condaBlack)) {
     console.log('✔ Using Conda environment for linting');
   } else {
-    console.warn('⚠ CONDA_LINT=1 is set but ruff/black not found in Conda env. Falling back to venv.');
+    console.warn('⚠ Conda environment detected but ruff/black not found. Falling back to venv.');
     condaRuff = null;
     condaBlack = null;
   }

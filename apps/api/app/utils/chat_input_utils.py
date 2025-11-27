@@ -2,18 +2,29 @@
 
 from __future__ import annotations
 
-from app.constants.chat import CHANNEL_CANONICAL
-from app.models.chat import Channel
-from app.rag.utils.language import detect_language_simple, normalize_language_code
+from ..constants.chat import CHANNEL_CANONICAL, LANGUAGE_CANONICAL
+from ..models.chat import Channel
+from ..rag.utils.language import detect_language_simple, normalize_language_code
 
 
 def coerce_language(preferred: str | None, fallback_question: str) -> str:
     """Return supported language code (en|vi)."""
     if preferred:
         normalized = normalize_language_code(preferred, default="en")
-        return "vi" if normalized == "vi" else "en"
-    detected = detect_language_simple(fallback_question or "")
-    return "vi" if detected == "vi" else "en"
+    else:
+        detected = detect_language_simple(fallback_question or "")
+        normalized = "vi" if detected == "vi" else "en"
+    return normalized if normalized in LANGUAGE_CANONICAL else "en"
+
+
+def validate_language_input(value: str | None) -> str | None:
+    """Validate language against accepted set."""
+    if value is None:
+        return None
+    normalized = value.strip().lower()
+    if normalized not in LANGUAGE_CANONICAL:
+        raise ValueError(f"language must be one of {sorted(LANGUAGE_CANONICAL)}")
+    return normalized
 
 
 def coerce_channel(value: str | None) -> str:
@@ -34,4 +45,9 @@ def validate_channel_input(value: str | None) -> str | None:
     return coerce_channel(value)
 
 
-__all__ = ["coerce_language", "coerce_channel", "validate_channel_input"]
+__all__ = [
+    "coerce_language",
+    "validate_language_input",
+    "coerce_channel",
+    "validate_channel_input",
+]

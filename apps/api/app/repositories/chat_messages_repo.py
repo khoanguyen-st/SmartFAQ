@@ -10,13 +10,15 @@ from motor.motor_asyncio import AsyncIOMotorCollection
 async def insert_messages(
     messages_coll: AsyncIOMotorCollection, docs: list[dict[str, Any]]
 ) -> None:
+    if not docs:
+        return
     await messages_coll.insert_many(docs)
 
 
 async def find_history(
     messages_coll: AsyncIOMotorCollection, session_id: str, limit: int
 ) -> list[dict[str, Any]]:
-    cursor = messages_coll.find({"sessionId": session_id}).sort("createdAt", -1).limit(limit)
+    cursor = messages_coll.find({"sessionId": session_id}).sort("createdAt", 1).limit(limit)
     return await cursor.to_list(length=limit)
 
 

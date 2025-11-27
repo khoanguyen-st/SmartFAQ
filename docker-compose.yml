@@ -73,9 +73,9 @@ services:
     image: mongo:7.0
     env_file: ./.env.docker
     environment:
-      MONGO_INITDB_ROOT_USERNAME: ${MONGO_USERNAME}
-      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD}
-      MONGO_INITDB_DATABASE: ${MONGO_DB}
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_USERNAME:-smartfaq}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD:-smartfaq}
+      MONGO_INITDB_DATABASE: ${MONGO_DB:-smartfaq}
     volumes:
       - mongo-data:/data/db
     ports:

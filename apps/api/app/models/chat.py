@@ -25,6 +25,13 @@ class Channel(str, Enum):
     MANAGEMENT = "management"
 
 
+class Language(str, Enum):
+    """Enumeration for supported languages."""
+
+    EN = "en"
+    VI = "vi"
+
+
 class ChatSession(Base):
     """Represents a chat session."""
 
@@ -33,11 +40,11 @@ class ChatSession(Base):
     id: Mapped[str] = mapped_column(String(36), primary_key=True)
     language: Mapped[str] = mapped_column(String(10), default="en", nullable=False)
     channel: Mapped[str] = mapped_column(String(50), default=Channel.WIDGET.value, nullable=False)
-    user_agent: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    user_agent: Mapped[str] = mapped_column(String(255), nullable=False, default="unknown")
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
     updated_at: Mapped[datetime] = mapped_column(
         DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
     )
 
 
-__all__ = ["ChatRole", "ChatSession", "Channel"]
+__all__ = ["ChatRole", "ChatSession", "Channel", "Language"]
