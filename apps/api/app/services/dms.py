@@ -79,7 +79,6 @@ def upload_to_cloudinary(content: bytes, filename: str) -> tuple[str, int, str]:
 async def create_document_record(
     db: AsyncSession,
     title: str,
-    uploaded_by: int | None,
     file_path: str | None = None,
     file_size: int | None = None,
     format: str | None = None,
@@ -88,7 +87,6 @@ async def create_document_record(
         title=title,
         language="en",
         status="ACTIVE",
-        created_by=uploaded_by,
     )
     db.add(doc)
     await db.flush()
@@ -100,7 +98,6 @@ async def create_document_record(
             file_path=file_path,
             file_size=file_size,
             format=format or "bin",
-            uploaded_by=uploaded_by,
         )
         db.add(dv)
         await db.flush()
@@ -122,7 +119,7 @@ async def async_session_scope():
             raise
 
 
-async def enqueue_single_document(file: UploadFile, uploaded_by=None) -> dict:
+async def enqueue_single_document(file: UploadFile) -> dict:
 
     content = await file.read()
     orig_name = file.filename or "upload.bin"
@@ -143,7 +140,6 @@ async def enqueue_single_document(file: UploadFile, uploaded_by=None) -> dict:
             doc_id = await create_document_record(
                 db,
                 title=orig_name,
-                uploaded_by=None,
                 file_path=public_id,
                 file_size=size,
                 format=fmt,
@@ -169,7 +165,7 @@ async def enqueue_multiple_documents(files: list[UploadFile]) -> list[dict]:
     results = []
     for file in files:
         try:
-            r = await enqueue_single_document(file, uploaded_by=None)
+            r = await enqueue_single_document(file)
             results.append(r)
         except Exception as exc:
             results.append({"filename": file.filename, "error": str(exc)})
