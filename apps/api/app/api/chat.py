@@ -74,15 +74,25 @@ def _confidence_to_percent(value: float | Decimal | None) -> int:
 
 def _format_sources(sources: list[dict[str, Any]] | None) -> list["ChatSource"]:
     formatted: list[ChatSource] = []
+    seen_titles: set[str] = set()  # Track các title đã thấy
+    
     for src in sources or []:
-        relevance_raw = src.get("score")
-        formatted.append(
-            ChatSource(
-                title=src.get("source") or src.get("document_id") or "Unknown source",
-                chunk_id=src.get("chunk_id") or src.get("chunkId"),
-                relevance=float(relevance_raw) if relevance_raw is not None else None,
+        title = src.get("source") or src.get("document_id") or "Unknown source"
+        # Normalize title để so sánh (lowercase, strip whitespace)
+        normalized_title = title.lower().strip()
+        
+        # Chỉ thêm nếu chưa thấy title này (mỗi file chỉ hiển thị 1 lần)
+        if normalized_title not in seen_titles:
+            seen_titles.add(normalized_title)
+            relevance_raw = src.get("score")
+            formatted.append(
+                ChatSource(
+                    title=title,  # Giữ nguyên title gốc
+                    chunk_id=src.get("chunk_id") or src.get("chunkId"),
+                    relevance=float(relevance_raw) if relevance_raw is not None else None,
+                )
             )
-        )
+    
     return formatted
 
 
