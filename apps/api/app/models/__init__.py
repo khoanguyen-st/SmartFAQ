@@ -3,6 +3,7 @@
 from .chat import Channel, ChatRole, ChatSession
 from .config import Base
 from .config_entry import ConfigEntry
+from .department import Department
 from .document import Document
 from .document_version import DocumentVersion
 from .fallback_log import FallbackLog
@@ -13,6 +14,7 @@ __all__ = [
     "User",
     "Document",
     "DocumentVersion",
+    "Department",
     "FallbackLog",
     "ConfigEntry",
     "ChatSession",
