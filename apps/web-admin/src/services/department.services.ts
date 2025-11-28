@@ -3,9 +3,6 @@ import { API_BASE_URL } from '@/lib/api'
 export interface IDepartment {
   id: number
   name: string
-  description?: string
-  memberCount?: number
-  createdAt?: string
 }
 
 const ENDPOINT = `${API_BASE_URL}/api/departments`
