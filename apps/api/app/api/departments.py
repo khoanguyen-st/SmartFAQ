@@ -25,12 +25,11 @@ async def get_all_departments(
 
 
 @router.post(
-    "/{department_id}",
+    "/",
     response_model=department_schemas.DepartmentResponse,
     status_code=status.HTTP_201_CREATED,
 )
 async def create_department(
-    department_id: int,
     department: department_schemas.DepartmentCreate,
     db: AsyncSession = Depends(get_db),
 ):
