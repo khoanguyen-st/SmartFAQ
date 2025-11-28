@@ -5,8 +5,8 @@ from fastapi import APIRouter, Depends, Form, HTTPException, UploadFile, status
 from fastapi.responses import FileResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from ..api import schemas
 from ..core.database import get_db
+from ..schemas import schemas
 from ..services import dms
 
 router = APIRouter()
