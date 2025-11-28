@@ -34,10 +34,12 @@ const ChatInput = ({ onSend, isLoading }: ChatInputProps) => {
           onKeyDown={handleKeyDown}
           onChange={e => setInput(e.target.value)}
           id="Chat__footer-input"
-
           className="Chat__footer-input h-10 w-full resize-none rounded-full text-[14px] leading-4"
         />
-        <label className="absolute top-1/2 left-14 -translate-y-1/2 text-[#1f2937] z-9 cursor-text" htmlFor="Chat__footer-input">
+        <label
+          className="absolute top-1/2 left-14 z-9 -translate-y-1/2 cursor-text text-[#1f2937]"
+          htmlFor="Chat__footer-input"
+        >
           Type your message
         </label>
 
