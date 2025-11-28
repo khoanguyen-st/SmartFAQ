@@ -24,8 +24,6 @@ def _hash_id(*parts: str) -> str:
 
 
 class PDFLoader:
-    """Custom PDF loader using pypdf"""
-
     def __init__(self, file_path: str):
         self.file_path = file_path
 
@@ -50,8 +48,6 @@ class PDFLoader:
 
 
 class DocxLoader:
-    """Custom DOCX loader using docx2txt"""
-
     def __init__(self, file_path: str):
         self.file_path = file_path
 
@@ -71,8 +67,6 @@ class DocxLoader:
 
 
 class TextLoader:
-    """Custom text loader for .txt and .md files"""
-
     def __init__(self, file_path: str):
         self.file_path = file_path
 
@@ -129,9 +123,6 @@ class DocumentProcessor:
         document_id: str,
         metadata: Optional[Dict[str, Any]] = None,
     ) -> List[Document]:
-        """
-        Load -> split theo từng trang (để giữ metadata 'page') -> wrap Document
-        """
         page_docs = self.load_document(file_path)
         if not page_docs:
             return []

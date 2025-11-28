@@ -1,37 +1,23 @@
-"""
-RAG module - Retrieval Augmented Generation components
-"""
-
 from .embedder import get_embeddings
-from .entity_extractor import RuleBasedEntityExtractor
-from .intent_detector import RuleBasedIntentDetector
+from .guardrail import GuardrailService
 from .llm import LLMWrapper
-from .normalizer import RuleBasedNormalizer
+from .normalizer import UnifiedNormalizer
 from .orchestrator import RAGOrchestrator
-from .question_understanding import (
-    EntityExtractor,
-    IntentDetector,
-    QuestionNormalizer,
-    QuestionUnderstanding,
-)
 from .retriever import Retriever
-from .validations import Entity, Intent, NormalizedQuestion
-from .vector_store import _get_vectorstore
+from .types import Entity, Intent
+from .vector_store import VectorStore
+
+RuleBasedNormalizer = UnifiedNormalizer
 
 __all__ = [
     "get_embeddings",
-    "_get_vectorstore",
+    "GuardrailService",
     "LLMWrapper",
-    "Retriever",
-    "RAGOrchestrator",
-    "QuestionUnderstanding",
-    "Intent",
-    "Entity",
-    "NormalizedQuestion",
-    "IntentDetector",
-    "EntityExtractor",
-    "QuestionNormalizer",
-    "RuleBasedIntentDetector",
+    "UnifiedNormalizer",
     "RuleBasedNormalizer",
-    "RuleBasedEntityExtractor",
+    "RAGOrchestrator",
+    "Retriever",
+    "VectorStore",
+    "Entity",
+    "Intent",
 ]

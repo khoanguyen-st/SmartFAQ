@@ -18,12 +18,10 @@ ALLOWED_EXTS = {".pdf", ".docx"}
 MAX_SIZE_MB = int(os.getenv("UPLOAD_MAX_MB", "50"))
 MAX_BYTES = MAX_SIZE_MB * 1024 * 1024
 
-
 def _secure_name(name: str) -> str:
     base = Path(name).name
     safe = "".join(c for c in base if c.isalnum() or c in ("-", "_", ".", " "))
     return safe.strip() or "file"
-
 
 async def _save_upload_async(src: UploadFile, dst: Path) -> int:
     dst.parent.mkdir(parents=True, exist_ok=True)
@@ -39,7 +37,6 @@ async def _save_upload_async(src: UploadFile, dst: Path) -> int:
             await asyncio.to_thread(out.write, chunk)
     return written
 
-
 def _sha256_of_file(path: Path, chunk_size: int = 1024 * 1024) -> str:
     h = hashlib.sha256()
     with path.open("rb") as f:
@@ -49,7 +46,6 @@ def _sha256_of_file(path: Path, chunk_size: int = 1024 * 1024) -> str:
                 break
             h.update(b)
     return h.hexdigest()
-
 
 class DocumentService:
     def __init__(self):
