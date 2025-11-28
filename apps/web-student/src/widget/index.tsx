@@ -39,7 +39,6 @@ export const initWidget = () => {
   root.render(
     <React.StrictMode>
       <MemoryRouter>
-
         <App />
       </MemoryRouter>
     </React.StrictMode>
@@ -47,6 +46,7 @@ export const initWidget = () => {
 }
 
 // Expose ra window
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 ;(window as any).ChatWidget = {
   init: initWidget
 }
