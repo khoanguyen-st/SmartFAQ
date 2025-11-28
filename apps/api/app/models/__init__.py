@@ -1,12 +1,11 @@
 """Database models package."""
 
-from .chat import ChatMessage, ChatRole, ChatSession
+from .chat import Channel, ChatRole, ChatSession
 from .config import Base
 from .config_entry import ConfigEntry
 from .document import Document
 from .document_version import DocumentVersion
 from .fallback_log import FallbackLog
-from .query_log import QueryLog
 from .user import User
 
 __all__ = [
@@ -14,10 +13,9 @@ __all__ = [
     "User",
     "Document",
     "DocumentVersion",
-    "QueryLog",
     "FallbackLog",
     "ConfigEntry",
     "ChatSession",
-    "ChatMessage",
     "ChatRole",
+    "Channel",
 ]

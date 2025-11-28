@@ -14,10 +14,6 @@ class Settings(BaseSettings):
     env: str = Field("development", alias="APP_ENV")
     api_host: str = Field("0.0.0.0", alias="API_HOST")
     api_port: int = Field(8000, alias="API_PORT")
-    cors_allow_origins: list[str] = Field(
-        default=["http://localhost:5174", "http://localhost:5173"],
-        alias="CORS_ALLOW_ORIGINS",
-    )
 
     jwt_secret: str = Field("change-me", alias="JWT_SECRET")
     jwt_expire_minutes: int = Field(60, alias="JWT_EXPIRE_MINUTES")
@@ -51,6 +47,12 @@ class Settings(BaseSettings):
 
     CELERY_BROKER_URL: str = Field("redis://localhost:6379/0", alias="CELERY_BROKER_URL")
     CELERY_RESULT_BACKEND: str = Field("redis://localhost:6379/0", alias="CELERY_RESULT_BACKEND")
+
+    # MongoDB Configuration
+    mongo_url: str = Field("mongodb://localhost:27017", alias="MONGO_URL")
+    mongo_db: str = Field("smartfaq", alias="MONGO_DB")
+    mongo_chat_collection: str = Field("chat_messages", alias="MONGO_CHAT_COLLECTION")
+    mongo_session_collection: str = Field("chat_sessions", alias="MONGO_SESSION_COLLECTION")
 
 
 @lru_cache(maxsize=1)
