@@ -3,7 +3,13 @@ import { useEffect, useMemo, useState } from 'react'
 import CreateDepartmentModal from '@/components/departments/CreateDepartmentModal'
 import DeleteDepartmentModal from '@/components/departments/DeleteDepartmentModal'
 import UpdateDepartmentModal from '@/components/departments/UpdateDepartmentModal'
-import { createDepartment, deleteDepartment, IDepartment, updateDepartment } from '@/services/department.services'
+import {
+  createDepartment,
+  deleteDepartment,
+  fetchDepartments,
+  IDepartment,
+  updateDepartment
+} from '@/services/department.services'
 
 import Plus from '@/assets/icons/plus.svg'
 import Search from '@/assets/icons/search.svg'
@@ -11,38 +17,6 @@ import Update from '@/assets/icons/edit.svg'
 import Delete from '@/assets/icons/trash.svg'
 import Previous from '@/assets/icons/previous.svg'
 import Next from '@/assets/icons/next.svg'
-
-// --- MOCK DATA GENERATOR ---
-const generateMockData = (): IDepartment[] => {
-  const departments = [
-    'Academic Affairs',
-    'Student Affairs',
-    'Information Technology',
-    'Library',
-    'Learning Resource',
-    'Human Resources',
-    'Finance',
-    'Marketing',
-    'Admissions',
-    'International Office',
-    'Facility Management',
-    'Security',
-    'Health Services',
-    'Alumni Relations',
-    'Career Services',
-    'Research & Development',
-    'Quality Assurance',
-    'Legal',
-    'Communications',
-    'Events'
-  ]
-  return Array.from({ length: 50 }, (_, i) => ({
-    id: i + 1,
-    name: departments[i % departments.length] + (i > 19 ? ` ${Math.floor(i / 20) + 1}` : ''),
-    description: 'Description for department...',
-    createdAt: new Date().toISOString()
-  }))
-}
 
 const DepartmentsPage = () => {
   const [departments, setDepartments] = useState<IDepartment[]>([])
@@ -59,10 +33,14 @@ const DepartmentsPage = () => {
   const loadData = async () => {
     setIsLoading(true)
     try {
-      const mock = generateMockData()
-      setDepartments(mock)
+      const data = await fetchDepartments()
+      if (Array.isArray(data)) {
+        setDepartments(data)
+      } else {
+        setDepartments(data as unknown as IDepartment[])
+      }
     } catch (error) {
-      console.error(error)
+      console.error('Failed to load departments:', error)
     } finally {
       setIsLoading(false)
     }
@@ -88,8 +66,10 @@ const DepartmentsPage = () => {
     try {
       await createDepartment(data)
       await loadData()
+      setIsAddOpen(false)
     } catch (error) {
       console.error(error)
+      alert('Failed to create department')
     } finally {
       setIsLoading(false)
     }
@@ -101,8 +81,10 @@ const DepartmentsPage = () => {
     try {
       await updateDepartment(editingDept.id, data)
       await loadData()
+      setEditingDept(null)
     } catch (error) {
       console.error(error)
+      alert('Failed to update department')
     } finally {
       setIsLoading(false)
     }
@@ -196,7 +178,7 @@ const DepartmentsPage = () => {
               {currentData.length === 0 ? (
                 <tr>
                   <td colSpan={3} className="py-6 pr-30 text-center text-gray-500">
-                    {isLoading && departments.length === 0 ? 'Loading...' : 'No departments found.'}
+                    {isLoading ? 'Loading...' : 'No departments found.'}
                   </td>
                 </tr>
               ) : (

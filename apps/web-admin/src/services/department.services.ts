@@ -4,20 +4,29 @@ export interface IDepartment {
   id: number
   name: string
   description?: string
-  memberCount?: number // Số lượng nhân viên (để hiển thị UI nếu cần)
+  memberCount?: number
   createdAt?: string
 }
 
-// GET: Lấy danh sách phòng ban
+const ENDPOINT = `${API_BASE_URL}/api/departments`
+
 export const fetchDepartments = async (): Promise<IDepartment[]> => {
-  const res = await fetch(`${API_BASE_URL}/api/departments`)
-  if (!res.ok) throw new Error('Failed to fetch departments')
+  const res = await fetch(`${ENDPOINT}/`, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json'
+    }
+  })
+
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}))
+    throw new Error(errorData.detail || 'Failed to fetch departments')
+  }
   return res.json()
 }
 
-// POST: Tạo phòng ban mới
 export const createDepartment = async (data: { name: string; description?: string }): Promise<IDepartment> => {
-  const res = await fetch(`${API_BASE_URL}/api/departments`, {
+  const res = await fetch(`${ENDPOINT}/`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data)
@@ -25,17 +34,16 @@ export const createDepartment = async (data: { name: string; description?: strin
 
   if (!res.ok) {
     const errorData = await res.json().catch(() => ({}))
-    throw new Error(errorData.error || 'Failed to create department')
+    throw new Error(errorData.detail || 'Failed to create department')
   }
   return res.json()
 }
 
-// PUT: Cập nhật phòng ban
 export const updateDepartment = async (
   id: number,
   data: { name: string; description?: string }
 ): Promise<IDepartment> => {
-  const res = await fetch(`${API_BASE_URL}/api/departments/${id}`, {
+  const res = await fetch(`${ENDPOINT}/${id}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data)
@@ -43,20 +51,18 @@ export const updateDepartment = async (
 
   if (!res.ok) {
     const errorData = await res.json().catch(() => ({}))
-    throw new Error(errorData.error || 'Failed to update department')
+    throw new Error(errorData.detail || 'Failed to update department')
   }
   return res.json()
 }
 
-// DELETE: Xóa phòng ban
 export const deleteDepartment = async (id: number): Promise<void> => {
-  const res = await fetch(`${API_BASE_URL}/api/departments/${id}`, {
+  const res = await fetch(`${ENDPOINT}/${id}`, {
     method: 'DELETE'
   })
 
   if (!res.ok) {
     const errorData = await res.json().catch(() => ({}))
-    // Xử lý lỗi nghiệp vụ: Cannot delete department with assigned staff
-    throw new Error(errorData.error || 'Failed to delete department')
+    throw new Error(errorData.detail || 'Failed to delete department')
   }
 }
