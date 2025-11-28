@@ -1,4 +1,5 @@
 import { API_BASE_URL } from '../lib/api'
+import { MAX_SIZE } from '@/lib/files'
 
 export interface IUploadedFile {
   id: string
@@ -81,8 +82,7 @@ export const fetchKnowledgeFiles = async (): Promise<IUploadedFile[]> => {
 }
 
 export const uploadKnowledgeFiles = async (files: File[]): Promise<IUploadedFile[]> => {
-  const MAX_FILE_SIZE = 50 * 1024 * 1024
-
+  const MAX_FILE_SIZE = MAX_SIZE
   const ALLOWED_EXTENSIONS = ['pdf', 'doc', 'docx', 'txt', 'md']
 
   for (const file of files) {
