@@ -1,5 +1,5 @@
 export const MAX_FILES = 20
-export const MAX_SIZE = 1000 * 1024 * 1024
+export const MAX_SIZE = 10000 * 1024 * 1024
 
 const allowedExtensions = ['.pdf', '.doc', '.docx', '.txt', '.md']
 

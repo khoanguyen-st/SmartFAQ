@@ -9,6 +9,7 @@ import ForgotPasswordPage from './pages/Forgotpassword'
 import CreateNewPasswordPage from './pages/Create'
 import ResetPasswordSuccessPage from './pages/Resetpasssuccess'
 import ShellLayout from './components/ShellLayout'
+import ViewChatPage from './pages/ViewChat'
 
 const App = () => (
   <Routes>
@@ -22,6 +23,7 @@ const App = () => (
       <Route path="users" element={<UsersPage />} />
       <Route path="logs" element={<LogsPage />} />
       <Route path="settings" element={<SettingsPage />} />
+      <Route path="view-chat" element={<ViewChatPage />} />
       <Route path="*" element={<Navigate to="dashboard" replace />} />
     </Route>
   </Routes>
