@@ -141,7 +141,16 @@ CHROMA_METRIC=cosine
 CONFIDENCE_THRESHOLD=0.65
 TOP_K_RETRIEVAL=5
 MAX_CONTEXT_CHARS=8000
+
+# MongoDB (chat persistence)
+MONGO_URL=mongodb://localhost:27017
+MONGO_DB=smartfaq
+MONGO_CHAT_COLLECTION=chat_messages
+MONGO_SESSION_COLLECTION=chat_sessions
 ```
+
+- Chat sessions are dual-written to Postgres and MongoDB.
+- Chat messages, sources, and query logs are persisted in MongoDB only.
 
 ## 📊 RAG Components
 
