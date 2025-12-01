@@ -43,6 +43,11 @@ class Settings(BaseSettings):
     CHROMA_HEADERS: str = Field("", alias="CHROMA_HEADERS")
 
     CONFIDENCE_THRESHOLD: float = Field(0.65, alias="CONFIDENCE_THRESHOLD")
+    HYBRID_ENABLED: bool = Field(True, alias="HYBRID_ENABLED")
+    HYBRID_K_VEC: int = Field(20, alias="HYBRID_K_VEC")
+    HYBRID_K_LEX: int = Field(20, alias="HYBRID_K_LEX")
+    HYBRID_FUSION_K: int = Field(60, alias="HYBRID_FUSION_K")
+    HYBRID_MAX_DOCS: int = Field(5000, alias="HYBRID_MAX_DOCS")
     MAX_CONTEXT_CHARS: int = Field(8000, alias="MAX_CONTEXT_CHARS")
     TOP_K_RETRIEVAL: int = Field(5, alias="TOP_K_RETRIEVAL")
 

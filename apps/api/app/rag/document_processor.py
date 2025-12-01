@@ -13,13 +13,6 @@ import fitz  # PyMuPDF
 from docx import Document as DocxDocument
 from langchain_core.documents import Document
 
-try:  # Prefer langchain_text_splitters when available
-    from langchain_text_splitters import SemanticChunker as LTSemanticChunker
-except Exception:  # pragma: no cover - optional dependency
-    LTSemanticChunker = None
-
-from app.rag.embedder import get_embeddings
-
 logger = logging.getLogger(__name__)
 
 SUPPORTED_EXTENSIONS = {".pdf", ".docx", ".doc", ".txt", ".md"}
@@ -432,49 +425,7 @@ class DocumentProcessor:
             chunking: Optional custom chunking configuration.
         """
         self.chunking = chunking or ChunkingConfig()
-        self._embeddings = get_embeddings()
-        self._chunker = self._init_chunker()
-
-    def _init_chunker(self):
-        """Instantiate SemanticChunker if available; otherwise use a safe fallback."""
-        if LTSemanticChunker:
-            try:
-                return LTSemanticChunker(
-                    self._embeddings,
-                    min_chunk_size=self.chunking.min_chunk_tokens,
-                    max_chunk_size=self.chunking.max_chunk_tokens,
-                    sentence_split_regex=self.chunking.sentence_split_regex,
-                    tokenizer=str.split,
-                )
-            except TypeError:
-                logger.warning(
-                    "SemanticChunker (langchain_text_splitters) init fallback: API mismatch, using defaults"
-                )
-                try:
-                    return LTSemanticChunker(self._embeddings)
-                except Exception:
-                    logger.exception("SemanticChunker (langchain_text_splitters) failed; trying fallback")
-
-        if LXSemanticChunker:
-            try:
-                return LXSemanticChunker(
-                    self._embeddings,
-                    min_chunk_size=self.chunking.min_chunk_tokens,
-                    max_chunk_size=self.chunking.max_chunk_tokens,
-                    sentence_split_regex=self.chunking.sentence_split_regex,
-                    tokenizer=str.split,
-                )
-            except TypeError:
-                logger.warning(
-                    "SemanticChunker (langchain_experimental) init fallback: API mismatch, using defaults"
-                )
-                try:
-                    return LXSemanticChunker(self._embeddings)
-                except Exception:
-                    logger.exception("SemanticChunker (langchain_experimental) failed; using simple fallback")
-
-        logger.warning("SemanticChunker not available; using simple sentence-based splitter fallback")
-        return _FallbackSemanticChunker(
+        self._chunker = _FallbackSemanticChunker(
             min_chunk_tokens=self.chunking.min_chunk_tokens,
             max_chunk_tokens=self.chunking.max_chunk_tokens,
             sentence_split_regex=self.chunking.sentence_split_regex,
@@ -636,7 +587,9 @@ class DocumentProcessor:
         flush_list_buffer()
         flush_paragraph_buffer()
 
-        return [d for d in docs if d.page_content.strip()]
+        cleaned = [d for d in docs if d.page_content.strip()]
+        logger.info("Chunked document %s into %d chunks", file_path, len(cleaned))
+        return cleaned
 
     def _build_metadata(
         self,
