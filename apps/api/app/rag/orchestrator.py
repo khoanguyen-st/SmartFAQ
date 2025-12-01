@@ -16,6 +16,12 @@ from app.rag.types import MasterAnalysis
 logger = logging.getLogger(__name__)
 
 
+def _clip(text: str, max_chars: int = 8000) -> str:
+    if len(text) <= max_chars:
+        return text
+    return text[: max_chars - 3] + "..."
+
+
 class RAGOrchestrator:
     def __init__(
         self, retriever: Optional[Retriever] = None, llm_wrapper: Optional[LLMWrapper] = None

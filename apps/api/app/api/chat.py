@@ -21,6 +21,7 @@ from ..core.input_validation import UnsafeInputError, ensure_safe_text
 from ..core.rate_limiter import RateLimiter
 from ..models.chat import ChatMessage, ChatRole, ChatSession
 from ..models.query_log import QueryLog
+from ..rag.llm import LLMWrapper
 from ..rag.orchestrator import RAGOrchestrator
 
 router = APIRouter()
@@ -37,6 +38,16 @@ def get_rag_orchestrator() -> RAGOrchestrator:
     if _rag_orchestrator is None:
         _rag_orchestrator = RAGOrchestrator()
     return _rag_orchestrator
+
+
+_llm_wrapper: Optional[LLMWrapper] = None
+
+
+def get_llm_wrapper() -> LLMWrapper:
+    global _llm_wrapper
+    if _llm_wrapper is None:
+        _llm_wrapper = LLMWrapper()
+    return _llm_wrapper
 
 
 _FEEDBACK_MESSAGES: dict[str, str] = {
@@ -109,6 +120,7 @@ class ChatSource(BaseModel):
     title: str
     chunk_id: str | None = Field(default=None, alias="chunkId")
     relevance: float | None = None
+
     model_config = ConfigDict(populate_by_name=True)
 
 
@@ -126,6 +138,7 @@ class ChatQueryResponse(BaseModel):
 class NewSessionRequest(BaseModel):
     user_agent: str | None = Field(default=None, alias="userAgent", max_length=255)
     language: str | None = Field(default=None, max_length=10)
+
     model_config = ConfigDict(populate_by_name=True)
 
 
@@ -164,6 +177,7 @@ class ChatHistoryMessage(BaseModel):
     chat_id: str | None = Field(default=None, alias="chatId")
     confidence: int | None = None
     fallback: bool | None = None
+
     model_config = ConfigDict(populate_by_name=True)
 
 
@@ -175,6 +189,7 @@ class ChatHistoryResponse(BaseModel):
 class ChatSourcesResponse(BaseModel):
     chat_id: str = Field(alias="chatId")
     sources: list[ChatSource]
+
     model_config = ConfigDict(populate_by_name=True)
 
 
@@ -183,6 +198,7 @@ class ChatConfidenceResponse(BaseModel):
     confidence: int
     threshold: int
     fallback_triggered: bool = Field(alias="fallbackTriggered")
+
     model_config = ConfigDict(populate_by_name=True)
 
 
@@ -246,7 +262,6 @@ async def query_chat(
         t0 = time.perf_counter()
         orchestrator = get_rag_orchestrator()
 
-        # LẤY HISTORY TỪ DB CHO PHIÊN NÀY
         stmt = (
             select(ChatMessage)
             .where(ChatMessage.session_id == payload.session_id)
@@ -255,13 +270,12 @@ async def query_chat(
         result = await db.execute(stmt)
         past_msgs = list(result.scalars())
 
-        # Chỉ lấy những field cần thiết, giữ role/text
         history = [{"role": msg.role, "text": msg.text} for msg in past_msgs]
 
         rag_response = await orchestrator.query(
             question=payload.question,
             top_k=5,
-            history=history,  # truyền history vào orchestrator
+            history=history,
         )
 
         latency_api_ms = int((time.perf_counter() - t0) * 1000)
