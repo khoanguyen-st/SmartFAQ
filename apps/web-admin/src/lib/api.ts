@@ -62,7 +62,7 @@ export async function logout(): Promise<void> {
 
 export interface ForgotPasswordResponse {
   message: string
-  reset_token: string
+  success?: boolean
 }
 
 export async function forgotPassword(email: string): Promise<ForgotPasswordResponse> {

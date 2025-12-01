@@ -105,14 +105,19 @@ async def forgot_password(
 ) -> dict:
     service = AuthService(db)
     try:
-        reset_token = await service.forgot_password(payload.email)
+        await service.forgot_password(payload.email)
     except UserNotFoundError:
         raise HTTPException(
-            status_code=404, detail={"error": "Email not found. Please contact the Super Admin."}
+            status_code=404,
+            detail={
+                "error": "Email not found. Please check your email address.",
+                "error_code": "EMAIL_NOT_FOUND",
+            },
         )
+
     return {
         "message": "A password reset link has been sent to your registered email.",
-        "reset_token": reset_token,
+        "success": True,
     }
 
 

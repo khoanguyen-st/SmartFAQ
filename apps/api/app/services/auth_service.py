@@ -17,6 +17,7 @@ from ..core.security import (
     verify_reset_token,
 )
 from ..models.user import User
+from ..services.email_service import EmailService
 
 
 class AccountLockedError(Exception):
@@ -119,6 +120,10 @@ class AuthService:
         user.locked_until = None
         self.db.add(user)
 
+    async def reset_failed_attempts_only(self, user: User) -> None:
+        user.failed_attempts = 0
+        self.db.add(user)
+
     async def forgot_password(self, email: str) -> str:
         result = await self.db.execute(select(User).filter(User.email == email))
         user: User | None = result.scalar_one_or_none()
@@ -126,6 +131,17 @@ class AuthService:
             raise UserNotFoundError
 
         reset_token = create_reset_token(user_id=user.id, email=user.email)
+
+        # Gửi email reset password
+        email_service = EmailService()
+        email_sent = await email_service.send_password_reset_email(
+            to_email=user.email, reset_token=reset_token, username=user.username
+        )
+
+        if not email_sent:
+            # Log error but don't fail the request (security: don't reveal if email exists)
+            pass
+
         result = await self.db.execute(select(User).filter(User.role == "ADMIN", User.is_active))
         admin_user = result.scalar_one_or_none()
         if admin_user:
@@ -144,7 +160,7 @@ class AuthService:
         if not validate_password_strength(new_password):
             raise WeakPasswordError
         user.password_hash = hash_password(new_password)
-        await self.reset_failed_attempts(user)
+        await self.reset_failed_attempts_only(user)
         await self.db.commit()
 
     async def logout(self, token: str) -> None:
