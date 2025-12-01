@@ -4,6 +4,7 @@ import logging
 import time
 from typing import Dict, List, Optional
 
+from app.core.config import settings
 from app.rag.guardrail import GuardrailService
 from app.rag.language import detect_language_enhanced
 from app.rag.llm import LLMWrapper
@@ -21,6 +22,7 @@ class RAGOrchestrator:
     ):
         self.retriever = retriever or Retriever()
         self.llm = llm_wrapper or LLMWrapper()
+
         self.guardrail = GuardrailService(self.llm)
         self.normalizer = UnifiedNormalizer(self.llm)
 
@@ -35,7 +37,7 @@ class RAGOrchestrator:
         raw_q = (question or "").strip()
 
         if not raw_q:
-            return self._response("Please input a valid question.", [], 0, t0, True)
+            return self._response("Please input a valid question.", [], 0.0, t0, True)
 
         logger.info(f" [Input] Raw: '{raw_q}' | History Len: {len(history) if history else 0}")
 
@@ -101,35 +103,64 @@ class RAGOrchestrator:
         all_docs = []
         for q in sub_qs:
             try:
-                docs = self.retriever.retrieve(q, top_k=3)
+                docs = self.retriever.retrieve(q, top_k=top_k)
                 all_docs.extend(docs)
-            except Exception:
-                pass
+            except Exception as e:
+                logger.error(f"Retriever error for '{q}': {e}")
 
         unique_docs = self._deduplicate(all_docs)
+        confidence = self.retriever.calculate_confidence(unique_docs)
+
+        threshold = float(getattr(settings, "CONFIDENCE_THRESHOLD", 0.65))
+
+        fallback_msg = (
+            "Tôi không tìm thấy thông tin phù hợp trong tài liệu."
+            if target_lang == "vi"
+            else "I could not find information in the documents."
+        )
 
         if not unique_docs:
-            fb = (
-                "Tôi không tìm thấy thông tin phù hợp trong tài liệu."
-                if target_lang == "vi"
-                else "I could not find information in the documents."
-            )
-            return self._response(fb, [], 0.0, t0, True)
+            return self._response(fallback_msg, [], 0.0, t0, True)
+
+        if confidence < threshold:
+            logger.warning(f" Low confidence ({confidence:.4f} < {threshold}). Fallback triggered.")
+            return self._response(fallback_msg, [], confidence, t0, True)
 
         try:
             ans = await self.llm.generate_answer_async(
                 refined_q, unique_docs, target_language=target_lang
             )
-            conf = self.retriever.calculate_confidence(unique_docs)
-            return self._response(ans, self._fmt_sources(unique_docs), conf, t0, False)
-        except Exception:
-            return self._response("System Error", [], 0, t0, True)
+
+            fallback_triggered = False
+            normalized_ans = (ans or "").strip().lower()
+
+            fallback_markers = [
+                "không tìm thấy thông tin",
+                "tôi không tìm thấy",
+                "could not find",
+                "no information",
+                "i do not know",
+            ]
+
+            if any(marker in normalized_ans for marker in fallback_markers):
+                logger.warning("️ LLM generated a fallback response despite having docs.")
+                fallback_triggered = True
+                ans = fallback_msg
+
+            return self._response(
+                ans, self._fmt_sources(unique_docs), confidence, t0, fallback_triggered
+            )
+
+        except Exception as e:
+            logger.exception(f"Generation error: {e}")
+            err_msg = "Hệ thống đang bận." if target_lang == "vi" else "System busy."
+            return self._response(err_msg, [], 0.0, t0, True)
 
     def _response(self, ans, srcs, conf, t0, fb):
         return {
             "answer": ans,
             "sources": srcs,
-            "confidence": conf,
+            "confidence": round(float(conf), 4),
             "fallback_triggered": fb,
             "latency_ms": int((time.time() - t0) * 1000),
         }
@@ -144,10 +175,19 @@ class RAGOrchestrator:
         return res
 
     def _fmt_sources(self, docs):
-        return [
-            {"source": d.get("source"), "page": d.get("page"), "score": d.get("score")}
-            for d in docs
-        ]
+        formatted = []
+        for d in docs:
+            md = d.get("metadata", {}) or {} if "metadata" in d else d
+            formatted.append(
+                {
+                    "source": d.get("source") or md.get("source"),
+                    "page": d.get("page") or md.get("page"),
+                    "score": d.get("score"),
+                    "chunk_id": d.get("chunk_id") or md.get("chunk_id"),
+                    "document_id": d.get("document_id") or md.get("document_id"),
+                }
+            )
+        return formatted
 
     def _get_blocked_msg(self, reason, lang):
         msgs = {
