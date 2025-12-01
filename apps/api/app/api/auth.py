@@ -1,9 +1,11 @@
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.security import OAuth2PasswordBearer
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..core.database import get_db
 from ..core.dependency import get_current_user
+from ..models.user import User
 from ..schemas import (
     ForgotPasswordRequest,
     LogoutResponse,
@@ -20,6 +22,7 @@ from ..services.auth_service import (
     InvalidCampusError,
     InvalidPasswordError,
     InvalidTokenError,
+    SamePasswordError,
     UserNotFoundError,
     WeakPasswordError,
 )
@@ -132,4 +135,46 @@ async def reset_password(payload: ResetPasswordRequest, db: AsyncSession = Depen
         raise HTTPException(
             status_code=400, detail={"error": "Password does not meet security requirements."}
         )
+    except SamePasswordError:
+        raise HTTPException(
+            status_code=400,
+            detail={
+                "error": "New password must be different from your current password.",
+                "error_code": "SAME_PASSWORD",
+            },
+        )
     return {"message": "Password reset successful."}
+
+
+@router.post("/verify-reset-token")
+async def verify_reset_token_endpoint(payload: dict, db: AsyncSession = Depends(get_db)) -> dict:
+    """Verify reset token without resetting password."""
+    service = AuthService(db)
+    token = payload.get("token")
+    if not token:
+        raise HTTPException(status_code=400, detail={"error": "Token is required."})
+
+    try:
+        token_payload = await service.verify_reset_token(token)
+        if not token_payload:
+            raise InvalidTokenError
+
+        # Get user info
+        result = await db.execute(select(User).filter(User.id == token_payload["user_id"]))
+        user = result.scalar_one_or_none()
+        if not user:
+            raise InvalidTokenError
+
+        return {
+            "valid": True,
+            "email": user.email,
+            "message": "Token is valid.",
+        }
+    except InvalidTokenError:
+        raise HTTPException(
+            status_code=401,
+            detail={
+                "error": "Invalid or expired reset token. Please request a new password reset.",
+                "error_code": "INVALID_TOKEN",
+            },
+        )

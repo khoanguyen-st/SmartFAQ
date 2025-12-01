@@ -9,10 +9,8 @@ logger = logging.getLogger(__name__)
 
 
 class EmailService:
-    """Service for sending emails using fastapi-mail."""
 
     def __init__(self) -> None:
-        """Initialize email service with configuration."""
         self.conf = ConnectionConfig(
             MAIL_USERNAME=settings.MAIL_USERNAME,
             MAIL_PASSWORD=settings.MAIL_PASSWORD,
@@ -33,7 +31,6 @@ class EmailService:
         html_body: str,
         text_body: str | None = None,
     ) -> bool:
-        """Send email using fastapi-mail."""
         try:
             message = MessageSchema(
                 subject=subject,
@@ -43,7 +40,6 @@ class EmailService:
             )
 
             if text_body:
-                # Add text alternative
                 message.body = f"{text_body}\n\n---\n{html_body}"
                 message.subtype = MessageType.html
 
@@ -67,44 +63,186 @@ class EmailService:
         <html>
         <head>
             <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
             <style>
-                body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-                .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-                .header { background-color: #4CAF50; color: white; padding: 20px; text-align: center; }
-                .content { padding: 20px; background-color: #f9f9f9; }
-                .button { display: inline-block; padding: 12px 24px; background-color: #4CAF50; 
-                          color: white; text-decoration: none; border-radius: 5px; margin: 20px 0; }
-                .button:hover { background-color: #45a049; }
-                .footer { padding: 20px; text-align: center; font-size: 12px; color: #666; }
-                .warning { background-color: #fff3cd; border-left: 4px solid #ffc107; 
-                           padding: 10px; margin: 15px 0; }
+                * { margin: 0; padding: 0; box-sizing: border-box; }
+                body { 
+                    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+                    line-height: 1.6; 
+                    color: #333333; 
+                    background-color: #f5f5f5;
+                    padding: 20px;
+                }
+                .email-wrapper {
+                    max-width: 600px;
+                    margin: 0 auto;
+                    background-color: #ffffff;
+                    border: 2px solid #d4e6f1;
+                    border-radius: 8px;
+                    overflow: hidden;
+                }
+                .logo-section {
+                    padding: 24px 24px 16px 24px;
+                    border-bottom: 1px solid #e0e0e0;
+                    background-color: #ffffff;
+                }
+                .logo {
+                    font-size: 28px;
+                    font-weight: 700;
+                    color: #003087;
+                    margin-bottom: 8px;
+                }
+                .main-heading {
+                    font-size: 20px;
+                    font-weight: 600;
+                    color: #333333;
+                    margin: 24px 24px 16px 24px;
+                    line-height: 1.4;
+                }
+                .content { 
+                    padding: 0 24px 24px 24px; 
+                    background-color: #ffffff;
+                }
+                .content p {
+                    color: #555555;
+                    margin-bottom: 16px;
+                    font-size: 15px;
+                    line-height: 1.6;
+                }
+                .instructions {
+                    color: #333333;
+                    margin: 20px 0;
+                    font-size: 15px;
+                }
+                .button-container {
+                    text-align: center;
+                    margin: 32px 0;
+                }
+                .button { 
+                    display: inline-block; 
+                    padding: 14px 40px; 
+                    background-color: #003087; 
+                    color: white; 
+                    text-decoration: none; 
+                    border-radius: 6px; 
+                    font-weight: 600;
+                    font-size: 16px;
+                    transition: background-color 0.2s;
+                }
+                .button:hover { 
+                    background-color: #1e3a8a; 
+                }
+                .link-section {
+                    margin: 24px 0;
+                    padding: 16px;
+                    background-color: #f9f9f9;
+                    border-left: 3px solid #003087;
+                    border-radius: 4px;
+                }
+                .link-label {
+                    color: #666666;
+                    font-size: 14px;
+                    margin-bottom: 8px;
+                    display: block;
+                }
+                .link-text {
+                    word-break: break-all; 
+                    color: #3073e9;
+                    font-size: 13px;
+                    line-height: 1.5;
+                }
+                a[href] {
+                    color: #3073e9;
+                    text-decoration: underline;
+                }
+                .button {
+                    color: white !important;
+                    text-decoration: none !important;
+                }
+                .security-notice { 
+                    background-color: #fff9e6; 
+                    border: 1px solid #ffd700; 
+                    border-left: 4px solid #f59e0b; 
+                    padding: 16px; 
+                    margin: 24px 0;
+                    border-radius: 4px;
+                }
+                .security-notice strong {
+                    color: #92400e;
+                    display: block;
+                    margin-bottom: 8px;
+                    font-size: 14px;
+                }
+                .security-notice ul {
+                    margin: 8px 0 0 20px;
+                    color: #78350f;
+                    font-size: 14px;
+                }
+                .security-notice li {
+                    margin-bottom: 6px;
+                }
+                .support-note {
+                    margin-top: 24px;
+                    padding-top: 20px;
+                    border-top: 1px solid #e0e0e0;
+                    color: #666666;
+                    font-size: 14px;
+                }
+                .footer { 
+                    padding: 20px 24px; 
+                    text-align: center; 
+                    font-size: 12px; 
+                    color: #999999;
+                    background-color: #f9f9f9;
+                    border-top: 1px solid #e0e0e0;
+                }
+                .footer p {
+                    margin: 4px 0;
+                    font-size: 12px;
+                }
             </style>
         </head>
         <body>
-            <div class="container">
-                <div class="header">
-                    <h1>SmartFAQ Password Reset</h1>
+            <div class="email-wrapper">
+                <div class="logo-section">
+                    <div class="logo">SmartFAQ</div>
                 </div>
+                
+                <div class="main-heading">
+                    We received your password reset request.
+                </div>
+                
                 <div class="content">
                     <p>Hello <strong>{{ username }}</strong>,</p>
-                    <p>You have requested to reset your password for your SmartFAQ account.</p>
-                    <p>Click the button below to reset your password:</p>
-                    <p style="text-align: center;">
-                        <a href="{{ reset_url }}" class="button">Reset Password</a>
+                    
+                    <p class="instructions">
+                        If you forgot your password, click <strong>Reset Password</strong> below and follow the onscreen instructions. The reset link expires in 10 minutes.
                     </p>
-                    <p>Or copy and paste this link into your browser:</p>
-                    <p style="word-break: break-all; color: #0066cc;">{{ reset_url }}</p>
-                    <div class="warning">
+                    
+                    <div class="button-container">
+                        <a href="{{ reset_url }}" class="button">Reset Password</a>
+                    </div>
+                    
+                    <div class="link-section">
+                        <span class="link-label">Or copy and paste this link into your browser:</span>
+                        <div class="link-text">{{ reset_url }}</div>
+                    </div>
+                    
+                    <div class="security-notice">
                         <strong>⚠️ Security Notice:</strong>
                         <ul>
-                            <li>This link will expire in 1 hour</li>
+                            <li>This link will expire in 10 minutes</li>
                             <li>If you did not request this reset, please ignore this email</li>
                             <li>Do not share this link with anyone</li>
                         </ul>
                     </div>
+                    
+                    <p class="support-note">
+                        If you didn't make this request, please contact SmartFAQ Support.
+                    </p>
                 </div>
-                <div class="footer">
-                    <p>This is an automated email. Please do not reply.</p>
+                                <div class="footer">
+                    <p>Please do not reply to this message. If you have any questions, please contact SmartFAQ Support.</p>
                     <p>&copy; 2025 SmartFAQ System. All rights reserved.</p>
                 </div>
             </div>
@@ -112,28 +250,7 @@ class EmailService:
         </html>
         """
 
-        text_body = f"""
-        SmartFAQ Password Reset Request
-
-        Hello {username},
-
-        You have requested to reset your password for your SmartFAQ account.
-
-        Click the link below to reset your password:
-        {reset_url}
-
-        Security Notice:
-        - This link will expire in 1 hour
-        - If you did not request this reset, please ignore this email
-        - Do not share this link with anyone
-
-        This is an automated email. Please do not reply.
-
-        © 2025 SmartFAQ System. All rights reserved.
-        """
-
-        # Render HTML template
         template = Template(html_template)
         html_body = template.render(username=username, reset_url=reset_url)
 
-        return await self.send_email(to_email, subject, html_body, text_body)
+        return await self.send_email(to_email, subject, html_body, text_body=None)

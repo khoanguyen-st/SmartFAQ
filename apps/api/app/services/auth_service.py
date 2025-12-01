@@ -48,6 +48,10 @@ class WeakPasswordError(Exception):
     """Raised when password does not meet strength requirements."""
 
 
+class SamePasswordError(Exception):
+    """Raised when new password is same as old password."""
+
+
 class InactiveAccountError(Exception):
     """Raised when user account is inactive."""
 
@@ -150,7 +154,7 @@ class AuthService:
         return reset_token
 
     async def reset_password(self, token: str, new_password: str) -> None:
-        token_payload = verify_reset_token(token)
+        token_payload = await verify_reset_token(token, self.db)
         if not token_payload:
             raise InvalidTokenError
         result = await self.db.execute(select(User).filter(User.id == token_payload["user_id"]))
@@ -159,8 +163,11 @@ class AuthService:
             raise InvalidTokenError
         if not validate_password_strength(new_password):
             raise WeakPasswordError
+        if verify_password(new_password, user.password_hash):
+            raise SamePasswordError
         user.password_hash = hash_password(new_password)
         await self.reset_failed_attempts_only(user)
+        await add_token_to_blacklist(token, self.db)
         await self.db.commit()
 
     async def logout(self, token: str) -> None:
@@ -200,3 +207,7 @@ class AuthService:
         )
 
         return access_token
+
+    async def verify_reset_token(self, token: str) -> dict | None:
+        """Verify reset token without resetting password."""
+        return await verify_reset_token(token, self.db)

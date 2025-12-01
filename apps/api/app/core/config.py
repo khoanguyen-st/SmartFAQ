@@ -63,7 +63,7 @@ class Settings(BaseSettings):
     MAIL_SSL_TLS: bool = Field(False, alias="MAIL_SSL_TLS")
     MAIL_USE_CREDENTIALS: bool = Field(True, alias="MAIL_USE_CREDENTIALS")
     FRONTEND_RESET_PASSWORD_URL: str = Field(
-        "http://localhost:5174/reset-password", alias="FRONTEND_RESET_PASSWORD_URL"
+        "http://localhost:5174/create-new-password", alias="FRONTEND_RESET_PASSWORD_URL"
     )
 
 

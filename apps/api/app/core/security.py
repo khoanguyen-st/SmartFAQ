@@ -176,9 +176,9 @@ async def is_token_blacklisted(token: str, db: AsyncSession | None = None) -> bo
 
 
 def create_reset_token(user_id: int, email: str, expires_delta: Optional[timedelta] = None) -> str:
-    """Create password reset token (default: 1 hour)."""
+    """Create password reset token (default: 10 minutes)."""
     if expires_delta is None:
-        expires_delta = timedelta(hours=1)
+        expires_delta = timedelta(minutes=10)
 
     now_ts = int(time.time())
     expire_ts = now_ts + int(expires_delta.total_seconds())
@@ -193,9 +193,11 @@ def create_reset_token(user_id: int, email: str, expires_delta: Optional[timedel
     return jwt.encode(payload, settings.jwt_secret, algorithm="HS256")
 
 
-def verify_reset_token(token: str) -> dict | None:
+async def verify_reset_token(token: str, db: AsyncSession | None = None) -> dict | None:
     """Verify and decode password reset token."""
     try:
+        if await is_token_blacklisted(token, db):
+            return None
         payload = jwt.decode(token, settings.jwt_secret, algorithms=["HS256"])
         if payload.get("type") != "password_reset":
             return None

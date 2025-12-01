@@ -83,6 +83,13 @@ export async function resetPassword(token: string, newPassword: string): Promise
   })
 }
 
+export async function verifyResetToken(token: string): Promise<{ valid: boolean; email: string }> {
+  return apiCall('/api/auth/verify-reset-token', {
+    method: 'POST',
+    body: JSON.stringify({ token })
+  })
+}
+
 // Admin functions
 export async function fetchMetrics() {
   return apiCall('/admin/metrics')
