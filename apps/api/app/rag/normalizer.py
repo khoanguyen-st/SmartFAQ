@@ -7,6 +7,7 @@ from typing import Any, Dict, Optional
 
 from app.rag.language import detect_language_enhanced
 from app.rag.llm import LLMWrapper
+from app.rag.prompts import get_normalization_prompt
 
 logger = logging.getLogger(__name__)
 
@@ -54,12 +55,7 @@ class SmartNormalizer:
 
     def _rule_based(self, text: str) -> Dict[str, Any]:
         det = detect_language_enhanced(text)
-        if isinstance(det, (tuple, list)) and det:
-            lang = det[0]
-        elif isinstance(det, str):
-            lang = det
-        else:
-            lang = "other"
+        lang = det if isinstance(det, str) else "other"
 
         t = text.strip().lower()
         cleaned = re.sub(r"\s+", " ", t)
@@ -89,72 +85,52 @@ class SmartNormalizer:
         if not text or not text.strip():
             return False
 
-        if rule_output.get("language") not in {"vi", "en"}:
+        if rule_output["changed"]:
             return False
 
-        if not rule_output["changed"]:
-            return True
+        if rule_output["language"] == "vi" and remove_accents(text) != text.lower():
+            return False
 
-        if len(text) <= 4:
-            return True
-
-        if not re.search(r"[a-zA-Z]", text):
-            return True
-
-        return False
+        return True
 
     async def _llm_normalize(self, text: str) -> Dict[str, Any]:
         try:
-            try:
-                from app.rag.prompts import get_normalization_prompt
+            prompt = get_normalization_prompt()
+            data = await self.llm_wrapper.invoke_json(prompt, text)
 
-                prompt = get_normalization_prompt()
-                data = await self.llm_wrapper.invoke_json(prompt, text)
-            except Exception:
-                prompt = (
-                    "Normalize the following user query. Detect language (vi or en) and return JSON with keys "
-                    "'normalized_text' and 'language'. Text:\n\n" + text
-                )
-                raw = (
-                    await self.llm_wrapper.generate(prompt)
-                    if hasattr(self.llm_wrapper, "generate")
-                    else await self.llm_wrapper.agenerate(prompt)
-                )
-                if isinstance(raw, str) and "\t" in raw:
-                    lang, norm = raw.split("\t", 1)
-                    data = {"normalized_text": norm.strip(), "language": lang.strip().lower()}
-                else:
-                    data = {"normalized_text": text, "language": "en"}
-            if not data or "normalized_text" not in data:
-                return {"normalized_text": text, "language": "en"}
+            if isinstance(data, dict) and "normalized_text" in data:
+                return {
+                    "normalized_text": self._capitalize_first_char(
+                        data.get("normalized_text", text)
+                    ),
+                    "language": data.get("language", "en"),
+                }
 
-            return {
-                "normalized_text": self._capitalize_first_char(data.get("normalized_text", text)),
-                "language": data.get("language", "en"),
-            }
+            logger.warning(f"LLM Normalize JSON Invalid: {data}")
+            return {"normalized_text": text, "language": "en"}
+
         except Exception as e:
-            logger.error(f"LLM Normalize Error: {e}")
+            logger.error(f"LLM Normalize Failed: {e}")
             return {"normalized_text": text, "language": "en"}
 
     async def understand(self, question: str) -> Dict[str, Any]:
         clean_q = self._capitalize_first_char(question)
-        result = {"normalized_text": clean_q, "language": "en"}
-
-        if not clean_q:
-            return result
 
         cached = self._cache_get(clean_q)
         if cached:
             return cached
 
         rule_res = self._rule_based(clean_q)
-        text_after_rule = rule_res["normalized_text"]
 
         if self._need_llm(clean_q, rule_res):
+            logger.info(f"Normalizer: Calling LLM for '{clean_q}'")
             llm_res = await self._llm_normalize(clean_q)
-            final = {"normalized_text": llm_res["normalized_text"], "language": llm_res["language"]}
+            final = llm_res
         else:
-            final = {"normalized_text": text_after_rule, "language": rule_res["language"]}
+            final = {
+                "normalized_text": rule_res["normalized_text"],
+                "language": rule_res["language"],
+            }
 
         self._cache_set(clean_q, final)
         return final
