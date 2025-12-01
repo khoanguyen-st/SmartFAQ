@@ -10,6 +10,7 @@ const navItems = [
   { path: 'dashboard', label: 'Dashboard' },
   { path: 'logs', label: 'Logs' },
   { path: 'settings', label: 'Settings' },
+  { path: 'departments', label: 'Departments' },
   { path: 'uploaded', label: 'Uploaded Documents' },
   { path: 'view-chat', label: 'View Chat' }
 ]
