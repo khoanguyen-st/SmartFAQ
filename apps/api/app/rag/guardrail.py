@@ -10,8 +10,12 @@ logger = logging.getLogger(__name__)
 
 REFUSAL_MESSAGES = {
     "competitor": {
-        "vi": "Xin lỗi, tôi chỉ hỗ trợ thông tin về Đại học Greenwich Việt Nam.",
-        "en": "I only support inquiries related to Greenwich University Vietnam.",
+        "vi": "Xin lỗi, tôi chỉ hỗ trợ thông tin về Đại học Greenwich Việt Nam, không hỗ trợ thông tin về các trường khác.",
+        "en": "I only support inquiries related to Greenwich University Vietnam, not other institutions.",
+    },
+    "irrelevant": {
+        "vi": "Xin lỗi, câu hỏi này nằm ngoài phạm vi hỗ trợ của tôi. Tôi chỉ trả lời những câu hỏi liên quan đến Đại học Greenwich.",
+        "en": "Sorry, this question is outside my scope. I only answer questions related to Greenwich University.",
     },
     "toxic": {
         "vi": "Vui lòng sử dụng ngôn ngữ lịch sự.",
@@ -20,10 +24,6 @@ REFUSAL_MESSAGES = {
     "wrong_language": {
         "vi": "Xin lỗi, tôi chỉ hỗ trợ Tiếng Việt và Tiếng Anh.",
         "en": "Sorry, I only support Vietnamese and English.",
-    },
-    "irrelevant": {
-        "vi": "Câu hỏi nằm ngoài phạm vi hỗ trợ.",
-        "en": "This question is outside my scope.",
     },
     "system_fail": {
         "vi": "Hệ thống đang bận, vui lòng thử lại sau.",
