@@ -66,3 +66,14 @@ OUTPUT JSON:
 User Input:
 {input}
 """
+
+
+def get_contextualize_q_prompt() -> str:
+    return """Given a chat history and the latest user question which might reference context in the chat history, formulate a standalone question which can be understood without the chat history. Do NOT answer the question, just rewrite it if needed, otherwise return it as is.
+
+Chat History:
+{history}
+
+Latest Question: {question}
+
+Standalone Question:"""

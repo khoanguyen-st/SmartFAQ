@@ -37,22 +37,46 @@ class RAGOrchestrator:
         if not raw_q:
             return self._response("Please input a valid question.", [], 0, t0, True)
 
-        safety_check = await self.guardrail.check_safety(raw_q)
+        logger.info(f" [Input] Raw: '{raw_q}' | History Len: {len(history) if history else 0}")
+
+        final_search_query = raw_q
+        if history and len(history) > 0:
+            try:
+                history_text = "\n".join(
+                    [f"{h.get('role', 'user')}: {h.get('text', '')}" for h in history[-4:]]
+                )
+                rewrite_system = 'You are a query rewriter. Rewrite the follow-up question into a standalone question based on the history. Keep the language of the follow-up question. Output JSON: {{"standalone_question": "..."}}'
+                rewrite_input = f"Chat History:\n{history_text}\n\nFollow-up Question: {raw_q}"
+
+                rewrite_result = await self.llm.invoke_json(rewrite_system, rewrite_input)
+                if rewrite_result and "standalone_question" in rewrite_result:
+                    final_search_query = rewrite_result["standalone_question"]
+                    logger.info(f" [Contextualizer] '{raw_q}' -> '{final_search_query}'")
+                else:
+                    logger.warning(f" [Contextualizer] Failed to rewrite, keeping raw: '{raw_q}'")
+            except Exception as e:
+                logger.error(f" [Contextualizer] Error: {e}")
+
+        safety_check = await self.guardrail.check_safety(final_search_query)
+        logger.info(
+            f" [Guardrail] Checking: '{final_search_query}' -> Status: {safety_check.get('status')}"
+        )
+
         if safety_check["status"] == "blocked":
-            temp_lang = language if language else detect_language_enhanced(raw_q)
+            temp_lang = language if language else detect_language_enhanced(final_search_query)
             msg = safety_check.get("vi") if temp_lang == "vi" else safety_check.get("en")
             return self._response(msg or "Request rejected.", [], 1.0, t0, False)
 
         if not language:
-            norm_result = await self.normalizer.understand(raw_q)
+            norm_result = await self.normalizer.understand(final_search_query)
             target_lang = norm_result["language"]
             refined_q = norm_result["normalized_text"]
             logger.info(
-                f"[Normalizer] Original: '{raw_q}' -> Normalized: '{refined_q}' | Lang: '{target_lang}'"
+                f" [Normalizer] '{final_search_query}' -> '{refined_q}' | Lang: '{target_lang}'"
             )
         else:
             target_lang = language
-            refined_q = raw_q
+            refined_q = final_search_query
 
         try:
             analysis_dict = await self.llm.invoke_json(get_master_analyzer_prompt(), refined_q)
@@ -131,11 +155,13 @@ class RAGOrchestrator:
                 "toxic": "Vui lòng sử dụng ngôn ngữ lịch sự.",
                 "competitor": "Tôi chỉ hỗ trợ thông tin về Đại học Greenwich Việt Nam.",
                 "irrelevant": "Câu hỏi nằm ngoài phạm vi hỗ trợ.",
+                "wrong_language": "Xin lỗi, tôi chỉ hỗ trợ Tiếng Việt và Tiếng Anh.",
             },
             "en": {
                 "toxic": "Please use polite language.",
                 "competitor": "I only support inquiries related to Greenwich University Vietnam.",
                 "irrelevant": "This question is outside my scope.",
+                "wrong_language": "Sorry, I only support Vietnamese and English.",
             },
         }
         return msgs.get(lang, msgs["en"]).get(reason, msgs[lang]["irrelevant"])
