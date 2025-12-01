@@ -11,6 +11,7 @@ from app.core.config import settings
 from app.rag.embedder import get_embeddings
 
 __VECTORSTORE: Optional[Chroma] = None
+_PUBLIC_VECTORSTORE: Optional[Chroma] = None
 
 
 def _parse_headers(raw: Optional[str]) -> Optional[Dict[str, str]]:
@@ -68,6 +69,13 @@ def _get_vectorstore() -> Chroma:
         )
 
     return __VECTORSTORE
+
+
+def get_vectorstore() -> Chroma:
+    """
+    Backwards-compatible accessor expected by scripts/tests.
+    """
+    return _get_vectorstore()
 
 
 def build_documents(chunks: Iterable[Dict[str, Any]]) -> List[Document]:

@@ -98,7 +98,7 @@ LLM_TEMPERATURE=0.3
 LLM_MAX_TOKENS=2048
 
 # Embeddings
-EMBED_MODEL=intfloat/multilingual-e5-small
+EMBED_MODEL=intfloat/multilingual-e5-base
 EMBED_DEVICE=cpu
 EMBED_NORMALIZE=true
 EMBED_BATCH=32

@@ -32,7 +32,7 @@ class Settings(BaseSettings):
     LLM_TEMPERATURE: float = Field(0.3, alias="LLM_TEMPERATURE")
     LLM_MAX_TOKENS: int = Field(2048, alias="LLM_MAX_TOKENS")
 
-    EMBED_MODEL: str = Field("intfloat/multilingual-e5-small", alias="EMBED_MODEL")
+    EMBED_MODEL: str = Field("intfloat/multilingual-e5-base", alias="EMBED_MODEL")
     EMBED_DEVICE: str = Field("cpu", alias="EMBED_DEVICE")
     EMBED_NORMALIZE: bool = Field(True, alias="EMBED_NORMALIZE")
     EMBED_BATCH: int = Field(32, alias="EMBED_BATCH")
