@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import logging
 import json
 from typing import Any, Dict, Optional, Sequence, Union
 
@@ -13,12 +12,12 @@ from langchain_google_genai import ChatGoogleGenerativeAI
 
 from app.core.config import settings
 
-logger = logging.getLogger(__name__)
 
 def _clip(text: str, max_chars: int) -> str:
     if len(text) <= max_chars:
         return text
     return text[: max_chars - 3] + "..."
+
 
 def _doc_to_text(doc: Union[Document, Dict[str, Any]], idx: int) -> str:
     if isinstance(doc, Document):
@@ -32,6 +31,7 @@ def _doc_to_text(doc: Union[Document, Dict[str, Any]], idx: int) -> str:
     page = meta.get("page")
     page_info = f" (trang {page})" if page else ""
     return f"[Nguồn {idx} - {source}{page_info}]\n{content}"
+
 
 class LLMWrapper:
     def __init__(
@@ -52,8 +52,6 @@ class LLMWrapper:
             google_api_key=getattr(settings, "GOOGLE_API_KEY", None),
             max_retries=2,
         )
-
-        logger.info(f"LLM initialized with model: {llm_model}")
 
         self.system_prompt = (
             "You are the AI Assistant of Greenwich University Vietnam.\n"
@@ -149,10 +147,8 @@ class LLMWrapper:
                 }
             )
         except google_exceptions.ResourceExhausted as e:
-            logger.error(f"Gemini API quota exceeded: {e}")
             raise RuntimeError("API quota exceeded.") from e
-        except Exception as e:
-            logger.error(f"Error generating answer: {e}")
+        except Exception:
             raise
 
     async def generate_direct_answer_async(
@@ -176,7 +172,8 @@ class LLMWrapper:
                 elif isinstance(item, dict):
                     role = str(item.get("role", "")).lower()
                     content = item.get("content") or item.get("text") or ""
-                    if not content: continue
+                    if not content:
+                        continue
                     if role == "assistant":
                         message = AIMessage(content=content)
                     else:
@@ -194,8 +191,7 @@ class LLMWrapper:
                     "target_language": lang,
                 }
             )
-        except Exception as e:
-            logger.error(f"Error generating direct answer: {e}")
+        except Exception:
             raise
 
     async def invoke_json(self, system_prompt: str, user_input: str) -> Optional[Dict[str, Any]]:
@@ -205,6 +201,5 @@ class LLMWrapper:
             raw = await c.ainvoke({"input": user_input})
             clean = raw.strip().replace("```json", "").replace("```", "")
             return json.loads(clean)
-        except Exception as e:
-            logger.error(f"JSON Invoke Error: {e}")
+        except Exception:
             return None

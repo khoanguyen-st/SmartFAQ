@@ -2,6 +2,7 @@ import ChatHeader from '@/components/ui/ChatHeader'
 import ChatMessageList from '@/components/ui/ChatMessageList'
 import ChatInput from '@/components/ui/ChatInput'
 import { ChatHistoryMessage } from '@/services/chat.services'
+import { FC } from 'react'
 
 interface ChatContainerProps {
   messages: ChatHistoryMessage[]
@@ -12,14 +13,14 @@ interface ChatContainerProps {
   sessionId?: string | null
 }
 
-export const ChatContainer = ({
+export const ChatContainer: FC<ChatContainerProps> = ({
   messages,
   isLoading,
   onSend,
   headerAction,
   headerAdditionalActions,
   sessionId
-}: ChatContainerProps) => {
+}) => {
   return (
     <div className="flex h-full w-full flex-col bg-white">
       <ChatHeader actionNode={headerAction} additionalActions={headerAdditionalActions} />
