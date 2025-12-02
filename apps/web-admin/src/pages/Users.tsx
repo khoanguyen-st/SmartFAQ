@@ -14,15 +14,14 @@ import ConfirmDialog from '@/components/users/ConfirmDialog'
 import Toast from '@/components/Toast'
 
 const Users: React.FC = () => {
-  // Lấy pageSize và setPageSize từ hook
   const {
     users,
     loading,
     error,
     page,
-    pageSize, // <--- Đã có
+    pageSize,
     setPage,
-    setPageSize, // <--- Đã có
+    setPageSize,
     createUser,
     updateUser,
     lockUser,
@@ -209,14 +208,13 @@ const Users: React.FC = () => {
       </div>
 
       <div className="w-full">
-        {/* SỬA CHỖ NÀY: Truyền đầy đủ props để Pagination hoạt động */}
         <Pagination
           currentPage={page}
           totalPages={totalPages}
           onPageChange={setPage}
-          pageSize={pageSize} // 1. Truyền pageSize hiện tại
-          onPageSizeChange={setPageSize} // 2. Truyền hàm đổi pageSize -> Nút sẽ hết disabled
-          totalCount={filteredUsers.length} // 3. Truyền tổng số user để hiện "Showing..."
+          pageSize={pageSize}
+          onPageSizeChange={setPageSize}
+          totalCount={filteredUsers.length}
         />
       </div>
 
