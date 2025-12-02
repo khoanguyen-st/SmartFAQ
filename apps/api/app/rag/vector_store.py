@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import logging
+import time
 from typing import Any, Dict, Iterable, List, Optional, Tuple
 
 from chromadb.config import Settings as ChromaSettings
@@ -89,8 +90,14 @@ def _hash_id(text: str, meta: Optional[Dict[str, Any]] = None, model: Optional[s
     h.update((model or settings.EMBED_MODEL).encode("utf-8"))
     h.update(text.encode("utf-8"))
     if meta:
+        # Prefer explicit chunk_id if provided, otherwise include document_id/source/page to stabilize uniqueness.
+        if meta.get("chunk_id"):
+            h.update(str(meta.get("chunk_id")).encode("utf-8"))
+        h.update(str(meta.get("document_id", "")).encode("utf-8"))
         h.update(str(meta.get("source", "")).encode("utf-8"))
         h.update(str(meta.get("page", "")).encode("utf-8"))
+        h.update(str(meta.get("chunk_index", "")).encode("utf-8"))
+        h.update(str(meta.get("ingest_timestamp") or int(time.time() * 1000)).encode("utf-8"))
     return h.hexdigest()
 
 

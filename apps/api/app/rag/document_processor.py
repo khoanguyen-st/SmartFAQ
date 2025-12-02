@@ -13,6 +13,8 @@ import fitz  # PyMuPDF
 from docx import Document as DocxDocument
 from langchain_core.documents import Document
 
+from app.rag.embedder import get_embeddings
+
 logger = logging.getLogger(__name__)
 
 SUPPORTED_EXTENSIONS = {".pdf", ".docx", ".doc", ".txt", ".md"}
@@ -425,11 +427,22 @@ class DocumentProcessor:
             chunking: Optional custom chunking configuration.
         """
         self.chunking = chunking or ChunkingConfig()
-        self._chunker = _FallbackSemanticChunker(
-            min_chunk_tokens=self.chunking.min_chunk_tokens,
-            max_chunk_tokens=self.chunking.max_chunk_tokens,
-            sentence_split_regex=self.chunking.sentence_split_regex,
-        )
+        try:
+            embeddings = get_embeddings()
+            self._chunker = _SemanticMergeChunker(
+                embeddings=embeddings,
+                min_chunk_tokens=self.chunking.min_chunk_tokens,
+                max_chunk_tokens=self.chunking.max_chunk_tokens,
+                sentence_split_regex=self.chunking.sentence_split_regex,
+            )
+            logger.info("Using semantic merge chunker with embeddings")
+        except Exception:
+            logger.exception("Semantic merge chunker init failed; falling back to sentence splitter")
+            self._chunker = _FallbackSemanticChunker(
+                min_chunk_tokens=self.chunking.min_chunk_tokens,
+                max_chunk_tokens=self.chunking.max_chunk_tokens,
+                sentence_split_regex=self.chunking.sentence_split_regex,
+            )
 
     def load_document(self, file_path: str) -> List[DocumentElement]:
         """
@@ -473,7 +486,7 @@ class DocumentProcessor:
         """
         elements = self.load_document(file_path)
         if not elements:
-            return []
+            raise ValueError("Document has no readable content")
 
         docs: List[Document] = []
         list_buffer: List[DocumentElement] = []
@@ -773,3 +786,81 @@ class _FallbackSemanticChunker:
             chunks.append(" ".join(buffer))
 
         return chunks
+
+
+class _SemanticMergeChunker:
+    """
+    Lightweight semantic chunker:
+    - Split văn bản thành câu.
+    - Embed từng câu, ghép các câu liên tiếp nếu cosine similarity cao và không vượt max tokens.
+    - Đảm bảo chunk không quá ngắn bằng cách merge buffer.
+    """
+
+    def __init__(
+        self,
+        embeddings,
+        min_chunk_tokens: int = 1500,
+        max_chunk_tokens: int = 2000,
+        sentence_split_regex: str = r"(?<=[.?!])\s+",
+        similarity_threshold: float = 0.6,
+    ):
+        self.embeddings = embeddings
+        self.min_chunk_tokens = min_chunk_tokens
+        self.max_chunk_tokens = max_chunk_tokens
+        self.similarity_threshold = similarity_threshold
+        self.sentence_split_regex = re.compile(sentence_split_regex)
+
+    @staticmethod
+    def _cosine(a: List[float], b: List[float]) -> float:
+        dot = sum(x * y for x, y in zip(a, b))
+        norm_a = sum(x * x for x in a) ** 0.5
+        norm_b = sum(y * y for y in b) ** 0.5
+        if norm_a == 0 or norm_b == 0:
+            return 0.0
+        return dot / (norm_a * norm_b)
+
+    def split_text(self, text: str) -> List[str]:
+        sentences = [s.strip() for s in self.sentence_split_regex.split(text) if s.strip()]
+        if not sentences:
+            return [text]
+
+        embeddings = self.embeddings.embed_documents(sentences)
+        chunks: List[str] = []
+        buffer_sentences: List[str] = []
+        buffer_vec: Optional[List[float]] = None
+
+        for sent, vec in zip(sentences, embeddings):
+            sent_tokens = _estimate_tokens(sent)
+            if not buffer_sentences:
+                buffer_sentences.append(sent)
+                buffer_vec = vec
+                continue
+
+            buffer_text = " ".join(buffer_sentences)
+            buffer_tokens = _estimate_tokens(buffer_text)
+            sim = self._cosine(buffer_vec or [], vec)
+            if sim >= self.similarity_threshold and (buffer_tokens + sent_tokens) <= self.max_chunk_tokens:
+                buffer_sentences.append(sent)
+                # simple running average
+                if buffer_vec:
+                    n = len(buffer_sentences)
+                    buffer_vec = [(bv * (n - 1) + v) / n for bv, v in zip(buffer_vec, vec)]
+                else:
+                    buffer_vec = vec
+            else:
+                chunks.append(" ".join(buffer_sentences))
+                buffer_sentences = [sent]
+                buffer_vec = vec
+
+        if buffer_sentences:
+            chunks.append(" ".join(buffer_sentences))
+
+        merged: List[str] = []
+        for ch in chunks:
+            if merged and _estimate_tokens(merged[-1]) < self.min_chunk_tokens:
+                prev = merged.pop()
+                merged.append(f"{prev}\n\n{ch}")
+            else:
+                merged.append(ch)
+
+        return merged

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import hashlib
+import logging
 import os
 from pathlib import Path
 from typing import Optional
@@ -17,6 +18,7 @@ UPLOAD_ROOT = Path(os.getenv("UPLOAD_DIR", "uploads")).resolve()
 ALLOWED_EXTS = {".pdf", ".docx", ".doc", ".txt", ".md"}
 MAX_SIZE_MB = int(os.getenv("UPLOAD_MAX_MB", "50"))
 MAX_BYTES = MAX_SIZE_MB * 1024 * 1024
+logger = logging.getLogger(__name__)
 
 
 def _secure_name(name: str) -> str:
@@ -92,6 +94,7 @@ class DocumentService:
             db.query(DocumentModel).filter(DocumentModel.checksum == checksum).first()
         )
         if existing:
+            logger.info("Upload skipped; document with same checksum already indexed: %s", checksum)
             return existing
 
         doc_model = DocumentModel(
@@ -112,19 +115,23 @@ class DocumentService:
             db.refresh(doc_model)
 
             meta = {"title": safe_name, "uploaded_by": user_id}
+            logger.info("Indexing document %s (id=%s, checksum=%s)", final_path, document_id, checksum)
             documents = self.processor.process_document(str(final_path), document_id, meta)
-            if not documents:
-                raise HTTPException(
-                    status_code=422, detail="Không trích xuất được nội dung tài liệu"
-                )
-
             upsert_documents(documents)
+            logger.info("Inserted %d chunks into vector store for document %s", len(documents), document_id)
             doc_model.status = "active"
             doc_model.chunk_count = len(documents)
             db.commit()
             db.refresh(doc_model)
             return doc_model
 
+        except ValueError as exc:
+            db.rollback()
+            doc_model.status = "failed"
+            doc_model.chunk_count = 0
+            db.add(doc_model)
+            db.commit()
+            raise HTTPException(status_code=422, detail=str(exc)) from exc
         except Exception:
             db.rollback()
             try:
