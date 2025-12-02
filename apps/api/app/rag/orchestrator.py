@@ -45,7 +45,15 @@ class RAGOrchestrator:
                 history_text = "\n".join(
                     [f"{h.get('role', 'user')}: {h.get('text', '')}" for h in history[-4:]]
                 )
-                rewrite_system = 'You are a query rewriter. Rewrite the follow-up question into a standalone question based on the history. Keep the language of the follow-up question. Output JSON: {{"standalone_question": "..."}}'
+                rewrite_system = (
+                    "Bạn là chuyên gia viết lại câu hỏi cho Đại học Greenwich Việt Nam. "
+                    "Nhiệm vụ: Viết lại câu hỏi nối tiếp (follow-up) thành câu hỏi độc lập, đầy đủ chủ ngữ dựa trên lịch sử chat. "
+                    "QUAN TRỌNG: Nếu câu hỏi mơ hồ hoặc thiếu chủ ngữ (ví dụ: 'thư viện', 'học phí là bao nhiêu'), "
+                    "LUÔN LUÔN mặc định người dùng đang hỏi về 'Đại học Greenwich Việt Nam'. "
+                    "TUYỆT ĐỐI KHÔNG gán câu hỏi cho các trường khác (như FPT, RMIT) ngay cả khi chúng xuất hiện trong lịch sử chat. "
+                    "Giữ nguyên ngôn ngữ của người dùng (Tiếng Việt hoặc Tiếng Anh). "
+                    'Output JSON: {{"standalone_question": "..."}}'
+                )
                 rewrite_input = f"Chat History:\n{history_text}\n\nFollow-up Question: {raw_q}"
 
                 rewrite_result = await self.llm.invoke_json(rewrite_system, rewrite_input)
