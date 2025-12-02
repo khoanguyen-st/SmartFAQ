@@ -121,8 +121,10 @@ const DepartmentsPage = () => {
   }
 
   return (
-    <div className="flex h-[calc(100vh-81px)] w-full flex-col overflow-hidden bg-[#F9FAFB] p-4 font-sans text-[#111827] md:pt-[50px] md:pr-[100px] md:pb-[85px] md:pl-[100px]">
-      <div className="mb-6 flex shrink-0 flex-col gap-4 md:mb-[45px] md:flex-row md:items-center md:justify-between">
+    // Sử dụng class semantic: dept-page-wrapper
+    <div className="dept-page-wrapper">
+      {/* Header Section: Margin bottom 50px */}
+      <div className="dept-header-section">
         <div>
           <h3 className="text-2xl leading-tight font-bold text-[#111827] md:text-[40px]">List of Department</h3>
           <p className="text-sm leading-6 font-normal text-[#637381] md:text-base md:leading-8">Manage departments</p>
@@ -137,7 +139,8 @@ const DepartmentsPage = () => {
         </button>
       </div>
 
-      <div className="mb-6 shrink-0 rounded-lg bg-white shadow-sm md:mb-[45px]">
+      {/* Search Section: Margin bottom 45px */}
+      <div className="dept-search-section">
         <div className="relative w-full">
           <input
             type="text"
@@ -153,7 +156,8 @@ const DepartmentsPage = () => {
         </div>
       </div>
 
-      <div className="flex flex-col overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
+      {/* Table Section */}
+      <div className="dept-table-wrapper">
         <div className="w-full border-b border-[#EEEEEE] bg-white pr-1.5">
           <table className="w-full min-w-full table-fixed border-collapse">
             <thead>
@@ -183,17 +187,15 @@ const DepartmentsPage = () => {
                 </tr>
               ) : (
                 currentData.map(dept => (
-                  <tr
-                    key={dept.id}
-                    className="border-b border-[#EEEEEE] transition-colors last:border-b-0 hover:bg-gray-50"
-                  >
-                    <td className="w-[15%] py-4 text-center text-sm font-medium text-[#637381] md:w-[10%] md:py-6 md:text-base">
+                  // Row Table: Height 85px
+                  <tr key={dept.id} className="dept-table-row">
+                    <td className="w-[15%] text-center text-sm font-medium text-[#637381] md:w-[10%] md:text-base">
                       {dept.id}
                     </td>
-                    <td className="w-[60%] truncate px-2 py-4 text-center text-sm font-medium text-[#637381] md:w-[70%] md:px-6 md:text-base">
+                    <td className="w-[60%] truncate px-2 text-center text-sm font-medium text-[#637381] md:w-[70%] md:px-6 md:text-base">
                       {dept.name}
                     </td>
-                    <td className="w-[25%] py-4 md:w-[20%] md:py-6">
+                    <td className="w-[25%] md:w-[20%]">
                       <div className="flex items-center justify-center gap-2 md:gap-2.5">
                         <button
                           onClick={() => setEditingDept(dept)}
@@ -220,7 +222,8 @@ const DepartmentsPage = () => {
         </div>
       </div>
 
-      <div className="z-20 mt-auto flex shrink-0 flex-wrap items-center justify-center gap-4 bg-transparent pt-4 md:justify-end md:pt-0">
+      {/* Pagination Section: Margin top 45px */}
+      <div className="dept-pagination-section">
         <div className="mr-6 hidden text-base font-medium text-[#202224] opacity-60 sm:block">
           Showing {(currentPage - 1) * itemsPerPage + 1}-{Math.min(currentPage * itemsPerPage, filteredData.length)} of{' '}
           {filteredData.length}

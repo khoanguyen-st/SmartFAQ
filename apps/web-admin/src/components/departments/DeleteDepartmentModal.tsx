@@ -56,7 +56,7 @@ const DeleteDepartmentModal = ({
           disabled={isLoading}
           className="absolute top-[266px] left-[323px] h-[50px] w-[198px] rounded-[50px] bg-[#C20B0B] text-[16px] font-medium text-white hover:bg-[#a00909] disabled:opacity-70"
         >
-          {isLoading ? 'Deleting...' : 'Delete Document'}
+          {isLoading ? 'Deleting...' : 'Delete Department'}
         </button>
       </div>
     </div>
