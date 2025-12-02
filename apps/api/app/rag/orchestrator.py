@@ -92,7 +92,7 @@ class RAGOrchestrator:
         )
 
         if not contexts:
-            logger.info("No contexts found for question=%s -> hard fallback", question)
+            logger.info("RAG: no contexts for question=%s -> fallback", question)
             answer = fallback_text
             fallback_triggered = True
             sources_to_return = []
@@ -146,10 +146,9 @@ class RAGOrchestrator:
             or any(marker in normalized_answer for marker in llm_fallback_markers)
         ):
             logger.warning(
-                "LLM returned fallback-like answer despite contexts present. question=%s retriever_confidence=%.4f top_context_preview=%s",
+                "RAG: LLM returned fallback-like answer; dropping sources. question=%s confidence=%.4f",
                 question,
                 confidence,
-                (sources_to_return[0].get("text") or "")[:300] if sources_to_return else None,
             )
             fallback_triggered = True
             sources_to_return = []
@@ -172,6 +171,14 @@ class RAGOrchestrator:
             )
 
         latency_ms = int((time.time() - t0) * 1000)
+        logger.info(
+            "RAG result question=%s fallback=%s confidence=%.4f sources=%d latency_ms=%d",
+            question,
+            fallback_triggered,
+            confidence,
+            len(sources_list),
+            latency_ms,
+        )
         return {
             "answer": answer,
             "confidence": round(float(confidence), 4),
