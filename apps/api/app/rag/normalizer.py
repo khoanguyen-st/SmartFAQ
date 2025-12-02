@@ -5,7 +5,7 @@ import re
 import unicodedata
 from typing import Any, Dict, Optional
 
-from app.rag.language import detect_language_enhanced
+from app.rag.language import detect_language
 from app.rag.llm import LLMWrapper
 from app.rag.prompts import get_normalization_prompt
 
@@ -54,7 +54,7 @@ class SmartNormalizer:
         self.cache[key] = result
 
     def _rule_based(self, text: str) -> Dict[str, Any]:
-        det = detect_language_enhanced(text)
+        det = detect_language(text)
         lang = det if isinstance(det, str) else "other"
 
         t = text.strip().lower()

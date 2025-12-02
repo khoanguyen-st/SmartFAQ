@@ -13,6 +13,7 @@ from ..constants.chat import FEEDBACK_MESSAGES
 from ..core.config import settings
 from ..core.mongo import get_chat_messages_collection, get_chat_sessions_collection
 from ..models.chat import ChatRole, ChatSession
+from ..rag.language import detect_language
 from ..rag.orchestrator import RAGOrchestrator
 from ..repositories.chat_messages_repo import (
     find_history,
@@ -33,7 +34,7 @@ from ..schemas.chat import (
     NewSessionRequest,
     NewSessionResponse,
 )
-from ..utils.chat_input_utils import coerce_channel, coerce_language
+from ..utils.chat_input_utils import coerce_channel
 from ..utils.chat_response_utils import (
     confidence_to_percent,
     format_sources,
@@ -67,7 +68,7 @@ class ChatService:
     ) -> NewSessionResponse:
         session_id = str(uuid4())
         input_language = (payload.language or "").strip() or "en"
-        language = coerce_language(input_language, payload.language or "")
+        language = detect_language(input_language)
         channel = coerce_channel(payload.channel)
         ua = (user_agent or "").strip() or "unknown"
         now = self._now()
@@ -126,7 +127,7 @@ class ChatService:
         if mongo_channel_raw and mongo_channel != session.channel:
             session.channel = mongo_channel
 
-        session.language = coerce_language(getattr(payload, "language", None), payload.question)
+        session.language = payload.language or session.language or "en"
         now = self._now()
         updates: dict[str, Any] = {"language": session.language, "updatedAt": now}
         if mongo_channel_raw != session.channel:
@@ -140,13 +141,13 @@ class ChatService:
 
         try:
             t0 = time.perf_counter()
+            history_response = await self.get_history(session.id, limit=5)
+            history = [{"role": msg.role, "text": msg.text} for msg in history_response.messages]
             rag_response = await self.orchestrator.query(
                 question=payload.question,
-                user_id=session.id,
                 top_k=5,
-                where=None,
-                return_top_sources=5,
-                response_language=session.language,
+                history=history,
+                language=session.language,
             )
             latency_ms = int((time.perf_counter() - t0) * 1000)
         except Exception as exc:

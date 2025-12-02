@@ -5,7 +5,7 @@ import time
 from typing import Dict, List, Optional
 
 from app.rag.guardrail import GuardrailService
-from app.rag.language import detect_language_enhanced
+from app.rag.language import detect_language
 from app.rag.llm import LLMWrapper
 from app.rag.normalizer import UnifiedNormalizer
 from app.rag.prompts import get_master_analyzer_prompt
@@ -71,7 +71,7 @@ class RAGOrchestrator:
         )
 
         if safety_check["status"] == "blocked":
-            temp_lang = language if language else detect_language_enhanced(final_search_query)
+            temp_lang = language if language else detect_language(final_search_query)
             msg = safety_check.get("vi") if temp_lang == "vi" else safety_check.get("en")
             return self._response(msg or "Request rejected.", [], 1.0, t0, False)
 

@@ -32,7 +32,7 @@ def has_vietnamese_accent(text: str) -> bool:
     return bool(re.search(vietnamese_chars, text, re.IGNORECASE))
 
 
-def detect_language_enhanced(text: str, llm_wrapper=None, async_: bool = False) -> str:
+def detect_language(text: str, llm_wrapper=None, async_: bool = False) -> str:
     if not text or not text.strip():
         return "en"
 
@@ -65,5 +65,5 @@ def normalize_text(
         return "en", ""
 
     txt = text.strip()
-    lang = detect_language_enhanced(txt, llm_wrapper=llm_wrapper, async_=async_)
+    lang = detect_language(txt, llm_wrapper=llm_wrapper, async_=async_)
     return lang, txt
