@@ -6,6 +6,7 @@ import React, { useState } from 'react'
 interface ChangePasswordModalProps {
   isOpen: boolean
   onClose: () => void
+  userId: number
 }
 
 interface ErrorState {
@@ -15,7 +16,7 @@ interface ErrorState {
   general?: string
 }
 
-const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({ isOpen, onClose }) => {
+const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({ isOpen, onClose, userId }) => {
   const initialFormData = {
     current_password: '',
     new_password: '',
@@ -90,7 +91,7 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({ isOpen, onClo
 
     setIsLoading(true)
     try {
-      await changePassword(formData)
+      await changePassword(userId, formData)
       alert('Password changed successfully!')
       handleCancel()
     } catch (err: unknown) {

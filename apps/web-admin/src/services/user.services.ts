@@ -1,11 +1,12 @@
 import { API_BASE_URL } from '@/lib/api'
 
 export interface UserProfile {
+  id: number
   username: string
   email: string
   phoneNumber: string
   address: string
-  image: string | null
+  avatar_url: string | null
 }
 
 export interface ChangePasswordRequest {
@@ -14,76 +15,119 @@ export interface ChangePasswordRequest {
   confirm_password: string
 }
 
-// Helper lấy header (sẽ cập nhật kỹ hơn khi có file backend)
+// Helper to get JWT headers
 const getAuthHeaders = () => {
-  const token = localStorage.getItem('accessToken') || '' // Tạm thời
+  const token = localStorage.getItem('accessToken') || ''
   return {
     Authorization: `Bearer ${token}`
   }
 }
 
-export async function getUserProfile(): Promise<UserProfile> {
-  const res = await fetch(`${API_BASE_URL}/api/users/profile`, {
+/** ----------------------------------------
+ * GET USER PROFILE:  GET /staff/{id}
+ * -----------------------------------------*/
+export async function getUserProfile(userId: number): Promise<UserProfile> {
+  const res = await fetch(`${API_BASE_URL}/staff/${userId}`, {
     headers: {
-      ...getAuthHeaders(),
-      'Content-Type': 'application/json'
+      ...getAuthHeaders()
     }
   })
+
   if (!res.ok) throw new Error('Failed to fetch profile')
-  return res.json()
+
+  const data = await res.json()
+
+  // Map backend snake_case to frontend camelCase
+  return {
+    id: data.id,
+    username: data.username,
+    email: data.email,
+    phoneNumber: data.phone_number || data.phoneNumber || '',
+    address: data.address || '',
+    avatar_url: data.avatar_url || null
+  }
 }
 
-export async function updateUserProfile(data: Partial<UserProfile>): Promise<UserProfile> {
-  const res = await fetch(`${API_BASE_URL}/api/users/profile`, {
+/** ----------------------------------------
+ * UPDATE PROFILE: PUT /staff/{id}
+ * -----------------------------------------*/
+export async function updateUserProfile(userId: number, data: Partial<UserProfile>): Promise<{ status: string }> {
+  // Map frontend camelCase to backend snake_case for payload
+  const payload: Record<string, unknown> = { ...data }
+  if (data.phoneNumber) {
+    payload.phone_number = data.phoneNumber
+    delete payload.phoneNumber
+  }
+
+  const res = await fetch(`${API_BASE_URL}/staff/${userId}`, {
     method: 'PUT',
     headers: {
       ...getAuthHeaders(),
       'Content-Type': 'application/json'
     },
-    body: JSON.stringify(data)
+    body: JSON.stringify(payload)
   })
+
   if (!res.ok) throw new Error('Failed to update profile')
   return res.json()
 }
 
-export async function uploadAvatar(file: File): Promise<{ image: string }> {
+/** ----------------------------------------
+ * UPLOAD AVATAR: POST /staff/{id}/avatar
+ * -----------------------------------------*/
+export async function uploadAvatar(userId: number, file: File): Promise<{ status: string; item: string }> {
   const formData = new FormData()
   formData.append('file', file)
 
-  const res = await fetch(`${API_BASE_URL}/api/users/profile/avatar`, {
+  const res = await fetch(`${API_BASE_URL}/staff/${userId}/avatar`, {
     method: 'POST',
     headers: {
       ...getAuthHeaders()
-      // Note: Không set Content-Type khi dùng FormData, browser tự handle boundary
+      // Do NOT manually set Content-Type for FormData; browser handles it
     },
     body: formData
   })
+
   if (!res.ok) throw new Error('Failed to upload avatar')
   return res.json()
 }
 
-export async function deleteAvatar(): Promise<void> {
-  const res = await fetch(`${API_BASE_URL}/api/users/profile/avatar`, {
+/** ----------------------------------------
+ * DELETE AVATAR: DELETE /staff/{id}/avatar
+ * -----------------------------------------*/
+export async function deleteAvatar(userId: number): Promise<{ status: string }> {
+  const res = await fetch(`${API_BASE_URL}/staff/${userId}/avatar`, {
     method: 'DELETE',
     headers: {
       ...getAuthHeaders()
     }
   })
+
   if (!res.ok) throw new Error('Failed to delete avatar')
+  return res.json()
 }
 
-export async function changePassword(data: ChangePasswordRequest): Promise<void> {
-  const res = await fetch(`${API_BASE_URL}/api/users/change-password`, {
+/** ----------------------------------------
+ * CHANGE PASSWORD: POST /staff/{id}/change-password
+ * -----------------------------------------*/
+export async function changePassword(userId: number, data: ChangePasswordRequest): Promise<{ status: string }> {
+  const formData = new FormData()
+  formData.append('current_password', data.current_password)
+  formData.append('new_password', data.new_password)
+  formData.append('confirm_password', data.confirm_password)
+
+  const res = await fetch(`${API_BASE_URL}/staff/${userId}/change-password`, {
     method: 'POST',
     headers: {
-      ...getAuthHeaders(),
-      'Content-Type': 'application/json'
+      ...getAuthHeaders()
     },
-    body: JSON.stringify(data)
+    body: formData
   })
 
   if (!res.ok) {
-    const errorData = await res.json().catch(() => ({}))
-    throw new Error(errorData.error || errorData.message || 'Failed to change password')
+    const error = await res.json().catch(() => ({ detail: 'Unknown error' }))
+    throw new Error(error.detail || 'Failed to change password')
   }
+
+  return res.json()
 }
