@@ -6,28 +6,30 @@ export const useUsers = () => {
   const [users, setUsers] = useState<User[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  // Pagination State
   const [page, setPage] = useState(1)
-  // --- SỬA Ở ĐÂY: Mặc định là 5 ---
-  const [pageSize, setPageSize] = useState(5)
+  const [pageSize, setPageSize] = useState(5) // Mặc định 5 dòng/trang
   const [totalRecords, setTotalRecords] = useState(0)
 
   const loadingRef = useRef(false)
 
   const loadUsers = useCallback(async (isAutoRefresh = false) => {
     if (loadingRef.current) return
-    
+
     if (!isAutoRefresh) {
-        setLoading(true)
+      setLoading(true)
     }
     loadingRef.current = true
 
     try {
       const allUsers = await AdminService.fetchUsers()
-      
+
+      // Sắp xếp user theo ID
       const sortedUsers = allUsers.sort((a, b) => a.id - b.id)
-      
+
       setUsers(sortedUsers)
-      setTotalRecords(allUsers.length)
+      setTotalRecords(allUsers.length) // Cập nhật tổng số record
       setError(null)
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to load users'
@@ -44,10 +46,11 @@ export const useUsers = () => {
     loadUsers(false)
   }, [loadUsers])
 
+  // Auto refresh mỗi 5s
   useEffect(() => {
     const intervalId = setInterval(() => {
       loadUsers(true)
-    }, 5000)
+    }, 3000)
 
     return () => clearInterval(intervalId)
   }, [loadUsers])
@@ -57,6 +60,7 @@ export const useUsers = () => {
       const cleanPayload = Object.fromEntries(
         Object.entries(payload).filter(([_, value]) => value !== undefined && value !== null && value !== '')
       ) as CreateUserRequest & { password: string }
+
       await AdminService.createUser(cleanPayload)
       await loadUsers()
     },
@@ -97,7 +101,7 @@ export const useUsers = () => {
     error,
     page,
     pageSize,
-    totalRecords,
+    totalRecords, // Đảm bảo export biến này
     setPage,
     setPageSize,
     createUser,

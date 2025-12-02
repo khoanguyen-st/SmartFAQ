@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react'
-import { Plus} from 'lucide-react'
+import { Plus } from 'lucide-react'
 import type { User } from '@/types/users'
 import { useUsers } from '@/hooks/useUsers'
 import { useUserFilters } from '@/hooks/useUseFilters'
@@ -14,15 +14,15 @@ import ConfirmDialog from '@/components/users/ConfirmDialog'
 import Toast from '@/components/Toast'
 
 const Users: React.FC = () => {
+  // Lấy pageSize và setPageSize từ hook
   const {
     users,
     loading,
     error,
     page,
-    pageSize,
-    totalRecords,
+    pageSize, // <--- Đã có
     setPage,
-    setPageSize,
+    setPageSize, // <--- Đã có
     createUser,
     updateUser,
     lockUser,
@@ -37,7 +37,7 @@ const Users: React.FC = () => {
   const [createDialogOpen, setCreateDialogOpen] = useState(false)
   const [editDialogOpen, setEditDialogOpen] = useState(false)
   const [selectedUser, setSelectedUser] = useState<User | null>(null)
-  
+
   const [confirmDialog, setConfirmDialog] = useState<{
     open: boolean
     type: 'lock' | 'unlock' | 'resetPassword'
@@ -47,11 +47,13 @@ const Users: React.FC = () => {
 
   const [actionLoading, setActionLoading] = useState(false)
   const [toast, setToast] = useState<{ type: 'success' | 'error' | 'warning'; message: string } | null>(null)
+
   const filterRef = useRef<HTMLDivElement>(null)
 
+  // 1. Lọc User
   const filteredUsers = useUserFilters({ users, searchQuery, selectedDepartments, selectedStatuses })
-  
-  // Sử dụng usePagination với logic mới
+
+  // 2. Phân trang (truyền pageSize vào để cắt dữ liệu đúng)
   const { paginatedItems: paginatedUsers, totalPages } = usePagination({
     items: filteredUsers,
     page,
@@ -124,11 +126,11 @@ const Users: React.FC = () => {
       switch (confirmDialog.type) {
         case 'lock':
           await lockUser(userId)
-          setToast({ type: 'success', message: 'Inactive user successfully' })
+          setToast({ type: 'success', message: 'User locked successfully' })
           break
         case 'unlock':
           await unlockUser(userId)
-          setToast({ type: 'success', message: 'Active user successfully' })
+          setToast({ type: 'success', message: 'User unlocked successfully' })
           break
         case 'resetPassword':
           await resetPassword(userId)
@@ -149,9 +151,6 @@ const Users: React.FC = () => {
     setSelectedStatuses([])
   }
 
-  const filtersApplied = Boolean(searchQuery || selectedDepartments.length || selectedStatuses.length)
-  const effectiveTotal = filtersApplied ? filteredUsers.length : totalRecords || users.length || 0
-
   return (
     <div className="space-y-4 md:space-y-6">
       <header className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
@@ -164,7 +163,7 @@ const Users: React.FC = () => {
             onClick={() => setCreateDialogOpen(true)}
             className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-[#003087] px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-[#002060] md:w-auto"
           >
-            <Plus className="h-4 w-4 mt-0.5" />
+            <Plus className="mt-0.5 h-4 w-4" />
             Create New Account
           </button>
         </div>
@@ -175,7 +174,7 @@ const Users: React.FC = () => {
         onSearchChange={setSearchQuery}
         filterOpen={filterOpen}
         onToggleFilter={() => setFilterOpen(prev => !prev)}
-        filterRef={filterRef}
+        filterRef={filterRef as React.RefObject<HTMLDivElement>}
         renderFilterDropdown={() => (
           <FilterDropdown
             selectedDepartments={selectedDepartments}
@@ -210,26 +209,25 @@ const Users: React.FC = () => {
       </div>
 
       <div className="w-full">
+        {/* SỬA CHỖ NÀY: Truyền đầy đủ props để Pagination hoạt động */}
         <Pagination
           currentPage={page}
-          pageSize={pageSize}
           totalPages={totalPages}
-          totalCount={effectiveTotal}
           onPageChange={setPage}
-          onPageSizeChange={setPageSize}
+          pageSize={pageSize} // 1. Truyền pageSize hiện tại
+          onPageSizeChange={setPageSize} // 2. Truyền hàm đổi pageSize -> Nút sẽ hết disabled
+          totalCount={filteredUsers.length} // 3. Truyền tổng số user để hiện "Showing..."
         />
       </div>
 
       <CreateUserDialog
         open={createDialogOpen}
         onClose={() => setCreateDialogOpen(false)}
-        onSubmit={(data) => {
-          return createUser({ ...data });
-        }}
+        onSubmit={data => createUser(data)}
         onSuccess={() => {
-          setToast({ 
-            type: 'success', 
-            message: 'User created successfully' 
+          setToast({
+            type: 'success',
+            message: 'User created successfully'
           })
         }}
         users={users}
@@ -244,9 +242,9 @@ const Users: React.FC = () => {
         }}
         onSubmit={updateUser}
         onSuccess={() => {
-          setToast({ 
-            type: 'success', 
-            message: 'User updated successfully' 
+          setToast({
+            type: 'success',
+            message: 'User updated successfully'
           })
         }}
         users={users}
@@ -262,9 +260,9 @@ const Users: React.FC = () => {
       />
 
       {toast && <Toast type={toast.type} message={toast.message} onClose={() => setToast(null)} />}
-
       {error && <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">{error}</div>}
     </div>
   )
 }
+
 export default Users

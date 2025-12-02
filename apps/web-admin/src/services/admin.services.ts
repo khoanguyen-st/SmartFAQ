@@ -63,9 +63,11 @@ export async function unlockUser(userId: number): Promise<boolean> {
 }
 
 // --- THÊM HÀM NÀY ĐỂ GỌI API RESET ---
-export async function resetUserPassword(userId: number): Promise<boolean> {
+// Sửa lại hàm như sau
+export async function resetUserPassword(userId: number, newPassword: string): Promise<boolean> {
   const res = await apiClient<{ status: string }>(`/api/user/${userId}/reset-password`, {
-    method: 'PUT'
+    method: 'PUT',
+    body: JSON.stringify({ password: newPassword }) // ✅ Gửi mật khẩu mới lên
   })
   return res.status === 'ok'
 }

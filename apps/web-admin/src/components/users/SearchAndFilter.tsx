@@ -4,9 +4,9 @@ import type { FilterDropdownProps, SearchBarProps } from '@/interfaces/search-an
 import { getDepartmentOptions } from '@/constants/options'
 
 const STATUS_MAPPING: Record<string, string> = {
-  'Active': 'Active',
-  'Inactive': 'Inactive',
-  'Locked': 'Locked'
+  Active: 'Active',
+  Inactive: 'Inactive',
+  Locked: 'Locked'
 }
 
 export const FilterDropdown: React.FC<FilterDropdownProps> = ({
@@ -35,7 +35,7 @@ export const FilterDropdown: React.FC<FilterDropdownProps> = ({
           )
         })}
       </div>
-      
+
       <p className="mt-4 mb-2 text-xs font-semibold text-slate-500 uppercase">STATUS</p>
       <div className="space-y-2">
         {Object.entries(STATUS_MAPPING).map(([value, label]) => (
@@ -50,7 +50,7 @@ export const FilterDropdown: React.FC<FilterDropdownProps> = ({
           </label>
         ))}
       </div>
-      
+
       <button type="button" onClick={onClearFilters} className="mt-4 text-sm font-semibold text-blue-600">
         Clear Filters
       </button>
@@ -68,24 +68,38 @@ export const SearchBar: React.FC<SearchBarProps> = ({
 }) => {
   return (
     <div className="rounded-lg border border-slate-200 bg-white shadow-sm">
-      <div className="relative flex items-center">
+      <div className="relative flex h-[52px] items-center">
+        {/* Input Search */}
         <input
           type="text"
           placeholder="Search by name or email..."
           value={searchQuery}
           onChange={e => onSearchChange(e.target.value)}
-          className="flex-1 border-none bg-transparent px-4 py-3 text-sm text-slate-600 outline-none placeholder:text-slate-400 md:px-6"
+          className="h-full flex-1 border-none bg-transparent px-4 py-3 text-sm text-slate-600 outline-none placeholder:text-slate-400 md:px-6"
         />
-        <div className="absolute right-4 flex items-center gap-3 md:right-6">
-          <button type="button" aria-label="Search" className="flex items-center text-[#637381] hover:text-slate-600">
+
+        {/* Cụm Action bên phải */}
+        <div className="absolute right-4 flex items-center">
+          {/* 1. Nút Search */}
+          <button
+            type="button"
+            aria-label="Search"
+            className="flex h-10 w-10 items-center justify-center rounded-full text-[#637381] transition-colors hover:bg-slate-50 hover:text-slate-700"
+          >
             <Search className="h-6 w-6" strokeWidth={2.5} />
           </button>
-          <div className="h-6 w-[0.5px] bg-[#637381]" aria-hidden="true" />
+
+          {/* 2. Đường kẻ dọc (Divider) - Cân đối với mx-2 (8px mỗi bên) */}
+          <div className="mx-2 h-6 w-[1px] bg-slate-300" aria-hidden="true" />
+
+          {/* 3. Nút Filter */}
           <div className="relative" ref={filterRef}>
             <button
               type="button"
               onClick={onToggleFilter}
-              className={`flex items-center text-[#637381] transition hover:text-slate-600 ${filterOpen ? 'text-blue-600' : ''}`}
+              className={`flex h-10 w-10 items-center justify-center rounded-full transition-colors ${
+                filterOpen ? 'bg-blue-50 text-blue-600' : 'text-[#637381] hover:bg-slate-50 hover:text-slate-700'
+              }`}
               aria-haspopup="true"
               aria-expanded={filterOpen}
             >
