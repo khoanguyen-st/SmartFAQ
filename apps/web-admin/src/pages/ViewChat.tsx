@@ -70,7 +70,7 @@ const ChatMessage = ({ message }: ChatMessageProps) => {
   if (message.type === 'error') {
     return (
       <div className="welcome-message w-70">
-      <p className="text-xl font-bold text-red-700">Error:</p>
+        <p className="text-xl font-bold text-red-700">Error:</p>
         <SimpleMarkdown content={markdownText} />
       </div>
     )
@@ -89,11 +89,7 @@ const ChatMessage = ({ message }: ChatMessageProps) => {
               let IconComponent = TxtNoFill
               if (filename.endsWith('.pdf')) {
                 IconComponent = PdfNoFill
-              } else if (
-                filename.endsWith('.jpg') ||
-                filename.endsWith('.gif') ||
-                filename.endsWith('.png')
-              ) {
+              } else if (filename.endsWith('.jpg') || filename.endsWith('.gif') || filename.endsWith('.png')) {
                 IconComponent = ImageNofill
               }
 
@@ -102,34 +98,28 @@ const ChatMessage = ({ message }: ChatMessageProps) => {
                   <IconComponent className="mr-2 h-3 w-3 shrink-0" />
                   <p className="cursor-pointer truncate text-sm">{source.title}</p>
 
-                  {/* Tooltip */}
-                  <div className="invisible group-hover:visible absolute left-0 top-full z-50 mt-2 w-64 rounded-lg border border-gray-200 bg-white p-3 shadow-lg">
+                  <div className="invisible absolute top-full left-0 z-50 mt-2 w-64 rounded-lg border border-gray-200 bg-white p-3 shadow-lg group-hover:visible">
                     <div className="space-y-1">
                       <div className="flex items-center gap-2">
                         <IconComponent className="h-4 w-4 shrink-0" />
-                        <p className="text-sm font-semibold text-gray-900">
-                          {source.title}
-                        </p>
+                        <p className="text-sm font-semibold text-gray-900">{source.title}</p>
                       </div>
 
-                      {source.relevance !== null &&
-                        source.relevance !== undefined && (
-                          <p className="text-xs text-gray-600">
-                            <span className="font-medium">Relevance:</span>{' '}
-                            {(source.relevance * 100).toFixed(1)}%
-                          </p>
-                        )}
+                      {source.relevance !== null && source.relevance !== undefined && (
+                        <p className="text-xs text-gray-600">
+                          <span className="font-medium">Relevance:</span> {(source.relevance * 100).toFixed(1)}%
+                        </p>
+                      )}
 
                       {source.chunkId && (
                         <p className="text-xs text-gray-600">
-                          <span className="font-medium">Chunk ID:</span>{' '}
-                          {source.chunkId}
+                          <span className="font-medium">Chunk ID:</span> {source.chunkId}
                         </p>
                       )}
                     </div>
 
                     {/* Arrow */}
-                    <div className="absolute -top-1 left-4 h-2 w-2 rotate-45 border-l border-t border-gray-200 bg-white" />
+                    <div className="absolute -top-1 left-4 h-2 w-2 rotate-45 border-t border-l border-gray-200 bg-white" />
                   </div>
                 </div>
               )
@@ -150,7 +140,6 @@ const ChatMessage = ({ message }: ChatMessageProps) => {
 
   return null
 }
-
 
 const ViewChatPage = () => {
   const uploadedFileRef = useRef<UploadedFileHandle>(null)
