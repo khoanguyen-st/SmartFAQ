@@ -231,8 +231,6 @@ class PDFLoader:
 
 
 class DocxLoader:
-    """Structured DOCX/DOC loader using python-docx."""
-
     def __init__(self, file_path: str):
         self.file_path = file_path
 
@@ -381,8 +379,6 @@ class MarkdownLoader:
 
 
 class TextLoader:
-    """Plain text loader; treats blank lines as paragraph boundaries."""
-
     def __init__(self, file_path: str):
         self.file_path = file_path
 

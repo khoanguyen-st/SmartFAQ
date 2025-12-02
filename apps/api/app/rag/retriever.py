@@ -14,21 +14,13 @@ logger = logging.getLogger(__name__)
 
 
 def _distance_to_similarity(distance: float, metric: str = None) -> float:
-    """
-    Chuẩn hóa score về [0,1] tùy metric:
-    - cosine: similarity ≈ 1 - distance (clamp 0..1)
-    - l2/ip/khác: heuristic 1/(1+d) để có số tăng theo độ gần
-    """
     if metric is None:
         metric = settings.CHROMA_METRIC.lower()
 
     if metric == "cosine":
         sim = 1.0 - distance
-        if sim < 0.0:
-            sim = 0.0
-        if sim > 1.0:
-            sim = 1.0
-        return sim
+        return max(0.0, min(1.0, sim))
+
     return 1.0 / (1.0 + max(distance, 0.0))
 
 
@@ -81,12 +73,13 @@ class _BM25LexicalIndex:
 
 
 class Retriever:
-    """Custom retriever implementation built on VectorStore (Chroma)."""
-
     def __init__(self, vector_store: Optional[VectorStore] = None):
         self.vector_store = vector_store or VectorStore()
         self._lexical_index: Optional[_BM25LexicalIndex] = None
         self._lexical_ready: bool = False
+
+    def is_empty(self) -> bool:
+        return self.vector_store.is_empty()
 
     def retrieve(
         self,
@@ -113,9 +106,6 @@ class Retriever:
         return self._retrieve_vector_only(query, top_k=top_k, where=where)
 
     def calculate_confidence(self, contexts: List[Dict[str, Any]]) -> float:
-        """
-        Weighted average của top-3 (0..1). Nếu ít hơn 3, tự co lại.
-        """
         if not contexts:
             return 0.0
         top_n = min(3, len(contexts))
@@ -138,12 +128,6 @@ class Retriever:
         search_type: Literal["similarity", "mmr"] = "similarity",
         **kwargs,
     ):
-        """
-        LangChain retriever (dùng cho LCEL chain).
-        - search_type="similarity" | "mmr"
-        - where: filter metadata
-        - kwargs: pass-through vào as_retriever (vd. fetch_k, lambda_mult khi MMR)
-        """
         skw: Dict[str, Any] = {"k": k}
         if where:
             skw["filter"] = where

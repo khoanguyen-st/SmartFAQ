@@ -18,6 +18,7 @@ import txtNoFillUrl from '@/assets/icons/txt-no-fill.svg'
 import KnowledgeSidebar from '@/components/viewchat/KnowledgeSidebar'
 import UploadModal from '@/components/viewchat/UploadModal'
 import sidebarUrl from '@/assets/icons/sidebar.svg'
+import SimpleMarkdown from '@/components/viewchat/SimpleMarkdown'
 import { UploadedFileHandle } from '@/components/viewchat/UploadedFile'
 
 type ImgCompProps = React.ImgHTMLAttributes<HTMLImageElement>
@@ -57,13 +58,14 @@ function formatHistoryMessage(msg: ChatHistoryMessage): DisplayMessage {
 type ChatMessageProps = {
   message: DisplayMessage
 }
+
 const ChatMessage = ({ message }: ChatMessageProps) => {
+  const markdownText = message.content.join('\n')
+
   if (message.type === 'system') {
     return (
       <div className="welcome-message">
-        {message.content.map((line: string, i: number) => (
-          <p key={i}>{line}</p>
-        ))}
+        <SimpleMarkdown content={markdownText} />
       </div>
     )
   }
@@ -72,9 +74,7 @@ const ChatMessage = ({ message }: ChatMessageProps) => {
     return (
       <div className="welcome-message w-70">
         <p className="text-xl font-bold text-red-700">Error:</p>
-        {message.content.map((line: string, i: number) => (
-          <p key={i}>{line}</p>
-        ))}
+        <SimpleMarkdown content={markdownText} />
       </div>
     )
   }
@@ -82,9 +82,8 @@ const ChatMessage = ({ message }: ChatMessageProps) => {
   if (message.type === 'sender') {
     return (
       <div className="message message--sender">
-        {message.content.map((line: string, i: number) => (
-          <p key={i}>{line}</p>
-        ))}
+        <SimpleMarkdown content={markdownText} />
+
         {message.sources && message.sources.length > 0 && (
           <div className="message__reference mt-2 border-t border-gray-300 pt-2">
             <h4 className="mb-1 text-xs font-semibold">Sources:</h4>
@@ -98,9 +97,33 @@ const ChatMessage = ({ message }: ChatMessageProps) => {
               }
 
               return (
-                <div key={index} className="mt-1 flex items-center">
+                <div key={index} className="group relative mt-1 flex items-center">
                   <IconComponent className="mr-2 h-3 w-3 shrink-0" />
-                  <p className="truncate text-sm">{source.title}</p>
+                  <p className="cursor-pointer truncate text-sm">{source.title}</p>
+
+                  <div className="invisible absolute top-full left-0 z-50 mt-2 w-64 rounded-lg border border-gray-200 bg-white p-3 shadow-lg group-hover:visible">
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <IconComponent className="h-4 w-4 shrink-0" />
+                        <p className="text-sm font-semibold text-gray-900">{source.title}</p>
+                      </div>
+
+                      {source.relevance !== null && source.relevance !== undefined && (
+                        <p className="text-xs text-gray-600">
+                          <span className="font-medium">Relevance:</span> {(source.relevance * 100).toFixed(1)}%
+                        </p>
+                      )}
+
+                      {source.chunkId && (
+                        <p className="text-xs text-gray-600">
+                          <span className="font-medium">Chunk ID:</span> {source.chunkId}
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Arrow */}
+                    <div className="absolute -top-1 left-4 h-2 w-2 rotate-45 border-t border-l border-gray-200 bg-white" />
+                  </div>
                 </div>
               )
             })}
@@ -113,12 +136,11 @@ const ChatMessage = ({ message }: ChatMessageProps) => {
   if (message.type === 'receiver') {
     return (
       <div className="message message--receiver">
-        {message.content.map((line: string, i: number) => (
-          <p key={i}>{line}</p>
-        ))}
+        <SimpleMarkdown content={markdownText} />
       </div>
     )
   }
+
   return null
 }
 

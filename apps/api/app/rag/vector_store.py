@@ -36,12 +36,9 @@ def _get_vectorstore() -> Chroma:
         return __VECTORSTORE
 
     embeddings = get_embeddings()
-
-    # Support both HTTP client and persistent client
     chroma_url = settings.CHROMA_URL
 
     if chroma_url.startswith("http://") or chroma_url.startswith("https://"):
-        # HTTP client mode
         chroma_url_clean = chroma_url.replace("http://", "").replace("https://", "")
         if ":" in chroma_url_clean:
             host, port_str = chroma_url_clean.split(":", 1)
@@ -63,7 +60,6 @@ def _get_vectorstore() -> Chroma:
             collection_metadata={"hnsw:space": settings.CHROMA_METRIC},
         )
     else:
-        # Persistent client mode (path to SQLite directory)
         __VECTORSTORE = Chroma(
             persist_directory=chroma_url,
             collection_name=settings.CHROMA_COLLECTION,
@@ -217,6 +213,17 @@ def _collection_get_documents(limit: Optional[int] = None) -> List[Document]:
 class VectorStore:
     def __init__(self) -> None:
         self._vs = _get_vectorstore()
+
+    def is_empty(self) -> bool:
+        try:
+            coll = self._vs._collection
+            if hasattr(coll, "count"):
+                return coll.count() == 0
+            data = coll.get(include=[])
+            ids = data.get("ids") or []
+            return len(ids) == 0
+        except Exception:
+            return True
 
     def similarity_search(
         self, query: str, k: int = 5, where: Optional[Dict[str, Any]] = None
