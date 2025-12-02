@@ -15,8 +15,14 @@ logger = logging.getLogger(__name__)
 
 @router.get("/")
 async def list_docs(db: AsyncSession = Depends(get_db)):
+    """
+    List all documents.
+    Returns empty array with message if no documents found.
+    """
     try:
         items = await dms.list_documents(db)
+        if not items:
+            return {"items": [], "message": "No documents found."}
         return {"items": items}
     except HTTPException:
         raise
@@ -134,13 +140,40 @@ async def update_document(
         ) from exc
 
 
+@router.post("/create-with-upload")
+async def create_document_with_upload(
+    files: list[UploadFile],
+    category: str | None = Form(None),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Create new document and upload files.
+    Validates: max 20 files, each ≤50MB.
+    Triggers async processing workflow.
+    """
+    try:
+        result = await dms.create_document_with_upload(files, category=category)
+        return result
+    except HTTPException:
+        raise
+    except Exception as exc:
+        logger.exception("Failed to create document with upload")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to create document with upload.",
+        ) from exc
+
+
 @router.delete("/{doc_id}")
 async def delete_document(doc_id: int, db: AsyncSession = Depends(get_db)):
+    """
+    Delete document, all attached files, and related embeddings in ChromaDB.
+    """
     try:
         ok = await dms.delete_document(doc_id, db)
         if not ok:
-            raise HTTPException(404, "Document not found")
-        return {"status": "deleted"}
+            raise HTTPException(status_code=404, detail={"error": "Document not found."})
+        return {"message": "Document and all embeddings deleted successfully."}
     except HTTPException:
         raise
     except Exception as exc:

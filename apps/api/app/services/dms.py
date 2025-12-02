@@ -3,7 +3,7 @@ import os
 from contextlib import asynccontextmanager
 from typing import Any
 
-from fastapi import UploadFile
+from fastapi import HTTPException, UploadFile
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -86,6 +86,7 @@ async def create_document_record(
     file_path: str | None = None,
     file_size: int | None = None,
     format: str | None = None,
+    category: str | None = None,
 ) -> int:
     """Create Document + DocumentVersion (optional)."""
     doc = Document(
@@ -93,6 +94,7 @@ async def create_document_record(
         language="en",
         status="ACTIVE",
         created_by=uploaded_by,
+        category=category,
     )
     db.add(doc)
     await db.flush()
@@ -127,39 +129,87 @@ async def async_session_scope():
             raise
 
 
-async def enqueue_single_document(file: UploadFile, uploaded_by=None) -> dict:
+async def enqueue_single_document(file: UploadFile, uploaded_by=None, category: str | None = None) -> dict:
     """Upload a single file and create document record."""
     file_path, size, fmt = await save_uploaded_file(file)
 
     async with async_session_scope() as db:
         doc_id = await create_document_record(
             db,
-            title=file.filename,
-            uploaded_by=None,
+            title=file.filename or "Untitled",
+            uploaded_by=uploaded_by,
             file_path=file_path,
             file_size=size,
             format=fmt,
+            category=category,
         )
 
+        # Trigger async processing workflow
+        # Process document and create embeddings
         processor = DocumentProcessor()
         split_docs = processor.process_document(
-            file_path, str(doc_id), metadata={"title": file.filename}
+            file_path, str(doc_id), metadata={"title": file.filename or "Untitled"}
         )
         upsert_documents(split_docs)
 
-        return {"document_id": doc_id, "file_path": file_path}
+        return {"document_id": doc_id, "file_path": file_path, "filename": file.filename}
 
 
-async def enqueue_multiple_documents(files: list[UploadFile]) -> list[dict]:
+async def enqueue_multiple_documents(files: list[UploadFile], category: str | None = None) -> list[dict]:
     """Process multiple file uploads."""
     results = []
     for file in files:
         try:
-            r = await enqueue_single_document(file, uploaded_by=None)
+            r = await enqueue_single_document(file, uploaded_by=None, category=category)
             results.append(r)
         except Exception as exc:
             results.append({"filename": file.filename, "error": str(exc)})
     return results
+
+
+async def create_document_with_upload(
+    files: list[UploadFile],
+    category: str | None = None,
+    uploaded_by: int | None = None,
+) -> dict:
+    """
+    Create new document and upload files.
+    Validates: max 20 files, each ≤50MB.
+    File size validation is handled in save_uploaded_file.
+    """
+    MAX_FILES = 20
+    MAX_FILE_SIZE_MB = 50
+
+    # Validation: Check number of files
+    if len(files) > MAX_FILES:
+        raise HTTPException(
+            status_code=400,
+            detail={"error": f"Invalid upload. Max {MAX_FILES} files, each ≤{MAX_FILE_SIZE_MB}MB."}
+        )
+
+    # Process uploads (file size validation happens in save_uploaded_file)
+    results = []
+    for file in files:
+        try:
+            r = await enqueue_single_document(file, uploaded_by=uploaded_by, category=category)
+            results.append(r)
+        except UploadTooLarge:
+            raise HTTPException(
+                status_code=400,
+                detail={"error": f"Invalid upload. Max {MAX_FILES} files, each ≤{MAX_FILE_SIZE_MB}MB."}
+            )
+        except InvalidFileType as e:
+            raise HTTPException(
+                status_code=400,
+                detail={"error": str(e)}
+            )
+        except Exception as exc:
+            results.append({"filename": file.filename, "error": str(exc)})
+    
+    return {
+        "status": "accepted",
+        "items": results
+    }
 
 
 async def create_metadata_document(data: dict[str, Any], db: AsyncSession) -> dict:
@@ -179,7 +229,7 @@ async def list_documents(db: AsyncSession) -> list[dict[str, Any]]:
     result = await db.execute(stmt)
     rows = result.scalars().all()
 
-    return [
+    documents = [
         {
             "id": d.id,
             "title": d.title,
@@ -194,6 +244,8 @@ async def list_documents(db: AsyncSession) -> list[dict[str, Any]]:
         }
         for d in rows
     ]
+    
+    return documents
 
 
 async def get_document(doc_id: int, db: AsyncSession):
@@ -248,13 +300,36 @@ async def update_document(doc_id: int, updates: dict[str, Any], db: AsyncSession
 
 
 async def delete_document(doc_id: int, db: AsyncSession) -> bool:
-    stmt = select(Document).where(Document.id == doc_id)
+    """
+    Delete document, all attached files, and related embeddings in ChromaDB.
+    """
+    from ..rag.vector_store import delete_by_metadata
+    
+    stmt = select(Document).options(selectinload(Document.versions)).where(Document.id == doc_id)
     result = await db.execute(stmt)
     doc = result.scalar_one_or_none()
 
     if not doc:
         return False
 
+    # 1. Delete physical files from all versions
+    await db.refresh(doc, ["versions"])
+    for version in doc.versions:
+        if version.file_path and os.path.exists(version.file_path):
+            try:
+                os.remove(version.file_path)
+                logging.info(f"Deleted file: {version.file_path}")
+            except Exception as e:
+                logging.warning(f"Failed to delete file {version.file_path}: {e}")
+
+    # 2. Delete embeddings from ChromaDB
+    try:
+        delete_by_metadata({"document_id": str(doc_id)})
+        logging.info(f"Deleted embeddings for document {doc_id}")
+    except Exception as e:
+        logging.warning(f"Failed to delete embeddings for document {doc_id}: {e}")
+
+    # 3. Delete DB record (cascade will delete versions automatically)
     await db.delete(doc)
     await db.commit()
     return True
