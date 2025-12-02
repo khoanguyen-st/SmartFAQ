@@ -13,8 +13,6 @@ def create_app() -> FastAPI:
         redoc_url="/docs/redoc",
     )
 
-    # origins = settings.cors_allow_origins
-
     # Configure CORS
     app.add_middleware(
         CORSMiddleware,
@@ -38,8 +36,8 @@ def create_app() -> FastAPI:
     app.include_router(docs.router, prefix="/api/docs", tags=["documents"])
     app.include_router(chat.router, prefix="/api/chat", tags=["chat"])
     app.include_router(fallback.router, prefix="/api/fallback", tags=["fallback"])
-    app.include_router(admin.router, prefix="/api/admin", tags=["admin"])
-    app.include_router(staff.router, prefix="/api/staff", tags=["staff"])
+    app.include_router(admin.router, prefix="/api/user", tags=["user"])
+    app.include_router(staff.router, prefix="/api/user", tags=["user"])
 
     @app.get("/health", tags=["system"])
     def health_check() -> dict[str, str]:
