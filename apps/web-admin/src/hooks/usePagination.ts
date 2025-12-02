@@ -7,12 +7,7 @@ export interface UsePaginationProps<T> {
   onPageChange: (page: number) => void
 }
 
-export const usePagination = <T>({
-  items,
-  page,
-  pageSize,
-  onPageChange
-}: UsePaginationProps<T>) => {
+export const usePagination = <T>({ items, page, pageSize }: UsePaginationProps<T>) => {
   const totalPages = Math.ceil(items.length / pageSize) || 1
 
   const paginatedItems = useMemo(() => {
