@@ -73,7 +73,7 @@ async def delete_department(
 ):
     try:
         deleted = await ds.delete_department(db, department_id)
-        if deleted == 0:  # assuming it returns rows affected or similar
+        if deleted == 0:
             raise ValueError("Department not found")
         return {"message": "Department deleted successfully"}
     except ValueError as e:

@@ -1,7 +1,6 @@
 """Department service."""
 
-from http.client import HTTPException
-
+from fastapi import HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy.orm import joinedload
@@ -16,6 +15,14 @@ async def get_all_departments(db: AsyncSession) -> list[Department]:
 
 
 async def create_department(db: AsyncSession, department: DepartmentCreate) -> Department:
+    existing_department = await db.execute(
+        select(Department).where(Department.name == department.name)
+    )
+    if existing_department.scalar_one_or_none():
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Department name already exists"
+        )
+
     new_department = Department(name=department.name)
     db.add(new_department)
     await db.commit()
@@ -31,7 +38,7 @@ async def get_department(db: AsyncSession, department_id: int) -> Department:
     )
     department = result.scalar_one_or_none()
     if not department:
-        raise HTTPException(status_code=404, detail="Department not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Department not found")
     return department
 
 
