@@ -1,13 +1,15 @@
 import asyncio
+import io
 import logging
 import os
+import re
 from contextlib import asynccontextmanager
 from tempfile import NamedTemporaryFile
 from typing import Any
 
-import cloudinary
-from cloudinary.uploader import destroy, upload
-from fastapi import UploadFile
+from fastapi import HTTPException, UploadFile, status
+from minio import Minio
+from minio.error import S3Error
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -19,11 +21,18 @@ from ..models.document_version import DocumentVersion
 from ..rag.document_processor import DocumentProcessor
 from ..rag.vector_store import delete_by_document_id, upsert_documents
 
-cloudinary.config(
-    cloud_name=settings.CLOUDINARY_CLOUD_NAME,
-    api_key=settings.CLOUDINARY_API_KEY,
-    api_secret=settings.CLOUDINARY_API_SECRET,
+minio_client = Minio(
+    "minio:9000",
+    access_key=settings.MINIO_ACCESS_KEY,
+    secret_key=settings.MINIO_SECRET_KEY,
+    secure=settings.MINIO_SECURE,
 )
+
+BUCKET_NAME = settings.MINIO_BUCKET_NAME
+FOLDER = "documents/"
+
+if not minio_client.bucket_exists(BUCKET_NAME):
+    minio_client.make_bucket(BUCKET_NAME)
 
 logger = logging.getLogger(__name__)
 
@@ -49,7 +58,7 @@ ALLOWED_EXTS = {
 }
 
 
-def upload_to_cloudinary(content: bytes, filename: str) -> tuple[str, int, str]:
+def upload_to_minio(content: bytes, filename: str) -> tuple[str, int, str]:
     size = len(content)
     max_bytes = int(settings.UPLOAD_MAX_MB) * 1024 * 1024
     if size > max_bytes:
@@ -64,23 +73,49 @@ def upload_to_cloudinary(content: bytes, filename: str) -> tuple[str, int, str]:
 
     fmt = ext.lstrip(".")
 
-    file_public_id = f"{base_name}"
+    object_name = f"{FOLDER}{base_name}{ext}"
 
-    logger.info("upload start: %s to Cloudinary (Public ID: %s)", orig_name, file_public_id)
+    logger.info("upload start: %s to MinIO (Object Name: %s)", orig_name, object_name)
 
     try:
-        result = upload(
-            content,
-            public_id=file_public_id,
-            folder=settings.CLOUDINARY_FOLDER_DOCUMENT,
-            resource_type="raw",
+        minio_client.put_object(
+            BUCKET_NAME,
+            object_name,
+            data=io.BytesIO(content),
+            length=size,
+            content_type="application/octet-stream",
         )
-        public_id = result["public_id"]
-        uploaded_size = result["bytes"]
+        uploaded_size = size
         logger.info("upload complete: %d bytes", uploaded_size)
-        return public_id, uploaded_size, fmt
-    except Exception as exc:
+        return object_name, uploaded_size, fmt
+    except S3Error as exc:
         raise exc
+
+
+async def generate_unique_title(db: AsyncSession, original_title: str) -> str:
+
+    base, ext = os.path.splitext(original_title)
+
+    stmt = select(Document).where(Document.title == original_title)
+    result = await db.execute(stmt)
+    if result.scalar_one_or_none() is None:
+        return original_title
+
+    like_pattern = f"{base}%{ext}"
+    stmt = select(Document.title).where(Document.title.like(like_pattern))
+    result = await db.execute(stmt)
+    similar_titles = [row[0] for row in result.fetchall()]
+
+    max_num = 0
+    pattern = re.compile(r"^" + re.escape(base) + r" \((\d+)\)" + re.escape(ext) + r"$")
+    for sim_title in similar_titles:
+        match = pattern.match(sim_title)
+        if match:
+            num = int(match.group(1))
+            if num > max_num:
+                max_num = num
+
+    return f"{base} ({max_num + 1}){ext}"
 
 
 async def create_document_record(
@@ -90,9 +125,11 @@ async def create_document_record(
     file_size: int | None = None,
     format: str | None = None,
 ) -> int:
+    current_title = await generate_unique_title(db, title)
+
     doc = Document(
-        title=title,
-        language="en",
+        title=current_title,
+        language="vi",
         status="ACTIVE",
     )
     db.add(doc)
@@ -131,11 +168,12 @@ async def enqueue_single_document(file: UploadFile) -> dict:
     orig_name = file.filename or "upload.bin"
     _, ext = os.path.splitext(orig_name)
 
-    public_id = None
+    object_name = None
     temp_path = None
+    doc_id = None
 
     try:
-        public_id, size, fmt = await asyncio.to_thread(upload_to_cloudinary, content, orig_name)
+        object_name, size, fmt = await asyncio.to_thread(upload_to_minio, content, orig_name)
 
         with NamedTemporaryFile(suffix=ext, delete=False) as tmp:
             tmp.write(content)
@@ -150,7 +188,7 @@ async def enqueue_single_document(file: UploadFile) -> dict:
                 doc_id = await create_document_record(
                     db,
                     title=orig_name,
-                    file_path=public_id,
+                    file_path=object_name,
                     file_size=size,
                     format=fmt,
                 )
@@ -165,44 +203,50 @@ async def enqueue_single_document(file: UploadFile) -> dict:
 
         except Exception:
             logger.exception("Failed to save document or index chunks for %s", orig_name)
-            if public_id:
+            if object_name:
                 try:
-                    await asyncio.to_thread(destroy, public_id, resource_type="raw")
-                    logger.info("Cleaned up Cloudinary file after DB/index failure: %s", public_id)
+                    await asyncio.to_thread(minio_client.remove_object, BUCKET_NAME, object_name)
+                    logger.info("Cleaned up MinIO file after DB/index failure: %s", object_name)
                 except Exception as cleanup_exc:
                     logger.error(
-                        "Failed to delete Cloudinary file %s after DB/index error: %s",
-                        public_id,
+                        "Failed to delete MinIO file %s after DB/index error: %s",
+                        object_name,
                         cleanup_exc,
                     )
             raise
 
-        return {"document_id": doc_id, "public_id": public_id}
+        return {"document_id": doc_id, "object_name": object_name}
 
     except Exception as exc:
-        if public_id:
+        if object_name:
             try:
-                await asyncio.to_thread(destroy, public_id, resource_type="raw")
-                logger.info("Cleaned up orphaned Cloudinary file: %s", public_id)
+                await asyncio.to_thread(minio_client.remove_object, BUCKET_NAME, object_name)
+                logger.info("Cleaned up orphaned MinIO file: %s", object_name)
             except Exception as cleanup_exc:
                 logger.error(
-                    "Failed to delete Cloudinary file %s after error: %s", public_id, cleanup_exc
+                    "Failed to delete MinIO file %s after error: %s", object_name, cleanup_exc
                 )
         raise exc
     finally:
         if temp_path and os.path.exists(temp_path):
-            os.remove(temp_path)
+            try:
+                await asyncio.to_thread(os.remove, temp_path)
+                logger.info("Temporary file deleted: %s", temp_path)
+            except Exception as cleanup_exc:
+                logger.error("Failed to delete temporary file %s: %s", temp_path, cleanup_exc)
 
 
 async def enqueue_multiple_documents(files: list[UploadFile]) -> list[dict]:
-    """Process multiple file uploads."""
     results = []
+    errors = []
     for file in files:
         try:
             r = await enqueue_single_document(file)
             results.append(r)
         except Exception as exc:
-            results.append({"filename": file.filename, "error": str(exc)})
+            errors.append({"filename": file.filename, "error": str(exc)})
+    if errors:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail={"errors": errors})
     return results
 
 
@@ -276,19 +320,132 @@ async def get_document(doc_id: int, db: AsyncSession):
     }
 
 
-async def update_document(doc_id: int, updates: dict[str, Any], db: AsyncSession) -> bool:
-    stmt = select(Document).where(Document.id == doc_id)
+async def update_document(
+    doc_id: int,
+    db: AsyncSession,
+    file: UploadFile | None = None,
+    title: str | None = None,
+    category: str | None = None,
+    tags: str | None = None,
+    language: str | None = None,
+    status: str | None = None,
+) -> dict[str, Any] | None:
+    stmt = select(Document).options(selectinload(Document.versions)).where(Document.id == doc_id)
     result = await db.execute(stmt)
     doc = result.scalar_one_or_none()
 
     if not doc:
-        return False
+        return None
 
-    for k, v in updates.items():
-        setattr(doc, k, v)
+    object_name = None
+    temp_path = None
+    new_version_info = None
 
-    await db.commit()
-    return True
+    try:
+        if file:
+            content = await file.read()
+            orig_name = file.filename or "upload.bin"
+            _, ext = os.path.splitext(orig_name)
+
+            object_name, size, fmt = await asyncio.to_thread(upload_to_minio, content, orig_name)
+
+            with NamedTemporaryFile(suffix=ext, delete=False) as tmp:
+                tmp.write(content)
+                tmp.flush()
+                temp_path = tmp.name
+
+            processor = DocumentProcessor()
+            split_docs = processor.process_document(
+                temp_path, str(doc_id), metadata={"title": orig_name}
+            )
+
+            await asyncio.to_thread(delete_by_document_id, str(doc_id))
+
+            next_version = max((v.version_no for v in doc.versions), default=0) + 1
+
+            dv = DocumentVersion(
+                document_id=doc.id,
+                version_no=next_version,
+                file_path=object_name,
+                file_size=size,
+                format=fmt,
+            )
+            db.add(dv)
+            await db.flush()
+
+            doc.current_version_id = dv.id
+
+            for sd in split_docs:
+                if "document_id" in sd.metadata:
+                    sd.metadata["document_id"] = str(doc_id)
+                else:
+                    sd.metadata["source"] = str(doc_id)
+
+            await asyncio.to_thread(upsert_documents, split_docs)
+
+            new_version_info = {
+                "version_no": next_version,
+                "file_path": object_name,
+                "file_size": size,
+                "format": fmt,
+            }
+
+            if not title or not title.strip():
+                title = orig_name
+
+        if title and title.strip():
+            unique_title = await generate_unique_title(db, title)
+            doc.title = unique_title
+
+        if category and category.strip():
+            doc.category = category
+
+        if tags and tags.strip():
+            doc.tags = tags
+
+        if language and language.strip():
+            doc.language = language
+
+        if status and status.strip():
+            doc.status = status
+
+        db.add(doc)
+        await db.commit()
+        await db.refresh(doc, ["current_version"])
+
+        result = {
+            "id": doc.id,
+            "title": doc.title,
+            "category": doc.category,
+            "tags": doc.tags,
+            "language": doc.language,
+            "status": doc.status,
+            "current_version_id": doc.current_version_id,
+            "current_file_size": doc.current_version.file_size if doc.current_version else None,
+            "current_format": doc.current_version.format if doc.current_version else None,
+        }
+
+        if new_version_info:
+            result["new_version"] = new_version_info
+
+        return result
+
+    except Exception as exc:
+        logger.exception("Failed to update document %s", doc_id)
+        if object_name:
+            try:
+                await asyncio.to_thread(minio_client.remove_object, BUCKET_NAME, object_name)
+                logger.info("Cleaned up MinIO file after update failure: %s", object_name)
+            except Exception as cleanup_exc:
+                logger.error("Failed to delete MinIO file %s: %s", object_name, cleanup_exc)
+        await db.rollback()
+        raise exc
+    finally:
+        if temp_path and os.path.exists(temp_path):
+            try:
+                await asyncio.to_thread(os.remove, temp_path)
+            except Exception as cleanup_exc:
+                logger.error("Failed to delete temporary file %s: %s", temp_path, cleanup_exc)
 
 
 async def delete_document(doc_id: int, db: AsyncSession) -> bool:
@@ -302,14 +459,14 @@ async def delete_document(doc_id: int, db: AsyncSession) -> bool:
     try:
         await asyncio.to_thread(delete_by_document_id, str(doc.id))
 
-        cloudinary_delete_tasks = []
+        minio_delete_tasks = []
         for v in doc.versions:
             if v.file_path:
-                task = asyncio.to_thread(destroy, v.file_path, resource_type="raw")
-                cloudinary_delete_tasks.append(task)
+                task = asyncio.to_thread(minio_client.remove_object, BUCKET_NAME, v.file_path)
+                minio_delete_tasks.append(task)
 
-        if cloudinary_delete_tasks:
-            await asyncio.gather(*cloudinary_delete_tasks)
+        if minio_delete_tasks:
+            await asyncio.gather(*minio_delete_tasks)
 
         await db.delete(doc)
         await db.commit()

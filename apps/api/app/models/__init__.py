@@ -17,6 +17,7 @@ __all__ = [
     "DocumentVersion",
     "Department",
     "UserDepartment",
+    "QueryLog",
     "FallbackLog",
     "ConfigEntry",
     "ChatSession",
