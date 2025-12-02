@@ -8,6 +8,7 @@ import { UserProfile, deleteAvatar, getUserProfile, updateUserProfile, uploadAva
 import { useEffect, useRef, useState } from 'react'
 
 const ProfilePage = () => {
+  // TODO: Trong thực tế, userId nên lấy từ AuthContext hoặc JWT Decode
   const userId = 1
 
   const [profile, setProfile] = useState<UserProfile | null>(null)
@@ -16,17 +17,21 @@ const ProfilePage = () => {
 
   const [isChangePassModalOpen, setIsChangePassModalOpen] = useState(false)
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
+
+  // State quản lý việc edit
   const [editingField, setEditingField] = useState<keyof UserProfile | null>(null)
   const [tempValue, setTempValue] = useState('')
   const fileInputRef = useRef<HTMLInputElement>(null)
 
+  // Cấu hình các trường form, mapping key khớp với Interface UserProfile
   const formFields: { label: string; key: keyof UserProfile; disabled?: boolean }[] = [
     { label: 'Email', key: 'email', disabled: true },
     { label: 'Username', key: 'username' },
-    { label: 'Phone Number', key: 'phoneNumber' },
+    { label: 'Phone Number', key: 'phoneNumber' }, // Dùng key 'phoneNumber' để Service tự map sang 'phone_number'
     { label: 'Address', key: 'address' }
   ]
 
+  // --- Fetch Profile ---
   useEffect(() => {
     const fetchProfile = async () => {
       try {
@@ -35,7 +40,7 @@ const ProfilePage = () => {
         setProfile(data)
       } catch (err) {
         console.error(err)
-        setError('Failed to load profile.')
+        setError('Failed to load profile. Please try again.')
       } finally {
         setLoading(false)
       }
@@ -43,27 +48,33 @@ const ProfilePage = () => {
     fetchProfile()
   }, [userId])
 
+  // --- Handle Avatar Upload ---
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (file && profile) {
-      try {
-        const objectUrl = URL.createObjectURL(file)
-        setProfile(prev => (prev ? { ...prev, avatar_url: objectUrl } : null))
+      // 1. Optimistic Update: Hiển thị ảnh ngay lập tức để UX mượt
+      const objectUrl = URL.createObjectURL(file)
+      setProfile(prev => (prev ? { ...prev, avatar_url: objectUrl } : null))
 
+      try {
+        // 2. Gọi API upload
         const res = await uploadAvatar(userId, file)
 
+        // 3. Cập nhật lại URL chính thức từ server trả về (nếu có)
         if (res.item) {
           setProfile(prev => (prev ? { ...prev, avatar_url: res.item } : null))
         }
       } catch (err) {
         console.error('Upload failed:', err)
         alert('Failed to upload avatar.')
+        // Rollback nếu lỗi: load lại profile gốc
         const data = await getUserProfile(userId)
         setProfile(data)
       }
     }
   }
 
+  // --- Handle Avatar Delete ---
   const handleDeleteImage = () => {
     if (profile?.avatar_url) setIsDeleteModalOpen(true)
   }
@@ -79,6 +90,7 @@ const ProfilePage = () => {
     }
   }
 
+  // --- Handle Inline Edit ---
   const startEdit = (field: keyof UserProfile) => {
     if (!profile) return
     setEditingField(field)
@@ -93,7 +105,10 @@ const ProfilePage = () => {
   const saveEdit = async () => {
     if (editingField && profile) {
       try {
+        // Gửi API update
         await updateUserProfile(userId, { [editingField]: tempValue })
+
+        // Cập nhật state local nếu thành công
         setProfile(prev => (prev ? { ...prev, [editingField]: tempValue } : null))
         setEditingField(null)
       } catch (err) {
@@ -103,14 +118,18 @@ const ProfilePage = () => {
     }
   }
 
-  const handleSeeDocuments = () => {}
+  const handleSeeDocuments = () => {
+    //   // Logic điều hướng hoặc mở modal documents
+    //   console.log("View documents clicked")
+  }
 
-  if (loading) return <div className="p-10 text-center">Loading profile...</div>
+  if (loading) return <div className="p-10 text-center text-gray-500">Loading profile...</div>
   if (error || !profile) return <div className="p-10 text-center text-red-500">{error || 'Profile not found'}</div>
 
   return (
     <div className="flex h-[calc(100vh-81px)] w-full flex-col overflow-y-auto bg-[#F9FAFB]">
       <div className="mx-auto flex min-h-full w-full max-w-[1535px] flex-col px-8 xl:px-[100px]">
+        {/* Header */}
         <div className="flex shrink-0 items-end justify-between py-10">
           <div>
             <h2 className="text-[32px] font-bold text-[#111827] lg:text-[40px] lg:leading-12">My Profile</h2>
@@ -128,7 +147,9 @@ const ProfilePage = () => {
           </button>
         </div>
 
+        {/* Main Card */}
         <div className="mb-[130px] flex w-full shrink-0 flex-col items-center gap-10 rounded-[20px] border border-[#E5E7EB] bg-white p-8 shadow-sm lg:flex-row lg:items-start lg:gap-[120px] lg:p-[100px]">
+          {/* Avatar Section */}
           <div className="flex shrink-0 flex-col items-center">
             <div className="h-[200px] w-[200px] overflow-hidden rounded-full shadow-[0px_4px_10px_rgba(0,0,0,0.15)] xl:h-[303px] xl:w-[303px]">
               <img src={profile.avatar_url || avatarDefaultUrl} alt="Profile" className="h-full w-full object-cover" />
@@ -145,13 +166,15 @@ const ProfilePage = () => {
 
               <button
                 onClick={handleDeleteImage}
-                className="h-10 flex-1 rounded-[50px] border border-[#E10E0E] text-[12px] font-bold text-[#E10E0E] transition hover:bg-red-50"
+                disabled={!profile.avatar_url}
+                className={`h-10 flex-1 rounded-[50px] border border-[#E10E0E] text-[12px] font-bold text-[#E10E0E] transition ${!profile.avatar_url ? 'cursor-not-allowed opacity-50' : 'hover:bg-red-50'}`}
               >
                 Delete Image
               </button>
             </div>
           </div>
 
+          {/* Form Section */}
           <div className="flex w-full flex-1 flex-col justify-center">
             <div className="flex flex-col gap-6 lg:gap-[60px]">
               {formFields.map(({ label, key, disabled }) => {

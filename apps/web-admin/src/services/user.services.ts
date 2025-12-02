@@ -24,10 +24,11 @@ const getAuthHeaders = () => {
 }
 
 /** ----------------------------------------
- * GET USER PROFILE:  GET /staff/{id}
+ * GET USER PROFILE:  GET /api/user/{id}
  * -----------------------------------------*/
 export async function getUserProfile(userId: number): Promise<UserProfile> {
-  const res = await fetch(`${API_BASE_URL}/staff/${userId}`, {
+  // FIX: Thêm /api vào đường dẫn và sửa /user -> /user cho đúng với backend
+  const res = await fetch(`${API_BASE_URL}/api/user/${userId}`, {
     headers: {
       ...getAuthHeaders()
     }
@@ -37,29 +38,33 @@ export async function getUserProfile(userId: number): Promise<UserProfile> {
 
   const data = await res.json()
 
-  // Map backend snake_case to frontend camelCase
+  // Map backend fields (UserOut schema) to frontend interface
   return {
-    id: data.id,
+    id: userId, // Backend UserOut không trả về ID, lấy từ tham số
     username: data.username,
     email: data.email,
-    phoneNumber: data.phone_number || data.phoneNumber || '',
+    // FIX: Backend trả về 'phone', Frontend dùng 'phoneNumber'
+    phoneNumber: data.phone || '',
     address: data.address || '',
-    avatar_url: data.avatar_url || null
+    // FIX: Backend trả về 'image', Frontend dùng 'avatar_url'
+    avatar_url: data.image || null
   }
 }
 
 /** ----------------------------------------
- * UPDATE PROFILE: PUT /staff/{id}
+ * UPDATE PROFILE: PUT /api/user/{id}
  * -----------------------------------------*/
 export async function updateUserProfile(userId: number, data: Partial<UserProfile>): Promise<{ status: string }> {
-  // Map frontend camelCase to backend snake_case for payload
-  const payload: Record<string, unknown> = { ...data }
-  if (data.phoneNumber) {
-    payload.phone_number = data.phoneNumber
-    delete payload.phoneNumber
-  }
+  // Chỉ gửi những trường mà backend UserUpdate schema chấp nhận: username, phone, address
+  const payload: Record<string, unknown> = {}
 
-  const res = await fetch(`${API_BASE_URL}/staff/${userId}`, {
+  if (data.username !== undefined) payload.username = data.username
+  if (data.address !== undefined) payload.address = data.address
+  // Map 'phoneNumber' frontend sang 'phone' backend
+  if (data.phoneNumber !== undefined) payload.phone = data.phoneNumber
+
+  // FIX: Thêm /api vào đường dẫn
+  const res = await fetch(`${API_BASE_URL}/api/user/${userId}`, {
     method: 'PUT',
     headers: {
       ...getAuthHeaders(),
@@ -73,17 +78,18 @@ export async function updateUserProfile(userId: number, data: Partial<UserProfil
 }
 
 /** ----------------------------------------
- * UPLOAD AVATAR: POST /staff/{id}/avatar
+ * UPLOAD AVATAR: POST /api/user/{id}/avatar
  * -----------------------------------------*/
 export async function uploadAvatar(userId: number, file: File): Promise<{ status: string; item: string }> {
   const formData = new FormData()
   formData.append('file', file)
 
-  const res = await fetch(`${API_BASE_URL}/staff/${userId}/avatar`, {
+  // FIX: Thêm /api vào đường dẫn
+  const res = await fetch(`${API_BASE_URL}/api/user/${userId}/avatar`, {
     method: 'POST',
     headers: {
       ...getAuthHeaders()
-      // Do NOT manually set Content-Type for FormData; browser handles it
+      // Không set Content-Type thủ công cho FormData
     },
     body: formData
   })
@@ -93,10 +99,11 @@ export async function uploadAvatar(userId: number, file: File): Promise<{ status
 }
 
 /** ----------------------------------------
- * DELETE AVATAR: DELETE /staff/{id}/avatar
+ * DELETE AVATAR: DELETE /api/user/{id}/avatar
  * -----------------------------------------*/
 export async function deleteAvatar(userId: number): Promise<{ status: string }> {
-  const res = await fetch(`${API_BASE_URL}/staff/${userId}/avatar`, {
+  // FIX: Thêm /api vào đường dẫn
+  const res = await fetch(`${API_BASE_URL}/api/user/${userId}/avatar`, {
     method: 'DELETE',
     headers: {
       ...getAuthHeaders()
@@ -108,7 +115,7 @@ export async function deleteAvatar(userId: number): Promise<{ status: string }> 
 }
 
 /** ----------------------------------------
- * CHANGE PASSWORD: POST /staff/{id}/change-password
+ * CHANGE PASSWORD: POST /api/user/{id}/change-password
  * -----------------------------------------*/
 export async function changePassword(userId: number, data: ChangePasswordRequest): Promise<{ status: string }> {
   const formData = new FormData()
@@ -116,7 +123,8 @@ export async function changePassword(userId: number, data: ChangePasswordRequest
   formData.append('new_password', data.new_password)
   formData.append('confirm_password', data.confirm_password)
 
-  const res = await fetch(`${API_BASE_URL}/staff/${userId}/change-password`, {
+  // FIX: Thêm /api vào đường dẫn
+  const res = await fetch(`${API_BASE_URL}/api/user/${userId}/change-password`, {
     method: 'POST',
     headers: {
       ...getAuthHeaders()
