@@ -15,6 +15,7 @@ from ..core.security import (
     verify_password,
     verify_refresh_token,
     verify_reset_token,
+    verify_reset_token_with_reason,
 )
 from ..models.user import User
 from ..services.email_service import EmailService
@@ -136,14 +137,12 @@ class AuthService:
 
         reset_token = create_reset_token(user_id=user.id, email=user.email)
 
-        # Gửi email reset password
         email_service = EmailService()
         email_sent = await email_service.send_password_reset_email(
             to_email=user.email, reset_token=reset_token, username=user.username
         )
 
         if not email_sent:
-            # Log error but don't fail the request (security: don't reveal if email exists)
             pass
 
         result = await self.db.execute(select(User).filter(User.role == "ADMIN", User.is_active))
@@ -211,3 +210,7 @@ class AuthService:
     async def verify_reset_token(self, token: str) -> dict | None:
         """Verify reset token without resetting password."""
         return await verify_reset_token(token, self.db)
+
+    async def verify_reset_token_with_reason(self, token: str) -> tuple[dict | None, str | None]:
+        """Verify reset token and return error reason if invalid."""
+        return await verify_reset_token_with_reason(token, self.db)

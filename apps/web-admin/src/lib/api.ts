@@ -21,7 +21,10 @@ async function apiCall(endpoint: string, options: RequestInit = {}) {
     if (!res.ok) {
       const errorData = await res.json().catch(() => ({ detail: res.statusText }))
       const errorMessage = errorData.detail?.error || errorData.detail || res.statusText
-      throw new Error(errorMessage)
+      const error = new Error(errorMessage) as Error & { status?: number; errorCode?: string }
+      error.status = res.status
+      error.errorCode = errorData.detail?.error_code
+      throw error
     }
 
     return res.json()

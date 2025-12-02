@@ -154,23 +154,36 @@ async def verify_reset_token_endpoint(payload: dict, db: AsyncSession = Depends(
     if not token:
         raise HTTPException(status_code=400, detail={"error": "Token is required."})
 
-    try:
-        token_payload = await service.verify_reset_token(token)
-        if not token_payload:
-            raise InvalidTokenError
+    token_payload, error_code = await service.verify_reset_token_with_reason(token)
 
-        # Get user info
-        result = await db.execute(select(User).filter(User.id == token_payload["user_id"]))
-        user = result.scalar_one_or_none()
-        if not user:
-            raise InvalidTokenError
+    if error_code:
+        # Token không hợp lệ - trả về error message cụ thể
+        if error_code == "TOKEN_EXPIRED":
+            raise HTTPException(
+                status_code=401,
+                detail={
+                    "error": "This reset link has expired. Please request a new password reset.",
+                    "error_code": "TOKEN_EXPIRED",
+                },
+            )
+        elif error_code == "TOKEN_USED":
+            raise HTTPException(
+                status_code=401,
+                detail={
+                    "error": "This reset link has already been used. Please request a new password reset.",
+                    "error_code": "TOKEN_USED",
+                },
+            )
+        else:  # INVALID_TOKEN
+            raise HTTPException(
+                status_code=401,
+                detail={
+                    "error": "Invalid reset token. Please request a new password reset.",
+                    "error_code": "INVALID_TOKEN",
+                },
+            )
 
-        return {
-            "valid": True,
-            "email": user.email,
-            "message": "Token is valid.",
-        }
-    except InvalidTokenError:
+    if not token_payload:
         raise HTTPException(
             status_code=401,
             detail={
@@ -178,3 +191,21 @@ async def verify_reset_token_endpoint(payload: dict, db: AsyncSession = Depends(
                 "error_code": "INVALID_TOKEN",
             },
         )
+
+    # Get user info
+    result = await db.execute(select(User).filter(User.id == token_payload["user_id"]))
+    user = result.scalar_one_or_none()
+    if not user:
+        raise HTTPException(
+            status_code=401,
+            detail={
+                "error": "Invalid reset token. Please request a new password reset.",
+                "error_code": "INVALID_TOKEN",
+            },
+        )
+
+    return {
+        "valid": True,
+        "email": user.email,
+        "message": "Token is valid.",
+    }

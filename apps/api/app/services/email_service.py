@@ -132,25 +132,6 @@ class EmailService:
                 .button:hover { 
                     background-color: #1e3a8a; 
                 }
-                .link-section {
-                    margin: 24px 0;
-                    padding: 16px;
-                    background-color: #f9f9f9;
-                    border-left: 3px solid #003087;
-                    border-radius: 4px;
-                }
-                .link-label {
-                    color: #666666;
-                    font-size: 14px;
-                    margin-bottom: 8px;
-                    display: block;
-                }
-                .link-text {
-                    word-break: break-all; 
-                    color: #3073e9;
-                    font-size: 13px;
-                    line-height: 1.5;
-                }
                 a[href] {
                     color: #3073e9;
                     text-decoration: underline;
@@ -216,22 +197,17 @@ class EmailService:
                     <p>Hello <strong>{{ username }}</strong>,</p>
                     
                     <p class="instructions">
-                        If you forgot your password, click <strong>Reset Password</strong> below and follow the onscreen instructions. The reset link expires in 10 minutes.
+                        If you forgot your password, click <strong>Reset Password</strong> below and follow the onscreen instructions. The reset link expires in 1 hour.
                     </p>
                     
                     <div class="button-container">
                         <a href="{{ reset_url }}" class="button">Reset Password</a>
                     </div>
                     
-                    <div class="link-section">
-                        <span class="link-label">Or copy and paste this link into your browser:</span>
-                        <div class="link-text">{{ reset_url }}</div>
-                    </div>
-                    
                     <div class="security-notice">
                         <strong>⚠️ Security Notice:</strong>
                         <ul>
-                            <li>This link will expire in 10 minutes</li>
+                            <li>This link will expire in 1 hour</li>
                             <li>If you did not request this reset, please ignore this email</li>
                             <li>Do not share this link with anyone</li>
                         </ul>

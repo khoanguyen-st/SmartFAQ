@@ -63,6 +63,15 @@ const CreateNewPassword = () => {
       localStorage.removeItem('reset_token')
       navigate('/reset-password-success')
     } catch (err) {
+      // Kiểm tra nếu lỗi là 401 (InvalidTokenError) - token đã dùng hoặc hết hạn
+      const errorWithStatus = err as Error & { status?: number }
+      if (errorWithStatus.status === 401) {
+        // Token invalid/expired/used - hiển thị "Invalid Reset Link" page
+        setIsValid(false)
+        setError('Invalid or expired reset token. Please request a new password reset.')
+        return
+      }
+      // Các lỗi khác (400 - weak password, same password) hiển thị trên form
       const errorMessage = err instanceof Error ? err.message : 'Failed to reset password. Please try again.'
       setError(errorMessage)
     }
@@ -80,8 +89,8 @@ const CreateNewPassword = () => {
     )
   }
 
-  // Hiển thị error nếu token không hợp lệ
-  if (!isValid || error) {
+  // Hiển thị error nếu token không hợp lệ (chỉ khi !isValid, không phải lỗi validation)
+  if (!isValid) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center bg-gray-50">
         <div className="max-w-md rounded-lg bg-white p-8 shadow-md">

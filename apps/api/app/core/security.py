@@ -176,9 +176,9 @@ async def is_token_blacklisted(token: str, db: AsyncSession | None = None) -> bo
 
 
 def create_reset_token(user_id: int, email: str, expires_delta: Optional[timedelta] = None) -> str:
-    """Create password reset token (default: 10 minutes)."""
+    """Create password reset token (default: 1 hour)."""
     if expires_delta is None:
-        expires_delta = timedelta(minutes=10)
+        expires_delta = timedelta(hours=1)
 
     now_ts = int(time.time())
     expire_ts = now_ts + int(expires_delta.total_seconds())
@@ -208,11 +208,30 @@ async def verify_reset_token(token: str, db: AsyncSession | None = None) -> dict
         return None
 
 
+async def verify_reset_token_with_reason(
+    token: str, db: AsyncSession | None = None
+) -> tuple[dict | None, str | None]:
+    """
+    Verify and decode password reset token, returning error reason if invalid.
+    Returns: (payload or None, error_code or None)
+    Error codes: 'TOKEN_EXPIRED', 'TOKEN_USED', 'INVALID_TOKEN'
+    """
+    try:
+        # Kiểm tra blacklist trước (token đã được dùng)
+        if await is_token_blacklisted(token, db):
+            return None, "TOKEN_USED"
+
+        payload = jwt.decode(token, settings.jwt_secret, algorithms=["HS256"])
+        if payload.get("type") != "password_reset":
+            return None, "INVALID_TOKEN"
+        return payload, None
+    except jwt.ExpiredSignatureError:
+        return None, "TOKEN_EXPIRED"
+    except jwt.JWTError:
+        return None, "INVALID_TOKEN"
+
+
 def validate_password_strength(password: str) -> bool:
-    """
-    Validate password complexity rules.
-    Rules: Minimum 8 characters, uppercase, lowercase, digit, special character.
-    """
     pattern = re.compile(
         r"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_\-+=\[{\]};:'\",<.>/?\\|`~]).{8,}$"
     )
