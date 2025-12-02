@@ -2,148 +2,57 @@ from __future__ import annotations
 
 import logging
 import re
+from pathlib import Path
 from typing import Optional, Tuple
 
-logging.getLogger("app.rag.language").setLevel(logging.DEBUG)
+import fasttext
 
-_vi_common_words = {
-    "la",
-    "toi",
-    "ban",
-    "anh",
-    "chi",
-    "em",
-    "cai",
-    "con",
-    "mot",
-    "hai",
-    "ba",
-    "muon",
-    "khong",
-    "co",
-    "duoc",
-    "nguoi",
-    "hoc",
-    "truong",
-    "day",
-    "nay",
-    "hoi",
-    "cho",
-    "lam",
-    "ve",
-    "ai",
-    "may",
-    "chao",
-    "xin",
-    "cam",
-    "on",
-    "duong",
-    "dang",
-    "viet",
-    "ngon",
-    "ngu",
-    "nam",
-}
+logger = logging.getLogger(__name__)
 
-_en_common_words = {
-    "the",
-    "is",
-    "i",
-    "you",
-    "he",
-    "she",
-    "it",
-    "we",
-    "they",
-    "a",
-    "an",
-    "and",
-    "or",
-    "not",
-    "to",
-    "of",
-    "in",
-    "on",
-    "for",
-    "with",
-    "that",
-    "this",
-    "there",
-    "here",
-    "hello",
-    "who",
-    "what",
-    "where",
-}
+LID_MODEL_PATH = Path("app/dataset/lid.176.ftz")
+_lid_model = None
 
 
-def _has_diacritics(s: str) -> bool:
-    """Check if string contains Vietnamese diacritics."""
-    return bool(
-        re.search(
-            r"[àáảãạâầấẩẫậăằắẳẵặ"
-            r"èéẻẽẹêềếểễệ"
-            r"ìíỉĩị"
-            r"òóỏõọôồốổỗộơờớởỡợ"
-            r"ùúủũụưừứửữự"
-            r"ỳýỷỹỵ"
-            r"đ]",
-            s,
-            re.IGNORECASE,
-        )
-    )
+def _load_lid_model():
+    global _lid_model
+    if _lid_model is None:
+        try:
+            if LID_MODEL_PATH.exists():
+                _lid_model = fasttext.load_model(str(LID_MODEL_PATH))
+            else:
+                logger.warning(f"LID model not found at {LID_MODEL_PATH}")
+        except Exception as e:
+            logger.error(f"Failed to load LID model: {e}")
 
 
-def _tokenize(s: str) -> list[str]:
-    """Tokenize keeping Vietnamese Unicode."""
-    return re.findall(r"[a-zA-Z0-9\u00C0-\u017F]+", s.lower())
-
-
-VI_KEYWORDS_SINGLE = {"hoc", "phi", "nganh", "truong", "sinhvien", "dangky", "tuyensinh", "cntt"}
-
-VI_KEYWORDS_PHRASES = [
-    ["cong", "nghe", "thong", "tin"],
-]
-
-
-def _detect_vi_no_accent(tokens: list[str]) -> bool:
-    if any(tok in VI_KEYWORDS_SINGLE for tok in tokens):
-        return True
-
-    for phrase in VI_KEYWORDS_PHRASES:
-        n = len(phrase)
-        for i in range(len(tokens) - n + 1):
-            if tokens[i : i + n] == phrase:
-                return True
-
-    return False
-
-
-def _is_likely_english(tokens: list[str]) -> bool:
-    """Heuristic đơn giản nhận diện tiếng Anh."""
-    if not tokens:
+def has_vietnamese_accent(text: str) -> bool:
+    if not text:
         return False
-
-    if not any(tok in _en_common_words for tok in tokens):
-        return False
-
-    ascii_tokens = sum(1 for t in tokens if re.fullmatch(r"[a-z0-9]+", t))
-    ratio = ascii_tokens / len(tokens)
-    return ratio >= 0.8
+    vietnamese_chars = r"[àáảãạâầấẩẫậăằắẳẵặèéẻẽẹêềếểễệìíỉĩịòóỏõọôồốổỗộơờớởỡợùúủũụưừứửữựỳýỷỹỵđ]"
+    return bool(re.search(vietnamese_chars, text, re.IGNORECASE))
 
 
 def detect_language_enhanced(text: str, llm_wrapper=None, async_: bool = False) -> str:
     if not text or not text.strip():
         return "en"
-    s = text.lower()
-    if _has_diacritics(s):
+
+    clean_text = text.strip()
+
+    if has_vietnamese_accent(clean_text):
         return "vi"
-    tokens = _tokenize(s)
-    if _detect_vi_no_accent(tokens):
-        return "vi"
-    if _is_likely_english(tokens):
-        return "en"
-    return "unsupported"
+
+    if _lid_model is None:
+        _load_lid_model()
+
+    if _lid_model:
+        try:
+            lbl, _ = _lid_model.predict(clean_text.replace("\n", " "), k=1)
+            if lbl and "__label__vi" in lbl[0]:
+                return "vi"
+        except Exception:
+            pass
+
+    return "en"
 
 
 def normalize_text(
@@ -157,5 +66,4 @@ def normalize_text(
 
     txt = text.strip()
     lang = detect_language_enhanced(txt, llm_wrapper=llm_wrapper, async_=async_)
-
     return lang, txt
