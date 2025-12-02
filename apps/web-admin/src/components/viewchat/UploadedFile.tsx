@@ -27,9 +27,51 @@ interface PendingFile {
   size: number
   type: string
   isPending: true
+  timestamp: number
 }
 
 type FileItem = IUploadedFile | PendingFile
+
+const PENDING_FILES_KEY = 'pending_upload_files'
+const PENDING_EXPIRY_MS = 5 * 60 * 1000 // 5 phút
+
+// Helper functions cho localStorage
+const savePendingFiles = (files: PendingFile[]) => {
+  try {
+    localStorage.setItem(PENDING_FILES_KEY, JSON.stringify(files))
+  } catch (e) {
+    console.error('Failed to save pending files:', e)
+  }
+}
+
+const loadPendingFiles = (): PendingFile[] => {
+  try {
+    const stored = localStorage.getItem(PENDING_FILES_KEY)
+    if (!stored) return []
+
+    const files: PendingFile[] = JSON.parse(stored)
+    const now = Date.now()
+
+    const validFiles = files.filter(f => now - f.timestamp < PENDING_EXPIRY_MS)
+
+    if (validFiles.length !== files.length) {
+      savePendingFiles(validFiles)
+    }
+
+    return validFiles
+  } catch (e) {
+    console.error('Failed to load pending files:', e)
+    return []
+  }
+}
+
+const clearPendingFiles = () => {
+  try {
+    localStorage.removeItem(PENDING_FILES_KEY)
+  } catch (e) {
+    console.error('Failed to clear pending files:', e)
+  }
+}
 
 const formatFileSize = (bytes: number): string => {
   if (bytes === 0) return '0 Bytes'
@@ -49,8 +91,14 @@ const UploadedFile = forwardRef<UploadedFileHandle, UploadedFileProps>(({ isComp
   const [isInitialLoading, setIsInitialLoading] = useState(true)
   const [loadError, setLoadError] = useState<string | null>(null)
   const [fileToDelete, setFileToDelete] = useState<IUploadedFile | null>(null)
-
   const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    const storedPending = loadPendingFiles()
+    if (storedPending.length > 0) {
+      setPendingFiles(storedPending)
+    }
+  }, [])
 
   const refreshFiles = useCallback(async () => {
     setLoadError(null)
@@ -59,7 +107,29 @@ const UploadedFile = forwardRef<UploadedFileHandle, UploadedFileProps>(({ isComp
 
       setPendingFiles(prev => {
         const fetchedNames = new Set(fetchedFiles.map(f => f.name.toLowerCase()))
-        return prev.filter(pf => !fetchedNames.has(pf.name.toLowerCase()))
+
+        let remaining = prev.filter(pf => !fetchedNames.has(pf.name.toLowerCase()))
+
+        if (remaining.length > 0) {
+          remaining = remaining.filter(pf => {
+            const pendingBaseName = pf.name.toLowerCase().replace(/\.[^/.]+$/, '')
+
+            const hasMatch = fetchedFiles.some(f => {
+              const fetchedBaseName = f.name.toLowerCase().replace(/\.[^/.]+$/, '')
+              return fetchedBaseName.includes(pendingBaseName) || pendingBaseName.includes(fetchedBaseName)
+            })
+
+            return !hasMatch
+          })
+        }
+
+        savePendingFiles(remaining)
+
+        if (remaining.length === 0 && prev.length > 0) {
+          clearPendingFiles()
+        }
+
+        return remaining
       })
 
       setFiles(fetchedFiles)
@@ -73,26 +143,38 @@ const UploadedFile = forwardRef<UploadedFileHandle, UploadedFileProps>(({ isComp
 
   const addPendingFiles = useCallback(
     (newFiles: { name: string; size: number; type: string }[]) => {
+      const now = Date.now()
       const pending: PendingFile[] = newFiles.map(file => ({
-        id: `pending-${Date.now()}-${Math.random()}`,
+        id: `pending-${now}-${Math.random()}`,
         name: file.name,
         size: file.size,
         type: file.type,
-        isPending: true
+        isPending: true,
+        timestamp: now
       }))
 
-      setPendingFiles(prev => [...prev, ...pending])
+      setPendingFiles(prev => {
+        const updated = [...prev, ...pending]
+        savePendingFiles(updated)
+        return updated
+      })
 
-      const pollInterval = setInterval(async () => {
-        await refreshFiles()
-      }, 2000)
-
-      setTimeout(() => {
-        clearInterval(pollInterval)
-      }, 30000)
+      setTimeout(() => refreshFiles(), 1000)
     },
     [refreshFiles]
   )
+
+  useEffect(() => {
+    if (pendingFiles.length === 0) return
+    refreshFiles()
+    const interval = setInterval(() => {
+      refreshFiles()
+    }, 3000)
+
+    return () => {
+      clearInterval(interval)
+    }
+  }, [pendingFiles.length, refreshFiles])
 
   useImperativeHandle(ref, () => ({
     refreshFiles,
@@ -119,7 +201,6 @@ const UploadedFile = forwardRef<UploadedFileHandle, UploadedFileProps>(({ isComp
       await deleteKnowledgeFile(fileId)
       await refreshFiles()
     } catch (e) {
-      alert('Error deleting file!')
       console.error(e)
       await refreshFiles()
     }
@@ -215,9 +296,9 @@ const UploadedFile = forwardRef<UploadedFileHandle, UploadedFileProps>(({ isComp
                   'group relative border border-[#E5E7EB] bg-white transition-all duration-500',
                   !isCompact && 'flex h-[70px] w-full items-center justify-between rounded-lg bg-[#F9FAFB] px-4',
                   isCompact && 'flex h-14 w-14 items-center justify-center rounded-xl shadow-sm hover:border-red-200',
-                  isPending && 'opacity-20'
+                  isPending && 'border-blue-300 opacity-60'
                 )}
-                title={`File: ${file.name}\nSize: ${formatFileSize(file.size)}`}
+                title={`File: ${file.name}\nSize: ${formatFileSize(file.size)}${isPending ? '\nStatus: Processing...' : ''}`}
               >
                 {isPending && (
                   <div className="absolute inset-0 z-10 flex items-center justify-center rounded-lg bg-transparent">
@@ -253,7 +334,7 @@ const UploadedFile = forwardRef<UploadedFileHandle, UploadedFileProps>(({ isComp
                           e.stopPropagation()
                           handleOpenDeleteModal(file as IUploadedFile)
                         }}
-                        className="absolute -top-2 -right-2 z-10 hidden h-5 w-5 items-center justify-center rounded-full bg-red-500 text-white shadow-md ring-2 ring-white transition-all group-hover:flex"
+                        className="absolute -top-2 -right-2 z-10 hidden h-5 w-5 items-center justify-center rounded-full bg-gray-200 text-white shadow-md ring-2 ring-white transition-all group-hover:flex"
                         title="Delete file"
                       >
                         <img src={trashUrl} alt="delete" className="h-3 w-3" />
@@ -277,7 +358,7 @@ const UploadedFile = forwardRef<UploadedFileHandle, UploadedFileProps>(({ isComp
                         </p>
                         <p className="text-xs text-[#6B7280]">
                           {isPending ? (
-                            <span className="italic">Processing...</span>
+                            <span className="text-blue-600 italic">Processing... Please wait</span>
                           ) : (
                             <>
                               Uploaded: {formatDate((file as IUploadedFile).uploadDate)}

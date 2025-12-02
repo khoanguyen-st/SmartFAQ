@@ -238,7 +238,6 @@ const ViewChatPage = () => {
   }, [messages])
 
   const handleClearChat = async () => {
-    setIsLoading(true)
     try {
       localStorage.removeItem('chatSessionId')
       localStorage.removeItem('chatMessages')
@@ -361,23 +360,25 @@ const ViewChatPage = () => {
             className="chat__form flex items-center justify-between"
             autoComplete="off"
           >
-            <input
-              type="text"
-              name="user-input"
-              id="user-input"
-              value={userText}
-              onChange={e => setUserText(e.target.value)}
-              placeholder={!sessionId ? 'Connecting to chat...' : 'Ask a question about your uploaded documents...'}
-              disabled={!sessionId}
-              className="chat__input mr-2 h-[40px] w-full rounded-[8px] border border-[#D1D5DB] px-3 py-2 text-sm placeholder:text-[13px] placeholder:leading-[20px] disabled:bg-gray-100 sm:mr-3 sm:h-[44px] sm:px-4 sm:placeholder:text-[14px]"
-            />
-            <button
-              type="submit"
-              disabled={!sessionId || isLoading || userText.trim().length === 0}
-              className="chat__submit flex h-[40px] w-[40px] shrink-0 items-center justify-center rounded-[8px] bg-[#003087] hover:cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 sm:h-[44px] sm:w-[48px]"
-            >
-              <SendIcon className="h-4 w-4 shrink-0" />
-            </button>
+            <div className="relative flex w-full items-center">
+              <input
+                type="text"
+                name="user-input"
+                id="user-input"
+                value={userText}
+                onChange={e => setUserText(e.target.value)}
+                placeholder={!sessionId ? 'Connecting to chat...' : 'Ask a question about your uploaded documents...'}
+                disabled={!sessionId}
+                className="chat__input h-[40px] w-full rounded-4xl border border-[#D1D5DB] px-3 py-2 pr-[52px] text-sm placeholder:text-[13px] placeholder:leading-[20px] disabled:bg-gray-100 sm:h-[44px] sm:px-4 sm:pr-[60px] sm:placeholder:text-[14px]"
+              />
+              <button
+                type="submit"
+                disabled={!sessionId || isLoading || userText.trim().length === 0}
+                className="chat__submit absolute top-1/2 right-1 flex h-[32px] w-[32px] -translate-y-1/2 items-center justify-center rounded-full bg-[#003087] transition-all hover:bg-[#002060] disabled:cursor-not-allowed disabled:opacity-50 sm:right-2 sm:h-[36px] sm:w-[40px]"
+              >
+                <SendIcon className="h-4 w-4 shrink-0" />
+              </button>
+            </div>
           </form>
           <div className="chat__note mt-2 flex h-4 items-center">
             <InforIcon className="mr-1 h-3 w-3 shrink-0" />
