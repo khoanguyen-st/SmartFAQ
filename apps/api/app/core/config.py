@@ -46,11 +46,11 @@ class Settings(BaseSettings):
     UPLOAD_MAX_MB: int = Field(50, alias="UPLOAD_MAX_MB")
 
     # Cloud Storage
-    CLOUDINARY_CLOUD_NAME: str = Field("", alias="CLOUDINARY_CLOUD_NAME")
-    CLOUDINARY_API_KEY: str = Field("", alias="CLOUDINARY_API_KEY")
-    CLOUDINARY_API_SECRET: str = Field("", alias="CLOUDINARY_API_SECRET")
-    CLOUDINARY_FOLDER_IMAGE: str = Field("Assets", alias="CLOUDINARY_FOLDER_IMAGE")
-    CLOUDINARY_FOLDER_DOCUMENT: str = Field("Documents", alias="CLOUDINARY_FOLDER_DOCUMENT")
+    MINIO_ENDPOINT: str = Field("", alias="MINIO_ENDPOINT")
+    MINIO_ACCESS_KEY: str = Field("", alias="MINIO_ROOT_USER")
+    MINIO_SECRET_KEY: str = Field("", alias="MINIO_ROOT_PASSWORD")
+    MINIO_SECURE: bool = Field(False, alias="MINIO_SECURE")
+    MINIO_BUCKET_NAME: str = Field("", alias="MINIO_BUCKET")
 
     # Celery
     CELERY_BROKER_URL: str = Field("redis://localhost:6379/0", alias="CELERY_BROKER_URL")

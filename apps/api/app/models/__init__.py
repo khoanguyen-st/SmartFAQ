@@ -8,6 +8,7 @@ from .document import Document
 from .document_version import DocumentVersion
 from .fallback_log import FallbackLog
 from .user import User
+from .user_department import UserDepartment
 
 __all__ = [
     "Base",
@@ -15,6 +16,7 @@ __all__ = [
     "Document",
     "DocumentVersion",
     "Department",
+    "UserDepartment",
     "QueryLog",
     "FallbackLog",
     "ConfigEntry",

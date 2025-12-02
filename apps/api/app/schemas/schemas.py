@@ -1,5 +1,3 @@
-"""Pydantic schemas for API payloads and responses."""
-
 from typing import Optional
 
 from pydantic import BaseModel, EmailStr
