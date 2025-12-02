@@ -1,5 +1,4 @@
 import React from 'react'
-import { useTranslation } from 'react-i18next'
 import { Lock, Unlock, Key } from 'lucide-react'
 
 interface ConfirmDialogProps {
@@ -19,7 +18,6 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
   onCancel,
   loading = false
 }) => {
-  const { t } = useTranslation()
 
   if (!open) return null
 
@@ -28,25 +26,25 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
       case 'lock':
         return {
           icon: <Lock className="h-12 w-12 text-red-600" />,
-          title: t('user.dialog.lockTitle'),
-          description: t('user.dialog.lockDescription'),
-          confirmText: t('user.lock'),
+          title: 'Set Inactive',
+          description: 'Are you sure you want to set this user to Inactive? They will not be able to login.',
+          confirmText: 'Inactive',
           confirmClass: 'bg-red-600 hover:bg-red-700'
         }
       case 'unlock':
         return {
           icon: <Unlock className="h-12 w-12 text-orange-600" />,
-          title: t('user.dialog.unlockTitle'),
-          description: t('user.dialog.unlockDescription'),
-          confirmText: t('user.unlock'),
+          title: 'Set Active',
+          description: 'Are you sure you want to set this user to Active?',
+          confirmText: 'Active',
           confirmClass: 'bg-orange-600 hover:bg-orange-700'
         }
       case 'resetPassword':
         return {
           icon: <Key className="h-12 w-12 text-amber-600" />,
-          title: t('user.dialog.resetPasswordTitle'),
-          description: t('user.dialog.resetPasswordDescription'),
-          confirmText: t('user.resetPassword'),
+          title: 'Reset Password',
+          description: 'Password will be reset to default. Are you sure?',
+          confirmText: 'Reset',
           confirmClass: 'bg-amber-600 hover:bg-amber-700'
         }
     }
@@ -63,7 +61,7 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
 
         {username && (
           <p className="mb-4 text-center text-sm text-slate-600">
-            {t('user.dialog.targetUser')}: <span className="font-semibold text-slate-900">{username}</span>
+            User: <span className="font-semibold text-slate-900">{username}</span>
           </p>
         )}
 
@@ -76,7 +74,7 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
             disabled={loading}
             className="flex-1 rounded-full border border-slate-200 px-6 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-50 disabled:opacity-50"
           >
-            {t('common.cancel')}
+            Cancel
           </button>
           <button
             type="button"
@@ -84,7 +82,7 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
             disabled={loading}
             className={`flex-1 rounded-full px-6 py-2.5 text-sm font-semibold text-white shadow-sm disabled:opacity-50 ${config.confirmClass}`}
           >
-            {loading ? t('common.loading') : config.confirmText}
+            {loading ? 'Loading...' : config.confirmText}
           </button>
         </div>
       </div>

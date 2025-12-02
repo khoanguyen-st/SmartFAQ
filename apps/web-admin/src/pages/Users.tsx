@@ -1,9 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react'
-import { useTranslation } from 'react-i18next'
-import { UserPlus } from 'lucide-react'
+import { Plus} from 'lucide-react'
 import type { User } from '@/types/users'
 import { useUsers } from '@/hooks/useUsers'
-import { useUserFilters, usePagination } from '@/hooks/useUseFilters'
+import { useUserFilters } from '@/hooks/useUseFilters'
+import { usePagination } from '@/hooks/usePagination'
 import { SearchBar, FilterDropdown } from '@/components/users/SearchAndFilter'
 import { UserTable } from '@/components/users/UserTable'
 import { UserCardList } from '@/components/users/UserCardList'
@@ -12,10 +12,8 @@ import CreateUserDialog from '@/components/users/CreateUserDialog'
 import EditUserDialog from '@/components/users/EditUserDialog'
 import ConfirmDialog from '@/components/users/ConfirmDialog'
 import Toast from '@/components/Toast'
-import { LanguageSwitcher } from '@/components/LanguageSwitcher'
 
 const Users: React.FC = () => {
-  const { t } = useTranslation()
   const {
     users,
     loading,
@@ -28,7 +26,8 @@ const Users: React.FC = () => {
     createUser,
     updateUser,
     lockUser,
-    unlockUser
+    unlockUser,
+    resetPassword
   } = useUsers()
 
   const [searchQuery, setSearchQuery] = useState('')
@@ -38,17 +37,21 @@ const Users: React.FC = () => {
   const [createDialogOpen, setCreateDialogOpen] = useState(false)
   const [editDialogOpen, setEditDialogOpen] = useState(false)
   const [selectedUser, setSelectedUser] = useState<User | null>(null)
+  
   const [confirmDialog, setConfirmDialog] = useState<{
     open: boolean
-    type: 'lock' | 'unlock'
+    type: 'lock' | 'unlock' | 'resetPassword'
     userId: string
     username: string
   } | null>(null)
+
   const [actionLoading, setActionLoading] = useState(false)
   const [toast, setToast] = useState<{ type: 'success' | 'error' | 'warning'; message: string } | null>(null)
   const filterRef = useRef<HTMLDivElement>(null)
 
   const filteredUsers = useUserFilters({ users, searchQuery, selectedDepartments, selectedStatuses })
+  
+  // Sử dụng usePagination với logic mới
   const { paginatedItems: paginatedUsers, totalPages } = usePagination({
     items: filteredUsers,
     page,
@@ -103,8 +106,14 @@ const Users: React.FC = () => {
     }
   }
 
-
-  // Đã loại bỏ reset password
+  const handleResetPassword = (user: User) => {
+    setConfirmDialog({
+      open: true,
+      type: 'resetPassword',
+      userId: user.id.toString(),
+      username: user.username
+    })
+  }
 
   const handleConfirmAction = async () => {
     if (!confirmDialog) return
@@ -115,11 +124,15 @@ const Users: React.FC = () => {
       switch (confirmDialog.type) {
         case 'lock':
           await lockUser(userId)
-          setToast({ type: 'success', message: 'User locked successfully' })
+          setToast({ type: 'success', message: 'Inactive user successfully' })
           break
         case 'unlock':
           await unlockUser(userId)
-          setToast({ type: 'success', message: 'User unlocked successfully' })
+          setToast({ type: 'success', message: 'Active user successfully' })
+          break
+        case 'resetPassword':
+          await resetPassword(userId)
+          setToast({ type: 'success', message: 'Password reset successfully' })
           break
       }
       setConfirmDialog(null)
@@ -143,17 +156,16 @@ const Users: React.FC = () => {
     <div className="space-y-4 md:space-y-6">
       <header className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
-          <h1 className="text-xl font-semibold text-slate-900 md:text-2xl lg:text-3xl">{t('user.pageTitle')}</h1>
-          <p className="text-xs text-slate-500 md:text-sm">{t('user.pageDescription')}</p>
+          <h1 className="text-xl font-semibold text-slate-900 md:text-2xl lg:text-3xl">User Management</h1>
+          <p className="text-xs text-slate-500 md:text-sm">Manage user accounts and system access</p>
         </div>
         <div className="flex gap-3">
-          <LanguageSwitcher />
           <button
             onClick={() => setCreateDialogOpen(true)}
-            className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-blue-800 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-900 md:w-auto"
+            className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-[#003087] px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-[#002060] md:w-auto"
           >
-            <UserPlus className="h-4 w-4" />
-            {t('user.createNewAccount')}
+            <Plus className="h-4 w-4 mt-0.5" />
+            Create New Account
           </button>
         </div>
       </header>
@@ -176,17 +188,15 @@ const Users: React.FC = () => {
       />
 
       <div className="rounded-xl border border-slate-200 bg-white shadow-sm">
-        {/* Table view for desktop (>= 768px) */}
-
         <UserTable
           users={paginatedUsers}
           loading={loading}
           onEdit={handleEdit}
           onLock={handleLock}
           onUnlock={handleUnlock}
+          onResetPassword={handleResetPassword}
         />
 
-        {/* Card view for mobile (< 768px) */}
         <div className="space-y-4 p-4 md:hidden">
           <UserCardList
             users={paginatedUsers}
@@ -194,6 +204,7 @@ const Users: React.FC = () => {
             onEdit={handleEdit}
             onLock={handleLock}
             onUnlock={handleUnlock}
+            onResetPassword={handleResetPassword}
           />
         </div>
       </div>
@@ -209,17 +220,19 @@ const Users: React.FC = () => {
         />
       </div>
 
-
       <CreateUserDialog
         open={createDialogOpen}
         onClose={() => setCreateDialogOpen(false)}
         onSubmit={(data) => {
-          // Chuyển đổi payload cho đúng type của createUser
-          return createUser({
-            ...data
-          });
+          return createUser({ ...data });
         }}
-        onSuccess={() => {}}
+        onSuccess={() => {
+          setToast({ 
+            type: 'success', 
+            message: 'User created successfully' 
+          })
+        }}
+        users={users}
       />
 
       <EditUserDialog
@@ -230,7 +243,13 @@ const Users: React.FC = () => {
           setSelectedUser(null)
         }}
         onSubmit={updateUser}
-        onSuccess={() => {}}
+        onSuccess={() => {
+          setToast({ 
+            type: 'success', 
+            message: 'User updated successfully' 
+          })
+        }}
+        users={users}
       />
 
       <ConfirmDialog

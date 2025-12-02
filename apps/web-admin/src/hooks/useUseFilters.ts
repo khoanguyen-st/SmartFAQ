@@ -1,57 +1,51 @@
-import { useMemo, useEffect } from 'react'
+import { useMemo } from 'react'
 import type { User } from '@/types/users'
 
 interface UseUserFiltersProps {
   users: User[]
   searchQuery: string
   selectedDepartments: string[]
-  selectedStatuses: User['status'][]
+  selectedStatuses: string[]
 }
 
-export const useUserFilters = ({ users, searchQuery, selectedDepartments, selectedStatuses }: UseUserFiltersProps) => {
-  const filteredUsers = useMemo(() => {
+export const useUserFilters = ({
+  users,
+  searchQuery,
+  selectedDepartments,
+  selectedStatuses
+}: UseUserFiltersProps) => {
+  return useMemo(() => {
     return users.filter(user => {
-      const matchesSearch = searchQuery
-        ? user.username.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          user.email.toLowerCase().includes(searchQuery.toLowerCase())
-        : true
+      // 1. Tìm kiếm text
+      const query = searchQuery.toLowerCase().trim()
+      const matchesSearch =
+        !query ||
+        user.username.toLowerCase().includes(query) ||
+        user.email.toLowerCase().includes(query)
 
-      const matchesDepartment = selectedDepartments.length
-        ? user.departments?.some(dept => selectedDepartments.includes(dept))
-        : true
+      // 2. Lọc Department
+      const matchesDepartment =
+        selectedDepartments.length === 0 ||
+        (user.departments && user.departments.some(dept => selectedDepartments.includes(dept)))
 
-      const matchesStatus = selectedStatuses.length ? selectedStatuses.includes(user.status) : true
+      // 3. Lọc Status (QUAN TRỌNG)
+      let userStatus = 'Active' // Mặc định là Active
+      
+      if (user.is_locked) {
+        // Nếu bị khóa và sai pass >= 5 lần -> Locked (Hệ thống khóa)
+        if (user.failed_attempts >= 5) {
+          userStatus = 'Locked'
+        } else {
+          // Nếu bị khóa mà không sai pass nhiều -> Inactive (Admin khóa tay)
+          userStatus = 'Inactive'
+        }
+      }
+
+      // So sánh: Nếu không chọn gì (length=0) thì lấy hết, ngược lại thì phải trùng status
+      const matchesStatus =
+        selectedStatuses.length === 0 || selectedStatuses.includes(userStatus)
 
       return matchesSearch && matchesDepartment && matchesStatus
     })
   }, [users, searchQuery, selectedDepartments, selectedStatuses])
-
-  return filteredUsers
-}
-
-interface UsePaginationProps<T> {
-  items: T[]
-  page: number
-  pageSize: number
-  onPageChange: (page: number) => void
-}
-
-export const usePagination = <T>({ items, page, pageSize, onPageChange }: UsePaginationProps<T>) => {
-  const paginatedItems = useMemo(() => {
-    const startIndex = (page - 1) * pageSize
-    return items.slice(startIndex, startIndex + pageSize)
-  }, [items, page, pageSize])
-
-  const totalPages = Math.max(1, Math.ceil(items.length / pageSize))
-
-  useEffect(() => {
-    if (page > totalPages) {
-      onPageChange(totalPages)
-    }
-  }, [page, totalPages, onPageChange])
-
-  return {
-    paginatedItems,
-    totalPages
-  }
 }

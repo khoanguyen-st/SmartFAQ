@@ -19,7 +19,7 @@ async function apiClient<T>(endpoint: string, options?: RequestInit): Promise<T>
   return res.json()
 }
 
-// Lấy danh sách user (role: staff/admin)
+// Lấy danh sách user
 export async function fetchUsers(role?: string): Promise<User[]> {
   const params = role ? `?role=${role}` : ''
   const data = await apiClient<{ items: User[] }>(`/api/user/${params}`)
@@ -60,4 +60,12 @@ export async function unlockUser(userId: number): Promise<boolean> {
     method: 'PUT'
   })
   return res.status === 'unlocked'
+}
+
+// --- THÊM HÀM NÀY ĐỂ GỌI API RESET ---
+export async function resetUserPassword(userId: number): Promise<boolean> {
+  const res = await apiClient<{ status: string }>(`/api/user/${userId}/reset-password`, {
+    method: 'PUT'
+  })
+  return res.status === 'ok'
 }

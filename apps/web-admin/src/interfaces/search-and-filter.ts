@@ -1,10 +1,10 @@
-import type { User } from '@/types/users'
+import React from 'react'
 
 export interface FilterDropdownProps {
   selectedDepartments: string[]
-  selectedStatuses: User['status'][]
+  selectedStatuses: string[]
   onToggleDepartment: (dept: string) => void
-  onToggleStatus: (status: User['status']) => void
+  onToggleStatus: (status: string) => void
   onClearFilters: () => void
 }
 
@@ -13,6 +13,6 @@ export interface SearchBarProps {
   onSearchChange: (query: string) => void
   filterOpen: boolean
   onToggleFilter: () => void
-  filterRef: React.RefObject<HTMLDivElement>
+  filterRef: React.RefObject<HTMLDivElement> 
   renderFilterDropdown: () => React.ReactNode
 }

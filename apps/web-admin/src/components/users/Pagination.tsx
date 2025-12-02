@@ -1,6 +1,6 @@
 import React from 'react'
 import type { PaginationProps } from '@/interfaces/pagination'
-import { UI, PAGINATION } from '@/constants'
+import { UI } from '@/constants'
 
 export const Pagination: React.FC<PaginationProps & { className?: string }> = ({
   currentPage,
@@ -13,7 +13,7 @@ export const Pagination: React.FC<PaginationProps & { className?: string }> = ({
 }) => {
   const effectiveTotal = totalCount ?? (totalPages ? totalPages * pageSize : UI.MOCK_TOTAL_USERS)
   const pages = 1;
-  const start = 1;
+  const start = totalCount === 0 ? 0 : (currentPage - 1) * pageSize + 1
   const end = effectiveTotal;
   const endLabel = end.toString().padStart(2, '0');
   const containerClass =
@@ -40,6 +40,8 @@ export const Pagination: React.FC<PaginationProps & { className?: string }> = ({
         disabled={!onPageSizeChange}
       >
         <option value={10}>10 / pages</option>
+        <option value={20}>20 / pages</option>
+        <option value={50}>50 / pages</option>
       </select>
     </div>
   );

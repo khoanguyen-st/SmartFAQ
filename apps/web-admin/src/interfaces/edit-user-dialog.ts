@@ -6,4 +6,5 @@ export interface EditUserDialogProps {
   onClose: () => void
   onSubmit?: (id: number, data: Partial<User>) => Promise<void> | void
   onSuccess?: () => void
+  users?: User[]
 }

@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useCallback, useEffect, useRef } from 'react'
 import * as AdminService from '@/services/admin.services'
 import type { User, CreateUserRequest } from '@/types/users'
 
@@ -7,32 +7,53 @@ export const useUsers = () => {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [page, setPage] = useState(1)
-  const [pageSize, setPageSize] = useState(10)
+  // --- SỬA Ở ĐÂY: Mặc định là 5 ---
+  const [pageSize, setPageSize] = useState(5)
   const [totalRecords, setTotalRecords] = useState(0)
 
-  const loadUsers = useCallback(async () => {
-    setLoading(true)
+  const loadingRef = useRef(false)
+
+  const loadUsers = useCallback(async (isAutoRefresh = false) => {
+    if (loadingRef.current) return
+    
+    if (!isAutoRefresh) {
+        setLoading(true)
+    }
+    loadingRef.current = true
+
     try {
       const allUsers = await AdminService.fetchUsers()
-      setUsers(allUsers)
+      
+      const sortedUsers = allUsers.sort((a, b) => a.id - b.id)
+      
+      setUsers(sortedUsers)
       setTotalRecords(allUsers.length)
       setError(null)
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to load users'
-      setError(message)
+      if (!isAutoRefresh) setError(message)
     } finally {
-      setLoading(false)
+      if (!isAutoRefresh) {
+        setLoading(false)
+      }
+      loadingRef.current = false
     }
   }, [])
 
   useEffect(() => {
-    loadUsers()
+    loadUsers(false)
   }, [loadUsers])
 
+  useEffect(() => {
+    const intervalId = setInterval(() => {
+      loadUsers(true)
+    }, 5000)
+
+    return () => clearInterval(intervalId)
+  }, [loadUsers])
 
   const createUser = useCallback(
     async (payload: CreateUserRequest & { password: string }) => {
-      // Chỉ truyền các trường có giá trị, loại bỏ undefined/rỗng
       const cleanPayload = Object.fromEntries(
         Object.entries(payload).filter(([_, value]) => value !== undefined && value !== null && value !== '')
       ) as CreateUserRequest & { password: string }
@@ -42,7 +63,6 @@ export const useUsers = () => {
     [loadUsers]
   )
 
-
   const updateUser = useCallback(
     async (userId: number, payload: Partial<User>) => {
       await AdminService.updateUser(userId, payload)
@@ -50,7 +70,6 @@ export const useUsers = () => {
     },
     [loadUsers]
   )
-
 
   const lockUser = useCallback(
     async (userId: number) => {
@@ -60,7 +79,6 @@ export const useUsers = () => {
     [loadUsers]
   )
 
-
   const unlockUser = useCallback(
     async (userId: number) => {
       await AdminService.unlockUser(userId)
@@ -69,10 +87,8 @@ export const useUsers = () => {
     [loadUsers]
   )
 
-
-  // API không hỗ trợ reset password
-  const resetPassword = useCallback(async (_userId: number) => {
-    throw new Error('Not supported')
+  const resetPassword = useCallback(async (userId: number) => {
+    await AdminService.resetUserPassword(userId)
   }, [])
 
   return {
@@ -88,7 +104,6 @@ export const useUsers = () => {
     updateUser,
     lockUser,
     unlockUser,
-    resetPassword,
-    refreshUsers: loadUsers
+    resetPassword
   }
 }

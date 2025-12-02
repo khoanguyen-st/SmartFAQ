@@ -4,8 +4,8 @@ export const USER_ACTION_LABELS = {
   UNLOCK: 'Unlock',
   RESET_PASSWORD: 'Reset Password',
   EDIT_USER: 'Edit user',
-  LOCK_USER: 'Lock user',
-  UNLOCK_USER: 'Unlock user'
+  LOCK_USER: 'Inactive',
+  UNLOCK_USER: 'Active user'
 } as const
 
 export const USER_STATUS = {

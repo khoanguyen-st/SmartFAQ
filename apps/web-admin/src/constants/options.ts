@@ -1,7 +1,8 @@
 export const CAMPUS_KEYS = {
   HANOI: 'campus.hanoi',
   DANANG: 'campus.danang',
-  HOCHIMINH: 'campus.hochiminh'
+  HOCHIMINH: 'campus.hochiminh',
+  CANTHO: 'campus.cantho'
 } as const
 
 export const DEPARTMENT_KEYS = {
@@ -13,7 +14,8 @@ export const DEPARTMENT_KEYS = {
 export const CAMPUS_VALUES = {
   'campus.hanoi': 'Hà Nội Campus',
   'campus.danang': 'Đà Nẵng Campus',
-  'campus.hochiminh': 'Hồ Chí Minh Campus'
+  'campus.hochiminh': 'Hồ Chí Minh Campus',
+  'campus.cantho': 'Cần Thơ Campus'
 } as const
 
 export const DEPARTMENT_VALUES = {
