@@ -140,7 +140,7 @@ async def update_document(
             category=category,
             tags=tags,
             language=language,
-            status=status_doc,
+            status_doc=status_doc,
         )
 
         if not result:

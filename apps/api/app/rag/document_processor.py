@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import hashlib
-from pathlib import Path
+import io
 from typing import Any, Dict, List, Optional
 
 import docx2txt
@@ -26,24 +26,24 @@ def _hash_id(*parts: str) -> str:
 class PDFLoader:
     """Custom PDF loader using pypdf"""
 
-    def __init__(self, file_path: str):
-        self.file_path = file_path
+    def __init__(self, stream: io.BytesIO):
+        self.stream = stream
 
     def load(self) -> List[Document]:
-        docs: List[Document] = []
-        with open(self.file_path, "rb") as f:
-            reader = pypdf.PdfReader(f)
-            for page_num, page in enumerate(reader.pages, start=1):
-                try:
-                    text = _clean_text(page.extract_text())
-                except Exception:
-                    text = ""
-                if not text:
-                    continue
+        docs = []
+        reader = pypdf.PdfReader(self.stream)
+
+        for page_num, page in enumerate(reader.pages, start=1):
+            try:
+                text = _clean_text(page.extract_text())
+            except Exception:
+                text = ""
+
+            if text:
                 docs.append(
                     Document(
                         page_content=text,
-                        metadata={"source": self.file_path, "page": page_num},
+                        metadata={"page": page_num},
                     )
                 )
         return docs
@@ -52,44 +52,38 @@ class PDFLoader:
 class DocxLoader:
     """Custom DOCX loader using docx2txt"""
 
-    def __init__(self, file_path: str):
-        self.file_path = file_path
+    def __init__(self, stream: io.BytesIO):
+        self.stream = stream
 
     def load(self) -> List[Document]:
         try:
-            text = _clean_text(docx2txt.process(self.file_path))
+            text = _clean_text(docx2txt.process(self.stream))
         except Exception:
             text = ""
+
         if not text:
             return []
-        return [
-            Document(
-                page_content=text,
-                metadata={"source": self.file_path, "page": None},
-            )
-        ]
+
+        return [Document(page_content=text, metadata={"page": None})]
 
 
 class TextLoader:
     """Custom text loader for .txt and .md files"""
 
-    def __init__(self, file_path: str):
-        self.file_path = file_path
+    def __init__(self, stream: io.BytesIO):
+        self.stream = stream
 
     def load(self) -> List[Document]:
         try:
-            with open(self.file_path, "r", encoding="utf-8") as f:
-                text = _clean_text(f.read())
+            text = self.stream.read().decode("utf-8")
+            text = _clean_text(text)
         except Exception:
             text = ""
+
         if not text:
             return []
-        return [
-            Document(
-                page_content=text,
-                metadata={"source": self.file_path, "page": None},
-            )
-        ]
+
+        return [Document(page_content=text, metadata={"page": None})]
 
 
 class DocumentProcessor:
@@ -107,51 +101,56 @@ class DocumentProcessor:
             is_separator_regex=False,
         )
 
-    def load_document(self, file_path: str) -> List[Document]:
-        path = Path(file_path)
-        ext = path.suffix.lower()
+    def load_document(self, file_stream: io.BytesIO, ext: str) -> List[Document]:
+        ext = ext.lower()
 
         if ext == ".pdf":
-            loader = PDFLoader(file_path)
+            loader = PDFLoader(file_stream)
         elif ext in (".docx", ".doc"):
-            loader = DocxLoader(file_path)
+            loader = DocxLoader(file_stream)
         elif ext in (".txt", ".md"):
-            loader = TextLoader(file_path)
+            loader = TextLoader(file_stream)
         else:
             raise ValueError(f"Unsupported file type: {ext}")
 
-        docs = loader.load()
-        return [d for d in docs if d.page_content.strip()]
+        return [d for d in loader.load() if d.page_content.strip()]
 
     def process_document(
         self,
-        file_path: str,
+        file_stream: io.BytesIO,
+        ext: str,
         document_id: str,
         metadata: Optional[Dict[str, Any]] = None,
     ) -> List[Document]:
-        """
-        Load -> split theo từng trang (để giữ metadata 'page') -> wrap Document
-        """
-        page_docs = self.load_document(file_path)
+
+        page_docs = self.load_document(file_stream, ext)
         if not page_docs:
             return []
 
         split_docs: List[Document] = []
+
         for d in page_docs:
             chunks = self.text_splitter.split_text(d.page_content)
+
             for idx_in_page, chunk in enumerate(chunks):
                 if not chunk.strip():
                     continue
+
                 md = dict(metadata or {})
                 md.update(
                     {
                         "document_id": document_id,
-                        "source": file_path,
                         "page": d.metadata.get("page"),
                         "chunk_index": idx_in_page,
                     }
                 )
-                chunk_id = _hash_id(document_id, str(md.get("page")), str(idx_in_page), chunk)
+
+                chunk_id = _hash_id(
+                    document_id,
+                    str(md.get("page")),
+                    str(idx_in_page),
+                    chunk,
+                )
                 md["chunk_id"] = chunk_id
 
                 split_docs.append(Document(page_content=chunk, metadata=md))
