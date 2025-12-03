@@ -4,12 +4,14 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "preinstall": "npx only-allow yarn",
     "dev": "vite",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
     "lint": "eslint src --max-warnings=0",
     "format": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json,css,md}\"",
-    "format:check": "prettier --check \"src/**/*.{ts,tsx,js,jsx,json,css,md}\""
+    "format:check": "prettier --check \"src/**/*.{ts,tsx,js,jsx,json,css,md}\"",
+    "build-widget": "vite build --mode widget"
   },
   "dependencies": {
     "clsx": "^2.1.1",
@@ -22,10 +24,11 @@
     "react-router-dom": "~6.26.0",
     "remark-gfm": "^4.0.1",
     "tailwind-merge": "^2.5.5",
+    "vite-inject-css": "^3.1.0",
     "zod": "~3.23.8"
   },
   "devDependencies": {
-    "@eslint/js": "^9.5.0",
+    "@tailwindcss/postcss": "^4.1.17",
     "@tailwindcss/vite": "^4.1.16",
     "@types/node": "^22.10.2",
     "@types/react": "^18.3.26",
@@ -38,13 +41,13 @@
     "eslint-plugin-jsx-a11y": "^6.8.0",
     "eslint-plugin-react": "^7.34.1",
     "eslint-plugin-react-hooks": "^5.0.0",
-    "globals": "^16.5.0",
-    "postcss": "^8.4.49",
+    "postcss": "^8.5.6",
     "prettier": "^3.3.0",
     "prettier-plugin-tailwindcss": "^0.6.9",
     "tailwindcss": "^4.1.16",
     "typescript": "~5.4.5",
     "vite": "^5.2.0",
+    "vite-plugin-css-injected-by-js": "^3.5.2",
     "vite-plugin-svgr": "^4.5.0"
   }
 }
