@@ -281,7 +281,7 @@ const ChatMessage = ({ message }: ChatMessageProps) => {
         {/* Popup hiển thị nội dung source khi hover vào số ID */}
         {popupSource && popupPosition && popupSource.summary && (
           <div
-            className="fixed z-[9999] max-w-2xl rounded-lg bg-gray-800 text-white shadow-2xl"
+            className="fixed z-9999 max-w-2xl rounded-lg bg-gray-800 text-white shadow-2xl"
             style={{
               left: `${popupPosition.x + 20}px`,
               top: `${popupPosition.y + 20}px`,

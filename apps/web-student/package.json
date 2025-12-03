@@ -11,7 +11,9 @@
     "lint": "eslint src --max-warnings=0",
     "format": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json,css,md}\"",
     "format:check": "prettier --check \"src/**/*.{ts,tsx,js,jsx,json,css,md}\"",
-    "build-widget": "vite build --mode widget"
+    "build-widget": "vite build --mode widget",
+    "postbuild-widget": "cp dist/widget/chat-widget.js public/chat-widget.js",
+    "serve-widget": "npx serve -l 8080 dist/widget --cors"
   },
   "dependencies": {
     "clsx": "^2.1.1",
