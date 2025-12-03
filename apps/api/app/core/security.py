@@ -34,7 +34,7 @@ def verify_password(password: str, hashed_password: str) -> bool:
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
     """Create JWT access token (default: 5 minutes)."""
     if expires_delta is None:
-        expires_delta = timedelta(minutes=5)
+        expires_delta = timedelta(minutes=5000)
 
     now_ts = int(time.time())
     expire_ts = now_ts + int(expires_delta.total_seconds())

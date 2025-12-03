@@ -14,6 +14,7 @@ const UserIcon: React.FC<ImgCompProps> = props => <img src={userUrl} alt="upload
 
 const navItems = [
   { path: 'dashboard', label: 'Dashboard' },
+  { path: 'users', label: 'Users' },
   { path: 'logs', label: 'Logs' },
   { path: 'settings', label: 'Settings' },
   { path: 'uploaded', label: 'Uploaded Documents' },
