@@ -83,6 +83,9 @@ class AuthService:
         if not user:
             raise UserNotFoundError
 
+        if not user.is_active:
+            raise InactiveAccountError
+
         if user.is_locked:
             raise AccountLockedError
 
@@ -130,6 +133,9 @@ class AuthService:
         if not user:
             raise UserNotFoundError
 
+        if not user.is_active:
+            raise InactiveAccountError
+
         reset_token = create_reset_token(user_id=user.id, email=user.email)
 
         email_service = EmailService()
@@ -155,6 +161,10 @@ class AuthService:
         user: User | None = result.scalar_one_or_none()
         if not user:
             raise InvalidTokenError
+
+        if not user.is_active:
+            raise InactiveAccountError
+
         if not validate_password_strength(new_password):
             raise WeakPasswordError
         if verify_password(new_password, user.password_hash):
@@ -186,6 +196,10 @@ class AuthService:
         user: User | None = result.scalar_one_or_none()
         if not user:
             raise InvalidTokenError
+
+        if not user.is_active:
+            raise InactiveAccountError
+
         if user.is_locked:
             raise AccountLockedError
 

@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect, useRef } from 'react'
 import * as AdminService from '@/services/admin.services'
+import { forgotPassword } from '@/lib/api'
 import type { User, CreateUserRequest } from '@/types/users'
 
 export const useUsers = () => {
@@ -85,8 +86,8 @@ export const useUsers = () => {
     [loadUsers]
   )
 
-  const resetPassword = useCallback(async (userId: number) => {
-    await AdminService.resetUserPassword(userId)
+  const resetPassword = useCallback(async (email: string) => {
+    await forgotPassword(email)
   }, [])
 
   return {

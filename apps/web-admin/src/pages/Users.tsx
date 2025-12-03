@@ -129,15 +129,23 @@ const Users: React.FC = () => {
           await unlockUser(userId)
           setToast({ type: 'success', message: 'Active user successfully' })
           break
-        case USER_ACTIONS.RESET_PASSWORD:
-          await resetPassword(userId)
-          setToast({ type: 'success', message: 'Reset password successfully' })
+        case USER_ACTIONS.RESET_PASSWORD: {
+          // Lấy email từ user được chọn
+          const user = users.find(u => u.id === userId)
+          if (user && user.email) {
+            await resetPassword(user.email)
+            setToast({ type: 'success', message: 'Password reset email has been sent successfully' })
+          } else {
+            setToast({ type: 'error', message: 'User email not found' })
+          }
           break
+        }
       }
       setConfirmDialog(null)
     } catch (error) {
       console.error('Action failed:', error)
-      setToast({ type: 'error', message: 'An error occurred. Please try again.' })
+      const errorMessage = error instanceof Error ? error.message : 'An error occurred. Please try again.'
+      setToast({ type: 'error', message: errorMessage })
     } finally {
       setActionLoading(false)
     }

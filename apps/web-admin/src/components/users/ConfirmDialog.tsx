@@ -18,7 +18,6 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
   onCancel,
   loading = false
 }) => {
-
   if (!open) return null
 
   const getDialogConfig = () => {
@@ -42,9 +41,9 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
       case 'resetPassword':
         return {
           icon: <Key className="h-12 w-12 text-amber-600" />,
-          title: 'Reset Password',
-          description: 'Password will be reset to default. Are you sure?',
-          confirmText: 'Reset',
+          title: 'Send Reset Password Email',
+          description: "A password reset link will be sent to the user's email address. Are you sure?",
+          confirmText: 'Send Email',
           confirmClass: 'bg-amber-600 hover:bg-amber-700'
         }
     }
