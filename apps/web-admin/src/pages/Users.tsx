@@ -12,6 +12,7 @@ import CreateUserDialog from '@/components/users/CreateUserDialog'
 import EditUserDialog from '@/components/users/EditUserDialog'
 import ConfirmDialog from '@/components/users/ConfirmDialog'
 import Toast from '@/components/Toast'
+import { USER_ACTIONS } from '@/constants/user'
 
 const Users: React.FC = () => {
   const {
@@ -37,17 +38,23 @@ const Users: React.FC = () => {
   const [editDialogOpen, setEditDialogOpen] = useState(false)
   const [selectedUser, setSelectedUser] = useState<User | null>(null)
 
+  // 2. Cập nhật type cho state confirmDialog để sử dụng values từ Constant
   const [confirmDialog, setConfirmDialog] = useState<{
     open: boolean
-    type: 'lock' | 'unlock' | 'resetPassword'
+    type: typeof USER_ACTIONS.LOCK | typeof USER_ACTIONS.UNLOCK | typeof USER_ACTIONS.RESET_PASSWORD
     userId: string
     username: string
   } | null>(null)
 
   const [actionLoading, setActionLoading] = useState(false)
   const [toast, setToast] = useState<{ type: 'success' | 'error' | 'warning'; message: string } | null>(null)
+
   const filterRef = useRef<HTMLDivElement>(null)
+
+  // Lọc User
   const filteredUsers = useUserFilters({ users, searchQuery, selectedDepartments, selectedStatuses })
+
+  // Phân trang
   const { paginatedItems: paginatedUsers, totalPages } = usePagination({
     items: filteredUsers,
     page,
@@ -78,34 +85,37 @@ const Users: React.FC = () => {
     setEditDialogOpen(true)
   }
 
+  // 3. Sử dụng USER_ACTIONS.LOCK
   const handleLock = (userId: number) => {
     const user = users.find(u => u.id === userId)
     if (user) {
       setConfirmDialog({
         open: true,
-        type: 'lock',
+        type: USER_ACTIONS.LOCK,
         userId: userId.toString(),
         username: user.username
       })
     }
   }
 
+  // 4. Sử dụng USER_ACTIONS.UNLOCK
   const handleUnlock = (userId: number) => {
     const user = users.find(u => u.id === userId)
     if (user) {
       setConfirmDialog({
         open: true,
-        type: 'unlock',
+        type: USER_ACTIONS.UNLOCK,
         userId: userId.toString(),
         username: user.username
       })
     }
   }
 
+  // 5. Sử dụng USER_ACTIONS.RESET_PASSWORD
   const handleResetPassword = (user: User) => {
     setConfirmDialog({
       open: true,
-      type: 'resetPassword',
+      type: USER_ACTIONS.RESET_PASSWORD,
       userId: user.id.toString(),
       username: user.username
     })
@@ -117,16 +127,17 @@ const Users: React.FC = () => {
     setActionLoading(true)
     try {
       const userId = parseInt(confirmDialog.userId)
+      // 6. Switch case dùng Constant
       switch (confirmDialog.type) {
-        case 'lock':
+        case USER_ACTIONS.LOCK:
           await lockUser(userId)
           setToast({ type: 'success', message: 'User locked successfully' })
           break
-        case 'unlock':
+        case USER_ACTIONS.UNLOCK:
           await unlockUser(userId)
           setToast({ type: 'success', message: 'User unlocked successfully' })
           break
-        case 'resetPassword':
+        case USER_ACTIONS.RESET_PASSWORD:
           await resetPassword(userId)
           setToast({ type: 'success', message: 'Password reset successfully' })
           break
@@ -245,7 +256,7 @@ const Users: React.FC = () => {
 
       <ConfirmDialog
         open={confirmDialog?.open || false}
-        type={confirmDialog?.type || 'lock'}
+        type={confirmDialog?.type || USER_ACTIONS.LOCK}
         username={confirmDialog?.username}
         onConfirm={handleConfirmAction}
         onCancel={() => setConfirmDialog(null)}

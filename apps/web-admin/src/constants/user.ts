@@ -36,8 +36,16 @@ export const USER_CARD_LABELS = {
   DEPARTMENT: 'Department:'
 } as const
 
+export const USER_ACTIONS = {
+  LOCK: 'lock',
+  UNLOCK: 'unlock',
+  RESET_PASSWORD: 'resetPassword',
+  EDIT: 'edit'
+} as const
+
 export type UserActionLabel = (typeof USER_ACTION_LABELS)[keyof typeof USER_ACTION_LABELS]
 export type UserStatus = (typeof USER_STATUS)[keyof typeof USER_STATUS]
 export type UIMessage = (typeof UI_MESSAGES)[keyof typeof UI_MESSAGES]
 export type UserTableHeader = (typeof USER_TABLE_HEADERS)[keyof typeof USER_TABLE_HEADERS]
 export type UserCardLabel = (typeof USER_CARD_LABELS)[keyof typeof USER_CARD_LABELS]
+export type UserActionType = (typeof USER_ACTIONS)[keyof typeof USER_ACTIONS]
