@@ -26,10 +26,10 @@ const AssistantMessage = ({ message, sessionId }: AssistantMessageProps) => {
   // 2. Logic Feedback
   const handleFeedback = async (clickedType: 'up' | 'down') => {
     if (!sessionId || !message.chatId) return
-    const isTogglingOff = feedbackStatus === clickedType // Người dùng bấm lại nút đang sáng
+    const isTogglingOff = feedbackStatus === clickedType 
 
-    const newUiStatus = isTogglingOff ? null : clickedType // Nếu toggle off thì UI về null, ngược lại thì theo nút bấm
-    const apiPayloadValue = isTogglingOff ? 'reset' : clickedType // Nếu toggle off thì gửi 'reset', ngược lại gửi 'up'/'down'
+    const newUiStatus = isTogglingOff ? null : clickedType 
+    const apiPayloadValue = isTogglingOff ? 'reset' : clickedType 
 
     setFeedbackStatus(newUiStatus)
 
@@ -37,49 +37,42 @@ const AssistantMessage = ({ message, sessionId }: AssistantMessageProps) => {
       await submitChatFeedback({
         chatId: message.chatId,
         sessionId: sessionId,
-        feedback: apiPayloadValue // Gửi 'up', 'down' hoặc 'reset'
+        feedback: apiPayloadValue 
       })
     } catch (error) {
       console.error('Feedback error', error)
-      // Rollback lại trạng thái cũ nếu lỗi (Optional)
-      // setFeedbackStatus(feedbackStatus);
     }
   }
 
   return (
-    <div className="mb-4 flex w-full items-start gap-3">
-      <div className="message message--sender">
-        <p className="whitespace-pre-wrap">{message.text}</p>
+    <div className="message message--sender">
+      <p className="whitespace-pre-wrap">{message.text}</p>
 
-        {/* Action Bar*/}
+      {/* Action Bar*/}
+      <div className="mt-2 flex items-center gap-2 border-t border-[#E5E7EB] pt-2 pl-1">
+        <button onClick={handleCopy} className="cursor-pointer transition">
+          {isCopied ? (
+            <CopiedIcon className="h-4 w-4 text-[#6b7280]" />
+          ) : (
+            <CopyIcon className="h-4 w-4 text-[#6b7280]" />
+          )}
+        </button>
 
-        <div className="mt-2 flex items-center gap-2 border-t border-[#E5E7EB] pt-2 pl-1">
-          <button onClick={handleCopy} className="cursor-pointer transition">
-            {isCopied ? (
-              <CopiedIcon className="h-4 w-4 text-[#6b7280]" />
-            ) : (
-              <CopyIcon className="h-4 w-4 text-[#6b7280]" />
-            )}
-          </button>
+        <button onClick={() => handleFeedback('up')} className={`mx-2 cursor-pointer transition`} title="Helpful">
+          {feedbackStatus === 'up' ? (
+            <LikeIconFill className="h-3.5 w-3.5 text-[#6b7280] hover:text-[#008b3c]" />
+          ) : (
+            <LikeIcon className="h-3.5 w-3.5 text-[#6b7280] hover:text-[#008b3c]" />
+          )}
+        </button>
 
-          {/* Nút Thumb Up */}
-          <button onClick={() => handleFeedback('up')} className={`mx-2 cursor-pointer transition`} title="Helpful">
-            {feedbackStatus === 'up' ? (
-              <LikeIconFill className="h-3.5 w-3.5 text-[#6b7280] hover:text-[#008b3c]" />
-            ) : (
-              <LikeIcon className="h-3.5 w-3.5 text-[#6b7280] hover:text-[#008b3c]" />
-            )}
-          </button>
-
-          {/* Nút Thumb Down */}
-          <button onClick={() => handleFeedback('down')} className={`cursor-pointer transition`}>
-            {feedbackStatus === 'down' ? (
-              <LikeIconFill className="h-3.5 w-3.5 rotate-180 text-[#6b7280] hover:text-[#9e1d1d]" />
-            ) : (
-              <LikeIcon className="h-3.5 w-3.5 rotate-180 text-[#6b7280] hover:text-[#9e1d1d]" />
-            )}
-          </button>
-        </div>
+        <button onClick={() => handleFeedback('down')} className={`cursor-pointer transition`}>
+          {feedbackStatus === 'down' ? (
+            <LikeIconFill className="h-3.5 w-3.5 rotate-180 text-[#6b7280] hover:text-[#9e1d1d]" />
+          ) : (
+            <LikeIcon className="h-3.5 w-3.5 rotate-180 text-[#6b7280] hover:text-[#9e1d1d]" />
+          )}
+        </button>
       </div>
     </div>
   )

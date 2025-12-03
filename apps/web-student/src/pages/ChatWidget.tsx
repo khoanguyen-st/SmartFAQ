@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useChat } from '@/hooks/useChat'
-import { ChatContainer } from './ChatContainer'
-import ConfirmModal from '../ui/ConfirmModal'
+import { ChatContainer } from '@/components/Chatbot/ChatContainer'
+import ConfirmModal from '@/components/ui/ConfirmModal'
 
 import ExpandIcon from '@/assets/icons/arrow-expand-alt.svg?react'
 import LogoGreenwich from '@/assets/icons/LogoGreenwich.svg'
@@ -34,8 +34,7 @@ const ChatWidget = () => {
   }
 
   return (
-    <div className="fixed right-10 bottom-10 z-[999]">
-      <ConfirmModal isOpen={showConfirm} onClose={() => setShowConfirm(false)} onConfirm={handleConfirmDelete} />
+    <div className="fixed right-10 bottom-10">
       <div
         className={`chat flex flex-col overflow-hidden rounded-4xl bg-white shadow-2xl shadow-slate-400 ${
           isOpen
@@ -43,6 +42,7 @@ const ChatWidget = () => {
             : 'h-0 w-0 opacity-0 transition-all duration-300 ease-in-out'
         } origin-bottom-right`}
       >
+        <ConfirmModal isOpen={showConfirm} onClose={() => setShowConfirm(false)} onConfirm={handleConfirmDelete} />
         <ChatContainer
           messages={messages}
           isLoading={isLoading}
