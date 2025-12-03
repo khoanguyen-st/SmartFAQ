@@ -3,6 +3,7 @@ FROM node:20-alpine
 WORKDIR /app
 
 RUN corepack enable
+RUN apk update && apk add --no-cache ca-certificates
 
 # Copy package files for caching
 COPY package.json yarn.lock* ./
