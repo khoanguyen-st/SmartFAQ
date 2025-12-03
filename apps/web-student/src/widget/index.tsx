@@ -52,6 +52,9 @@ export const initWidget = () => {
     </React.StrictMode>
   )
 }
+
+// Expose ra window
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 ;(window as any).ChatWidget = {
   init: initWidget
 }
