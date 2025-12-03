@@ -193,9 +193,11 @@ def create_reset_token(user_id: int, email: str, expires_delta: Optional[timedel
     return jwt.encode(payload, settings.jwt_secret, algorithm="HS256")
 
 
-def verify_reset_token(token: str) -> dict | None:
+async def verify_reset_token(token: str, db: AsyncSession | None = None) -> dict | None:
     """Verify and decode password reset token."""
     try:
+        if await is_token_blacklisted(token, db):
+            return None
         payload = jwt.decode(token, settings.jwt_secret, algorithms=["HS256"])
         if payload.get("type") != "password_reset":
             return None
@@ -206,11 +208,30 @@ def verify_reset_token(token: str) -> dict | None:
         return None
 
 
+async def verify_reset_token_with_reason(
+    token: str, db: AsyncSession | None = None
+) -> tuple[dict | None, str | None]:
+    """
+    Verify and decode password reset token, returning error reason if invalid.
+    Returns: (payload or None, error_code or None)
+    Error codes: 'TOKEN_EXPIRED', 'TOKEN_USED', 'INVALID_TOKEN'
+    """
+    try:
+        # Kiểm tra blacklist trước (token đã được dùng)
+        if await is_token_blacklisted(token, db):
+            return None, "TOKEN_USED"
+
+        payload = jwt.decode(token, settings.jwt_secret, algorithms=["HS256"])
+        if payload.get("type") != "password_reset":
+            return None, "INVALID_TOKEN"
+        return payload, None
+    except jwt.ExpiredSignatureError:
+        return None, "TOKEN_EXPIRED"
+    except jwt.JWTError:
+        return None, "INVALID_TOKEN"
+
+
 def validate_password_strength(password: str) -> bool:
-    """
-    Validate password complexity rules.
-    Rules: Minimum 8 characters, uppercase, lowercase, digit, special character.
-    """
     pattern = re.compile(
         r"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_\-+=\[{\]};:'\",<.>/?\\|`~]).{8,}$"
     )

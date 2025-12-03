@@ -20,7 +20,10 @@ async function apiCall(endpoint: string, options: RequestInit = {}) {
     if (!res.ok) {
       const errorData = await res.json().catch(() => ({ detail: res.statusText }))
       const errorMessage = errorData.detail?.error || errorData.detail || res.statusText
-      throw new Error(errorMessage)
+      const error = new Error(errorMessage) as Error & { status?: number; errorCode?: string }
+      error.status = res.status
+      error.errorCode = errorData.detail?.error_code
+      throw error
     }
 
     return res.json()
@@ -59,7 +62,7 @@ export async function logout(): Promise<void> {
 
 export interface ForgotPasswordResponse {
   message: string
-  reset_token: string
+  success?: boolean
 }
 
 export async function forgotPassword(email: string): Promise<ForgotPasswordResponse> {
@@ -80,6 +83,14 @@ export async function resetPassword(token: string, newPassword: string): Promise
   })
 }
 
+export async function verifyResetToken(token: string): Promise<{ valid: boolean; email: string }> {
+  return apiCall('/api/auth/verify-reset-token', {
+    method: 'POST',
+    body: JSON.stringify({ token })
+  })
+}
+
+// Admin functions
 export async function fetchMetrics() {
   return apiCall('/admin/metrics')
 }

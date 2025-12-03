@@ -15,8 +15,10 @@ from ..core.security import (
     verify_password,
     verify_refresh_token,
     verify_reset_token,
+    verify_reset_token_with_reason,
 )
 from ..models.user import User
+from ..services.email_service import EmailService
 
 
 class AccountLockedError(Exception):
@@ -45,6 +47,10 @@ class InvalidTokenError(Exception):
 
 class WeakPasswordError(Exception):
     """Raised when password does not meet strength requirements."""
+
+
+class SamePasswordError(Exception):
+    """Raised when new password is same as old password."""
 
 
 class InactiveAccountError(Exception):
@@ -114,6 +120,10 @@ class AuthService:
         user.locked_until = None
         self.db.add(user)
 
+    async def reset_failed_attempts_only(self, user: User) -> None:
+        user.failed_attempts = 0
+        self.db.add(user)
+
     async def forgot_password(self, email: str) -> str:
         result = await self.db.execute(select(User).filter(User.email == email))
         user: User | None = result.scalar_one_or_none()
@@ -121,7 +131,16 @@ class AuthService:
             raise UserNotFoundError
 
         reset_token = create_reset_token(user_id=user.id, email=user.email)
-        result = await self.db.execute(select(User).filter(User.role == "ADMIN"))
+
+        email_service = EmailService()
+        email_sent = await email_service.send_password_reset_email(
+            to_email=user.email, reset_token=reset_token, username=user.username
+        )
+
+        if not email_sent:
+            pass
+
+        result = await self.db.execute(select(User).filter(User.role == "ADMIN", User.is_active))
         admin_user = result.scalar_one_or_none()
         if admin_user:
             pass
@@ -129,7 +148,7 @@ class AuthService:
         return reset_token
 
     async def reset_password(self, token: str, new_password: str) -> None:
-        token_payload = verify_reset_token(token)
+        token_payload = await verify_reset_token(token, self.db)
         if not token_payload:
             raise InvalidTokenError
         result = await self.db.execute(select(User).filter(User.id == token_payload["user_id"]))
@@ -138,8 +157,11 @@ class AuthService:
             raise InvalidTokenError
         if not validate_password_strength(new_password):
             raise WeakPasswordError
+        if verify_password(new_password, user.password_hash):
+            raise SamePasswordError
         user.password_hash = hash_password(new_password)
-        await self.reset_failed_attempts(user)
+        await self.reset_failed_attempts_only(user)
+        await add_token_to_blacklist(token, self.db)
         await self.db.commit()
 
     async def logout(self, token: str) -> None:
@@ -177,3 +199,11 @@ class AuthService:
         )
 
         return access_token
+
+    async def verify_reset_token(self, token: str) -> dict | None:
+        """Verify reset token without resetting password."""
+        return await verify_reset_token(token, self.db)
+
+    async def verify_reset_token_with_reason(self, token: str) -> tuple[dict | None, str | None]:
+        """Verify reset token and return error reason if invalid."""
+        return await verify_reset_token_with_reason(token, self.db)

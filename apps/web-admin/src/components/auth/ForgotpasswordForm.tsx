@@ -4,9 +4,10 @@ import userIcon from '../../assets/icons/email.svg'
 interface ForgotPasswordFormProps {
   onSubmit: (email: string) => Promise<void>
   error?: string | null
+  success?: string | null
 }
 
-const ForgotPasswordForm = ({ onSubmit, error }: ForgotPasswordFormProps) => {
+const ForgotPasswordForm = ({ onSubmit, error, success }: ForgotPasswordFormProps) => {
   const [email, setEmail] = useState('')
   const [loading, setLoading] = useState(false)
   const inputId = 'forgot-password-email'
@@ -65,6 +66,12 @@ const ForgotPasswordForm = ({ onSubmit, error }: ForgotPasswordFormProps) => {
         </div>
 
         {error && <p className="text-sm text-red-500 md:text-base">{error}</p>}
+
+        {success && (
+          <div className="rounded-lg border border-green-200 bg-green-50 p-4">
+            <p className="text-sm text-green-800 md:text-base">{success}</p>
+          </div>
+        )}
 
         <div className="flex justify-center">
           <button

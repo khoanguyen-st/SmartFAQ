@@ -60,6 +60,20 @@ class Settings(BaseSettings):
     CELERY_BROKER_URL: str = Field("redis://localhost:6379/0", alias="CELERY_BROKER_URL")
     CELERY_RESULT_BACKEND: str = Field("redis://localhost:6379/0", alias="CELERY_RESULT_BACKEND")
 
+    # Email Configuration
+    MAIL_USERNAME: str = Field("", alias="MAIL_USERNAME")
+    MAIL_PASSWORD: str = Field("", alias="MAIL_PASSWORD")
+    MAIL_FROM: str = Field("noreply@smartfaq.com", alias="MAIL_FROM")
+    MAIL_FROM_NAME: str = Field("SmartFAQ System", alias="MAIL_FROM_NAME")
+    MAIL_PORT: int = Field(587, alias="MAIL_PORT")
+    MAIL_SERVER: str = Field("smtp.gmail.com", alias="MAIL_SERVER")
+    MAIL_STARTTLS: bool = Field(True, alias="MAIL_STARTTLS")
+    MAIL_SSL_TLS: bool = Field(False, alias="MAIL_SSL_TLS")
+    MAIL_USE_CREDENTIALS: bool = Field(True, alias="MAIL_USE_CREDENTIALS")
+    FRONTEND_RESET_PASSWORD_URL: str = Field(
+        "http://localhost:5174/create-new-password", alias="FRONTEND_RESET_PASSWORD_URL"
+    )
+
 
 @lru_cache(maxsize=1)
 def get_settings() -> Settings:
