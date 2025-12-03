@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react'
+import React, { useMemo, useCallback } from 'react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 
@@ -7,6 +7,7 @@ type SimpleMarkdownProps = {
   enableHighlight?: boolean
   sources?: Array<{ title: string }> // Thêm prop sources
   onSourceHover?: (sourceIndex: number | null) => void // Callback khi hover
+  onSourceClick?: (sourceIndex: number) => void // Thêm prop mới
 }
 
 /**
@@ -104,12 +105,60 @@ const SimpleMarkdown: React.FC<SimpleMarkdownProps> = ({
   content,
   enableHighlight = false, // Thêm prop này và default = false
   sources = [],
-  onSourceHover
+  onSourceHover,
+  onSourceClick // Thêm prop mới
 }) => {
   // Highlight keywords trước khi render - chỉ khi enableHighlight = true
   const highlightedContent = useMemo(() => {
     return enableHighlight ? highlightKeywords(content) : content
   }, [content, enableHighlight])
+
+  // Helper function để process children và replace source references
+  const processSourceReferences = useCallback(
+    (node: React.ReactNode): React.ReactNode | React.ReactNode[] => {
+      if (typeof node === 'string') {
+        // Split string by source reference markers (case insensitive)
+        const parts = node.split(/(\[SOURCE_REF_\d+\])/gi)
+        return parts.map((part, idx) => {
+          const match = part.match(/\[SOURCE_REF_(\d+)\]/i)
+          if (match) {
+            const sourceIndex = parseInt(match[1], 10) - 1 // Convert to 0-based
+            if (sourceIndex >= 0 && sourceIndex < sources.length) {
+              return (
+                <span
+                  key={`source-ref-${idx}-${match[1]}`}
+                  className="source-reference inline-flex h-5 w-5 cursor-pointer items-center justify-center rounded-full bg-gray-200 text-xs font-medium text-gray-700 transition-colors hover:bg-blue-500 hover:text-white"
+                  onMouseEnter={() => onSourceHover?.(sourceIndex)}
+                  onMouseLeave={() => onSourceHover?.(null)}
+                  onClick={() => onSourceClick?.(sourceIndex)} // Thêm onClick
+                >
+                  {match[1]}
+                </span>
+              )
+            }
+          }
+          return part
+        })
+      }
+
+      if (React.isValidElement(node)) {
+        const element = node as React.ReactElement<{ children?: React.ReactNode }>
+        if (element.props.children) {
+          return React.cloneElement(element, {
+            children: React.Children.map(element.props.children, processSourceReferences)
+          } as { children?: React.ReactNode })
+        }
+        return node
+      }
+
+      if (Array.isArray(node)) {
+        return node.map((child, idx) => <React.Fragment key={idx}>{processSourceReferences(child)}</React.Fragment>)
+      }
+
+      return node
+    },
+    [sources, onSourceHover, onSourceClick]
+  ) // Thêm onSourceClick vào dependencies
 
   // Process content để wrap các số reference
   const processedContent = useMemo(() => {
@@ -117,12 +166,19 @@ const SimpleMarkdown: React.FC<SimpleMarkdownProps> = ({
 
     let processed = highlightedContent
 
-    // Pattern cải thiện: tìm số đơn lẻ (1-9) hoặc số có nhiều chữ số
-    // Tránh match với số trong markdown lists, code blocks, etc.
-    // Match số được bao quanh bởi khoảng trắng hoặc ở cuối/cuối câu
+    // Trước tiên, normalize các [SOURCE_REF_X] format từ backend (case insensitive)
+    // Đảm bảo format nhất quán
+    processed = processed.replace(/\[SOURCE_REF_(\d+)\]/gi, (match, numStr) => {
+      const num = parseInt(numStr, 10)
+      if (num >= 1 && num <= sources.length) {
+        return `[SOURCE_REF_${num}]`
+      }
+      return match
+    })
+
+    // Sau đó, tìm các số đơn lẻ và replace nếu nằm trong range
     const referencePattern = /\b([1-9]\d*)\b(?=\s|$|[.,;:!?])/g
 
-    // Chỉ replace nếu số đó nằm trong range của sources (1-based index)
     processed = processed.replace(referencePattern, (match, numStr, offset) => {
       const num = parseInt(numStr, 10)
       // Chỉ xử lý nếu số nằm trong range của sources (1 đến sources.length)
@@ -132,6 +188,12 @@ const SimpleMarkdown: React.FC<SimpleMarkdownProps> = ({
 
         // Nếu có dấu chấm ngay sau số, có thể là markdown list, bỏ qua
         if (afterMatch.trim().startsWith('.')) {
+          return match
+        }
+
+        // Kiểm tra xem đã có [SOURCE_REF_X] chưa (tránh double replace)
+        const beforeText = processed.substring(Math.max(0, offset - 20), offset)
+        if (beforeText.includes('[SOURCE_REF_')) {
           return match
         }
 
@@ -149,53 +211,30 @@ const SimpleMarkdown: React.FC<SimpleMarkdownProps> = ({
         remarkPlugins={[remarkGfm]}
         components={{
           // Headings với spacing tốt hơn
-          h1: ({ ...props }) => <h1 className="mt-4 mb-3 text-2xl leading-tight font-bold" {...props} />,
-          h2: ({ ...props }) => <h2 className="mt-3 mb-2 text-xl leading-tight font-semibold" {...props} />,
-          h3: ({ ...props }) => <h3 className="mt-3 mb-2 text-lg leading-tight font-semibold" {...props} />,
-          h4: ({ ...props }) => <h4 className="mt-2 mb-1 text-base font-semibold" {...props} />,
+          h1: ({ children, ...props }) => (
+            <h1 className="mt-4 mb-3 text-2xl leading-tight font-bold" {...props}>
+              {React.Children.map(children, processSourceReferences)}
+            </h1>
+          ),
+          h2: ({ children, ...props }) => (
+            <h2 className="mt-3 mb-2 text-xl leading-tight font-semibold" {...props}>
+              {React.Children.map(children, processSourceReferences)}
+            </h2>
+          ),
+          h3: ({ children, ...props }) => (
+            <h3 className="mt-3 mb-2 text-lg leading-tight font-semibold" {...props}>
+              {React.Children.map(children, processSourceReferences)}
+            </h3>
+          ),
+          h4: ({ children, ...props }) => (
+            <h4 className="mt-2 mb-1 text-base font-semibold" {...props}>
+              {React.Children.map(children, processSourceReferences)}
+            </h4>
+          ),
 
           // Paragraphs với line height tốt hơn
           p: ({ children, ...props }) => {
-            // Process children để tìm và replace source references
-            const processChildren = (node: React.ReactNode): React.ReactNode | React.ReactNode[] => {
-              if (typeof node === 'string') {
-                // Split string by source reference markers
-                const parts = node.split(/(\[SOURCE_REF_\d+\])/g)
-                return parts.map((part, idx) => {
-                  const match = part.match(/\[SOURCE_REF_(\d+)\]/)
-                  if (match) {
-                    const sourceIndex = parseInt(match[1], 10) - 1 // Convert to 0-based
-                    return (
-                      <span
-                        key={idx}
-                        className="source-reference inline-flex h-5 w-5 cursor-pointer items-center justify-center rounded-full bg-gray-200 text-xs font-medium text-gray-700 transition-colors hover:bg-blue-500 hover:text-white"
-                        onMouseEnter={() => onSourceHover?.(sourceIndex)}
-                        onMouseLeave={() => onSourceHover?.(null)}
-                      >
-                        {match[1]}
-                      </span>
-                    )
-                  }
-                  return part
-                })
-              }
-
-              if (React.isValidElement(node)) {
-                const element = node as React.ReactElement<{ children?: React.ReactNode }>
-                return React.cloneElement(element, {
-                  children: React.Children.map(element.props.children, processChildren)
-                })
-              }
-
-              if (Array.isArray(node)) {
-                return node.map(processChildren)
-              }
-
-              return node
-            }
-
-            const processedChildren = React.Children.map(children, processChildren)
-
+            const processedChildren = React.Children.map(children, processSourceReferences)
             return (
               <p className="mb-3 leading-relaxed last:mb-0" {...props}>
                 {processedChildren}
@@ -204,9 +243,21 @@ const SimpleMarkdown: React.FC<SimpleMarkdownProps> = ({
           },
 
           // Lists với styling đẹp hơn
-          ul: ({ ...props }) => <ul className="mb-3 ml-4 list-disc space-y-1 last:mb-0" {...props} />,
-          ol: ({ ...props }) => <ol className="mb-3 ml-4 list-decimal space-y-1 last:mb-0" {...props} />,
-          li: ({ ...props }) => <li className="leading-relaxed" {...props} />,
+          ul: ({ children, ...props }) => (
+            <ul className="mb-3 ml-4 list-disc space-y-1 last:mb-0" {...props}>
+              {React.Children.map(children, processSourceReferences)}
+            </ul>
+          ),
+          ol: ({ children, ...props }) => (
+            <ol className="mb-3 ml-4 list-decimal space-y-1 last:mb-0" {...props}>
+              {React.Children.map(children, processSourceReferences)}
+            </ol>
+          ),
+          li: ({ children, ...props }) => (
+            <li className="leading-relaxed" {...props}>
+              {React.Children.map(children, processSourceReferences)}
+            </li>
+          ),
 
           // Code blocks - không có syntax highlighting
           code: ({ className, children, ...props }: React.ComponentPropsWithoutRef<'code'>) => {
@@ -214,7 +265,7 @@ const SimpleMarkdown: React.FC<SimpleMarkdownProps> = ({
 
             return isInline ? (
               <code className="rounded bg-gray-200 px-1.5 py-0.5 font-mono text-sm text-gray-800" {...props}>
-                {children}
+                {React.Children.map(children, processSourceReferences)}
               </code>
             ) : (
               <code
@@ -235,40 +286,69 @@ const SimpleMarkdown: React.FC<SimpleMarkdownProps> = ({
           },
 
           // Strong và emphasis - tăng font weight cho highlighted text
-          strong: ({ ...props }) => <strong className="font-bold text-gray-900" {...props} />,
-          em: ({ ...props }) => <em className="italic" {...props} />,
+          strong: ({ children, ...props }) => (
+            <strong className="font-bold text-gray-900" {...props}>
+              {React.Children.map(children, processSourceReferences)}
+            </strong>
+          ),
+          em: ({ children, ...props }) => (
+            <em className="italic" {...props}>
+              {React.Children.map(children, processSourceReferences)}
+            </em>
+          ),
 
           // Blockquotes đẹp hơn
-          blockquote: ({ ...props }) => (
-            <blockquote className="my-4 border-l-4 border-gray-400 bg-gray-50 pl-4 text-gray-700 italic" {...props} />
+          blockquote: ({ children, ...props }) => (
+            <blockquote className="my-4 border-l-4 border-gray-400 bg-gray-50 pl-4 text-gray-700 italic" {...props}>
+              {React.Children.map(children, processSourceReferences)}
+            </blockquote>
           ),
 
           // Links với hover effect
-          a: ({ ...props }) => (
+          a: ({ children, ...props }) => (
             <a
               className="font-medium text-blue-600 underline decoration-2 underline-offset-2 transition-colors hover:text-blue-800"
               target="_blank"
               rel="noopener noreferrer"
               {...props}
-            />
+            >
+              {React.Children.map(children, processSourceReferences)}
+            </a>
           ),
 
           // Tables với styling đẹp
-          table: ({ ...props }) => (
+          table: ({ children, ...props }) => (
             <div className="my-4 overflow-x-auto rounded-lg border border-gray-300 last:my-0">
-              <table className="min-w-full divide-y divide-gray-300" {...props} />
+              <table className="min-w-full divide-y divide-gray-300" {...props}>
+                {React.Children.map(children, processSourceReferences)}
+              </table>
             </div>
           ),
-          thead: ({ ...props }) => <thead className="bg-gray-100" {...props} />,
-          tbody: ({ ...props }) => <tbody className="divide-y divide-gray-200 bg-white" {...props} />,
-          th: ({ ...props }) => (
-            <th
-              className="px-4 py-3 text-left text-xs font-semibold tracking-wider text-gray-700 uppercase"
-              {...props}
-            />
+          thead: ({ children, ...props }) => (
+            <thead className="bg-gray-100" {...props}>
+              {React.Children.map(children, processSourceReferences)}
+            </thead>
           ),
-          td: ({ ...props }) => <td className="px-4 py-3 text-sm whitespace-nowrap text-gray-900" {...props} />,
-          tr: ({ ...props }) => <tr className="hover:bg-gray-50" {...props} />,
+          tbody: ({ children, ...props }) => (
+            <tbody className="divide-y divide-gray-200 bg-white" {...props}>
+              {React.Children.map(children, processSourceReferences)}
+            </tbody>
+          ),
+          th: ({ children, ...props }) => (
+            <th className="px-4 py-3 text-left text-xs font-semibold tracking-wider text-gray-700 uppercase" {...props}>
+              {React.Children.map(children, processSourceReferences)}
+            </th>
+          ),
+          td: ({ children, ...props }) => (
+            <td className="px-4 py-3 text-sm whitespace-nowrap text-gray-900" {...props}>
+              {React.Children.map(children, processSourceReferences)}
+            </td>
+          ),
+          tr: ({ children, ...props }) => (
+            <tr className="hover:bg-gray-50" {...props}>
+              {React.Children.map(children, processSourceReferences)}
+            </tr>
+          ),
 
           // Horizontal rule
           hr: ({ ...props }) => <hr className="my-4 border-t border-gray-300" {...props} />,
