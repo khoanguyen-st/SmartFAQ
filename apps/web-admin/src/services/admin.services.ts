@@ -36,7 +36,7 @@ export async function createUser(
 }
 
 export async function updateUser(userId: number, data: Partial<User> & { password?: string }): Promise<boolean> {
-  const res = await apiClient<{ status: string }>(`/api/user/${userId}`, {
+  const res = await apiClient<{ status: string }>(`/api/admin/user/${userId}`, {
     method: 'PUT',
     body: JSON.stringify(data)
   })
