@@ -45,6 +45,15 @@ async def get_department(db: AsyncSession, department_id: int) -> Department:
 async def update_department(
     db: AsyncSession, department_id: int, department: DepartmentUpdate
 ) -> Department:
+    result = await db.execute(
+        select(Department).where(Department.name == department.name, Department.id != department_id)
+    )
+    duplicate = result.scalar_one_or_none()
+    if duplicate:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Department name already exists"
+        )
+
     existing_department = await get_department(db, department_id)
     existing_department.name = department.name
     await db.commit()
