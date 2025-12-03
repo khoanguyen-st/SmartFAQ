@@ -1,0 +1,536 @@
+__label__vi b40 zzo ko k3t qua
+__label__vi cho em hỏi chút
+__label__vi tài khoản bị xóa
+__label__vi q3n mật kẩu
+__label__vi h0c f1 b4o nkjeu
+__label__vi ba0 luu ket qu@
+__label__vi tủ tụk nkập học
+__label__vi nganh kong qhe toq tin
+__label__en information technology major
+__label__vi djểm rèn luyện
+__label__vi qen m@t k4u
+__label__vi bi l01 roi ad 0i
+__label__vi tu tuc nhap hoc
+__label__vi cho em hoi chut
+__label__vi có học bổng xog
+__label__vi bao dzờ có kết qả
+__label__vi hoc phi bao nhieu
+__label__vi khôq vào duợc web
+__label__vi wjfj thw vjện yếu wá
+__label__en can i change my password
+__label__vi mạng lag quá
+__label__vi hoc phi bao nhjeu
+__label__vi em muon h0j ve ktx
+__label__vi ljk thi la1
+__label__vi tầy co já0
+__label__vi ngành kong gệ thôq tin
+__label__vi d1em ku@n nam nai
+__label__vi rexet paxxworz zup em
+__label__vi ko hoc bog kh0ng
+__label__en how r u
+__label__vi bao giờ có kết quả
+__label__vi fong d4o ta0
+__label__vi xôq vào dwợc w3b
+__label__vi ngank c0q qhe thong tin
+__label__vi truoq minh 0 z4u
+__label__vi học phí bao nhiêu
+__label__vi sin zấy sác nhận
+__label__vi ba0 luu ket qua
+__label__vi reset password giup em
+__label__vi lịkh ti lại
+__label__vi mạq l@g quá
+__label__vi m4ng l@g qu@
+__label__vi truong m1nh 0 d4u
+__label__vi truờq mình ở đâu
+__label__vi phòng dào tạo
+__label__vi hoc phi b@0 nhieu
+__label__vi cho 3m h0i kut
+__label__vi tai khoan bi khoa
+__label__vi dang ky tin chi
+__label__vi wifi tu vj3n i3u qua
+__label__vi phong da0 tao
+__label__vi b@o gio ko ket qua
+__label__vi ph0ng dao t4o
+__label__vi wjfj thu ziện jếu quá
+__label__vi lịck ti lạj
+__label__vi dăq ký tín kỉ
+__label__vi qànk k0g nghệ thong tin
+__label__vi djểm kkuẩn năm n4y
+__label__vi điểm rèn luyện
+__label__vi reset password zup em
+__label__vi tài kh0ản bị xóa
+__label__vi x0ng v@0 du0c web
+__label__vi thu tuc nk4p hoc
+__label__vi làm sao dể nộp don
+__label__vi nganh koq nge thong tin
+__label__vi tw vấn zúp mình
+__label__vi tu van giup minh
+__label__vi làm x4o để nộp đơn
+__label__vi làm sao dể nộp đon
+__label__vi lich th1 laj
+__label__vi bao zờ có kết quả
+__label__vi thầy c0 zzáo
+__label__vi diem r3n luyen
+__label__vi mạng l@g qá
+__label__vi g4nk kong ge th0ng tin
+__label__vi bi loj roi 4d oj
+__label__vi taj ko4n b1 khoa
+__label__en server down
+__label__vi bi lo1 r0i az o1
+__label__vi w1f1 thu zjện jếu qá
+__label__vi tk@y c0 giao
+__label__vi thủ tục nkập học
+__label__vi qu3n mật kẩu
+__label__vi kh0ng z@0 zuoc web
+__label__vi tư vấn júp mìnk
+__label__vi tkủ tục nhập học
+__label__vi bi loi r0i ad 0j
+__label__vi truong m1nh o zau
+__label__vi xjn zay xac nhan
+__label__vi cko 3m hỏi chút
+__label__vi tkầy k0 giáo
+__label__vi w1f1 tu vjện jếu qá
+__label__vi t4j ko giao
+__label__vi r3s3t password giup em
+__label__vi co h0k b0q kh0ng
+__label__vi bi loi roj ad 0i
+__label__vi 3m mu0n ho1 v3 ktx
+__label__vi ba0 gjờ kó kết quả
+__label__vi lịkh th1 lại
+__label__vi dag kj tin kh1
+__label__vi r3s3t password gjup em
+__label__vi hoc ff1 bao nhieu
+__label__vi bị lỗj rồ1 ad oj
+__label__vi cho 3m hỏ1 khút
+__label__vi zaq ky tjn ckj
+__label__vi em muon hoi ve ktx
+__label__vi qànk c0ng ngệ thông t1n
+__label__vi ta1 ko@n bi k0a
+__label__vi cko em hoi khut
+__label__vi tu vấn giúp mìnk
+__label__vi tu van dzup mjnh
+__label__vi xet tujen hok ba
+__label__vi cho em hỏj chút
+__label__vi kho 3m hoi chut
+__label__vi g4nk cong ghe tkong tin
+__label__vi em muon ho1 ze ktx
+__label__vi lịch tk1 lại
+__label__vi 3m mu0n h01 v3 ktx
+__label__vi tu van gjup minh
+__label__vi gank coq ng3 thong t1n
+__label__vi đăng ký tín chỉ
+__label__vi học phí bao nh1êu
+__label__vi em muốn hỏi về kts
+__label__vi lịch thi lại
+__label__vi r3x3t p@ssword dzup em
+__label__vi tài khoản bị khóa
+__label__vi lịch thj lạj
+__label__vi k0ng và0 dược web
+__label__vi djểm chuẩn năm nay
+__label__vi t@1 xo@n bi kho@
+__label__vi phòng đà0 tạ0
+__label__vi ziem ren luyen
+__label__vi diem r3n lujen
+__label__vi m@ng lag qua
+__label__vi ko h0k b0g khoq
+__label__vi hok ffi b@o nhi3u
+__label__vi bao giờ có kết wả
+__label__vi có học bổng không
+__label__vi lịkh thj lại
+__label__vi lịch th1 lạj
+__label__vi ffòq dà0 tạo
+__label__vi ffòq dà0 tạ0
+__label__vi h0c ffi bao nhjeu
+__label__en business administration
+__label__vi khuoq minh 0 d4u
+__label__vi dang ki tin kj
+__label__vi wifi thu v1ện yếu quá
+__label__vi tu v4n giup mink
+__label__vi ck0 3m hỏi ckút
+__label__vi h0k phi b@0 nkieu
+__label__vi m@ng l@g qu4
+__label__vi nganh cong ng3 thong tin
+__label__vi bao giờ kó kết quả
+__label__vi w1f1 tu viện yếu qá
+__label__vi fong da0 tao
+__label__vi bảo lwu kết wả
+__label__vi chu0ng m1nh 0 dau
+__label__vi k0 hok bong khong
+__label__vi b40 dzo k0 k3t qu4
+__label__vi chuong mjnh o dau
+__label__vi ba0 giờ kó kết qả
+__label__vi xin gjấi xác nkận
+__label__vi w1f1 thu vi3n yeu qu4
+__label__vi quên mật khẩu
+__label__en lagging
+__label__vi reset paxxworz gjup 3m
+__label__vi thủ tục nhập họk
+__label__vi xin giấy xác nhận
+__label__vi xét tuyển học bạ
+__label__vi wên mật sẩu
+__label__vi wen mật khẩu
+__label__vi th@y co jao
+__label__vi hok ffj bao nhieu
+__label__vi ffòng dào tạo
+__label__vi em mu0n hoi ze ktx
+__label__en wifi password
+__label__vi khong vao duoc web
+__label__vi quên mật xẩu
+__label__en fail to connect
+__label__vi tầy cô záo
+__label__vi không vào được web
+__label__vi bi loi roi ad oi
+__label__vi bảo lwu kết quả
+__label__vi wên mật xẩu
+__label__vi x1n giai xac nh@n
+__label__vi làm s4o dể nộp don
+__label__vi r3x3t password júp em
+__label__vi bả0 lưu kết quả
+__label__vi có học bổng khog
+__label__vi lam s40 z3 n0p zon
+__label__vi có học bổq không
+__label__vi xet tuien hoc ba
+__label__vi d4ng ký tín kkỉ
+__label__vi bao j0 c0 ket qua
+__label__vi tu v@n dzup mink
+__label__en where is the campus
+__label__vi reset passworz júp em
+__label__vi thủ tục nkập họk
+__label__vi cho em hoj chut
+__label__vi co hoc b0ng khong
+__label__vi làm s40 dể nộp don
+__label__vi bj loi roj ad o1
+__label__vi học phí ba0 nk1êu
+__label__vi xin g1ay sac nhan
+__label__vi chuờg mình ở d4u
+__label__vi bj lo1 ro1 ad o1
+__label__vi ng@nk coq nghe tkog tin
+__label__vi sin jai sac nhan
+__label__vi đaq ký tín khỉ
+__label__vi fong z@o t@o
+__label__vi phong dao t@o
+__label__vi d4ng ky tin ch1
+__label__vi thủ tục nhập học
+__label__vi xjn giấy xák nhận
+__label__vi làm s@o dể nộp don
+__label__vi w3n mật kẩu
+__label__vi b@o gjo co k3t qa
+__label__vi thai k0 gi@o
+__label__en can i change my pwd
+__label__vi co hoc b0g kh0ng
+__label__vi có họk bổng kông
+__label__vi t41 xo@n bi khoa
+__label__vi taj xoan bi xoa
+__label__vi thay co giao
+__label__vi s3t tujen h0c b@
+__label__vi truong m1nk o dau
+__label__vi bao luu ket qa
+__label__vi ngank k0g nge t0ng t1n
+__label__vi diem khu4n nam nay
+__label__vi qànk côg gệ thông tin
+__label__vi khôg vào đwợc w3b
+__label__vi bảo lưu kết quả
+__label__vi wifi tu vien yeu qua
+__label__vi diem ren luyen
+__label__vi xet tuj3n h0c b4
+__label__vi tài khoản bị kó@
+__label__vi lam sao de nop don
+__label__vi không vào đwợc web
+__label__vi t4i kho@n b1 khoa
+__label__vi m@ng l4g qa
+__label__vi kh0ng vào đwợc web
+__label__vi ba0 dzờ có kết qả
+__label__vi đang ký tín chỉ
+__label__vi l4m sa0 d3 nop don
+__label__vi xin zzay sak nkan
+__label__vi ba0 gi0 co k3t qa
+__label__vi m@ng l@g w4
+__label__vi b@o j0 co k3t qu@
+__label__vi ngành c0ng nghệ tk0g tin
+__label__vi bị lỗj rồi 4z oi
+__label__vi bi loi r0j 4d 0j
+__label__vi t4i co j@o
+__label__vi diem ren luy3n
+__label__vi ljch thj lai
+__label__vi tkay co g1a0
+__label__en wifi pwd
+__label__vi bao j0 k0 ket qa
+__label__vi mạq lag quá
+__label__vi thầy co giáo
+__label__vi bao gio co ket qua
+__label__vi reset p4ssword dzup 3m
+__label__vi w1f1 tu vi3n yeu qu4
+__label__vi x1n jấy sác nkận
+__label__vi xét tuiển học bạ
+__label__vi co hoc bong khong
+__label__vi ko hok b0ng kh0ng
+__label__vi kông zà0 dwợc web
+__label__vi d1ểm khuẩn năm n@j
+__label__vi tủ tục nhập họk
+__label__vi fòq dà0 tạo
+__label__vi thaj co gi4o
+__label__vi tài kh0ản bị khó4
+__label__vi bị lỗi rồi ad ơi
+__label__vi d1ểm rèn luyện
+__label__vi diểm kkuẩn n4m n4y
+__label__vi quen mat khau
+__label__vi bi loi roi az oi
+__label__vi tu zan giup minh
+__label__vi bảo luu kết wả
+__label__vi wifi thu zjen j3u q4
+__label__vi xin giay xac nhan
+__label__vi đ4ng ký tín khỉ
+__label__vi cko em h0i kut
+__label__vi ta1 khoan b1 ko4
+__label__vi làm sao để nộp đơn
+__label__vi qu3n m@t kau
+__label__vi em muốn hỏi về ktx
+__label__vi nganh cong nghe thong tin
+__label__vi khong va0 duoc web
+__label__vi wifi tư ziện yếu quá
+__label__vi họk phí bao nhi3u
+__label__vi b@0 luu ket w4
+__label__vi tkủ tụk nkập họk
+__label__vi tài koản bị só4
+__label__vi tkủ tục nkập học
+__label__vi l4m xao de nop d0n
+__label__vi reset p4xxword g1úp em
+__label__vi bảo lưu kết qả
+__label__vi mạng l4g wá
+__label__vi qành coq ngệ tk0ng tin
+__label__vi qànk cong ngệ thog tjn
+__label__en english program
+__label__vi tw zấn g1úp mình
+__label__vi x1n dzai xak nh@n
+__label__vi em muốn hỏ1 zề kts
+__label__vi tku tuc nh@p h0c
+__label__vi tw vấn júp mìnk
+__label__vi ngành c0ng nghệ thông tin
+__label__vi djểm khuẩn năm naj
+__label__vi hoc fi bao nh1eu
+__label__vi thu tuc nkap h0c
+__label__vi d4ng ký tín chỉ
+__label__vi xet tuyen h0c b@
+__label__en what is the tuition fee
+__label__vi thu tuc nh@p hoc
+__label__vi tư zấn gjúp mình
+__label__vi qu3n mật sẩu
+__label__vi ffog d40 t@o
+__label__vi sét tujển học bạ
+__label__vi b40 giờ có kết wả
+__label__vi tu zấn g1úp mình
+__label__vi khog và0 dwợc w3b
+__label__vi họk phí bao nhiêu
+__label__vi tài khoản bị kóa
+__label__vi xet tuyen hoc ba
+__label__vi l1ch th1 la1
+__label__vi zang ky tin khi
+__label__vi quen mật kẩu
+__label__vi wifi tkư viện yếu quá
+__label__vi l4m sao z3 nop don
+__label__vi lam xao de nop zon
+__label__vi reset passw0rd gjúp em
+__label__vi quen m@t kau
+__label__vi xog vao duoc web
+__label__vi set tuyen hoc b@
+__label__vi sét tuyển học bạ
+__label__vi quen m@t kh@u
+__label__vi điểm chuẩn năm nay
+__label__vi tu van zzup m1nk
+__label__vi tư vấn g1úp mình
+__label__vi m@ng l4g qua
+__label__vi diểm rèn luiện
+__label__vi diem chuan nam nay
+__label__vi quen m@t khau
+__label__vi r3s3t p@ssworz g1úp 3m
+__label__vi học phí bao nh1eu
+__label__vi reset passw0rz júp em
+__label__vi cko em h0i chut
+__label__vi có học bổq khong
+__label__vi đang ký tín kỉ
+__label__en how are you
+__label__vi khog v4o du0c w3b
+__label__vi tu zấn giúp mình
+__label__vi học phí b@0 nkiêu
+__label__vi chuong mink 0 d4u
+__label__vi 3m muốn hỏj về ktx
+__label__vi w1f1 thu zjen yeu qa
+__label__vi bảo luu kết qả
+__label__vi ngành kog ghệ tôq tin
+__label__vi ziem ren luien
+__label__vi trường mình ở đâu
+__label__vi wifi thư ziện yếu quá
+__label__vi mang l4g qu4
+__label__vi maq lag qua
+__label__vi k0 em hỏi chút
+__label__vi thầy cô giáo
+__label__vi tư zấn júp mình
+__label__vi làm s4o để nộp don
+__label__vi lich tki la1
+__label__vi mag lag qua
+__label__vi xin giaj x4k nh@n
+__label__vi sin zzay s4k nkan
+__label__vi đ1ểm khuẩn năm naj
+__label__vi tủ tục nkập học
+__label__vi có học bổng kông
+__label__vi xjn zz4y s@k nhan
+__label__vi m4q l@g qua
+__label__vi wjfj thw ziện yếu quá
+__label__vi thay co dza0
+__label__vi ngành công nghệ thông tin
+__label__vi lịk thj lại
+__label__vi reset p4ssword gjup em
+__label__vi bao gjo co ket wa
+__label__vi ch0 em h01 chut
+__label__vi wen mat khau
+__label__vi tài koản bị khóa
+__label__vi lịkk th1 lạ1
+__label__vi wjfj thư viện jếu wá
+__label__en deadline for submission
+__label__vi bi l01 r0j 4d 0i
+__label__vi d4ng ký tín kỉ
+__label__vi chuog minh o dau
+__label__vi m4ng l4g qu@
+__label__vi dăq ký tín khỉ
+__label__vi xét tujển học bạ
+__label__vi d4g ký tín khỉ
+__label__vi zang ki tin kh1
+__label__vi b1 loi r0j ad oj
+__label__vi thầy c0 giáo
+__label__vi ch0 em hỏj kút
+__label__vi khong vào đuợc w3b
+__label__vi hoc ph1 b4o nhieu
+__label__vi l4m s@0 d3 nop don
+__label__vi bi loi ro1 @d oi
+__label__vi ffòng đào tạo
+__label__vi em muon hoj ve kts
+__label__en scholarship requirements
+__label__vi xjn dzaj xac nhan
+__label__vi wifi thư viện yếu quá
+__label__vi zag ky tin ki
+__label__vi đăq ký tín chỉ
+__label__vi tru0q mink 0 d4u
+__label__vi thầj cô jáo
+__label__vi w1f1 thu z13n yeu qu@
+__label__vi kó học bổng s0q
+__label__vi djểm kkuẩn nam naj
+__label__vi diem cku4n nam nay
+__label__vi qu3n mật khẩu
+__label__vi em muốn hỏi zề ktx
+__label__vi xet tuy3n hoc ba
+__label__vi tai kho4n bi kh0a
+__label__vi sin g1ấj xác nhận
+__label__vi bị lỗi rồj @d o1
+__label__vi reset paxxw0rd giup em
+__label__vi truong minh o dau
+__label__vi reset p@ssw0rd júp em
+__label__vi diểm chuẩn nam n4j
+__label__vi fòng dà0 tạ0
+__label__vi thu tuk nhap h0c
+__label__vi ffong dao t@o
+__label__vi s0ng za0 du0c w3b
+__label__vi xin gjấj xác nhận
+__label__vi kho 3m hỏi chút
+__label__vi diểm chuẩn năm naj
+__label__vi b1 loi ro1 ad oj
+__label__vi w1f1 thư z1ện yếu quá
+__label__vi nganh k0ng nghe th0g t1n
+__label__vi b1 loi roi @d 01
+__label__vi kó học bổg xông
+__label__vi xet tujen hoc b@
+__label__vi sin g1ấy sác nhận
+__label__vi c0 hoc b0q khog
+__label__vi truoq minh o z@u
+__label__vi diem chu4n n4m nay
+__label__vi lịch tj lạ1
+__label__vi dj3m ku4n nam nay
+__label__vi chu0q mjnh o d@u
+__label__vi làm sao để nộp dơn
+__label__vi d13m ren luyen
+__label__vi tư vấn giúp mình
+__label__vi mang lag qua
+__label__vi em muon hoj v3 kts
+__label__vi l4m xao z3 nop don
+__label__vi tku tuc nhap h0k
+__label__vi b@o gio co ket qua
+__label__vi học phí b40 nhi3u
+__label__vi c0 hoc bong x0ng
+__label__vi quen mat x@u
+__label__vi cho em hỏi kút
+__label__vi xjn gj4y xac nkan
+__label__vi ba0 luu ket qa
+__label__vi b1 loj roi @d oj
+__label__vi t@j co jao
+__label__vi co h0c boq khong
+__label__vi tru0ng minh o z@u
+__label__vi tu v@n giup m1nh
+__label__vi đ1ểm rèn luyện
+__label__vi lich thi lai
+__label__vi làm sao để nộp đon
+__label__vi wifi thu vien yeu qua
+__label__vi wifi thw viện yếu quá
+__label__vi tầy cô gjá0
+__label__vi lam x@0 ze n0p zon
+__label__en computer science
+__label__vi em muốn hỏj về ktx
+__label__vi tà1 khoản bị khóa
+__label__vi tku tuc nkap hoc
+__label__vi bảo luu kết quả
+__label__vi truờng mình ở d4u
+__label__vi di3m chu4n n4m nai
+__label__en please help me
+__label__vi em muon h0i ve kts
+__label__vi xin giấj sác nhận
+__label__vi hok phi bao nhjeu
+__label__vi rexet p4ssworz zzúp 3m
+__label__vi tu tuk nhap hoc
+__label__vi lịch tki lại
+__label__vi xoq v4o zuok w3b
+__label__vi tu z4n giup mink
+__label__vi mạq lag qá
+__label__vi rexet p@ssword giúp em
+__label__vi di3m ren luyen
+__label__vi ffong dao tao
+__label__vi t41 k0@n bi x0a
+__label__vi k0ng z@o duoc web
+__label__vi bị lỗj rồj 4z oi
+__label__vi zj3m chuan n4m n4i
+__label__vi phong dao tao
+__label__vi 3m muốn hỏi về ktx
+__label__vi hok fi ba0 nki3u
+__label__vi lịch th1 lại
+__label__en contact number
+__label__vi ph0ng dao tao
+__label__vi rexet password dzúp em
+__label__vi thu tuk nh4p hok
+__label__vi djem chu4n nam nay
+__label__en system error
+__label__vi làm xao dể nộp don
+__label__vi reset p@ssword zúp em
+__label__vi w3n mat khau
+__label__vi tầy co giáo
+__label__vi kôq vào duợc w3b
+__label__vi b@o dzo c0 k3t qua
+__label__vi kôg vào dwợc web
+__label__vi reset password giúp em
+__label__vi k0 h0k b0g khoq
+__label__en pls help me
+__label__vi dăng ký tín chỉ
+__label__vi phòng dào tạ0
+__label__vi truong mink o dau
+__label__vi thu tuc nhap hoc
+__label__vi x1n giay xac nhan
+__label__vi kko em hỏ1 khút
+__label__vi phòng đào tạo
+__label__vi kho em hoi chut
+__label__vi diểm rèn lujện
+__label__vi xét tuyển họk bạ
+__label__en i cannot login
+__label__vi bao luu ket qua
+__label__en hello admin
+__label__vi ljch tk1 lai
+__label__vi ng@nk c0ng nghe tog t1n
+__label__vi bao zz0 k0 ket qua
+__label__vi điểm chuẩn năm n@y
+__label__vi ch0 em hoi chut
+__label__vi dăng ký tín khỉ

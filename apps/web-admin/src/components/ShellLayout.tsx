@@ -3,8 +3,13 @@ import { useState, useCallback, useMemo } from 'react'
 import type { ReactNode } from 'react'
 import { cn } from '@/lib/utils'
 import Education from '../assets/icon/education.svg?react'
-import UserIcon from '../assets/icon/user.svg?react'
 import { Menu, X } from 'lucide-react'
+import educationUrl from '@/assets/icons/education.svg'
+import userUrl from '@/assets/icons/user.svg'
+
+type ImgCompProps = React.ImgHTMLAttributes<HTMLImageElement>
+const EducationIcon: React.FC<ImgCompProps> = props => <img src={educationUrl} alt="edu" {...props} />
+const UserIcon: React.FC<ImgCompProps> = props => <img src={userUrl} alt="upload" {...props} />
 
 const navItems = [
   { path: 'dashboard', label: 'Dashboard' },
@@ -84,6 +89,7 @@ const ShellLayout = ({ children }: { children: ReactNode }) => {
               </button>
               <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#003087]">
                 <Education />
+                <EducationIcon />
               </div>
               <div className="hidden sm:block">
                 <h1 className="text-xl font-semibold text-gray-900">Greenwich SmartFAQ</h1>
