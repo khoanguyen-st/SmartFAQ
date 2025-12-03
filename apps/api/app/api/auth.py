@@ -4,7 +4,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..core.database import get_db
-from ..core.dependency import get_current_user
+from ..core.users import get_current_user
 from ..models.user import User
 from ..schemas import (
     ForgotPasswordRequest,
@@ -117,6 +117,14 @@ async def forgot_password(
                 "error_code": "EMAIL_NOT_FOUND",
             },
         )
+    except InactiveAccountError:
+        raise HTTPException(
+            status_code=403,
+            detail={
+                "error": "Account is inactive. Please contact administrator.",
+                "error_code": "ACCOUNT_INACTIVE",
+            },
+        )
 
     return {
         "message": "A password reset link has been sent to your registered email.",
@@ -131,6 +139,14 @@ async def reset_password(payload: ResetPasswordRequest, db: AsyncSession = Depen
         await service.reset_password(payload.token, payload.new_password)
     except InvalidTokenError:
         raise HTTPException(status_code=401, detail={"error": "Invalid or expired reset token."})
+    except InactiveAccountError:
+        raise HTTPException(
+            status_code=403,
+            detail={
+                "error": "Account is inactive. Please contact administrator.",
+                "error_code": "ACCOUNT_INACTIVE",
+            },
+        )
     except WeakPasswordError:
         raise HTTPException(
             status_code=400, detail={"error": "Password does not meet security requirements."}
