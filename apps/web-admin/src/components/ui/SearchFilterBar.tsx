@@ -4,12 +4,16 @@ import { useState } from 'react'
 
 interface SearchFilterBarProps {
   onSearch?: (value: string) => void
-  onFilter?: () => void
+  onFilter?: (format: string) => void
   placeholder?: string
 }
 
+const DOCUMENT_FORMATS = ['pdf', 'doc', 'docx', 'txt', 'md']
+
 const SearchFilterBar = ({ onSearch, onFilter, placeholder = 'Enter to Search...' }: SearchFilterBarProps) => {
   const [searchValue, setSearchValue] = useState('')
+  const [showFilterMenu, setShowFilterMenu] = useState(false)
+  const [selectedFormat, setSelectedFormat] = useState<string>('')
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value
@@ -20,6 +24,13 @@ const SearchFilterBar = ({ onSearch, onFilter, placeholder = 'Enter to Search...
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     onSearch?.(searchValue)
+  }
+
+  const handleFormatSelect = (format: string) => {
+    const newFormat = selectedFormat === format ? '' : format
+    setSelectedFormat(newFormat)
+    onFilter?.(newFormat)
+    setShowFilterMenu(false)
   }
 
   return (
@@ -47,14 +58,53 @@ const SearchFilterBar = ({ onSearch, onFilter, placeholder = 'Enter to Search...
 
         <div className="h-10 w-px bg-[#E5E7EB]" />
 
-        <button
-          type="button"
-          onClick={onFilter}
-          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600"
-          title="Filter"
-        >
-          <img src={filterUrl} alt="filter" className="h-5 w-5" />
-        </button>
+        <div className="relative">
+          <button
+            type="button"
+            onClick={() => setShowFilterMenu(!showFilterMenu)}
+            className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg transition-colors ${
+              selectedFormat ? 'bg-indigo-100 text-[#003087]' : 'text-gray-400 hover:bg-gray-100 hover:text-gray-600'
+            }`}
+            title="Filter by format"
+          >
+            <img src={filterUrl} alt="filter" className="h-5 w-5" />
+          </button>
+
+          {showFilterMenu && (
+            <div className="absolute top-12 right-0 z-10 min-w-max rounded-lg border border-gray-200 bg-white shadow-lg">
+              {DOCUMENT_FORMATS.map(format => (
+                <button
+                  key={format}
+                  type="button"
+                  onClick={() => handleFormatSelect(format)}
+                  className={`block w-full px-4 py-2 text-left text-sm transition-colors ${
+                    selectedFormat === format
+                      ? 'bg-indigo-100 font-medium text-[#003087]'
+                      : 'text-gray-700 hover:bg-gray-100'
+                  }`}
+                >
+                  .{format}
+                </button>
+              ))}
+              {selectedFormat && (
+                <>
+                  <div className="h-px bg-gray-200" />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedFormat('')
+                      onFilter?.('')
+                      setShowFilterMenu(false)
+                    }}
+                    className="block w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50"
+                  >
+                    Clear filter
+                  </button>
+                </>
+              )}
+            </div>
+          )}
+        </div>
       </form>
     </div>
   )

@@ -228,3 +228,66 @@ export const deleteKnowledgeFile = async (fileId: string): Promise<{ id: string 
     throw error instanceof Error ? error : new Error('Failed to delete file')
   }
 }
+
+export const searchKnowledgeFiles = async (name: string): Promise<IUploadedFile[]> => {
+  try {
+    const response = await fetch(`${DOCS_BASE_URL}/search?name=${encodeURIComponent(name)}`)
+    if (!response.ok) {
+      const errorText = await response.text()
+      console.error(`API Error - Status: ${response.status} on GET /api/docs/search`, errorText)
+      throw new Error(`Failed to search documents. Server responded with status: ${response.status}`)
+    }
+
+    const data: { documents?: BackendDocument[] } = await response.json()
+    const documents: BackendDocument[] = data.documents || []
+    return documents.map(mapBackendToFrontend)
+  } catch (error) {
+    console.error('Failed to search knowledge files:', error)
+    throw error instanceof Error ? error : new Error('Unable to search files due to network error or server issue.')
+  }
+}
+
+export const filterKnowledgeFiles = async (format: string): Promise<IUploadedFile[]> => {
+  try {
+    const response = await fetch(`${DOCS_BASE_URL}/filter?format=${encodeURIComponent(format)}`)
+    if (!response.ok) {
+      const errorText = await response.text()
+      console.error(`API Error - Status: ${response.status} on GET /api/docs/filter`, errorText)
+      throw new Error(`Failed to filter documents. Server responded with status: ${response.status}`)
+    }
+
+    const data: { documents?: BackendDocument[] } = await response.json()
+    const documents: BackendDocument[] = data.documents || []
+    return documents.map(mapBackendToFrontend)
+  } catch (error) {
+    console.error('Failed to filter knowledge files:', error)
+    throw error instanceof Error ? error : new Error('Unable to filter files due to network error or server issue.')
+  }
+}
+
+export interface DocumentStatus {
+  document_id: number
+  title: string
+  status: string
+  current_version_id: number | null
+}
+
+export const fetchDocumentsByStatus = async (status: string): Promise<DocumentStatus[]> => {
+  try {
+    const response = await fetch(`${DOCS_BASE_URL}/documents/status?document_status=${encodeURIComponent(status)}`)
+    if (!response.ok) {
+      const errorText = await response.text()
+      console.error(`API Error - Status: ${response.status} on GET /api/docs/documents/status`, errorText)
+      throw new Error(`Failed to fetch documents by status. Server responded with status: ${response.status}`)
+    }
+
+    const data: { documents?: DocumentStatus[] } = await response.json()
+    const documents: DocumentStatus[] = data.documents || []
+    return documents
+  } catch (error) {
+    console.error('Failed to fetch documents by status:', error)
+    throw error instanceof Error
+      ? error
+      : new Error('Unable to fetch documents by status due to network error or server issue.')
+  }
+}

@@ -9,12 +9,20 @@ import { MAX_SIZE } from '@/lib/files'
 import { cn } from '@/lib/utils'
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from 'react'
 import { API_BASE_URL } from '../../lib/api'
-import { IUploadedFile, deleteKnowledgeFile, fetchKnowledgeFiles } from '../../services/document.services'
+import {
+  IUploadedFile,
+  deleteKnowledgeFile,
+  fetchKnowledgeFiles,
+  searchKnowledgeFiles,
+  filterKnowledgeFiles
+} from '../../services/document.services'
 import DeleteConfirmationModal from './DeleteConfirmationModal'
 
 export interface UploadedFileHandle {
   refreshFiles: () => Promise<void>
   addPendingFiles: (files: { name: string; size: number; type: string }[]) => void
+  searchFiles: (searchTerm: string) => Promise<void>
+  filterFiles: (format: string | undefined) => Promise<void>
 }
 
 interface UploadedFileProps {
@@ -182,7 +190,9 @@ const UploadedFile = forwardRef<UploadedFileHandle, UploadedFileProps>(({ isComp
 
   useImperativeHandle(ref, () => ({
     refreshFiles,
-    addPendingFiles
+    addPendingFiles,
+    searchFiles,
+    filterFiles
   }))
 
   useEffect(() => {
@@ -211,6 +221,46 @@ const UploadedFile = forwardRef<UploadedFileHandle, UploadedFileProps>(({ isComp
       await refreshFiles()
     }
   }
+
+  const searchFiles = useCallback(
+    async (searchTerm: string) => {
+      if (!searchTerm.trim()) {
+        await refreshFiles()
+        return
+      }
+
+      setLoadError(null)
+      try {
+        const searchedFiles = await searchKnowledgeFiles(searchTerm)
+        setFiles(searchedFiles)
+      } catch (e) {
+        console.error('Failed to search knowledge files:', e)
+        setLoadError('Failed to search knowledge files.')
+      }
+    },
+    [refreshFiles]
+  )
+
+  const filterFiles = useCallback(
+    async (format: string | undefined) => {
+      const formatStr = typeof format === 'string' ? format : ''
+
+      if (!formatStr || !formatStr.trim()) {
+        await refreshFiles()
+        return
+      }
+
+      setLoadError(null)
+      try {
+        const filteredFiles = await filterKnowledgeFiles(formatStr)
+        setFiles(filteredFiles)
+      } catch (e) {
+        console.error('Failed to filter knowledge files:', e)
+        setLoadError('Failed to filter knowledge files.')
+      }
+    },
+    [refreshFiles]
+  )
 
   const handleReplace = useCallback(
     (fileId: string) => {
