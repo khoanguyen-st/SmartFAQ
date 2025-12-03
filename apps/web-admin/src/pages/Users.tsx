@@ -123,15 +123,15 @@ const Users: React.FC = () => {
       switch (confirmDialog.type) {
         case USER_ACTIONS.LOCK:
           await lockUser(userId)
-          setToast({ type: 'success', message: 'User locked successfully' })
+          setToast({ type: 'success', message: 'Inactive user successfully' })
           break
         case USER_ACTIONS.UNLOCK:
           await unlockUser(userId)
-          setToast({ type: 'success', message: 'User unlocked successfully' })
+          setToast({ type: 'success', message: 'Active user successfully' })
           break
         case USER_ACTIONS.RESET_PASSWORD:
           await resetPassword(userId)
-          setToast({ type: 'success', message: 'Password reset successfully' })
+          setToast({ type: 'success', message: 'Reset password successfully' })
           break
       }
       setConfirmDialog(null)
