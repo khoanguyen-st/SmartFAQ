@@ -8,8 +8,7 @@ import styleText from '../styles.css?inline'
 const WIDGET_ID = 'my-chat-widget-root'
 
 export const initWidget = () => {
-  
-  console.log('CSS Loaded:', styleText);
+  console.log('CSS Loaded:', styleText)
   if (document.getElementById(WIDGET_ID)) {
     return
   }
@@ -33,6 +32,7 @@ export const initWidget = () => {
   // 4. Tạo điểm Mount cho React
   const mountPoint = document.createElement('div')
   mountPoint.id = 'root-mount'
+  mountPoint.className = 'widget-app antialiased'
 
   mountPoint.style.fontSize = '16px'
   mountPoint.style.lineHeight = '1.5'

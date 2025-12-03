@@ -7,7 +7,6 @@
   --color-black: #000;
   --color-blue: #003087;
   --color-blue-2: #003087;
-
   --color-dark: #111827;
   --color-dark-1: #1f2937;
   --color-dark-2: #6b7280;
@@ -22,11 +21,14 @@
   line-height: 1.5;
   -webkit-text-size-adjust: 100%;
   font-family: ui-sans-serif, system-ui, sans-serif;
-  color: #111827; 
+  color: #111827;
 }
 
 /* Quan trọng: Fix lỗi box-sizing bị mất trong shadow dom */
-:host *, :host *::before, :host *::after {
+
+:host *,
+:host *::before,
+:host *::after {
   box-sizing: border-box;
   border-width: 0;
   border-style: solid;
@@ -48,8 +50,7 @@
   --font-family-sans: Inter, system-ui, sans-serif;
 }
 
-
-.chat__content{
+.chat__content {
   flex-grow: 1;
   padding: 24px 24px 72px 24px;
   overflow: auto;
@@ -86,7 +87,6 @@
   color: var(--color-dark);
 }
 
-
 .chat__footer {
   position: absolute;
   bottom: 0;
@@ -114,14 +114,15 @@
   margin: 0;
   margin-top: 2px;
   margin-bottom: 8px;
-  transition-duration: .15s;
+  transition-duration: 0.15s;
 }
 
-.Chat__footer-input:focus , .Chat__footer-input:hover{
+.Chat__footer-input:focus,
+.Chat__footer-input:hover {
   outline: none;
-  border: 2px solid #1677FF;
-  box-shadow: 0px 0px 3px #1677FF;
-  transition-duration: .15s;
+  border: 2px solid #1677ff;
+  box-shadow: 0px 0px 3px #1677ff;
+  transition-duration: 0.15s;
 }
 
 .open-button {
@@ -134,7 +135,6 @@
   :root {
     color-scheme: light;
   }
-
   body {
     @apply m-0 bg-slate-50 font-sans;
   }

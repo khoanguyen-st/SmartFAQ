@@ -34,7 +34,7 @@ const ChatWidget = () => {
   }
 
   return (
-    <div className="fixed right-10 bottom-10">
+    <div className="fixed right-10 bottom-10 ">
       <div
         className={`chat flex flex-col overflow-hidden rounded-4xl bg-white shadow-2xl shadow-slate-400 ${
           isOpen

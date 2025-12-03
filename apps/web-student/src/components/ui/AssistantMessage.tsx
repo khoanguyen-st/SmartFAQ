@@ -47,36 +47,36 @@ const AssistantMessage = ({ message, sessionId }: AssistantMessageProps) => {
   }
 
   return (
-      <div className="message message--sender gap-3">
-        <p className="whitespace-pre-wrap">{message.text}</p>
+    <div className="message message--sender">
+      <p className="whitespace-pre-wrap">{message.text}</p>
 
-        {/* Action Bar*/}
-        <div className="mt-2 flex items-center gap-2 border-t border-[#E5E7EB] pt-2 pl-1">
-          <button onClick={handleCopy} className="cursor-pointer transition">
-            {isCopied ? (
-              <CopiedIcon className="h-4 w-4 text-[#6b7280]" />
-            ) : (
-              <CopyIcon className="h-4 w-4 text-[#6b7280]" />
-            )}
-          </button>
+      {/* Action Bar*/}
+      <div className="mt-2 flex items-center gap-2 border-t border-[#E5E7EB] pt-2 pl-1">
+        <button onClick={handleCopy} className="cursor-pointer transition">
+          {isCopied ? (
+            <CopiedIcon className="h-4 w-4 text-[#6b7280]" />
+          ) : (
+            <CopyIcon className="h-4 w-4 text-[#6b7280]" />
+          )}
+        </button>
 
-          <button onClick={() => handleFeedback('up')} className={`mx-2 cursor-pointer transition`} title="Helpful">
-            {feedbackStatus === 'up' ? (
-              <LikeIconFill className="h-3.5 w-3.5 text-[#6b7280] hover:text-[#008b3c]" />
-            ) : (
-              <LikeIcon className="h-3.5 w-3.5 text-[#6b7280] hover:text-[#008b3c]" />
-            )}
-          </button>
+        <button onClick={() => handleFeedback('up')} className={`mx-2 cursor-pointer transition`} title="Helpful">
+          {feedbackStatus === 'up' ? (
+            <LikeIconFill className="h-3.5 w-3.5 text-[#6b7280] hover:text-[#008b3c]" />
+          ) : (
+            <LikeIcon className="h-3.5 w-3.5 text-[#6b7280] hover:text-[#008b3c]" />
+          )}
+        </button>
 
-          <button onClick={() => handleFeedback('down')} className={`cursor-pointer transition`}>
-            {feedbackStatus === 'down' ? (
-              <LikeIconFill className="h-3.5 w-3.5 rotate-180 text-[#6b7280] hover:text-[#9e1d1d]" />
-            ) : (
-              <LikeIcon className="h-3.5 w-3.5 rotate-180 text-[#6b7280] hover:text-[#9e1d1d]" />
-            )}
-          </button>
-        </div>
+        <button onClick={() => handleFeedback('down')} className={`cursor-pointer transition`}>
+          {feedbackStatus === 'down' ? (
+            <LikeIconFill className="h-3.5 w-3.5 rotate-180 text-[#6b7280] hover:text-[#9e1d1d]" />
+          ) : (
+            <LikeIcon className="h-3.5 w-3.5 rotate-180 text-[#6b7280] hover:text-[#9e1d1d]" />
+          )}
+        </button>
       </div>
+    </div>
   )
 }
 
