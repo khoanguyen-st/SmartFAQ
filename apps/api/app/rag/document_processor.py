@@ -1,12 +1,12 @@
 from __future__ import annotations
 
 import hashlib
+import io
 import logging
 import re
 import statistics
 from dataclasses import dataclass
 from enum import Enum
-from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, Sequence
 
 import fitz  # PyMuPDF
@@ -66,7 +66,9 @@ def _estimate_tokens(text: str) -> int:
 def _looks_like_list_line(line: str) -> bool:
     stripped = line.strip()
     return bool(
-        re.match(r"^[-*•●]\s+", stripped) or re.match(r"^\d+[.)]\s+", stripped) or stripped.endswith(":")
+        re.match(r"^[-*•●]\s+", stripped)
+        or re.match(r"^\d+[.)]\s+", stripped)
+        or stripped.endswith(":")
     )
 
 
@@ -94,11 +96,11 @@ def _is_heading_block(text: str, avg_size: float, median_size: float) -> bool:
 class PDFLoader:
     """Structured PDF loader using PyMuPDF heuristics."""
 
-    def __init__(self, file_path: str):
-        self.file_path = file_path
+    def __init__(self, stream: io.BytesIO):
+        self.stream = stream
 
     def load(self) -> List[DocumentElement]:
-        doc = fitz.open(self.file_path)
+        doc = fitz.open(stream=self.stream, filetype="pdf")
         elements: List[DocumentElement] = []
 
         for page_index, page in enumerate(doc, start=1):
@@ -108,7 +110,9 @@ class PDFLoader:
 
         return elements
 
-    def _extract_tables(self, page: fitz.Page, page_number: int) -> tuple[List[DocumentElement], List[Iterable[float]]]:
+    def _extract_tables(
+        self, page: fitz.Page, page_number: int
+    ) -> tuple[List[DocumentElement], List[Iterable[float]]]:
         tables: List[DocumentElement] = []
         bboxes: List[Iterable[float]] = []
         try:
@@ -178,7 +182,9 @@ class PDFLoader:
                 text = " ".join(span.get("text", "") for span in spans)
                 if text.strip():
                     line_texts.append(text)
-                    line_sizes.extend([float(span.get("size", 0)) for span in spans if span.get("text")])
+                    line_sizes.extend(
+                        [float(span.get("size", 0)) for span in spans if span.get("text")]
+                    )
 
             text_block = "\n".join(line_texts).strip()
             if not text_block:
@@ -231,11 +237,11 @@ class PDFLoader:
 
 
 class DocxLoader:
-    def __init__(self, file_path: str):
-        self.file_path = file_path
+    def __init__(self, stream: io.BytesIO):
+        self.stream = stream
 
     def load(self) -> List[DocumentElement]:
-        doc = DocxDocument(self.file_path)
+        doc = DocxDocument(self.stream)
         elements: List[DocumentElement] = []
 
         for idx, table in enumerate(doc.tables):
@@ -304,12 +310,12 @@ class DocxLoader:
 class MarkdownLoader:
     """Lightweight Markdown loader with heuristics for headings, lists, and tables."""
 
-    def __init__(self, file_path: str):
-        self.file_path = file_path
+    def __init__(self, stream: io.BytesIO):
+        self.stream = stream
 
     def load(self) -> List[DocumentElement]:
-        with open(self.file_path, "r", encoding="utf-8") as f:
-            lines = f.read().splitlines()
+        content = self.stream.read().decode("utf-8")
+        lines = content.splitlines()
         return self._parse_lines(lines)
 
     def _parse_lines(self, lines: List[str]) -> List[DocumentElement]:
@@ -369,24 +375,32 @@ class MarkdownLoader:
             # Paragraph: gather until blank or structural line
             para_lines = [line]
             i += 1
-            while i < len(lines) and lines[i].strip() and not _looks_like_list_line(lines[i]) and not lines[i].startswith("#"):
+            while (
+                i < len(lines)
+                and lines[i].strip()
+                and not _looks_like_list_line(lines[i])
+                and not lines[i].startswith("#")
+            ):
                 para_lines.append(lines[i])
                 i += 1
-            elements.append(DocumentElement(text=_clean_text(" ".join(para_lines)), type=ElementType.PARAGRAPH))
+            elements.append(
+                DocumentElement(text=_clean_text(" ".join(para_lines)), type=ElementType.PARAGRAPH)
+            )
             parent_id = None
 
         return elements
 
 
 class TextLoader:
-    def __init__(self, file_path: str):
-        self.file_path = file_path
+    def __init__(self, stream: io.BytesIO):
+        self.stream = stream
 
     def load(self) -> List[DocumentElement]:
-        with open(self.file_path, "r", encoding="utf-8") as f:
-            content = f.read()
+        content = self.stream.read().decode("utf-8")
         paragraphs = [p.strip() for p in re.split(r"\n\s*\n", content) if p.strip()]
-        return [DocumentElement(text=_clean_text(p), type=ElementType.PARAGRAPH) for p in paragraphs]
+        return [
+            DocumentElement(text=_clean_text(p), type=ElementType.PARAGRAPH) for p in paragraphs
+        ]
 
 
 class ChunkingConfig:
@@ -433,54 +447,66 @@ class DocumentProcessor:
             )
             logger.info("Using semantic merge chunker with embeddings")
         except Exception:
-            logger.exception("Semantic merge chunker init failed; falling back to sentence splitter")
+            logger.exception(
+                "Semantic merge chunker init failed; falling back to sentence splitter"
+            )
             self._chunker = _FallbackSemanticChunker(
                 min_chunk_tokens=self.chunking.min_chunk_tokens,
                 max_chunk_tokens=self.chunking.max_chunk_tokens,
                 sentence_split_regex=self.chunking.sentence_split_regex,
             )
 
-    def load_document(self, file_path: str) -> List[DocumentElement]:
+    def load_document(self, file_stream: io.BytesIO, ext: str) -> List[DocumentElement]:
         """
         Load a document with format-specific loaders, preserving element types.
+
+        Args:
+            file_stream: Byte stream of the document
+            ext: File extension (e.g., '.pdf', '.docx')
 
         Raises:
             ValueError: if the file extension is not supported or parsing fails.
         """
-        path = Path(file_path)
-        ext = path.suffix.lower()
+        ext = ext.lower()
         if ext not in SUPPORTED_EXTENSIONS:
             raise ValueError(f"Unsupported file type: {ext}")
 
         if ext == ".pdf":
-            loader = PDFLoader(file_path)
+            loader = PDFLoader(file_stream)
         elif ext in (".docx", ".doc"):
-            loader = DocxLoader(file_path)
+            loader = DocxLoader(file_stream)
         elif ext == ".md":
-            loader = MarkdownLoader(file_path)
+            loader = MarkdownLoader(file_stream)
         else:
-            loader = TextLoader(file_path)
+            loader = TextLoader(file_stream)
 
         try:
             return [el for el in loader.load() if _clean_text(el.text)]
         except Exception as exc:
-            logger.exception("Failed to load document %s", file_path)
+            logger.exception("Failed to load document from stream")
             raise ValueError(f"Failed to parse document: {exc}") from exc
 
     def process_document(
         self,
-        file_path: str,
+        file_stream: io.BytesIO,
+        ext: str,
         document_id: str,
         metadata: Optional[Dict[str, Any]] = None,
     ) -> List[Document]:
         """
         Full ingestion pipeline:
-        1) Load with format-specific loader.
+        1) Load with format-specific loader from byte stream.
         2) Preprocess by element type (tables, lists, headings, paragraphs).
         3) Semantic chunking for paragraph content.
         4) Enrich metadata and generate stable chunk IDs.
+
+        Args:
+            file_stream: Byte stream of the document
+            ext: File extension (e.g., '.pdf', '.docx')
+            document_id: Unique document identifier
+            metadata: Optional additional metadata
         """
-        elements = self.load_document(file_path)
+        elements = self.load_document(file_stream, ext)
         if not elements:
             raise ValueError("Document has no readable content")
 
@@ -496,7 +522,9 @@ class DocumentProcessor:
             if not list_buffer:
                 return
             parent_id = list_buffer[0].parent_id
-            text_lines = [f"- {_clean_text(item.text)}" for item in list_buffer if _clean_text(item.text)]
+            text_lines = [
+                f"- {_clean_text(item.text)}" for item in list_buffer if _clean_text(item.text)
+            ]
             page_numbers = [item.page for item in list_buffer]
             list_text = "\n".join(text_lines)
             if not list_text:
@@ -506,7 +534,7 @@ class DocumentProcessor:
             md = self._build_metadata(
                 metadata=metadata,
                 document_id=document_id,
-                source=file_path,
+                source=metadata.get("source") if metadata else None,
                 page=_first_non_null(page_numbers),
                 element_type=ElementType.LIST.value,
                 heading=current_heading,
@@ -530,7 +558,7 @@ class DocumentProcessor:
             base_md = self._build_metadata(
                 metadata=metadata,
                 document_id=document_id,
-                source=file_path,
+                source=metadata.get("source") if metadata else None,
                 page=page,
                 element_type=ElementType.PARAGRAPH.value,
                 heading=current_heading,
@@ -557,7 +585,7 @@ class DocumentProcessor:
                 md = self._build_metadata(
                     metadata=metadata,
                     document_id=document_id,
-                    source=file_path,
+                    source=metadata.get("source") if metadata else None,
                     page=element.page,
                     element_type=ElementType.TABLE.value,
                     heading=current_heading,
@@ -573,7 +601,7 @@ class DocumentProcessor:
                     md = self._build_metadata(
                         metadata=metadata,
                         document_id=document_id,
-                        source=file_path,
+                        source=metadata.get("source") if metadata else None,
                         page=element.page,
                         element_type=ElementType.HEADING.value,
                         heading=None,
@@ -597,14 +625,14 @@ class DocumentProcessor:
         flush_paragraph_buffer()
 
         cleaned = [d for d in docs if d.page_content.strip()]
-        logger.info("Chunked document %s into %d chunks", file_path, len(cleaned))
+        logger.info("Chunked document into %d chunks", len(cleaned))
         return cleaned
 
     def _build_metadata(
         self,
         metadata: Optional[Dict[str, Any]],
         document_id: str,
-        source: str,
+        source: Optional[str],
         page: Optional[int],
         element_type: str,
         heading: Optional[str],
@@ -641,7 +669,9 @@ class DocumentProcessor:
         for offset, chunk in enumerate(overlapped):
             md = dict(metadata)
             md["chunk_index"] = start_index + offset
-            md["chunk_id"] = _hash_id(document_id, str(md.get("page")), str(md["chunk_index"]), chunk)
+            md["chunk_id"] = _hash_id(
+                document_id, str(md.get("page")), str(md["chunk_index"]), chunk
+            )
             documents.append(Document(page_content=chunk, metadata=md))
         return documents
 
@@ -835,7 +865,10 @@ class _SemanticMergeChunker:
             buffer_text = " ".join(buffer_sentences)
             buffer_tokens = _estimate_tokens(buffer_text)
             sim = self._cosine(buffer_vec or [], vec)
-            if sim >= self.similarity_threshold and (buffer_tokens + sent_tokens) <= self.max_chunk_tokens:
+            if (
+                sim >= self.similarity_threshold
+                and (buffer_tokens + sent_tokens) <= self.max_chunk_tokens
+            ):
                 buffer_sentences.append(sent)
                 # simple running average
                 if buffer_vec:

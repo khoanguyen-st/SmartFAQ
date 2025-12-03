@@ -8,7 +8,6 @@ class DocumentCreate(BaseModel):
     category: Optional[str] = None
     tags: Optional[str] = None
     language: str = "en"
-    status: str = "ACTIVE"
 
 
 class DocumentUpdate(BaseModel):
@@ -16,7 +15,7 @@ class DocumentUpdate(BaseModel):
     category: Optional[str] = None
     tags: Optional[str] = None
     language: Optional[str] = None
-    status: Optional[str] = None
+    # `status` is managed by the system and cannot be set by users.
 
 
 class DocumentVersionOut(BaseModel):

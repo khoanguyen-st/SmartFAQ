@@ -183,6 +183,8 @@ def delete_by_document_id(document_id: str) -> None:
         ]
     }
     delete_by_metadata(where)
+
+
 def _collection_get_documents(limit: Optional[int] = None) -> List[Document]:
     """
     Fetch raw documents+metadatas from the underlying Chroma collection.

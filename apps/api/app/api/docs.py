@@ -5,8 +5,10 @@ import os
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
 from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.future import select
 
 from ..core.database import get_db
+from ..models import document as document_model
 from ..schemas import document
 from ..services import dms
 
@@ -45,9 +47,7 @@ async def create_docs(
         if not title:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="title is required")
 
-        payload = document.DocumentCreate(
-            title=title, category=category, tags=tags, language="vi", status="ACTIVE"
-        )
+        payload = document.DocumentCreate(title=title, category=category, tags=tags, language="vi")
 
         data = payload.dict()
         data["created_by"] = None
@@ -61,6 +61,36 @@ async def create_docs(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to create document(s).",
+        ) from exc
+
+
+@router.get("/search")
+async def search_documents_by_name(name: str, db: AsyncSession = Depends(get_db)):
+    try:
+        docs = await dms.search_documents_by_name(name, db)
+        return {"documents": docs}
+    except HTTPException:
+        raise
+    except Exception as exc:
+        logger.exception("Failed to search documents by name")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to search documents by name.",
+        ) from exc
+
+
+@router.get("/filter")
+async def filter_documents_by_format(format: str, db: AsyncSession = Depends(get_db)):
+    try:
+        docs = await dms.filter_documents_by_format(format, db)
+        return {"documents": docs}
+    except HTTPException:
+        raise
+    except Exception as exc:
+        logger.exception("Failed to filter documents by format")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to filter documents by format.",
         ) from exc
 
 
@@ -128,7 +158,6 @@ async def update_document(
     category: str | None = Form(None),
     tags: str | None = Form(None),
     language: str | None = Form(None),
-    status_doc: str | None = Form(None),
     db: AsyncSession = Depends(get_db),
 ):
     try:
@@ -140,7 +169,6 @@ async def update_document(
             category=category,
             tags=tags,
             language=language,
-            status=status_doc,
         )
 
         if not result:
@@ -182,4 +210,37 @@ async def delete_document(doc_id: int, db: AsyncSession = Depends(get_db)):
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to delete document.",
+        ) from exc
+
+
+@router.get("/documents/status")
+async def get_documents_by_status(
+    document_status: str | None = None, db: AsyncSession = Depends(get_db)
+):
+    try:
+        stmt = select(document_model.Document)
+        if document_status:
+            stmt = stmt.where(document_model.Document.status == document_status)
+
+        result = await db.execute(stmt)
+        docs = result.scalars().all()
+
+        return {
+            "documents": [
+                {
+                    "document_id": doc.id,
+                    "title": doc.title,
+                    "status": doc.status,
+                    "current_version_id": doc.current_version_id,
+                }
+                for doc in docs
+            ]
+        }
+    except HTTPException:
+        raise
+    except Exception as exc:
+        logger.exception("Failed to fetch documents by status")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to fetch documents by status.",
         ) from exc

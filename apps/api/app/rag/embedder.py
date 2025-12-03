@@ -10,6 +10,7 @@ from app.core.config import settings
 
 _EMBED_CACHE: Dict[str, Embeddings] = {}
 
+
 def get_embeddings(model: Optional[str] = None) -> Embeddings:
     name = model or settings.EMBED_MODEL
     if name in _EMBED_CACHE:

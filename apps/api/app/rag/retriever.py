@@ -97,7 +97,9 @@ class Retriever:
             return self._format_results_no_score(docs)
 
         if settings.HYBRID_ENABLED and where:
-            logger.debug("Hybrid retrieval skips metadata filters; using vector-only for where=%s", where)
+            logger.debug(
+                "Hybrid retrieval skips metadata filters; using vector-only for where=%s", where
+            )
             return self._retrieve_vector_only(query, top_k=top_k, where=where)
 
         if settings.HYBRID_ENABLED:
