@@ -41,7 +41,7 @@ class LLMWrapper:
         self,
         model: Optional[str] = None,
         temperature: Optional[float] = None,
-        max_context_chars: int = 4000,
+        max_context_chars: int = 8000,
         max_tokens: Optional[int] = None,
     ):
         llm_model = model or settings.LLM_MODEL
@@ -59,15 +59,29 @@ class LLMWrapper:
         logger.info(f"LLM initialized with model: {llm_model}")
 
         self.system_prompt = (
-            "Bạn là trợ lý AI của Đại học Greenwich Việt Nam.\n"
-            "Nhiệm vụ: Trả lời câu hỏi của sinh viên dựa trên thông tin được cung cấp.\n\n"
-            "Quy tắc:\n"
-            "1. Trả lời bằng cùng ngôn ngữ với câu hỏi của người dùng.\n"
-            "2. CHỈ sử dụng thông tin từ context được cung cấp để trả lời nội dung chính.\n"
-            '3. Nếu context không chứa thông tin phù hợp, trả lời: "Tôi không tìm thấy thông tin về vấn đề này" bằng ngôn ngữ của người dùng.\n'
-            "4. Khi có context, trả lời rõ ràng, không chung chung; ưu tiên gạch đầu dòng, nêu số liệu/tên/mốc thời gian/điều kiện quan trọng.\n"
-            "5. Nếu có link/email/số điện thoại trong context, hãy đưa vào câu trả lời.\n"
-            "6. Nếu câu hỏi mang tính chào hỏi hoặc xã giao, hãy đáp lại lịch sự và đề nghị hỗ trợ thêm.\n"
+            "Bạn là trợ lý AI của Đại học Greenwich Việt Nam.\n\n"
+            "NHIỆM VỤ: Trả lời câu hỏi sinh viên dựa trên Context bên dưới.\n\n"
+            "QUY TẮC:\n"
+            "1. LUÔN LUÔN trả lời bằng ngôn ngữ của câu hỏi (Vietnamese hoặc English)\n"
+            "2. Sử dụng thông tin từ Context để trả lời\n"
+            "3. Nếu câu hỏi NGẮN (1-2 từ), cung cấp thông tin TỔNG QUAN từ Context\n"
+            "4. Nếu Context có thông tin liên quan, LUÔN trả lời (không được từ chối)\n"
+            "5. CHỈ nói 'Tôi không tìm thấy...' khi Context HOÀN TOÀN không liên quan\n\n"
+            "FORMAT:\n"
+            "• Dùng bullet points (•) để liệt kê\n"
+            "• Nêu rõ số liệu, deadline, điều kiện quan trọng\n"
+            "• Bao gồm email/link nếu có trong Context\n\n"
+            "VÍ DỤ CÁCH TRẢ LỜI:\n\n"
+            'Câu hỏi: "Học phí"\n'
+            'Trả lời: "Học phí năm 2024-2025:\n'
+            "• Hệ chuẩn: 120 triệu/năm\n"
+            "• Hệ chất lượng cao: 150 triệu/năm\n"
+            'Liên hệ: finance@greenwich.edu.vn"\n\n'
+            'Câu hỏi: "CNTT"\n'
+            'Trả lời: "Ngành Công nghệ thông tin:\n'
+            "• Thời gian: 4 năm\n"
+            "• Chuyên ngành: Software Engineering, Cyber Security\n"
+            '• Cơ hội việc làm: Developer, System Admin, Security Analyst"\n'
         )
 
         self.prompt = ChatPromptTemplate.from_messages(
@@ -95,13 +109,21 @@ class LLMWrapper:
     def format_contexts(
         self,
         contexts: Sequence[Union[Document, Dict[str, Any]]],
-        max_sources: int = 4,
+        max_sources: int = 10,
     ) -> str:
+        """Format contexts with more sources to provide richer information."""
         pieces = []
         for i, ctx in enumerate(contexts[:max_sources], start=1):
             pieces.append(_doc_to_text(ctx, i))
         joined = "\n\n".join(pieces).strip()
-        return _clip(joined, self.max_context_chars)
+        clipped = _clip(joined, self.max_context_chars)
+
+        # Debug log to verify contexts are being passed
+        logger.debug(
+            f"Formatted {len(pieces)} contexts, total chars: {len(joined)} (clipped to {len(clipped)})"
+        )
+
+        return clipped
 
     @staticmethod
     def _resolve_language(language: Optional[str] = None) -> str:
@@ -145,13 +167,21 @@ class LLMWrapper:
             return self._fallback_no_context(lang)
 
         try:
-            return await self.chain.ainvoke(
+            answer = await self.chain.ainvoke(
                 {
                     "context": context_text,
                     "question": question.strip(),
                     "target_language": lang,
                 }
             )
+
+            # Validate response is not empty
+            if not answer or not answer.strip():
+                logger.warning(f"LLM returned empty response for: {question[:50]}")
+                return self._fallback_no_context(lang)
+
+            return answer
+
         except google_exceptions.ResourceExhausted as e:
             logger.error(f"Gemini API quota exceeded: {e}")
             raise RuntimeError("API quota exceeded.") from e

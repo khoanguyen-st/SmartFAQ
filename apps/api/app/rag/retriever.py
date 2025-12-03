@@ -107,21 +107,50 @@ class Retriever:
 
         return self._retrieve_vector_only(query, top_k=top_k, where=where)
 
-    def calculate_confidence(self, contexts: List[Dict[str, Any]]) -> float:
+    def calculate_confidence(
+        self, contexts: List[Dict[str, Any]], num_sub_queries: int = 1
+    ) -> float:
+        """
+        Calculate confidence score with diversity and coverage considerations.
+
+        Args:
+            contexts: Retrieved document chunks with scores
+            num_sub_queries: Number of sub-queries used for retrieval
+
+        Returns:
+            Confidence score between 0.0 and 1.0
+        """
         if not contexts:
             return 0.0
+
+        # Diversity bonus: prefer results from multiple different documents
+        unique_docs = len(set(ctx.get("document_id") for ctx in contexts if ctx.get("document_id")))
+        diversity_bonus = min(1.0, unique_docs / 3.0)  # Target: at least 3 different docs
+
+        # Calculate base confidence from top scores with decay
         top_n = min(3, len(contexts))
         scores = [ctx.get("score") for ctx in contexts[:top_n] if ctx.get("score") is not None]
         if not scores:
             return 0.0
-        decay = 0.6
-        weighted_sum = 0.0
-        total_weight = 0.0
-        for i, s in enumerate(scores):
-            w = decay**i
-            weighted_sum += s * w
-            total_weight += w
-        return (weighted_sum / total_weight) if total_weight > 0 else 0.0
+
+        decay = settings.CONFIDENCE_DECAY
+        weighted_sum = sum(s * (decay**i) for i, s in enumerate(scores))
+        total_weight = sum(decay**i for i in range(len(scores)))
+        base_confidence = weighted_sum / total_weight if total_weight > 0 else 0.0
+
+        # Coverage penalty: if many sub-queries but few results
+        expected_results = num_sub_queries * 3  # Expect ~3 results per sub-query
+        coverage_ratio = min(1.0, len(contexts) / max(expected_results, 1))
+
+        # Combined confidence score
+        final_confidence = base_confidence * diversity_bonus * coverage_ratio
+
+        logger.debug(
+            f"Confidence: base={base_confidence:.3f}, diversity={diversity_bonus:.3f}, "
+            f"coverage={coverage_ratio:.3f}, final={final_confidence:.3f}"
+        )
+
+        return final_confidence
 
     def get_langchain_retriever(
         self,

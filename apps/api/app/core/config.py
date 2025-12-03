@@ -39,6 +39,7 @@ class Settings(BaseSettings):
     CHROMA_HEADERS: str = Field("", alias="CHROMA_HEADERS")
 
     CONFIDENCE_THRESHOLD: float = Field(0.65, alias="CONFIDENCE_THRESHOLD")
+    CONFIDENCE_DECAY: float = Field(0.6, alias="CONFIDENCE_DECAY")
     HYBRID_ENABLED: bool = Field(True, alias="HYBRID_ENABLED")
     HYBRID_K_VEC: int = Field(20, alias="HYBRID_K_VEC")
     HYBRID_K_LEX: int = Field(20, alias="HYBRID_K_LEX")
