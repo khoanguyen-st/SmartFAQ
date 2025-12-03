@@ -19,7 +19,6 @@ logger = logging.getLogger(__name__)
 
 
 async def _process_single_document(db: AsyncSession, doc: Document) -> None:
-    # Refresh relationships to get file path/version
     await db.refresh(doc, ["versions", "current_version"])
 
     object_name: Optional[str] = None
@@ -32,12 +31,10 @@ async def _process_single_document(db: AsyncSession, doc: Document) -> None:
         if not object_name:
             raise RuntimeError("No file path available for document")
 
-        # mark as PROCESSING
         doc.status = "PROCESSING"
         db.add(doc)
         await db.commit()
 
-        # fetch file from MinIO
         minio_obj = await asyncio.to_thread(
             dms.minio_client.get_object, dms.BUCKET_NAME, object_name
         )
@@ -53,10 +50,8 @@ async def _process_single_document(db: AsyncSession, doc: Document) -> None:
             file_stream, ext, str(doc.id), metadata={"title": doc.title}
         )
 
-        # upsert vector data
         await asyncio.to_thread(upsert_documents, split_docs)
 
-        # success -> ACTIVE
         doc.status = "ACTIVE"
         db.add(doc)
         await db.commit()
@@ -65,14 +60,12 @@ async def _process_single_document(db: AsyncSession, doc: Document) -> None:
     except Exception as exc:
         logger.exception("Processing failed for document %s: %s", getattr(doc, "id", "?"), exc)
         try:
-            # set status FAIL then cleanup
             doc.status = "FAIL"
             db.add(doc)
             await db.commit()
         except Exception:
             await db.rollback()
 
-        # cleanup: remove minio object if exists, delete DB record
         try:
             if object_name:
                 await asyncio.to_thread(
@@ -95,6 +88,7 @@ async def _process_single_document(db: AsyncSession, doc: Document) -> None:
 async def process_requests_once() -> None:
     async with AsyncSessionLocal() as db:
         try:
+            logger.info("Fetching documents with status 'REQUEST' for processing...")
             stmt = (
                 select(Document)
                 .where(Document.status == "REQUEST")
@@ -103,26 +97,30 @@ async def process_requests_once() -> None:
             result = await db.execute(stmt)
             docs = result.scalars().all()
 
+            logger.info("Found %d documents to process.", len(docs))
+
             if not docs:
                 return
 
             for doc in docs:
                 try:
+                    logger.info("Processing document ID: %s", doc.id)
                     await _process_single_document(db, doc)
                 except Exception:
-                    # errors are handled per-document inside _process_single_document
-                    pass
+                    logger.exception("Error processing document ID: %s", doc.id)
 
         except Exception:
             logger.exception("Failed to fetch REQUEST documents for processing")
 
 
 async def start_periodic_task() -> None:
-    interval = int(getattr(settings, "CRON_INTERVAL_SECONDS", 180))
+    interval = int(getattr(settings, "CRON_INTERVAL_SECONDS", 30))
     logger.info("Starting document processing cron with interval %s seconds", interval)
     try:
         while True:
+            logger.info("Starting a new processing cycle.")
             await process_requests_once()
+            logger.info("Processing cycle completed. Sleeping for %s seconds.", interval)
             await asyncio.sleep(interval)
     except asyncio.CancelledError:
         logger.info("Document processing cron cancelled")
