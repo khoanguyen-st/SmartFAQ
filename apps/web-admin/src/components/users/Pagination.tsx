@@ -54,7 +54,7 @@ const Pagination: React.FC<PaginationProps> = ({
   const handlePageSizeClick = (size: number) => {
     if (onPageSizeChange) {
       onPageSizeChange(size)
-      setIsOpen(false) // Đóng menu sau khi chọn
+      setIsOpen(false)
     }
   }
 
@@ -196,7 +196,7 @@ const Pagination: React.FC<PaginationProps> = ({
                     fontSize: '15px'
                   }}
                 >
-                  {size} / pages
+                  {size}
                 </button>
               ))}
             </div>
@@ -204,7 +204,6 @@ const Pagination: React.FC<PaginationProps> = ({
         </div>
       </div>
 
-      {/* Mobile View */}
       <div className="flex w-full items-center justify-between sm:hidden">
         <div className="text-sm text-gray-500">
           {start}-{endLabel} of {totalCount}
