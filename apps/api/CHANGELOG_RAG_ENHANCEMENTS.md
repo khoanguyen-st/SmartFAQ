@@ -11,28 +11,33 @@ This document summarizes the Priority 1 enhancements made to the SmartFAQ RAG pi
 ### 1. **Enhanced Confidence Calculation** 🎯
 
 **Previous Implementation:**
+
 - Simple weighted average of top-3 similarity scores
 - Hard-coded decay factor (0.6)
 - No consideration of document diversity
 - No context about number of sub-queries
 
 **New Implementation:**
+
 ```python
 confidence = base_score × diversity_bonus × coverage_ratio
 ```
 
 **Improvements:**
+
 - ✅ **Diversity Bonus**: Rewards results from multiple different documents (target: 3+ unique docs)
 - ✅ **Coverage Ratio**: Penalizes cases where many sub-queries yield few results
 - ✅ **Configurable Decay**: `CONFIDENCE_DECAY` setting in `.env` (default: 0.6)
 - ✅ **Debug Logging**: Detailed breakdown of confidence components
 
 **Impact:**
+
 - More accurate confidence scores that reflect answer quality
 - Better detection of low-quality retrievals
 - Configurable without code changes
 
 **Files Modified:**
+
 - `app/rag/retriever.py` - Updated `calculate_confidence()` method
 - `app/core/config.py` - Added `CONFIDENCE_DECAY` setting
 
@@ -41,6 +46,7 @@ confidence = base_score × diversity_bonus × coverage_ratio
 ### 2. **Improved Error Handling & User Messages** 🛡️
 
 **Previous Implementation:**
+
 - Generic exception catching with `Exception`
 - Vague "System Error" messages
 - No error categorization
@@ -59,19 +65,22 @@ class ErrorType(Enum):
 ```
 
 **Improvements:**
+
 - ✅ **Specific Error Types**: Categorized errors for better tracking
-- ✅ **User-Friendly Messages**: 
+- ✅ **User-Friendly Messages**:
   - Quota exceeded → "Hệ thống đang quá tải. Vui lòng thử lại sau vài phút."
   - System error → "Đã xảy ra lỗi hệ thống. Vui lòng thử lại."
 - ✅ **Graceful Degradation**: Fallback mechanisms for each stage
 - ✅ **Bilingual Support**: Vietnamese and English error messages
 
 **Impact:**
+
 - Better user experience with clear error messages
 - Easier debugging and monitoring
 - Reduced confusion for end users
 
 **Files Modified:**
+
 - `app/rag/metrics.py` - New file with `ErrorType` enum
 - `app/rag/orchestrator.py` - Enhanced exception handling
 
@@ -80,6 +89,7 @@ class ErrorType(Enum):
 ### 3. **Request Tracing & Metrics** 📊
 
 **Previous Implementation:**
+
 - Basic timing logs
 - No request correlation
 - Limited performance insights
@@ -90,26 +100,27 @@ class ErrorType(Enum):
 @dataclass
 class RAGMetrics:
     request_id: str  # 8-character UUID
-    
+
     # Timing metrics (milliseconds)
     total_latency_ms: int
     normalization_ms: int
     analysis_ms: int
     retrieval_ms: int
     generation_ms: int
-    
+
     # Quality metrics
     num_sub_queries: int
     num_contexts: int
     num_unique_docs: int
     confidence: float
-    
+
     # Error tracking
     error_type: Optional[ErrorType]
     error_message: Optional[str]
 ```
 
 **Improvements:**
+
 - ✅ **Request ID**: Every query gets a unique 8-char ID for tracing
 - ✅ **Stage-Level Timing**: Track latency for each pipeline stage
 - ✅ **Quality Metrics**: Document diversity, context counts
@@ -117,17 +128,20 @@ class RAGMetrics:
 - ✅ **Success/Error Summary**: One-line status log per request
 
 **Example Log Output:**
+
 ```
 [a3f7b9c2] SUCCESS | Latency: 1234ms | Confidence: 0.85 | Contexts: 7 (4 docs) | Sub-queries: 2
 [d8e1f4a6] ERROR | Latency: 567ms | Confidence: 0.00 | Error: llm_quota_exceeded
 ```
 
 **Impact:**
+
 - Easy request tracking across logs
 - Performance bottleneck identification
 - Better production monitoring
 
 **Files Modified:**
+
 - `app/rag/metrics.py` - New file with `RAGMetrics` dataclass
 - `app/rag/orchestrator.py` - Integrated metrics tracking
 - `app/rag/__init__.py` - Exported new classes
@@ -137,6 +151,7 @@ class RAGMetrics:
 ### 4. **Optimized Prompts with Examples** 📝
 
 **Previous Implementation:**
+
 - Generic, lengthy instructions
 - No format guidance
 - No examples
@@ -166,6 +181,7 @@ Chi tiết: admissions@greenwich.edu.vn"
 ```
 
 **Improvements:**
+
 - ✅ **Clear Structure**: Separated principles, format, and examples
 - ✅ **Few-Shot Examples**: Vietnamese and English examples
 - ✅ **Format Guidance**: Specific instructions for bullet points, highlights
@@ -173,12 +189,14 @@ Chi tiết: admissions@greenwich.edu.vn"
 - ✅ **Conciseness**: Shorter, more focused answers (2-4 sentences)
 
 **Impact:**
+
 - More consistent answer formatting
 - Better structure (bullet points for lists)
 - Higher quality responses
 - Reduced hallucinations
 
 **Files Modified:**
+
 - `app/rag/llm.py` - Rewritten `system_prompt`
 
 ---
@@ -221,12 +239,14 @@ HYBRID_MAX_DOCS=5000
 ## 📈 Expected Improvements
 
 ### Quantitative Metrics
+
 - **Confidence Accuracy**: ±15% improvement in confidence-to-quality correlation
 - **Error Clarity**: 100% of errors now have specific messages
 - **Observability**: 5x more metrics per request (8 vs. 1)
 - **Answer Quality**: ~10% improvement in formatting consistency
 
 ### Qualitative Improvements
+
 - Better user experience with clear error messages
 - Easier debugging with request IDs and stage timings
 - More reliable confidence scores
@@ -237,6 +257,7 @@ HYBRID_MAX_DOCS=5000
 ## 🧪 Testing Recommendations
 
 ### 1. Unit Tests
+
 ```python
 # Test enhanced confidence calculation
 def test_confidence_with_diversity():
@@ -250,6 +271,7 @@ def test_confidence_with_diversity():
 ```
 
 ### 2. Integration Tests
+
 ```python
 # Test error handling
 async def test_llm_quota_error():
@@ -260,6 +282,7 @@ async def test_llm_quota_error():
 ```
 
 ### 3. Manual Testing Scenarios
+
 - [ ] Ask a question with high-quality results → Check confidence > 0.7
 - [ ] Ask a question with results from same document → Check diversity penalty
 - [ ] Trigger quota error → Verify user-friendly message
@@ -304,15 +327,15 @@ async def test_llm_quota_error():
 
 ```
 # Average latency by stage
-SELECT 
+SELECT
   AVG(retrieval_ms) as avg_retrieval,
   AVG(generation_ms) as avg_generation
 FROM rag_metrics
 WHERE timestamp > NOW() - INTERVAL '1 hour'
 
 # Error distribution
-SELECT 
-  error_type, 
+SELECT
+  error_type,
   COUNT(*) as count
 FROM rag_metrics
 WHERE error_type IS NOT NULL
@@ -325,12 +348,14 @@ ORDER BY count DESC
 ## 🔮 Next Steps (Priority 2 & 3)
 
 ### Priority 2 (Upcoming - 2-4 weeks)
+
 1. Vietnamese tokenization for BM25 (using `underthesea`)
 2. Incremental BM25 index updates
 3. Evaluation framework with test datasets
 4. Metrics dashboard
 
 ### Priority 3 (Future - 1-2 months)
+
 1. Query rewriting based on retrieval results
 2. Multi-modal support (images in documents)
 3. Fine-tuned embeddings for domain terms
@@ -341,18 +366,21 @@ ORDER BY count DESC
 ## 💡 Tips & Best Practices
 
 ### For Developers
+
 - Always use `request_id` when debugging issues
 - Check stage-level timings to identify bottlenecks
 - Monitor confidence distribution to adjust threshold
 - Review error logs weekly to identify patterns
 
 ### For Ops/DevOps
+
 - Set up alerts for high `error_type` counts
 - Monitor `total_latency_ms` P95/P99
 - Track `LLM_QUOTA` errors for budget planning
 - Create dashboards for confidence trends
 
 ### For Product
+
 - Review user feedback on answer quality
 - Monitor fallback rate as quality indicator
 - Use metrics to prioritize document improvements
@@ -372,6 +400,7 @@ ORDER BY count DESC
 ## ✅ Summary
 
 **What Was Done:**
+
 - ✅ Enhanced confidence calculation with diversity & coverage
 - ✅ Improved error handling with specific error types
 - ✅ Added request tracing with correlation IDs
@@ -379,6 +408,7 @@ ORDER BY count DESC
 - ✅ Created comprehensive metrics tracking
 
 **Impact:**
+
 - Better accuracy in confidence scores
 - Clearer error messages for users
 - Easier debugging and monitoring

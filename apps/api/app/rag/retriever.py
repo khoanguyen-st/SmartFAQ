@@ -24,24 +24,109 @@ def _distance_to_similarity(distance: float, metric: str = None) -> float:
     return 1.0 / (1.0 + max(distance, 0.0))
 
 
+# Vietnamese language detection
+_VIETNAMESE_CHARS = re.compile(
+    r"[àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđ]"
+)
+
 _TOKEN_RE = re.compile(r"[A-Za-z0-9']+")
 
 
+def _is_vietnamese(text: str) -> bool:
+    """Detect if text contains Vietnamese characters."""
+    return bool(_VIETNAMESE_CHARS.search(text.lower()))
+
+
 def _tokenize(text: str) -> List[str]:
+    """
+    Tokenize text with Vietnamese-aware tokenization.
+
+    Approach:
+    - Vietnamese: Split on whitespace and punctuation (simple but effective for BM25)
+    - English/Other: Regex-based word extraction
+    """
     if not text:
         return []
+
+    # Check if text is Vietnamese
+    if _is_vietnamese(text):
+        # Vietnamese: Split on whitespace and punctuation
+        # This is simpler than underthesea but works well for BM25
+        tokens = []
+        # Remove punctuation and split
+        import string
+
+        text_cleaned = text.lower()
+        for char in string.punctuation:
+            text_cleaned = text_cleaned.replace(char, " ")
+
+        tokens = [word.strip() for word in text_cleaned.split() if word.strip()]
+        return tokens
+
+    # English/other languages: use regex
     return _TOKEN_RE.findall(text.lower())
 
 
 class _BM25LexicalIndex:
     """
     BM25 index được giữ trong bộ nhớ để hybrid với vector search.
+    Supports incremental updates for better performance.
     """
 
     def __init__(self, documents: Sequence[Document]):
         self.documents = list(documents)
-        corpus_tokens = [_tokenize(d.page_content) for d in self.documents]
-        self.bm25 = BM25Okapi(corpus_tokens)
+        self._corpus_tokens = [_tokenize(d.page_content) for d in self.documents]
+        self.bm25 = BM25Okapi(self._corpus_tokens)
+        logger.info(f"BM25 index initialized with {len(self.documents)} documents")
+
+    def add_documents(self, new_docs: Sequence[Document]) -> None:
+        """
+        Add new documents to the existing index incrementally.
+        This is more efficient than rebuilding the entire index.
+        """
+        if not new_docs:
+            return
+
+        # Add to document list
+        self.documents.extend(new_docs)
+
+        # Tokenize new documents
+        new_tokens = [_tokenize(d.page_content) for d in new_docs]
+        self._corpus_tokens.extend(new_tokens)
+
+        # Rebuild BM25 with updated corpus
+        # Note: BM25Okapi doesn't support true incremental updates,
+        # but this is still faster than reloading all docs from DB
+        self.bm25 = BM25Okapi(self._corpus_tokens)
+
+        logger.info(f"Added {len(new_docs)} documents to BM25 index (total: {len(self.documents)})")
+
+    def remove_documents(self, document_ids: List[str]) -> None:
+        """Remove documents by document_id from the index."""
+        if not document_ids:
+            return
+
+        id_set = set(document_ids)
+
+        # Filter out documents
+        filtered_docs = []
+        filtered_tokens = []
+
+        for doc, tokens in zip(self.documents, self._corpus_tokens):
+            doc_id = doc.metadata.get("document_id")
+            if doc_id not in id_set:
+                filtered_docs.append(doc)
+                filtered_tokens.append(tokens)
+
+        removed_count = len(self.documents) - len(filtered_docs)
+
+        if removed_count > 0:
+            self.documents = filtered_docs
+            self._corpus_tokens = filtered_tokens
+            self.bm25 = BM25Okapi(self._corpus_tokens)
+            logger.info(
+                f"Removed {removed_count} documents from BM25 index (remaining: {len(self.documents)})"
+            )
 
     def search(self, query: str, k: int = 10) -> List[Dict[str, Any]]:
         if not self.documents:
@@ -246,6 +331,49 @@ class Retriever:
             logger.exception("Failed to build BM25 index: %s", exc)
             self._lexical_index = None
         return self._lexical_index
+
+    def update_lexical_index_add(self, new_docs: Sequence[Document]) -> None:
+        """
+        Add new documents to the BM25 lexical index incrementally.
+        This is more efficient than rebuilding the entire index.
+
+        Args:
+            new_docs: New documents to add to the index
+        """
+        if not settings.HYBRID_ENABLED:
+            return
+
+        index = self._get_lexical_index()
+        if index:
+            index.add_documents(new_docs)
+        else:
+            logger.warning("BM25 index not available for incremental update")
+
+    def update_lexical_index_remove(self, document_ids: List[str]) -> None:
+        """
+        Remove documents from the BM25 lexical index by document IDs.
+
+        Args:
+            document_ids: List of document IDs to remove
+        """
+        if not settings.HYBRID_ENABLED:
+            return
+
+        index = self._get_lexical_index()
+        if index:
+            index.remove_documents(document_ids)
+        else:
+            logger.warning("BM25 index not available for removal")
+
+    def refresh_lexical_index(self) -> None:
+        """Force refresh of the BM25 lexical index from vector store."""
+        if not settings.HYBRID_ENABLED:
+            return
+
+        logger.info("Refreshing BM25 lexical index...")
+        self._lexical_ready = False
+        self._lexical_index = None
+        self._get_lexical_index()
 
     @staticmethod
     def _ctx_key(ctx: Dict[str, Any]) -> str:

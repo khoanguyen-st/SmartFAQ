@@ -18,8 +18,12 @@ from app.rag.prompts import (
 from app.rag.query_expander import QueryExpander
 from app.rag.retriever import Retriever
 from app.rag.types import MasterAnalysis
+from app.utils.logging_config import setup_rag_metrics_logger
 
 logger = logging.getLogger(__name__)
+
+# Setup dedicated RAG metrics logger with JSON formatting
+rag_metrics_logger = setup_rag_metrics_logger("logs/rag_metrics.json")
 
 
 class RAGOrchestrator:
@@ -307,6 +311,15 @@ class RAGOrchestrator:
                 "num_unique_docs": metrics.num_unique_docs,
                 "language": metrics.language,
             }
+
+            # Log metrics to dedicated JSON logger for monitoring
+            rag_metrics_logger.info(
+                "RAG request completed",
+                extra={
+                    "request_id": metrics.request_id,
+                    "metrics": metrics.to_dict(),
+                },
+            )
 
         return response
 

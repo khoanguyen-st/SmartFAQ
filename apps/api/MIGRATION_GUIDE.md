@@ -48,12 +48,14 @@ pip install -r requirements.txt
 ## Step 4: Restart Services
 
 ### Docker Compose
+
 ```bash
 docker compose restart api
 docker compose logs -f api
 ```
 
 ### Manual/Development
+
 ```bash
 # Restart the API server
 pkill -f "uvicorn app.main:app"
@@ -65,6 +67,7 @@ uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ## Step 5: Verify Changes
 
 ### Check Logs
+
 Look for the new log format with request IDs:
 
 ```
@@ -76,6 +79,7 @@ Look for the new log format with request IDs:
 ```
 
 ### Test API Response
+
 ```bash
 curl -X POST http://localhost:8000/api/chat/query \
   -H "Content-Type: application/json" \
@@ -83,6 +87,7 @@ curl -X POST http://localhost:8000/api/chat/query \
 ```
 
 Expected response includes new fields:
+
 ```json
 {
   "answer": "...",
@@ -105,6 +110,7 @@ Expected response includes new fields:
 ## Step 6: Monitor for Issues
 
 ### Watch for Errors
+
 ```bash
 # Monitor error logs
 docker compose logs -f api | grep ERROR
@@ -116,12 +122,15 @@ tail -f logs/api.log | grep ERROR
 ### Common Issues & Solutions
 
 #### Issue: `KeyError: 'CONFIDENCE_DECAY'`
+
 **Solution:** Add `CONFIDENCE_DECAY=0.6` to your `.env` file
 
 #### Issue: Confidence scores seem different
+
 **Solution:** This is expected! The new calculation is more accurate. Monitor for 1-2 days and adjust `CONFIDENCE_THRESHOLD` if needed.
 
 #### Issue: Different error messages
+
 **Solution:** This is intentional. Users now see clearer, more helpful messages.
 
 ---
@@ -147,20 +156,24 @@ CONFIDENCE_THRESHOLD=0.60  # Lower from 0.65 if needed
 If you encounter critical issues:
 
 ### Quick Rollback
+
 ```bash
 git checkout main~1  # Go back one commit
 docker compose restart api
 ```
 
 ### Targeted Rollback
+
 If only specific features are problematic:
 
 1. **Revert confidence calculation:**
+
 ```bash
 git checkout main~1 -- apps/api/app/rag/retriever.py
 ```
 
 2. **Revert error handling:**
+
 ```bash
 git checkout main~1 -- apps/api/app/rag/orchestrator.py
 rm apps/api/app/rag/metrics.py
@@ -187,6 +200,7 @@ Use this checklist to verify everything works:
 ## Performance Comparison
 
 ### Before Enhancement
+
 ```
 Average latency: ~1200ms
 Confidence range: 0.45-0.95
@@ -195,6 +209,7 @@ Observability: Minimal
 ```
 
 ### After Enhancement
+
 ```
 Average latency: ~1200ms (similar)
 Confidence range: 0.40-0.90 (more accurate spread)
@@ -207,11 +222,13 @@ Observability: Excellent (request IDs, stage timings)
 ## Support & Troubleshooting
 
 ### Get Help
+
 1. Check `CHANGELOG_RAG_ENHANCEMENTS.md` for details
 2. Review logs with request IDs for specific queries
 3. Create GitHub issue with request ID and error message
 
 ### Useful Commands
+
 ```bash
 # Check current config
 docker compose exec api python -c "from app.core.config import settings; print(settings.CONFIDENCE_DECAY)"
