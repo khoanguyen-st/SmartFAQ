@@ -1,78 +1,195 @@
-import { useCallback, useState } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
+import { startNewChatSession, sendChatMessage, getChatHistory, ChatHistoryMessage } from '@/services/chat.services'
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8000'
+const CUSTOM_WELCOME_MSG = 'Xin chào!\nTôi là trợ lý ảo Greenwich (Smart FAQ)'
+const SYNC_CHANNEL_NAME = 'greenwich_chat_sync_channel'
+const STORAGE_KEY = 'chat_session_id'
 
-interface Message {
-  id: string
-  author: 'user' | 'assistant'
-  content: string
-  timestamp: string
-}
-
-export const useChat = () => {
-  const [history, setHistory] = useState<Message[]>([])
+export const useChat = (initialSessionId?: string | null) => {
+  const [sessionId, setSessionId] = useState<string | null>(initialSessionId || null)
+  const [messages, setMessages] = useState<ChatHistoryMessage[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const sendMessage = useCallback(async (content: string) => {
-    const timestamp = new Date().toLocaleTimeString()
-    const userMessage: Message = {
-      id: crypto.randomUUID(),
-      author: 'user',
-      content,
-      timestamp
-    }
-    setHistory(prev => [...prev, userMessage])
-    setIsLoading(true)
-    setError(null)
+  // Ref checking call API
+  const isFetchingRef = useRef(false)
+
+  // Ref use to storage messages hiện tại nhằm so sánh khi sync (tránh re-render thừa)
+  const messagesRef = useRef<ChatHistoryMessage[]>([])
+  messagesRef.current = messages
+
+  // 1. FETCH HISTORY
+  const fetchHistory = useCallback(async (currentId: string) => {
+    if (isFetchingRef.current || !currentId) return
 
     try {
-      // Call SmartFAQ API
-      const response = await fetch(`${API_BASE_URL}/api/chat`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          message: content,
-          conversation_id: sessionStorage.getItem('conversation_id') || undefined
-        })
-      })
+      isFetchingRef.current = true
+      const history = await getChatHistory(currentId)
 
-      if (!response.ok) {
-        throw new Error(`API error: ${response.status}`)
+      // Nếu lịch sử trả về RỖNG (Session mới chưa chat gì)
+      if (history.messages.length === 0) {
+        // Tự động set tin nhắn chào mừng
+        setMessages([
+          {
+            role: 'system',
+            text: CUSTOM_WELCOME_MSG,
+            timestamp: new Date().toISOString()
+          }
+        ])
       }
-
-      const data = await response.json()
-
-      // Save conversation ID for session continuity
-      if (data.conversation_id) {
-        sessionStorage.setItem('conversation_id', data.conversation_id)
+      // Nếu có tin nhắn và khác với hiện tại thì mới cập nhật
+      else if (history.messages.length !== messagesRef.current.length) {
+        setMessages(history.messages)
       }
-
-      const assistantMessage: Message = {
-        id: crypto.randomUUID(),
-        author: 'assistant',
-        content: data.response || data.message || 'Sorry, I could not process your request.',
-        timestamp: new Date().toLocaleTimeString()
-      }
-      setHistory(prev => [...prev, assistantMessage])
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to send message'
-      setError(errorMessage)
-
-      // Show error message in chat
-      const errorResponse: Message = {
-        id: crypto.randomUUID(),
-        author: 'assistant',
-        content: `Sorry, an error occurred: ${errorMessage}. Please try again.`,
-        timestamp: new Date().toLocaleTimeString()
-      }
-      setHistory(prev => [...prev, errorResponse])
+      console.error('Fetch history error:', err)
     } finally {
-      setIsLoading(false)
+      isFetchingRef.current = false
     }
   }, [])
 
-  return { history, sendMessage, isLoading, error }
+  // 2. INIT SESSION
+  useEffect(() => {
+    const initSession = async () => {
+      setIsLoading(true)
+      try {
+        let targetId = initialSessionId
+
+        if (!targetId) {
+          targetId = localStorage.getItem(STORAGE_KEY)
+        }
+
+        if (targetId) {
+          setSessionId(targetId)
+          await fetchHistory(targetId)
+        } else {
+          const newSession = await startNewChatSession()
+          setSessionId(newSession.sessionId)
+          localStorage.setItem(STORAGE_KEY, newSession.sessionId)
+          setMessages([{
+              role: 'system',
+              text: CUSTOM_WELCOME_MSG,
+              timestamp: new Date().toISOString()
+            }])
+        }
+      } catch (err) {
+        setError('Cannot connect to chat service.')
+        console.error(err)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    initSession()
+  }, [initialSessionId, fetchHistory])
+
+  // 3. SYNC EVENTS
+  useEffect(() => {
+    if (!sessionId) return
+
+    const channel = new BroadcastChannel(SYNC_CHANNEL_NAME)
+    channel.onmessage = (event) => {
+      if (event.data.type === 'NEED_REFRESH') {
+        fetchHistory(sessionId)
+      }
+    }
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        fetchHistory(sessionId)
+      }
+    }
+
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+    return () => {
+      channel.close()
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+    }
+  }, [sessionId, fetchHistory])
+
+  //4. SEND MESSAGE
+  const sendMessage = useCallback(
+    async (question: string) => {
+      if (!question.trim() || !sessionId) return
+
+      // Optimistic UI
+      const userMsg: ChatHistoryMessage = {
+        role: 'user',
+        text: question,
+        timestamp: new Date().toISOString()
+      }
+      setMessages(prev => [...prev, userMsg])
+      setIsLoading(true)
+
+      try {
+        const response = await sendChatMessage(sessionId, question)
+
+        // Cập nhật câu trả lời từ Bot
+        const botMsg: ChatHistoryMessage = {
+          role: 'assistant',
+          text: response.answer,
+          timestamp: new Date().toISOString(),
+          chatId: response.chatId,
+          confidence: response.confidence
+        }
+        setMessages(prev => [...prev, botMsg])
+
+        // Báo cho các tab khác biết
+        const channel = new BroadcastChannel(SYNC_CHANNEL_NAME)
+        channel.postMessage({ type: 'NEED_REFRESH' })
+        channel.close()
+      } catch (err) {
+        setError(`Failed to send message: ${err instanceof Error ? err.message : 'Unknown error'}`)
+      } finally {
+        setIsLoading(false)
+      }
+    },
+    [sessionId]
+  )
+
+  // 5. CLEAR CHAT 
+  // -------------------------------------------------------
+  const clearChat = async () => {
+    setSessionId(null)
+
+    const welcomeMsg: ChatHistoryMessage = {
+        role: 'system',
+        text: CUSTOM_WELCOME_MSG,
+        timestamp: new Date().toISOString()
+    }
+    setMessages([welcomeMsg])
+    messagesRef.current = [welcomeMsg]
+
+    setIsLoading(true)
+    try {
+      // 1. Xóa session cũ khỏi Storage
+      localStorage.removeItem(STORAGE_KEY)
+
+      // 2. Tạo session mới
+      const newSession = await startNewChatSession()
+      setSessionId(newSession.sessionId)
+
+      // 3. Lưu session MỚI vào Storage
+      localStorage.setItem(STORAGE_KEY, newSession.sessionId) 
+
+      // 4. Báo cho các tab khác biết (để chúng nó cũng reload/clear theo)
+      const channel = new BroadcastChannel(SYNC_CHANNEL_NAME)
+      channel.postMessage({ type: 'NEED_REFRESH' })
+      channel.close()
+      
+    } catch (e) {
+      console.error(e)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  return {
+    sessionId,
+    messages,
+    isLoading,
+    error,
+    sendMessage,
+    clearChat
+  }
 }
