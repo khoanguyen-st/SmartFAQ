@@ -16,8 +16,8 @@ const ChatWidget = () => {
   const handleExpand = () => {
     if (sessionId) {
       // localhost:5173
-      // https://your-domain.com import.meta.env.VITE_BASE_URL ||
-      const HOST_URL = 'http://localhost:5173'
+      // https://your-domain.com
+      const HOST_URL = import.meta.env.VITE_BASE_URL || 'http://localhost:5173'
 
       const url = `${HOST_URL}/chat?sessionId=${sessionId}`
       window.open(url, '_blank')
@@ -34,11 +34,11 @@ const ChatWidget = () => {
   }
 
   return (
-    <div className="fixed right-10 bottom-10 ">
+    <div className="fixed right-10 bottom-10">
       <div
         className={`chat flex flex-col overflow-hidden rounded-4xl bg-white shadow-2xl shadow-slate-400 ${
           isOpen
-            ? 'translate-y-0 opacity-100 transition-all duration-300 ease-in-out m-9 h-160 w-120'
+            ? 'm-9 h-160 w-120 translate-y-0 opacity-100 transition-all duration-300 ease-in-out'
             : 'h-0 w-0 opacity-0 transition-all duration-300 ease-in-out'
         } origin-bottom-right`}
       >
@@ -70,8 +70,8 @@ const ChatWidget = () => {
       <button
         className={`open-button flex h-18 w-18 origin-bottom-right cursor-pointer items-center justify-center rounded-[50%] bg-[#00033d] transition-all duration-200 ease-in-out ${
           isOpen
-            ? 'translate-x-4 translate-y-2 scale-80 hover:scale-82 flex'
-            : 'flex origin-bottom-right scale-100 hover:scale-95 h-18 w-18'
+            ? 'flex translate-x-4 translate-y-2 scale-80 hover:scale-82'
+            : 'flex h-18 w-18 origin-bottom-right scale-100 hover:scale-95'
         } `}
         onClick={() => setIsOpen(prev => !prev)}
       >

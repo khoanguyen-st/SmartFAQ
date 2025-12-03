@@ -26,10 +26,10 @@ const AssistantMessage = ({ message, sessionId }: AssistantMessageProps) => {
   // 2. Logic Feedback
   const handleFeedback = async (clickedType: 'up' | 'down') => {
     if (!sessionId || !message.chatId) return
-    const isTogglingOff = feedbackStatus === clickedType // Người dùng bấm lại nút đang sáng
+    const isTogglingOff = feedbackStatus === clickedType 
 
-    const newUiStatus = isTogglingOff ? null : clickedType // Nếu toggle off thì UI về null, ngược lại thì theo nút bấm
-    const apiPayloadValue = isTogglingOff ? 'reset' : clickedType // Nếu toggle off thì gửi 'reset', ngược lại gửi 'up'/'down'
+    const newUiStatus = isTogglingOff ? null : clickedType 
+    const apiPayloadValue = isTogglingOff ? 'reset' : clickedType 
 
     setFeedbackStatus(newUiStatus)
 
@@ -37,12 +37,10 @@ const AssistantMessage = ({ message, sessionId }: AssistantMessageProps) => {
       await submitChatFeedback({
         chatId: message.chatId,
         sessionId: sessionId,
-        feedback: apiPayloadValue // Gửi 'up', 'down' hoặc 'reset'
+        feedback: apiPayloadValue 
       })
     } catch (error) {
       console.error('Feedback error', error)
-      // Rollback lại trạng thái cũ nếu lỗi (Optional)
-      // setFeedbackStatus(feedbackStatus);
     }
   }
 

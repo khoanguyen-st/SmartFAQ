@@ -66,11 +66,13 @@ export const useChat = (initialSessionId?: string | null) => {
           const newSession = await startNewChatSession()
           setSessionId(newSession.sessionId)
           localStorage.setItem(STORAGE_KEY, newSession.sessionId)
-          setMessages([{
+          setMessages([
+            {
               role: 'system',
               text: CUSTOM_WELCOME_MSG,
               timestamp: new Date().toISOString()
-            }])
+            }
+          ])
         }
       } catch (err) {
         setError('Cannot connect to chat service.')
@@ -88,7 +90,7 @@ export const useChat = (initialSessionId?: string | null) => {
     if (!sessionId) return
 
     const channel = new BroadcastChannel(SYNC_CHANNEL_NAME)
-    channel.onmessage = (event) => {
+    channel.onmessage = event => {
       if (event.data.type === 'NEED_REFRESH') {
         fetchHistory(sessionId)
       }
@@ -147,15 +149,15 @@ export const useChat = (initialSessionId?: string | null) => {
     [sessionId]
   )
 
-  // 5. CLEAR CHAT 
+  // 5. CLEAR CHAT
   // -------------------------------------------------------
   const clearChat = async () => {
     setSessionId(null)
 
     const welcomeMsg: ChatHistoryMessage = {
-        role: 'system',
-        text: CUSTOM_WELCOME_MSG,
-        timestamp: new Date().toISOString()
+      role: 'system',
+      text: CUSTOM_WELCOME_MSG,
+      timestamp: new Date().toISOString()
     }
     setMessages([welcomeMsg])
     messagesRef.current = [welcomeMsg]
@@ -170,13 +172,12 @@ export const useChat = (initialSessionId?: string | null) => {
       setSessionId(newSession.sessionId)
 
       // 3. Lưu session MỚI vào Storage
-      localStorage.setItem(STORAGE_KEY, newSession.sessionId) 
+      localStorage.setItem(STORAGE_KEY, newSession.sessionId)
 
       // 4. Báo cho các tab khác biết (để chúng nó cũng reload/clear theo)
       const channel = new BroadcastChannel(SYNC_CHANNEL_NAME)
       channel.postMessage({ type: 'NEED_REFRESH' })
       channel.close()
-      
     } catch (e) {
       console.error(e)
     } finally {

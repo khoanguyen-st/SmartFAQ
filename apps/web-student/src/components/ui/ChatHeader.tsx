@@ -29,7 +29,6 @@ const ChatHeader = ({
         </div>
       </div>
 
-
       <div className="flex items-center gap-2">
         {additionalActions && <div className="flex items-center">{additionalActions}</div>}
         {actionNode && <div>{actionNode}</div>}
