@@ -6,6 +6,7 @@ from datetime import datetime
 from typing import TYPE_CHECKING
 
 from sqlalchemy import DateTime, ForeignKey, Integer, String
+from sqlalchemy import Enum as SAEnum
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .config import Base
@@ -24,7 +25,12 @@ class Document(Base):
     category: Mapped[str | None] = mapped_column(String(120), nullable=True)
     tags: Mapped[str | None] = mapped_column(String(255), nullable=True)
     language: Mapped[str] = mapped_column(String(10), nullable=False, default="vi")
-    status: Mapped[str] = mapped_column(String(50), nullable=False, default="active")
+    # Status enum: REQUEST, PROCESSING, ACTIVE, FAIL
+    status: Mapped[str] = mapped_column(
+        SAEnum("REQUEST", "PROCESSING", "ACTIVE", "FAIL", name="documentstatus"),
+        nullable=False,
+        default="REQUEST",
+    )
 
     current_version_id: Mapped[int | None] = mapped_column(
         ForeignKey("document_versions.id"), nullable=True

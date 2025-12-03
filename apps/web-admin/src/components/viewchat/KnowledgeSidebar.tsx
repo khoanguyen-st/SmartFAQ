@@ -5,25 +5,34 @@ import { cn } from '@/lib/utils'
 import React from 'react'
 import UploadedFile, { UploadedFileHandle } from './UploadedFile'
 import { X } from 'lucide-react'
+import SearchFilterBar from '@/components/ui/SearchFilterBar'
 
 interface KnowledgeSidebarProps {
   isSidebarOpen: boolean
   setIsSidebarOpen: (isOpen: boolean) => void
   handleSelectFileClick: () => void
   uploadedFileRef: React.RefObject<UploadedFileHandle>
+  onSearch?: (value: string) => void
 }
 
 const KnowledgeSidebar: React.FC<KnowledgeSidebarProps> = ({
   isSidebarOpen,
   setIsSidebarOpen,
   handleSelectFileClick,
-  uploadedFileRef
+  uploadedFileRef,
+  onSearch
 }) => {
+  const handleSearch = (value: string) => {
+    onSearch?.(value)
+  }
+
+  const handleFilter = () => {}
+
   return (
     <div
       className={cn(
         'flex h-full flex-col border-r border-[#F3F4F6] bg-white transition-all duration-300 ease-in-out',
-        'fixed inset-0 z-40 lg:relative',
+        'fixed inset-0 z-30 lg:relative',
         isSidebarOpen ? 'w-full lg:w-1/2 lg:min-w-[400px]' : 'w-0 -translate-x-full lg:w-[118px] lg:translate-x-0',
         'overflow-hidden'
       )}
@@ -85,6 +94,10 @@ const KnowledgeSidebar: React.FC<KnowledgeSidebarProps> = ({
           </button>
         </div>
       </div>
+
+      {isSidebarOpen && (
+        <SearchFilterBar onSearch={handleSearch} onFilter={handleFilter} placeholder="Search documents..." />
+      )}
 
       <div className="relative flex flex-1 flex-col overflow-hidden">
         {!isSidebarOpen && (

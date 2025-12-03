@@ -12,11 +12,6 @@ _EMBED_CACHE: Dict[str, Embeddings] = {}
 
 
 def get_embeddings(model: Optional[str] = None) -> Embeddings:
-    """
-    Get embeddings model (cached singleton).
-    Supports HuggingFace local models.
-    For LangChain v1, using langchain-huggingface package.
-    """
     name = model or settings.EMBED_MODEL
     if name in _EMBED_CACHE:
         return _EMBED_CACHE[name]
