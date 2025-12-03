@@ -4,7 +4,8 @@ import iUrl from '../../assets/icons/i.svg'
 import uploadUrl from '../../assets/icons/upload.svg'
 import { getFileIcon } from '../../lib/icons'
 import { uploadKnowledgeFiles } from '../../services/document.services'
-import InformationModal from './InformationModal'
+import { X } from 'lucide-react'
+
 export interface FileItem {
   id: string
   name: string
@@ -15,16 +16,15 @@ export interface FileItem {
 interface UploadModalProps {
   isOpen: boolean
   onClose: () => void
+  onFilesUploaded?: (files: { name: string; size: number; type: string }[]) => void
 }
 
-const UploadModal = ({ isOpen, onClose }: UploadModalProps) => {
+const UploadModal = ({ isOpen, onClose, onFilesUploaded }: UploadModalProps) => {
   const [files, setFiles] = useState<FileItem[]>([])
   const [fileObjects, setFileObjects] = useState<Map<string, File>>(new Map())
-  const [fileInfo, setFileInfo] = useState<Record<string, { category?: string; tags?: string[] }>>({})
   const [selectedFiles, setSelectedFiles] = useState<string[]>([])
   const [error, setError] = useState<string | null>(null)
-  const [success, setSuccess] = useState(false)
-  const [showInfoModal, setShowInfoModal] = useState(false)
+  const [isSaving, setIsSaving] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
@@ -33,7 +33,7 @@ const UploadModal = ({ isOpen, onClose }: UploadModalProps) => {
       setFileObjects(new Map())
       setSelectedFiles([])
       setError(null)
-      setSuccess(false)
+      setIsSaving(false)
     }
   }, [isOpen])
 
@@ -62,22 +62,23 @@ const UploadModal = ({ isOpen, onClose }: UploadModalProps) => {
       files.map(f => f.name.toLowerCase())
     )
 
-    if (error) {
-      setError(error)
-      return
+    if (valid.length > 0) {
+      const mapped = mapFiles(valid)
+      setFiles(prev => [...prev, ...mapped])
+
+      setFileObjects(prev => {
+        const newMap = new Map(prev)
+        valid.forEach(file => {
+          const fileItem = mapped.find(f => f.name === file.name)
+          if (fileItem) newMap.set(fileItem.id, file)
+        })
+        return newMap
+      })
     }
 
-    const mapped = mapFiles(valid)
-    setFiles(prev => [...prev, ...mapped])
-
-    setFileObjects(prev => {
-      const newMap = new Map(prev)
-      valid.forEach(file => {
-        const fileItem = mapped.find(f => f.name === file.name)
-        if (fileItem) newMap.set(fileItem.id, file)
-      })
-      return newMap
-    })
+    if (error) {
+      setError(error)
+    }
   }
 
   const handleRemoveSelected = () => {
@@ -93,12 +94,6 @@ const UploadModal = ({ isOpen, onClose }: UploadModalProps) => {
       return newMap
     })
 
-    setFileInfo(prev => {
-      const updated = { ...prev }
-      selectedFiles.forEach(id => delete updated[id])
-      return updated
-    })
-
     setSelectedFiles([])
   }
 
@@ -112,7 +107,7 @@ const UploadModal = ({ isOpen, onClose }: UploadModalProps) => {
       if (!newFile) return
 
       if (newFile.size > MAX_SIZE) {
-        setError('Invalid file (max 10MB).')
+        setError('Invalid file (max 50MB).')
         return
       }
 
@@ -142,8 +137,27 @@ const UploadModal = ({ isOpen, onClose }: UploadModalProps) => {
       return
     }
 
+    if (isSaving) return
+
     setError(null)
-    setSuccess(false)
+    setIsSaving(true)
+    const filesInfo = files.map(file => {
+      const fileObj = fileObjects.get(file.id)
+      const fileType = fileObj?.name.split('.').pop()?.toLowerCase() || 'file'
+      return {
+        name: file.name,
+        size: file.size,
+        type: fileType
+      }
+    })
+
+    if (onFilesUploaded) {
+      onFilesUploaded(filesInfo)
+    }
+
+    setTimeout(() => {
+      onClose()
+    }, 1000)
 
     try {
       const filesToUpload: File[] = []
@@ -152,18 +166,19 @@ const UploadModal = ({ isOpen, onClose }: UploadModalProps) => {
         if (fileObj) filesToUpload.push(fileObj)
       })
 
-      if (filesToUpload.length === 0) throw new Error('No valid files to upload')
-
-      await uploadKnowledgeFiles(filesToUpload)
-
-      setSuccess(true)
-      setTimeout(() => {
-        setSuccess(false)
-        onClose()
-      }, 1800)
+      if (filesToUpload.length > 0) {
+        uploadKnowledgeFiles(filesToUpload).catch(error => {
+          console.error('Upload error:', error)
+        })
+      }
     } catch (error) {
-      console.error('Upload error:', error)
-      setError(error instanceof Error ? error.message : 'Failed to upload files')
+      console.error('Upload preparation error:', error)
+    }
+  }
+
+  const handleBackdropClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (e.target === e.currentTarget && !isSaving) {
+      onClose()
     }
   }
 
@@ -185,39 +200,44 @@ const UploadModal = ({ isOpen, onClose }: UploadModalProps) => {
   const UploadIcon: React.FC<ImgCompProps> = props => <img src={uploadUrl} alt="upload" {...props} />
 
   return (
-    <div className="bg-opacity-70 fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm">
-      <div className="w-full max-w-2xl overflow-hidden rounded-xl bg-white shadow-2xl">
-        <div className="flex items-start justify-between border-b border-gray-100 p-6">
+    <div
+      className="bg-opacity-70 fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-sm"
+      onClick={handleBackdropClick}
+    >
+      <div className="w-full max-w-2xl overflow-hidden rounded-xl bg-white shadow-2xl sm:w-11/12 md:max-w-xl lg:max-w-2xl">
+        <div className="flex items-start justify-between border-b border-gray-100 p-4 sm:p-6">
           <div>
-            <h2 className="text-xl font-semibold text-gray-800">Upload Documents</h2>
-            <p className="mt-1 text-sm text-gray-500">
+            <h2 className="text-lg font-semibold text-gray-800 sm:text-xl">Upload Documents</h2>
+            <p className="mt-1 text-xs text-gray-500 sm:text-sm">
               Upload reference materials to enhance chatbot responses for students.
             </p>
           </div>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
-            <i className="fas fa-times text-lg"></i>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600" disabled={isSaving}>
+            <X className="h-5 w-5" />
           </button>
         </div>
 
-        <div className="space-y-5 p-6">
+        <div className="space-y-4 p-4 sm:space-y-5 sm:p-6">
           <div
             onDragOver={handleDragOver}
             onDrop={handleDrop}
-            onClick={() => fileInputRef.current?.click()}
-            className="cursor-pointer rounded-lg border-2 border-dashed border-indigo-200 bg-slate-50 p-10 text-center transition hover:border-indigo-400"
+            onClick={() => !isSaving && fileInputRef.current?.click()}
+            className={`cursor-pointer rounded-lg border-2 border-dashed border-indigo-200 bg-slate-50 p-6 text-center transition hover:border-indigo-400 sm:p-10 ${
+              isSaving ? 'pointer-events-none opacity-50' : ''
+            }`}
           >
-            <div className="mx-auto mb-3 flex h-16 w-16 items-center justify-center rounded-full bg-indigo-100">
-              <UploadIcon className="h-[21px] w-[30px]" aria-hidden />
+            <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-indigo-100 sm:h-16 sm:w-16">
+              <UploadIcon className="h-[20px] w-[28px] sm:h-[21px] sm:w-[30px]" aria-hidden />
             </div>
-            <p className="font-semibold text-gray-700">
+            <p className="text-sm font-semibold text-gray-700 sm:text-base">
               Drag & drop files here or <span className="text-indigo-600 hover:underline">choose files to upload.</span>
             </p>
             <p className="mt-1 text-xs text-gray-500">
               Supported formats: PDF,DOC, DOCX, TXT, MD <br />
-              Maximum 20 files per upload, each ≤ 10MB
+              Maximum 20 files per upload, each ≤ 50MB
             </p>
 
-            <div className="mx-auto mt-3 w-1/2">
+            <div className="mx-auto mt-3 w-4/5 sm:w-1/2">
               <p className="text-xs text-gray-600">Progress:</p>
               <div className="mt-1 h-1 overflow-hidden rounded bg-gray-300">
                 <div
@@ -236,6 +256,7 @@ const UploadModal = ({ isOpen, onClose }: UploadModalProps) => {
               multiple
               className="hidden"
               accept=".pdf,.doc,.docx,.txt,.md"
+              disabled={isSaving}
               onChange={e => {
                 handleFiles(e.target.files)
                 e.currentTarget.value = ''
@@ -246,73 +267,52 @@ const UploadModal = ({ isOpen, onClose }: UploadModalProps) => {
           {error && <p className="text-center text-sm font-medium text-red-500">{error}</p>}
 
           <div>
-            <div className="max-h-60 space-y-3 overflow-y-auto rounded-lg border border-gray-200 bg-gray-50 p-4">
+            <div className="max-h-52 space-y-3 overflow-y-auto rounded-lg border border-gray-200 bg-gray-50 p-3 sm:max-h-60 sm:p-4">
               <div className="mb-2 flex items-center justify-between">
-                <h3 className="text-base font-semibold text-gray-700">Uploaded Files</h3>
+                <h3 className="text-sm font-semibold text-gray-700 sm:text-base">Uploaded Files</h3>
 
-                <div className="flex items-center space-x-2">
-                  <button
-                    onClick={() => {
-                      if (selectedFiles.length === 0) {
-                        setError('Please select at least one file to update.')
-                        return
-                      }
-                      setShowInfoModal(true)
-                    }}
-                    className="rounded-lg bg-indigo-600 px-3 py-1.5 text-sm font-medium text-white shadow-md transition-all duration-300 hover:-translate-y-0.5 hover:scale-105 hover:bg-indigo-700 hover:shadow-lg active:translate-y-0 active:scale-95"
-                  >
-                    <span>Update</span>
-                  </button>
-                  <button
-                    onClick={handleRemoveSelected}
-                    className="rounded-lg px-3 py-1.5 text-sm font-medium shadow-md transition-all duration-300 hover:scale-105 hover:bg-red-50 hover:shadow-lg active:scale-95"
-                  >
-                    <span className="text-red-500 hover:text-red-600">Remove</span>
-                  </button>
-                </div>
+                <button
+                  onClick={handleRemoveSelected}
+                  disabled={isSaving}
+                  className="rounded-lg px-2 py-1 text-sm font-medium shadow-md transition-all duration-300 hover:scale-105 hover:bg-red-50 hover:shadow-lg active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 sm:px-3"
+                >
+                  <span className="text-red-500 hover:text-red-600">Remove</span>
+                </button>
               </div>
 
               {files.length === 0 ? (
-                <p className="py-3 text-center text-gray-400">No files uploaded yet.</p>
+                <p className="py-3 text-center text-sm text-gray-400">No files uploaded yet.</p>
               ) : (
                 files.map(file => (
                   <div
                     key={file.id}
                     className="flex items-center justify-between rounded-lg border border-gray-200 bg-white p-3"
                   >
-                    <div className="flex items-center space-x-3">
+                    <div className="flex items-center space-x-3 truncate">
                       <input
                         type="checkbox"
                         checked={selectedFiles.includes(file.id)}
                         onChange={() => toggleSelect(file.id)}
-                        className="h-4 w-4 cursor-pointer accent-indigo-600"
+                        disabled={isSaving}
+                        className="h-4 w-4 shrink-0 cursor-pointer accent-indigo-600 disabled:cursor-not-allowed disabled:opacity-50"
                       />
                       <div
-                        className={`flex h-8 w-8 items-center justify-center rounded-lg ${getFileBgClass(file.name)}`}
+                        className={`flex h-7 w-7 items-center justify-center rounded-lg sm:h-8 sm:w-8 ${getFileBgClass(file.name)} shrink-0`}
                       >
                         {(() => {
                           const IconComp = getFileIcon(file.name)
-                          return <IconComp className="h-[15px] w-[15px]" />
+                          return <IconComp className="h-[14px] w-[14px] sm:h-[15px] sm:w-[15px]" />
                         })()}
                       </div>
-                      <div>
-                        <p className="text-sm font-medium text-gray-800">{file.name}</p>
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-medium text-gray-800">{file.name}</p>
                         <p className="text-xs text-gray-500">{formatBytes(file.size)}</p>
-                        {(() => {
-                          const info = fileInfo[file.id]
-                          if (!info) return null
-                          return (
-                            <p className="mt-1 text-xs text-gray-600 italic">
-                              {info.category ? ` ${info.category}` : ''}{' '}
-                              {Array.isArray(info.tags) && info.tags.length > 0 ? ` ${info.tags.join(', ')}` : ''}
-                            </p>
-                          )
-                        })()}
                       </div>
                     </div>
                     <button
                       onClick={() => handleReplace(file.id)}
-                      className="text-sm font-medium text-indigo-600 hover:text-indigo-800"
+                      disabled={isSaving}
+                      className="ml-2 shrink-0 text-sm font-medium text-indigo-600 hover:text-indigo-800 disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       Replace
                     </button>
@@ -323,47 +323,52 @@ const UploadModal = ({ isOpen, onClose }: UploadModalProps) => {
           </div>
         </div>
 
-        {/* Footer */}
-        <div className="flex items-center justify-between gap-4 border-t border-gray-100 p-6">
-          <div className="flex-1">
+        <div className="flex flex-col items-center justify-between gap-3 border-t border-gray-100 p-4 sm:flex-row sm:gap-4 sm:p-6">
+          <div className="w-full flex-1 sm:w-auto">
             <p className="flex items-start space-x-1 text-xs text-indigo-700">
-              <InfoIcon className="mt-1 h-[14px] w-[14px]" />
-              <span className="block max-w-[360px]">
+              <InfoIcon className="mt-1 h-[14px] w-[14px] shrink-0" />
+              <span className="block max-w-full sm:max-w-[360px]">
                 Uploaded documents will be automatically processed into the chatbot knowledge base.
               </span>
             </p>
           </div>
-          <div className="flex space-x-3">
-            <button
-              onClick={onClose}
-              className="rounded-lg border border-gray-300 px-5 py-2 text-gray-700 transition hover:bg-gray-50"
-            >
-              Cancel
-            </button>
+          <div className="flex w-full justify-end space-x-3 sm:w-auto">
             <button
               onClick={handleSave}
-              className="rounded-lg bg-indigo-600 px-6 py-2 font-medium text-white shadow-md transition hover:bg-indigo-700"
+              disabled={isSaving}
+              className="flex w-full items-center justify-center gap-2 rounded-lg bg-indigo-600 px-6 py-2 font-medium text-white shadow-md transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
             >
-              Save & Process
+              {isSaving ? (
+                <>
+                  <svg
+                    className="h-4 w-4 animate-spin text-white"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    ></circle>
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    ></path>
+                  </svg>
+                  Processing...
+                </>
+              ) : (
+                'Save & Process'
+              )}
             </button>
           </div>
         </div>
       </div>
-
-      {success && (
-        <div className="fixed right-6 bottom-6 animate-bounce rounded-lg bg-green-500 px-5 py-3 text-white shadow-lg">
-          Uploaded files have been processed successfully.
-        </div>
-      )}
-
-      {showInfoModal && (
-        <InformationModal
-          onClose={() => setShowInfoModal(false)}
-          selectedFiles={files.filter(f => selectedFiles.includes(f.id))}
-          existingInfo={fileInfo}
-          onSave={updated => setFileInfo(updated)}
-        />
-      )}
     </div>
   )
 }

@@ -28,7 +28,7 @@ class Settings(BaseSettings):
     LLM_TEMPERATURE: float = Field(0.3, alias="LLM_TEMPERATURE")
     LLM_MAX_TOKENS: int = Field(2048, alias="LLM_MAX_TOKENS")
 
-    EMBED_MODEL: str = Field("intfloat/multilingual-e5-small", alias="EMBED_MODEL")
+    EMBED_MODEL: str = Field("intfloat/multilingual-e5-base", alias="EMBED_MODEL")
     EMBED_DEVICE: str = Field("cpu", alias="EMBED_DEVICE")
     EMBED_NORMALIZE: bool = Field(True, alias="EMBED_NORMALIZE")
     EMBED_BATCH: int = Field(32, alias="EMBED_BATCH")
@@ -39,6 +39,11 @@ class Settings(BaseSettings):
     CHROMA_HEADERS: str = Field("", alias="CHROMA_HEADERS")
 
     CONFIDENCE_THRESHOLD: float = Field(0.65, alias="CONFIDENCE_THRESHOLD")
+    HYBRID_ENABLED: bool = Field(True, alias="HYBRID_ENABLED")
+    HYBRID_K_VEC: int = Field(20, alias="HYBRID_K_VEC")
+    HYBRID_K_LEX: int = Field(20, alias="HYBRID_K_LEX")
+    HYBRID_FUSION_K: int = Field(60, alias="HYBRID_FUSION_K")
+    HYBRID_MAX_DOCS: int = Field(5000, alias="HYBRID_MAX_DOCS")
     MAX_CONTEXT_CHARS: int = Field(8000, alias="MAX_CONTEXT_CHARS")
     TOP_K_RETRIEVAL: int = Field(5, alias="TOP_K_RETRIEVAL")
 

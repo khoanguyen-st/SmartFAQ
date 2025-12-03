@@ -1,10 +1,17 @@
 import asyncio
+import logging
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from .api import admin, auth, chat, docs, fallback, staff
 from .core.config import settings
+from .rag.embedder import get_embeddings
+from .rag.llm import LLMWrapper
+from .rag.retriever import Retriever
+from .rag.vector_store import get_vectorstore
+
+logger = logging.getLogger(__name__)
 
 
 def create_app() -> FastAPI:
@@ -67,6 +74,39 @@ def create_app() -> FastAPI:
     @app.get("/health", tags=["system"])
     def health_check() -> dict[str, str]:
         return {"status": "ok", "environment": settings.env}
+
+    @app.on_event("startup")
+    async def warmup() -> None:
+        """
+        Warm critical components so that the first user request is fast and clean.
+        - Init embeddings/vectorstore (ensure collection exists).
+        - Build BM25 index if hybrid retrieval is enabled.
+        - Init LLM client.
+        """
+        try:
+            get_embeddings()
+            vs = get_vectorstore()
+            # Lightweight ping to ensure collection is ready
+            try:
+                vs.similarity_search("ping", k=1)
+            except Exception:
+                logger.exception("Warmup: vectorstore similarity_search failed")
+
+            if settings.HYBRID_ENABLED:
+                try:
+                    Retriever()._get_lexical_index()
+                except Exception:
+                    logger.exception("Warmup: failed to build BM25 lexical index")
+
+            # Init LLM
+            try:
+                LLMWrapper()
+            except Exception:
+                logger.exception("Warmup: failed to initialize LLM")
+
+            logger.info("Warmup completed.")
+        except Exception:
+            logger.exception("Warmup failed.")
 
     return app
 
