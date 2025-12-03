@@ -37,8 +37,6 @@ class RAGOrchestrator:
         if not raw_q:
             return self._response("Please input a valid question.", [], 0, t0, True)
 
-        logger.info(f" [Input] Raw: '{raw_q}' | History Len: {len(history) if history else 0}")
-
         final_search_query = raw_q
         if history and len(history) > 0:
             try:
@@ -46,7 +44,7 @@ class RAGOrchestrator:
                     [f"{h.get('role', 'user')}: {h.get('text', '')}" for h in history[-4:]]
                 )
                 rewrite_system = (
-                    "Bạn là chuyên gia viết lại câu hỏi cho Đại học Greenwich Việt Nam. "
+                    "Bạn là trợ lý AI của Đại học Greenwich Việt Nam.\n "
                     "Nhiệm vụ: Viết lại câu hỏi nối tiếp (follow-up) thành câu hỏi độc lập, đầy đủ chủ ngữ dựa trên lịch sử chat. "
                     "QUAN TRỌNG: Nếu câu hỏi mơ hồ hoặc thiếu chủ ngữ (ví dụ: 'thư viện', 'học phí là bao nhiêu'), "
                     "LUÔN LUÔN mặc định người dùng đang hỏi về 'Đại học Greenwich Việt Nam'. "
@@ -59,32 +57,24 @@ class RAGOrchestrator:
                 rewrite_result = await self.llm.invoke_json(rewrite_system, rewrite_input)
                 if rewrite_result and "standalone_question" in rewrite_result:
                     final_search_query = rewrite_result["standalone_question"]
-                    logger.info(f" [Contextualizer] '{raw_q}' -> '{final_search_query}'")
-                else:
-                    logger.warning(f" [Contextualizer] Failed to rewrite, keeping raw: '{raw_q}'")
             except Exception as e:
-                logger.error(f" [Contextualizer] Error: {e}")
+                logger.error(f"Contextualizer Error: {e}")
 
         safety_check = await self.guardrail.check_safety(final_search_query)
-        logger.info(
-            f" [Guardrail] Checking: '{final_search_query}' -> Status: {safety_check.get('status')}"
-        )
 
         if safety_check["status"] == "blocked":
-            temp_lang = language if language else detect_language(final_search_query)
+            temp_lang = detect_language(final_search_query)
             msg = safety_check.get("vi") if temp_lang == "vi" else safety_check.get("en")
             return self._response(msg or "Request rejected.", [], 1.0, t0, False)
 
-        if not language:
-            norm_result = await self.normalizer.understand(final_search_query)
-            target_lang = norm_result["language"]
-            refined_q = norm_result["normalized_text"]
-            logger.info(
-                f" [Normalizer] '{final_search_query}' -> '{refined_q}' | Lang: '{target_lang}'"
-            )
+        norm_result = await self.normalizer.understand(final_search_query)
+        detected_lang = norm_result["language"]
+        refined_q = norm_result["normalized_text"]
+
+        if detected_lang in ["vi", "en"]:
+            target_lang = detected_lang
         else:
-            target_lang = language
-            refined_q = final_search_query
+            target_lang = language if language else "en"
 
         try:
             analysis_dict = await self.llm.invoke_json(get_master_analyzer_prompt(), refined_q)
