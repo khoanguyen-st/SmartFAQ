@@ -64,6 +64,36 @@ async def create_docs(
         ) from exc
 
 
+@router.get("/search")
+async def search_documents_by_name(name: str, db: AsyncSession = Depends(get_db)):
+    try:
+        docs = await dms.search_documents_by_name(name, db)
+        return {"documents": docs}
+    except HTTPException:
+        raise
+    except Exception as exc:
+        logger.exception("Failed to search documents by name")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to search documents by name.",
+        ) from exc
+
+
+@router.get("/filter")
+async def filter_documents_by_format(format: str, db: AsyncSession = Depends(get_db)):
+    try:
+        docs = await dms.filter_documents_by_format(format, db)
+        return {"documents": docs}
+    except HTTPException:
+        raise
+    except Exception as exc:
+        logger.exception("Failed to filter documents by format")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to filter documents by format.",
+        ) from exc
+
+
 @router.get("/{doc_id}", response_model=document.DocumentOut)
 async def get_document(doc_id: int, db: AsyncSession = Depends(get_db)):
     try:

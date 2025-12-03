@@ -433,3 +433,71 @@ async def delete_document(doc_id: int, db: AsyncSession) -> bool:
             logger.exception("Failed to rollback after delete failure for %s: %s", doc_id, rb_exc)
 
         return False
+
+
+async def search_documents_by_name(name: str, db: AsyncSession) -> list[dict[str, Any]]:
+    try:
+        stmt = (
+            select(Document)
+            .options(selectinload(Document.current_version))
+            .where(Document.title.ilike(f"%{name}%"))
+            .order_by(Document.created_at.desc())
+        )
+        result = await db.execute(stmt)
+        rows = result.scalars().all()
+
+        return [
+            {
+                "id": d.id,
+                "title": d.title,
+                "category": d.category,
+                "tags": d.tags,
+                "language": d.language,
+                "status": d.status,
+                "current_version_id": d.current_version_id,
+                "created_at": d.created_at.isoformat() if d.created_at else None,
+                "current_file_size": d.current_version.file_size if d.current_version else None,
+                "current_format": d.current_version.format if d.current_version else None,
+            }
+            for d in rows
+        ]
+    except Exception as exc:
+        logger.exception("Error occurred while searching documents by name: %s", exc)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to search documents by name.",
+        ) from exc
+
+
+async def filter_documents_by_format(format: str, db: AsyncSession) -> list[dict[str, Any]]:
+    try:
+        stmt = (
+            select(Document)
+            .options(selectinload(Document.current_version))
+            .where(Document.current_version.has(format=format))
+            .order_by(Document.created_at.desc())
+        )
+        result = await db.execute(stmt)
+        rows = result.scalars().all()
+
+        return [
+            {
+                "id": d.id,
+                "title": d.title,
+                "category": d.category,
+                "tags": d.tags,
+                "language": d.language,
+                "status": d.status,
+                "current_version_id": d.current_version_id,
+                "created_at": d.created_at.isoformat() if d.created_at else None,
+                "current_file_size": d.current_version.file_size if d.current_version else None,
+                "current_format": d.current_version.format if d.current_version else None,
+            }
+            for d in rows
+        ]
+    except Exception as exc:
+        logger.exception("Error occurred while filtering documents by format: %s", exc)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to filter documents by format.",
+        ) from exc
