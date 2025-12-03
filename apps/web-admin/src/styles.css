@@ -149,39 +149,31 @@
   }
 }
 
-/* --- Custom Styles for Departments Page --- */
-
-/* Container chính của trang */
 .dept-page-wrapper {
   @apply flex flex-col overflow-hidden bg-[#F9FAFB] p-4 font-sans text-[#111827] md:pt-[50px] md:pr-[100px] md:pb-[85px] md:pl-[100px];
 }
 
-/* Header: Cách ô search 50px */
 .dept-header-section {
   @apply flex shrink-0 flex-col gap-4 md:flex-row md:items-center md:justify-between;
   margin-bottom: 50px;
 }
 
-/* Search: Cách table 45px */
 .dept-search-section {
   @apply shrink-0 rounded-lg bg-white shadow-sm;
   margin-bottom: 45px;
 }
 
-/* Table Container */
 .dept-table-wrapper {
   @apply flex flex-col overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm;
 }
 
-/* Table Row: Chiều cao 85px đều nhau */
 .dept-table-row {
   @apply border-b border-[#EEEEEE] transition-colors last:border-b-0 hover:bg-gray-50;
-  height: 85px; 
+  height: 73px; 
 }
 
-/* Pagination: Cách table 45px */
 .dept-pagination-section {
   @apply z-20 mt-auto flex shrink-0 flex-wrap items-center justify-center gap-4 bg-transparent md:justify-end;
   margin-top: 45px;
-  padding-top: 0; /* Reset padding cũ nếu có */
+  padding-top: 0;
 }

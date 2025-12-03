@@ -61,30 +61,24 @@ const DepartmentsPage = () => {
     return filteredData.slice(start, start + itemsPerPage)
   }, [filteredData, currentPage, itemsPerPage])
 
-  const handleCreate = async (data: { name: string; description: string }) => {
+  const handleCreate = async (data: { name: string }) => {
     setIsLoading(true)
     try {
       await createDepartment(data)
       await loadData()
       setIsAddOpen(false)
-    } catch (error) {
-      console.error(error)
-      alert('Failed to create department')
     } finally {
       setIsLoading(false)
     }
   }
 
-  const handleUpdate = async (data: { name: string; description: string }) => {
+  const handleUpdate = async (data: { name: string }) => {
     if (!editingDept) return
     setIsLoading(true)
     try {
       await updateDepartment(editingDept.id, data)
       await loadData()
       setEditingDept(null)
-    } catch (error) {
-      console.error(error)
-      alert('Failed to update department')
     } finally {
       setIsLoading(false)
     }
@@ -121,9 +115,7 @@ const DepartmentsPage = () => {
   }
 
   return (
-    // Sử dụng class semantic: dept-page-wrapper
     <div className="dept-page-wrapper">
-      {/* Header Section: Margin bottom 50px */}
       <div className="dept-header-section">
         <div>
           <h3 className="text-2xl leading-tight font-bold text-[#111827] md:text-[40px]">List of Department</h3>
@@ -139,7 +131,6 @@ const DepartmentsPage = () => {
         </button>
       </div>
 
-      {/* Search Section: Margin bottom 45px */}
       <div className="dept-search-section">
         <div className="relative w-full">
           <input
@@ -156,7 +147,6 @@ const DepartmentsPage = () => {
         </div>
       </div>
 
-      {/* Table Section */}
       <div className="dept-table-wrapper">
         <div className="w-full border-b border-[#EEEEEE] bg-white pr-1.5">
           <table className="w-full min-w-full table-fixed border-collapse">
@@ -176,7 +166,7 @@ const DepartmentsPage = () => {
           </table>
         </div>
 
-        <div className="max-h-[365px] flex-1 overflow-y-auto [scrollbar-gutter:stable] [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-gray-300 hover:[&::-webkit-scrollbar-thumb]:bg-gray-400 [&::-webkit-scrollbar-track]:bg-transparent">
+        <div className="max-h-[370px] flex-1 overflow-y-auto [scrollbar-gutter:stable] [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-gray-300 hover:[&::-webkit-scrollbar-thumb]:bg-gray-400 [&::-webkit-scrollbar-track]:bg-transparent">
           <table className="w-full min-w-full table-fixed border-collapse">
             <tbody>
               {currentData.length === 0 ? (
@@ -187,7 +177,6 @@ const DepartmentsPage = () => {
                 </tr>
               ) : (
                 currentData.map(dept => (
-                  // Row Table: Height 85px
                   <tr key={dept.id} className="dept-table-row">
                     <td className="w-[15%] text-center text-sm font-medium text-[#637381] md:w-[10%] md:text-base">
                       {dept.id}
@@ -222,7 +211,6 @@ const DepartmentsPage = () => {
         </div>
       </div>
 
-      {/* Pagination Section: Margin top 45px */}
       <div className="dept-pagination-section">
         <div className="mr-6 hidden text-base font-medium text-[#202224] opacity-60 sm:block">
           Showing {(currentPage - 1) * itemsPerPage + 1}-{Math.min(currentPage * itemsPerPage, filteredData.length)} of{' '}

@@ -35,6 +35,8 @@ async def create_department(
 ):
     try:
         return await ds.create_department(db, department)
+    except HTTPException:
+        raise
     except ValueError as e:
         logger.error(f"Value error creating department: {str(e)}")
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
@@ -56,6 +58,8 @@ async def update_department(
         if updated is None:
             raise ValueError("Department not found")
         return updated
+    except HTTPException:
+        raise
     except ValueError as e:
         logger.error(f"Value error updating department {department_id}: {str(e)}")
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
@@ -76,6 +80,8 @@ async def delete_department(
         if deleted == 0:
             raise ValueError("Department not found")
         return {"message": "Department deleted successfully"}
+    except HTTPException:
+        raise
     except ValueError as e:
         logger.error(f"Value error deleting department {department_id}: {str(e)}")
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
