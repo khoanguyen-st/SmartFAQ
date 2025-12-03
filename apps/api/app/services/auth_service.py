@@ -98,7 +98,8 @@ class AuthService:
                 raise AccountLockedError
             raise InvalidPasswordError
 
-        if user.campus != campus_id:
+        # Chỉ kiểm tra campus nếu user không thuộc MAIN
+        if user.campus != "MAIN" and user.campus != campus_id:
             raise InvalidCampusError
 
         await self.reset_failed_attempts(user)

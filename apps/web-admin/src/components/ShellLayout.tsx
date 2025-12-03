@@ -1,9 +1,8 @@
 import { useEffect } from 'react'
-import { NavLink, useNavigate } from 'react-router-dom'
+import { NavLink, useNavigate, Outlet } from 'react-router-dom'
 import { cn } from '@/lib/utils'
 import { logout } from '@/lib/api'
 import { useState, useCallback, useMemo } from 'react'
-import type { ReactNode } from 'react'
 import educationUrl from '@/assets/icons/education.svg'
 import userUrl from '@/assets/icons/user.svg'
 import { Menu, X } from 'lucide-react'
@@ -22,7 +21,7 @@ const navItems = [
   { path: 'profile', label: 'Profile' }
 ]
 
-const ShellLayout = ({ children }: { children: ReactNode }) => {
+const ShellLayout = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
 
   const navigate = useNavigate()
@@ -131,7 +130,9 @@ const ShellLayout = ({ children }: { children: ReactNode }) => {
             </div>
           </div>
         </header>
-        <div className="flex flex-col gap-6">{children}</div>
+        <div className="flex flex-col gap-6 p-6">
+          <Outlet />
+        </div>
       </main>
     </div>
   )
