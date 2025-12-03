@@ -52,10 +52,6 @@ export const UserTable: React.FC<UserTableProps> = ({ users, loading, onEdit, on
           return (
             <tr
               key={user.id}
-              // SỬA Ở ĐÂY:
-              // 1. border-[#EEEEEE]: Đặt màu đường kẻ chính xác
-              // 2. border-b: Tạo đường kẻ dưới (1px solid mặc định của tailwind)
-              // 3. last:border-0: Xóa đường kẻ ở dòng cuối cùng
               className="border-b border-[#EEEEEE] text-sm text-slate-700 transition-colors last:border-0 hover:bg-slate-50"
               style={{ height: '60px' }}
             >
@@ -90,7 +86,6 @@ export const UserTable: React.FC<UserTableProps> = ({ users, loading, onEdit, on
   return (
     <div className="hidden overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm md:block">
       <table className="w-full">
-        {/* Tiêu đề không có border-b (theo yêu cầu trước) */}
         <thead className="bg-white text-xs text-black uppercase">
           <tr style={{ height: '60px' }}>
             <th className="px-6 py-3 text-center font-bold whitespace-nowrap">ID</th>

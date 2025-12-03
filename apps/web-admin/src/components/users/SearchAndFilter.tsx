@@ -69,7 +69,6 @@ export const SearchBar: React.FC<SearchBarProps> = ({
   return (
     <div className="rounded-lg border border-slate-200 bg-white shadow-sm">
       <div className="relative flex h-[52px] items-center">
-        {/* Input Search */}
         <input
           type="text"
           placeholder="Search by name or email..."
@@ -78,9 +77,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
           className="h-full flex-1 border-none bg-transparent px-4 py-3 text-sm text-slate-600 outline-none placeholder:text-slate-400 md:px-6"
         />
 
-        {/* Cụm Action bên phải */}
         <div className="absolute right-4 flex items-center">
-          {/* 1. Nút Search */}
           <button
             type="button"
             aria-label="Search"
@@ -88,11 +85,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
           >
             <Search className="h-6 w-6" strokeWidth={2.5} />
           </button>
-
-          {/* 2. Đường kẻ dọc (Divider) - Cân đối với mx-2 (8px mỗi bên) */}
           <div className="mx-2 h-6 w-[1px] bg-slate-300" aria-hidden="true" />
-
-          {/* 3. Nút Filter */}
           <div className="relative" ref={filterRef}>
             <button
               type="button"

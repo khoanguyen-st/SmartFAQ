@@ -1,20 +1,20 @@
 import React, { useMemo, useState } from 'react'
 import type { CreateUserDialogProps, CreateUserDialogPayload } from '@/interfaces/create-user-dialog'
 
-export const CreateUserDialog: React.FC<CreateUserDialogProps> = ({ 
-  open, 
-  onClose, 
-  onSubmit, 
+export const CreateUserDialog: React.FC<CreateUserDialogProps> = ({
+  open,
+  onClose,
+  onSubmit,
   onSuccess,
-  users = [] 
+  users = []
 }) => {
   const [formData, setFormData] = useState<CreateUserDialogPayload>({
     username: '',
     email: '',
     password: '',
     role: '',
-    campus: '',
-  });
+    campus: ''
+  })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -26,41 +26,38 @@ export const CreateUserDialog: React.FC<CreateUserDialogProps> = ({
       formData.password.length < 8 ||
       !formData.role ||
       !formData.campus
-    );
-  }, [formData]);
-
+    )
+  }, [formData])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setError(null);
+    setError(null)
 
-    const isDuplicate = users.some(u => 
-        u.username.toLowerCase() === formData.username.toLowerCase()
-    )
+    const isDuplicate = users.some(u => u.username.toLowerCase() === formData.username.toLowerCase())
 
     if (isDuplicate) {
-        setError('Username already exists')
-        return
+      setError('Username already exists')
+      return
     }
 
     try {
-      setLoading(true);
-      await onSubmit?.(formData);
-      onSuccess?.();
-      onClose();
+      setLoading(true)
+      await onSubmit?.(formData)
+      onSuccess?.()
+      onClose()
       setFormData({
         username: '',
         email: '',
         password: '',
         role: '',
-        campus: '',
-      });
-      setError(null);
+        campus: ''
+      })
+      setError(null)
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Create failed');
-      console.error('Failed to create user:', err);
+      setError(err instanceof Error ? err.message : 'Create failed')
+      console.error('Failed to create user:', err)
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
   }
 
@@ -74,7 +71,6 @@ export const CreateUserDialog: React.FC<CreateUserDialogProps> = ({
           <p className="mt-1 text-sm text-slate-500">Fill in the information to create a new user</p>
         </div>
         <form onSubmit={handleSubmit} className="space-y-4">
-          
           {error && (
             <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">{error}</div>
           )}
@@ -120,7 +116,9 @@ export const CreateUserDialog: React.FC<CreateUserDialogProps> = ({
               onChange={e => setFormData({ ...formData, role: e.target.value })}
               className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm focus:border-blue-500 focus:outline-none"
             >
-              <option value="" disabled>Select Role</option>
+              <option value="" disabled>
+                Select Role
+              </option>
               <option value="admin">Admin</option>
               <option value="staff">Staff</option>
             </select>
@@ -133,7 +131,9 @@ export const CreateUserDialog: React.FC<CreateUserDialogProps> = ({
               onChange={e => setFormData({ ...formData, campus: e.target.value })}
               className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm focus:border-blue-500 focus:outline-none"
             >
-              <option value="" disabled>Select Campus</option>
+              <option value="" disabled>
+                Select Campus
+              </option>
               <option value="HN">Hanoi</option>
               <option value="HCM">Ho Chi Minh</option>
               <option value="DN">Danang</option>
@@ -162,5 +162,4 @@ export const CreateUserDialog: React.FC<CreateUserDialogProps> = ({
     </div>
   )
 }
-
 export default CreateUserDialog

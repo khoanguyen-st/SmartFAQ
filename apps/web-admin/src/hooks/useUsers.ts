@@ -6,10 +6,8 @@ export const useUsers = () => {
   const [users, setUsers] = useState<User[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-
-  // Pagination State
   const [page, setPage] = useState(1)
-  const [pageSize, setPageSize] = useState(5) // Mặc định 5 dòng/trang
+  const [pageSize, setPageSize] = useState(5)
   const [totalRecords, setTotalRecords] = useState(0)
 
   const loadingRef = useRef(false)
@@ -24,12 +22,9 @@ export const useUsers = () => {
 
     try {
       const allUsers = await AdminService.fetchUsers()
-
-      // Sắp xếp user theo ID
       const sortedUsers = allUsers.sort((a, b) => a.id - b.id)
-
       setUsers(sortedUsers)
-      setTotalRecords(allUsers.length) // Cập nhật tổng số record
+      setTotalRecords(allUsers.length)
       setError(null)
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to load users'
@@ -46,7 +41,6 @@ export const useUsers = () => {
     loadUsers(false)
   }, [loadUsers])
 
-  // Auto refresh mỗi 5s
   useEffect(() => {
     const intervalId = setInterval(() => {
       loadUsers(true)
@@ -101,7 +95,7 @@ export const useUsers = () => {
     error,
     page,
     pageSize,
-    totalRecords, // Đảm bảo export biến này
+    totalRecords,
     setPage,
     setPageSize,
     createUser,

@@ -46,13 +46,8 @@ const Users: React.FC = () => {
 
   const [actionLoading, setActionLoading] = useState(false)
   const [toast, setToast] = useState<{ type: 'success' | 'error' | 'warning'; message: string } | null>(null)
-
   const filterRef = useRef<HTMLDivElement>(null)
-
-  // 1. Lọc User
   const filteredUsers = useUserFilters({ users, searchQuery, selectedDepartments, selectedStatuses })
-
-  // 2. Phân trang (truyền pageSize vào để cắt dữ liệu đúng)
   const { paginatedItems: paginatedUsers, totalPages } = usePagination({
     items: filteredUsers,
     page,

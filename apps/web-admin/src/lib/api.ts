@@ -1,6 +1,5 @@
 export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8000'
 
-// Helper function để gọi API với authentication
 async function apiCall(endpoint: string, options: RequestInit = {}) {
   const token = localStorage.getItem('access_token')
   const headers: Record<string, string> = {
@@ -26,7 +25,6 @@ async function apiCall(endpoint: string, options: RequestInit = {}) {
 
     return res.json()
   } catch (error) {
-    // Handle network errors
     if (error instanceof TypeError && error.message === 'Failed to fetch') {
       throw new Error(`Cannot connect to API server at ${API_BASE_URL}. Please check if the backend is running.`)
     }
@@ -34,7 +32,6 @@ async function apiCall(endpoint: string, options: RequestInit = {}) {
   }
 }
 
-// Auth functions
 export interface LoginRequest {
   email: string
   password: string
@@ -83,7 +80,6 @@ export async function resetPassword(token: string, newPassword: string): Promise
   })
 }
 
-// Admin functions
 export async function fetchMetrics() {
   return apiCall('/admin/metrics')
 }

@@ -19,14 +19,12 @@ async function apiClient<T>(endpoint: string, options?: RequestInit): Promise<T>
   return res.json()
 }
 
-// Lấy danh sách user
 export async function fetchUsers(role?: string): Promise<User[]> {
   const params = role ? `?role=${role}` : ''
   const data = await apiClient<{ items: User[] }>(`/api/user/${params}`)
   return data.items
 }
 
-// Tạo user mới
 export async function createUser(
   data: Omit<User, 'id' | 'failed_attempts' | 'locked_until' | 'is_locked' | 'created_at'> & { password: string }
 ): Promise<User> {
@@ -37,7 +35,6 @@ export async function createUser(
   return res.item
 }
 
-// Cập nhật user
 export async function updateUser(userId: number, data: Partial<User> & { password?: string }): Promise<boolean> {
   const res = await apiClient<{ status: string }>(`/api/user/${userId}`, {
     method: 'PUT',
@@ -46,7 +43,6 @@ export async function updateUser(userId: number, data: Partial<User> & { passwor
   return res.status === 'ok'
 }
 
-// Khóa user
 export async function lockUser(userId: number): Promise<boolean> {
   const res = await apiClient<{ status: string }>(`/api/user/${userId}/lock`, {
     method: 'PUT'
@@ -54,7 +50,6 @@ export async function lockUser(userId: number): Promise<boolean> {
   return res.status === 'locked'
 }
 
-// Mở khóa user
 export async function unlockUser(userId: number): Promise<boolean> {
   const res = await apiClient<{ status: string }>(`/api/user/${userId}/unlock`, {
     method: 'PUT'
@@ -62,12 +57,10 @@ export async function unlockUser(userId: number): Promise<boolean> {
   return res.status === 'unlocked'
 }
 
-// --- THÊM HÀM NÀY ĐỂ GỌI API RESET ---
-// Sửa lại hàm như sau
 export async function resetUserPassword(userId: number, newPassword: string): Promise<boolean> {
   const res = await apiClient<{ status: string }>(`/api/user/${userId}/reset-password`, {
     method: 'PUT',
-    body: JSON.stringify({ password: newPassword }) // ✅ Gửi mật khẩu mới lên
+    body: JSON.stringify({ password: newPassword })
   })
   return res.status === 'ok'
 }
