@@ -5,7 +5,6 @@ import time
 from typing import Dict, List, Optional
 
 from app.rag.guardrail import GuardrailService
-from app.rag.language import detect_language
 from app.rag.llm import LLMWrapper
 from app.rag.normalizer import UnifiedNormalizer
 from app.rag.prompts import get_master_analyzer_prompt
@@ -34,23 +33,27 @@ class RAGOrchestrator:
         t0 = time.time()
         raw_q = (question or "").strip()
 
+        logger.info(
+            f"--- [Query Start] Input: '{raw_q}' | History Length: {len(history) if history else 0}"
+        )
+
         if not raw_q:
             return self._response("Please input a valid question.", [], 0, t0, True)
 
-        logger.info(f" [Input] Raw: '{raw_q}' | History Len: {len(history) if history else 0}")
-
         final_search_query = raw_q
+
         if history and len(history) > 0:
             try:
+                history_subset = history[-2:]
                 history_text = "\n".join(
-                    [f"{h.get('role', 'user')}: {h.get('text', '')}" for h in history[-4:]]
+                    [f"{h.get('role', 'user')}: {h.get('text', '')}" for h in history_subset]
                 )
                 rewrite_system = (
-                    "Bạn là chuyên gia viết lại câu hỏi cho Đại học Greenwich Việt Nam. "
+                    "Bạn là trợ lý AI của Đại học Greenwich Việt Nam.\n "
                     "Nhiệm vụ: Viết lại câu hỏi nối tiếp (follow-up) thành câu hỏi độc lập, đầy đủ chủ ngữ dựa trên lịch sử chat. "
                     "QUAN TRỌNG: Nếu câu hỏi mơ hồ hoặc thiếu chủ ngữ (ví dụ: 'thư viện', 'học phí là bao nhiêu'), "
                     "LUÔN LUÔN mặc định người dùng đang hỏi về 'Đại học Greenwich Việt Nam'. "
-                    "TUYỆT ĐỐI KHÔNG gán câu hỏi cho các trường khác (như FPT, RMIT) ngay cả khi chúng xuất hiện trong lịch sử chat. "
+                    "TUYỆT ĐỐI KHÔNG gán câu hỏi cho các trường khác ngay cả khi chúng xuất hiện trong lịch sử chat. "
                     "Giữ nguyên ngôn ngữ của người dùng (Tiếng Việt hoặc Tiếng Anh). "
                     'Output JSON: {{"standalone_question": "..."}}'
                 )
@@ -59,41 +62,35 @@ class RAGOrchestrator:
                 rewrite_result = await self.llm.invoke_json(rewrite_system, rewrite_input)
                 if rewrite_result and "standalone_question" in rewrite_result:
                     final_search_query = rewrite_result["standalone_question"]
-                    logger.info(f" [Contextualizer] '{raw_q}' -> '{final_search_query}'")
-                else:
-                    logger.warning(f" [Contextualizer] Failed to rewrite, keeping raw: '{raw_q}'")
+                    if final_search_query != raw_q:
+                        logger.info(
+                            f" [Contextualizer] Rewritten: '{raw_q}' -> '{final_search_query}'"
+                        )
             except Exception as e:
-                logger.error(f" [Contextualizer] Error: {e}")
+                logger.error(f"Contextualizer Error: {e}")
 
-        safety_check = await self.guardrail.check_safety(final_search_query)
-        logger.info(
-            f" [Guardrail] Checking: '{final_search_query}' -> Status: {safety_check.get('status')}"
-        )
+        norm_result = await self.normalizer.understand(final_search_query)
+        detected_lang = norm_result["language"]
+        refined_q = norm_result["normalized_text"]
+        logger.info(f" [Normalizer] Refined: '{refined_q}' | Detected Lang: {detected_lang}")
 
-        if safety_check["status"] == "blocked":
-            temp_lang = language if language else detect_language(final_search_query)
-            msg = safety_check.get("vi") if temp_lang == "vi" else safety_check.get("en")
-            return self._response(msg or "Request rejected.", [], 1.0, t0, False)
-
-        if not language:
-            norm_result = await self.normalizer.understand(final_search_query)
-            target_lang = norm_result["language"]
-            refined_q = norm_result["normalized_text"]
-            logger.info(
-                f" [Normalizer] '{final_search_query}' -> '{refined_q}' | Lang: '{target_lang}'"
-            )
+        if detected_lang in ["vi", "en"]:
+            target_lang = detected_lang
         else:
-            target_lang = language
-            refined_q = final_search_query
-
+            target_lang = language if language else "en"
         try:
             analysis_dict = await self.llm.invoke_json(get_master_analyzer_prompt(), refined_q)
             if isinstance(analysis_dict, dict):
                 analysis = MasterAnalysis(**analysis_dict)
             else:
                 analysis = MasterAnalysis(status="valid", sub_questions=[refined_q])
-        except Exception:
+        except Exception as e:
+            logger.warning(f"Master Analysis Failed: {e}. Fallback to valid.")
             analysis = MasterAnalysis(status="valid", sub_questions=[refined_q])
+
+        logger.info(
+            f" [Analyzer] Status: {analysis.status} | Sub-questions: {analysis.sub_questions}"
+        )
 
         if analysis.status == "blocked":
             msg = self._get_blocked_msg(analysis.reason, target_lang)
@@ -103,6 +100,7 @@ class RAGOrchestrator:
             msg = self._get_greeting_msg(target_lang)
             return self._response(msg, [], 1.0, t0, False)
 
+        # 5. Retrieval
         sub_qs = analysis.sub_questions if analysis.sub_questions else [refined_q]
         sub_qs = sub_qs[:3]
 
@@ -111,12 +109,15 @@ class RAGOrchestrator:
             try:
                 docs = self.retriever.retrieve(q, top_k=3)
                 all_docs.extend(docs)
-            except Exception:
-                pass
+            except Exception as e:
+                logger.error(f"Retrieve failed for '{q}': {e}")
 
         unique_docs = self._deduplicate(all_docs)
 
+        logger.info(f" [Retriever] Found {len(unique_docs)} unique docs for {len(sub_qs)} queries.")
+
         if not unique_docs:
+            logger.info(" [Retriever] No documents found. Triggering fallback.")
             fb = (
                 "Tôi không tìm thấy thông tin phù hợp trong tài liệu."
                 if target_lang == "vi"
@@ -125,12 +126,16 @@ class RAGOrchestrator:
             return self._response(fb, [], 0.0, t0, True)
 
         try:
+            logger.info(f" [Generator] Generating answer in '{target_lang}'...")
             ans = await self.llm.generate_answer_async(
                 refined_q, unique_docs, target_language=target_lang
             )
             conf = self.retriever.calculate_confidence(unique_docs)
+
+            logger.info(f"--- [Query End] Success | Latency: {int((time.time() - t0) * 1000)}ms")
             return self._response(ans, self._fmt_sources(unique_docs), conf, t0, False)
         except Exception:
+            logger.exception("System Error during generation")
             return self._response("System Error", [], 0, t0, True)
 
     def _response(self, ans, srcs, conf, t0, fb):
