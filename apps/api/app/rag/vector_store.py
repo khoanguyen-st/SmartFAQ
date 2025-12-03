@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import hashlib
+import logging
+import time
 from typing import Any, Dict, Iterable, List, Optional, Tuple
 
 from chromadb.config import Settings as ChromaSettings
@@ -11,6 +13,8 @@ from app.core.config import settings
 from app.rag.embedder import get_embeddings
 
 __VECTORSTORE: Optional[Chroma] = None
+_PUBLIC_VECTORSTORE: Optional[Chroma] = None
+logger = logging.getLogger(__name__)
 
 
 def _parse_headers(raw: Optional[str]) -> Optional[Dict[str, str]]:
@@ -32,12 +36,9 @@ def _get_vectorstore() -> Chroma:
         return __VECTORSTORE
 
     embeddings = get_embeddings()
-
-    # Support both HTTP client and persistent client
     chroma_url = settings.CHROMA_URL
 
     if chroma_url.startswith("http://") or chroma_url.startswith("https://"):
-        # HTTP client mode
         chroma_url_clean = chroma_url.replace("http://", "").replace("https://", "")
         if ":" in chroma_url_clean:
             host, port_str = chroma_url_clean.split(":", 1)
@@ -59,7 +60,6 @@ def _get_vectorstore() -> Chroma:
             collection_metadata={"hnsw:space": settings.CHROMA_METRIC},
         )
     else:
-        # Persistent client mode (path to SQLite directory)
         __VECTORSTORE = Chroma(
             persist_directory=chroma_url,
             collection_name=settings.CHROMA_COLLECTION,
@@ -68,6 +68,13 @@ def _get_vectorstore() -> Chroma:
         )
 
     return __VECTORSTORE
+
+
+def get_vectorstore() -> Chroma:
+    """
+    Backwards-compatible accessor expected by scripts/tests.
+    """
+    return _get_vectorstore()
 
 
 def build_documents(chunks: Iterable[Dict[str, Any]]) -> List[Document]:
@@ -79,22 +86,46 @@ def _hash_id(text: str, meta: Optional[Dict[str, Any]] = None, model: Optional[s
     h.update((model or settings.EMBED_MODEL).encode("utf-8"))
     h.update(text.encode("utf-8"))
     if meta:
+        # Prefer explicit chunk_id if provided, otherwise include document_id/source/page to stabilize uniqueness.
+        if meta.get("chunk_id"):
+            h.update(str(meta.get("chunk_id")).encode("utf-8"))
+        h.update(str(meta.get("document_id", "")).encode("utf-8"))
         h.update(str(meta.get("source", "")).encode("utf-8"))
         h.update(str(meta.get("page", "")).encode("utf-8"))
+        h.update(str(meta.get("chunk_index", "")).encode("utf-8"))
+        h.update(str(meta.get("ingest_timestamp") or int(time.time() * 1000)).encode("utf-8"))
     return h.hexdigest()
 
 
 def upsert_documents(docs: Iterable[Document], ids: Optional[List[str]] = None) -> None:
     vs = _get_vectorstore()
     docs_list = list(docs)
+    if not docs_list:
+        return
+
     if ids is not None:
         if len(ids) != len(docs_list):
             raise ValueError("Length of ids must match documents")
-        vs.add_documents(docs_list, ids=ids)
-        return
+        pairs = zip(docs_list, ids)
+    else:
+        pairs = (
+            (doc, _hash_id(doc.page_content, doc.metadata, settings.EMBED_MODEL))
+            for doc in docs_list
+        )
 
-    gen_ids = [_hash_id(d.page_content, d.metadata, settings.EMBED_MODEL) for d in docs_list]
-    vs.add_documents(docs_list, ids=gen_ids)
+    dedup_docs: List[Document] = []
+    dedup_ids: List[str] = []
+    seen: set[str] = set()
+    for doc, did in pairs:
+        if did in seen:
+            logger.warning("Dropping duplicate chunk id during upsert: %s", did)
+            continue
+        seen.add(did)
+        dedup_docs.append(doc)
+        dedup_ids.append(did)
+
+    if dedup_docs:
+        vs.add_documents(dedup_docs, ids=dedup_ids)
 
 
 def similarity_search(
@@ -144,9 +175,57 @@ def delete_by_metadata(where: Dict[str, Any]) -> None:
     collection.delete(where=where)
 
 
+def delete_by_document_id(document_id: str) -> None:
+    where = {
+        "$or": [
+            {"source": document_id},
+            {"document_id": document_id},
+        ]
+    }
+    delete_by_metadata(where)
+
+
+def _collection_get_documents(limit: Optional[int] = None) -> List[Document]:
+    """
+    Fetch raw documents+metadatas from the underlying Chroma collection.
+    Intended for building auxiliary indexes (e.g., BM25).
+    """
+    vs = _get_vectorstore()
+    try:
+        collection = vs._collection
+    except Exception as exc:  # pragma: no cover - depends on Chroma internals
+        logger.exception("Chroma collection unavailable: %s", exc)
+        return []
+
+    kwargs: Dict[str, Any] = {"include": ["documents", "metadatas"]}
+    if limit is not None:
+        kwargs["limit"] = limit
+    try:
+        data = collection.get(**kwargs)
+    except Exception as exc:  # pragma: no cover - upstream dependency
+        logger.exception("Failed to fetch documents from Chroma: %s", exc)
+        return []
+
+    docs: List[Document] = []
+    for text, meta in zip(data.get("documents") or [], data.get("metadatas") or []):
+        docs.append(Document(page_content=text or "", metadata=meta or {}))
+    return docs
+
+
 class VectorStore:
     def __init__(self) -> None:
         self._vs = _get_vectorstore()
+
+    def is_empty(self) -> bool:
+        try:
+            coll = self._vs._collection
+            if hasattr(coll, "count"):
+                return coll.count() == 0
+            data = coll.get(include=[])
+            ids = data.get("ids") or []
+            return len(ids) == 0
+        except Exception:
+            return True
 
     def similarity_search(
         self, query: str, k: int = 5, where: Optional[Dict[str, Any]] = None
@@ -164,6 +243,9 @@ class VectorStore:
     def delete_by_metadata(self, where: Dict[str, Any]) -> None:
         delete_by_metadata(where)
 
+    def delete_by_document_id(self, document_id: str) -> None:
+        delete_by_document_id(document_id)
+
     def get_retriever(
         self,
         search_type: str = "similarity",
@@ -172,3 +254,9 @@ class VectorStore:
     ):
         search_kwargs = search_kwargs or {}
         return self._vs.as_retriever(search_type=search_type, search_kwargs=search_kwargs, **kwargs)
+
+    def get_all_documents(self, limit: Optional[int] = None) -> List[Document]:
+        """
+        Retrieve raw documents from the Chroma collection for auxiliary indexes.
+        """
+        return _collection_get_documents(limit=limit)

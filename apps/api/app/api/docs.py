@@ -1,12 +1,15 @@
+import io
 import logging
 import os
 
-from fastapi import APIRouter, Depends, Form, HTTPException, UploadFile, status
-from fastapi.responses import FileResponse
+from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
+from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.future import select
 
-from ..api import schemas
 from ..core.database import get_db
+from ..models import document as document_model
+from ..schemas import document
 from ..services import dms
 
 router = APIRouter()
@@ -34,8 +37,6 @@ async def create_docs(
     title: str | None = Form(None),
     category: str | None = Form(None),
     tags: str | None = Form(None),
-    language: str = Form("en"),
-    status: str = Form("ACTIVE"),
     db: AsyncSession = Depends(get_db),
 ):
     try:
@@ -44,20 +45,15 @@ async def create_docs(
             return {"status": "accepted", "items": results}
 
         if not title:
-            raise HTTPException(400, "title is required")
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="title is required")
 
-        payload = schemas.DocumentCreate(
-            title=title,
-            category=category,
-            tags=tags,
-            language=language,
-            status=status,
-        )
+        payload = document.DocumentCreate(title=title, category=category, tags=tags, language="vi")
 
         data = payload.dict()
         data["created_by"] = None
         result = await dms.create_metadata_document(data, db)
-        return {"item": result}
+        return {"item": result, "status": status.HTTP_201_CREATED}
+
     except HTTPException:
         raise
     except Exception as exc:
@@ -68,7 +64,37 @@ async def create_docs(
         ) from exc
 
 
-@router.get("/{doc_id}", response_model=schemas.DocumentOut)
+@router.get("/search")
+async def search_documents_by_name(name: str, db: AsyncSession = Depends(get_db)):
+    try:
+        docs = await dms.search_documents_by_name(name, db)
+        return {"documents": docs}
+    except HTTPException:
+        raise
+    except Exception as exc:
+        logger.exception("Failed to search documents by name")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to search documents by name.",
+        ) from exc
+
+
+@router.get("/filter")
+async def filter_documents_by_format(format: str, db: AsyncSession = Depends(get_db)):
+    try:
+        docs = await dms.filter_documents_by_format(format, db)
+        return {"documents": docs}
+    except HTTPException:
+        raise
+    except Exception as exc:
+        logger.exception("Failed to filter documents by format")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to filter documents by format.",
+        ) from exc
+
+
+@router.get("/{doc_id}", response_model=document.DocumentOut)
 async def get_document(doc_id: int, db: AsyncSession = Depends(get_db)):
     try:
         doc = await dms.get_document(doc_id, db)
@@ -92,19 +118,28 @@ async def download_document(doc_id: int, db: AsyncSession = Depends(get_db)):
         if not doc:
             raise HTTPException(404, "Document not found")
 
-        file_path = None
+        object_name = None
         if doc["versions"]:
             for v in doc["versions"]:
                 if v["id"] == doc["current_version_id"]:
-                    file_path = v["file_path"]
+                    object_name = v["file_path"]
                     break
-            if not file_path:
-                file_path = doc["versions"][0]["file_path"]
+            if not object_name:
+                object_name = doc["versions"][0]["file_path"]
 
-        if not file_path or not os.path.isfile(file_path):
-            raise HTTPException(404, "File not found on server")
+        if not object_name:
+            raise HTTPException(404, "File not found in storage")
 
-        return FileResponse(file_path, filename=os.path.basename(file_path))
+        response = dms.minio_client.get_object(dms.BUCKET_NAME, object_name)
+        content = response.read()
+        filename = os.path.basename(object_name)
+
+        return StreamingResponse(
+            io.BytesIO(content),
+            media_type="application/octet-stream",
+            headers={"Content-Disposition": f"attachment; filename={filename}"},
+        )
+
     except HTTPException:
         raise
     except Exception as exc:
@@ -117,13 +152,40 @@ async def download_document(doc_id: int, db: AsyncSession = Depends(get_db)):
 
 @router.put("/{doc_id}")
 async def update_document(
-    doc_id: int, payload: schemas.DocumentUpdate, db: AsyncSession = Depends(get_db)
+    doc_id: int,
+    file: UploadFile | None = File(None),
+    title: str | None = Form(None),
+    category: str | None = Form(None),
+    tags: str | None = Form(None),
+    language: str | None = Form(None),
+    db: AsyncSession = Depends(get_db),
 ):
     try:
-        ok = await dms.update_document(doc_id, payload.dict(exclude_none=True), db)
-        if not ok:
+        result = await dms.update_document(
+            doc_id=doc_id,
+            db=db,
+            file=file,
+            title=title,
+            category=category,
+            tags=tags,
+            language=language,
+        )
+
+        if not result:
             raise HTTPException(404, "Document not found")
-        return {"status": "ok"}
+
+        return {"status": "updated", "item": result}
+
+    except dms.UploadTooLarge as exc:
+        raise HTTPException(
+            status_code=status.HTTP_413_CONTENT_TOO_LARGE,
+            detail=str(exc),
+        ) from exc
+    except dms.InvalidFileType as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(exc),
+        ) from exc
     except HTTPException:
         raise
     except Exception as exc:
@@ -148,4 +210,37 @@ async def delete_document(doc_id: int, db: AsyncSession = Depends(get_db)):
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to delete document.",
+        ) from exc
+
+
+@router.get("/documents/status")
+async def get_documents_by_status(
+    document_status: str | None = None, db: AsyncSession = Depends(get_db)
+):
+    try:
+        stmt = select(document_model.Document)
+        if document_status:
+            stmt = stmt.where(document_model.Document.status == document_status)
+
+        result = await db.execute(stmt)
+        docs = result.scalars().all()
+
+        return {
+            "documents": [
+                {
+                    "document_id": doc.id,
+                    "title": doc.title,
+                    "status": doc.status,
+                    "current_version_id": doc.current_version_id,
+                }
+                for doc in docs
+            ]
+        }
+    except HTTPException:
+        raise
+    except Exception as exc:
+        logger.exception("Failed to fetch documents by status")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to fetch documents by status.",
         ) from exc

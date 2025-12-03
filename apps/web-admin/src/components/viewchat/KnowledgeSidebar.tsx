@@ -2,44 +2,68 @@ import knowledgeUrl from '@/assets/icons/knowledge.svg'
 import plusUrl from '@/assets/icons/plus.svg'
 import sidebarUrl from '@/assets/icons/sidebar.svg'
 import { cn } from '@/lib/utils'
-import React from 'react'
+import React, { useState } from 'react'
 import UploadedFile, { UploadedFileHandle } from './UploadedFile'
+import { X } from 'lucide-react'
+import SearchFilterBar from '@/components/ui/SearchFilterBar'
 
 interface KnowledgeSidebarProps {
   isSidebarOpen: boolean
   setIsSidebarOpen: (isOpen: boolean) => void
   handleSelectFileClick: () => void
   uploadedFileRef: React.RefObject<UploadedFileHandle>
+  onSearch?: (value: string) => void
 }
 
 const KnowledgeSidebar: React.FC<KnowledgeSidebarProps> = ({
   isSidebarOpen,
   setIsSidebarOpen,
   handleSelectFileClick,
-  uploadedFileRef
+  uploadedFileRef,
+  onSearch
 }) => {
+  const [, setSelectedFormat] = useState<string>('')
+
+  const handleSearch = (value: string) => {
+    onSearch?.(value)
+    if (value.trim()) {
+      uploadedFileRef.current?.searchFiles(value)
+    } else {
+      uploadedFileRef.current?.refreshFiles()
+    }
+  }
+
+  const handleFilter = (format: string) => {
+    setSelectedFormat(format)
+    if (format) {
+      uploadedFileRef.current?.filterFiles(format)
+    } else {
+      uploadedFileRef.current?.refreshFiles()
+    }
+  }
+
   return (
     <div
       className={cn(
-        'z-10 flex h-full flex-col border-r border-[#F3F4F6] bg-white transition-all duration-300 ease-in-out',
-        isSidebarOpen ? 'w-1/2 min-w-[400px]' : 'w-[118px]'
+        'flex h-full flex-col border-r border-[#F3F4F6] bg-white transition-all duration-300 ease-in-out',
+        'fixed inset-0 z-30 lg:relative',
+        isSidebarOpen ? 'w-full lg:w-1/2 lg:min-w-[400px]' : 'w-0 -translate-x-full lg:w-[118px] lg:translate-x-0',
+        'overflow-hidden'
       )}
     >
-      {/* Header Area */}
       <div
         className={cn(
           'flex shrink-0 items-center border-b border-[#F3F4F6] transition-all duration-300',
-          isSidebarOpen ? 'h-[92px] justify-between p-6' : 'h-[92px] justify-center'
+          isSidebarOpen ? 'h-[92px] justify-between p-4 sm:p-6' : 'h-[92px] justify-center'
         )}
       >
-        {/* Title & Icon (Chỉ hiện khi MỞ) */}
         {isSidebarOpen && (
           <div className="flex flex-col overflow-hidden text-nowrap text-ellipsis">
             <div className="title-header flex items-center">
               <img src={knowledgeUrl} alt="knowledge" className="mr-2 h-6 w-6 shrink-0 text-[#003087]" />
               <h1 className="text-[18px] leading-7 font-semibold text-[#111827]">Knowledge Sources</h1>
             </div>
-            <p className="text-[14px] text-[#6B7280]">Upload and manage documents</p>
+            <p className="hidden text-[14px] text-[#6B7280] sm:block">Upload and manage documents</p>
           </div>
         )}
 
@@ -53,7 +77,7 @@ const KnowledgeSidebar: React.FC<KnowledgeSidebarProps> = ({
               <div className="flex items-center justify-center">
                 <img src={plusUrl} alt="plus" className="h-3.5 w-3 text-white" />
               </div>
-              <span className="text-sm font-medium text-white">Select Files</span>
+              <span className="hidden text-sm font-medium text-white sm:block">Select Files</span>
             </button>
           )}
 
@@ -63,19 +87,31 @@ const KnowledgeSidebar: React.FC<KnowledgeSidebarProps> = ({
               'group cursor-pointer rounded p-1 transition-colors hover:bg-gray-100',
               !isSidebarOpen && 'p-2'
             )}
-            title={isSidebarOpen ? 'Collapse sidebar' : 'Expand sidebar'}
+            title={isSidebarOpen ? 'Close sidebar' : 'Expand sidebar'}
           >
-            <img
-              src={sidebarUrl}
-              alt="sidebar"
-              className={cn(
-                'h-6 w-6 text-gray-400 transition-transform group-hover:text-[#003087]',
-                !isSidebarOpen && 'rotate-180'
-              )}
-            />
+            {isSidebarOpen ? (
+              <>
+                <X className="h-6 w-6 lg:hidden" />
+                <img
+                  src={sidebarUrl}
+                  alt="sidebar"
+                  className="hidden h-6 w-6 text-gray-400 transition-transform group-hover:text-[#003087] lg:block"
+                />
+              </>
+            ) : (
+              <img
+                src={sidebarUrl}
+                alt="sidebar"
+                className="h-6 w-6 rotate-180 text-gray-400 transition-transform group-hover:text-[#003087]"
+              />
+            )}
           </button>
         </div>
       </div>
+
+      {isSidebarOpen && (
+        <SearchFilterBar onSearch={handleSearch} onFilter={handleFilter} placeholder="Search documents..." />
+      )}
 
       <div className="relative flex flex-1 flex-col overflow-hidden">
         {!isSidebarOpen && (
