@@ -9,6 +9,7 @@ import CreateNewPasswordPage from './pages/Create'
 import ResetPasswordSuccessPage from './pages/Resetpasssuccess'
 import ViewChatPage from './pages/ViewChat'
 import ProfilePage from './pages/Profile'
+import UploadedPage from './pages/UploadedDocuments'
 import ShellLayout from './components/ShellLayout'
 
 const App = () => (
