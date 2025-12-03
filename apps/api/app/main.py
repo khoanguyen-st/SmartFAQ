@@ -1,3 +1,5 @@
+import asyncio
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -38,6 +40,29 @@ def create_app() -> FastAPI:
     app.include_router(fallback.router, prefix="/api/fallback", tags=["fallback"])
     app.include_router(admin.router, prefix="/api/admin", tags=["admin"])
     app.include_router(staff.router, prefix="/api/staff", tags=["staff"])
+
+    # Start background cron worker on startup
+    @app.on_event("startup")
+    async def _start_cron() -> None:
+        try:
+            from .workers import cron
+
+            app.state.cron_task = asyncio.create_task(cron.start_periodic_task())
+        except Exception:
+            # log lazily to avoid importing logging at top-level here
+            import logging
+
+            logging.getLogger(__name__).exception("Failed to start cron worker")
+
+    @app.on_event("shutdown")
+    async def _stop_cron() -> None:
+        task = getattr(app.state, "cron_task", None)
+        if task:
+            task.cancel()
+            try:
+                await task
+            except Exception:
+                pass
 
     @app.get("/health", tags=["system"])
     def health_check() -> dict[str, str]:

@@ -45,9 +45,7 @@ async def create_docs(
         if not title:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="title is required")
 
-        payload = document.DocumentCreate(
-            title=title, category=category, tags=tags, language="vi", status="ACTIVE"
-        )
+        payload = document.DocumentCreate(title=title, category=category, tags=tags, language="vi")
 
         data = payload.dict()
         data["created_by"] = None
@@ -128,7 +126,6 @@ async def update_document(
     category: str | None = Form(None),
     tags: str | None = Form(None),
     language: str | None = Form(None),
-    status_doc: str | None = Form(None),
     db: AsyncSession = Depends(get_db),
 ):
     try:
@@ -140,7 +137,6 @@ async def update_document(
             category=category,
             tags=tags,
             language=language,
-            status_doc=status_doc,
         )
 
         if not result:

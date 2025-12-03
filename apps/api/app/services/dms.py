@@ -17,8 +17,7 @@ from ..core.config import settings
 from ..core.database import AsyncSessionLocal
 from ..models.document import Document
 from ..models.document_version import DocumentVersion
-from ..rag.document_processor import DocumentProcessor
-from ..rag.vector_store import delete_by_document_id, upsert_documents
+from ..rag.vector_store import delete_by_document_id
 
 minio_client = Minio(
     "minio:9000",
@@ -137,7 +136,7 @@ async def create_document_record(
     doc = Document(
         title=current_title,
         language="vi",
-        status="ACTIVE",
+        status="REQUEST",
     )
     db.add(doc)
     await db.flush()
@@ -192,24 +191,7 @@ async def enqueue_single_document(file: UploadFile) -> dict:
             )
         logger.info("Created document record in database with ID: %s", doc_id)
 
-        minio_obj = await asyncio.to_thread(minio_client.get_object, BUCKET_NAME, object_name)
-        file_bytes = minio_obj.read()
-        minio_obj.close()
-        minio_obj.release_conn()
-
-        file_stream = io.BytesIO(file_bytes)
-
-        processor = DocumentProcessor()
-        split_docs = processor.process_document(
-            file_stream,
-            ext,
-            str(doc_id),
-            metadata={"title": orig_name},
-        )
-
-        await asyncio.to_thread(upsert_documents, split_docs)
-        logger.info("Successfully chunked and upserted document ID: %s", doc_id)
-
+        # Do not process immediately here. Processing is handled by the periodic cron worker.
         return {"document_id": doc_id, "object_name": object_name}
 
     except Exception as exc:
@@ -255,6 +237,10 @@ async def enqueue_multiple_documents(files: list[UploadFile]) -> list[dict]:
 
 
 async def create_metadata_document(data: dict[str, Any], db: AsyncSession) -> dict:
+    # Ensure status is set by the system (REQUEST) and not taken from user input
+    data.pop("status", None)
+    data.setdefault("language", "vi")
+    data["status"] = "REQUEST"
     doc = Document(**data)
     db.add(doc)
     await db.commit()
@@ -332,7 +318,6 @@ async def update_document(
     category: str | None = None,
     tags: str | None = None,
     language: str | None = None,
-    status_doc: str | None = None,
 ) -> dict[str, Any] | None:
     stmt = select(Document).options(selectinload(Document.versions)).where(Document.id == doc_id)
     result = await db.execute(stmt)
@@ -342,8 +327,6 @@ async def update_document(
         return None
 
     object_name = None
-    new_version_info = None
-
     try:
         if file:
             content = await file.read()
@@ -353,36 +336,7 @@ async def update_document(
             object_name, size, fmt = await asyncio.to_thread(upload_to_minio, content, orig_name)
             logger.info("Uploaded new file to MinIO with object name: %s", object_name)
 
-            if doc.current_version and doc.current_version.file_path:
-                old_file_path = doc.current_version.file_path
-                try:
-                    await asyncio.to_thread(minio_client.remove_object, BUCKET_NAME, old_file_path)
-                    logger.info("Deleted old file from MinIO: %s", old_file_path)
-                except Exception as cleanup_exc:
-                    logger.error("Failed to delete old file %s: %s", old_file_path, cleanup_exc)
-
-            try:
-                await asyncio.to_thread(delete_by_document_id, str(doc_id))
-                logger.info("Deleted old vector data for document ID: %s", doc_id)
-            except Exception as vector_cleanup_exc:
-                logger.error(
-                    "Failed to delete vector data for document ID %s: %s",
-                    doc_id,
-                    vector_cleanup_exc,
-                )
-
-            minio_obj = await asyncio.to_thread(minio_client.get_object, BUCKET_NAME, object_name)
-            file_bytes = minio_obj.read()
-            minio_obj.close()
-            minio_obj.release_conn()
-
-            file_stream = io.BytesIO(file_bytes)
-
-            processor = DocumentProcessor()
-            split_docs = processor.process_document(
-                file_stream, ext, str(doc_id), metadata={"title": orig_name}
-            )
-
+            # Save new file details and set status to REQUEST
             next_version = max((v.version_no for v in doc.versions), default=0) + 1
 
             dv = DocumentVersion(
@@ -396,19 +350,7 @@ async def update_document(
             await db.flush()
 
             doc.current_version_id = dv.id
-
-            await asyncio.to_thread(upsert_documents, split_docs)
-            logger.info("Successfully chunked and upserted document ID: %s", doc_id)
-
-            new_version_info = {
-                "version_no": next_version,
-                "file_path": object_name,
-                "file_size": size,
-                "format": fmt,
-            }
-
-            if not title or not title.strip():
-                title = orig_name
+            doc.status = "REQUEST"
 
         if title and title.strip():
             unique_title = await generate_unique_title(db, title)
@@ -423,14 +365,11 @@ async def update_document(
         if language and language.strip():
             doc.language = language
 
-        if status_doc and status_doc.strip():
-            doc.status = status_doc
-
         db.add(doc)
         await db.commit()
         await db.refresh(doc, ["current_version"])
 
-        result = {
+        return {
             "id": doc.id,
             "title": doc.title,
             "category": doc.category,
@@ -441,11 +380,6 @@ async def update_document(
             "current_file_size": doc.current_version.file_size if doc.current_version else None,
             "current_format": doc.current_version.format if doc.current_version else None,
         }
-
-        if new_version_info:
-            result["new_version"] = new_version_info
-
-        return result
 
     except Exception:
         logger.exception("Failed to update document %s", doc_id)
