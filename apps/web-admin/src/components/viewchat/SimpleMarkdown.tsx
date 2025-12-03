@@ -4,6 +4,9 @@ import remarkGfm from 'remark-gfm'
 
 type SimpleMarkdownProps = {
   content: string
+  enableHighlight?: boolean
+  sources?: Array<{ title: string }> // Thêm prop sources
+  onSourceHover?: (sourceIndex: number | null) => void // Callback khi hover
 }
 
 /**
@@ -97,9 +100,48 @@ const highlightKeywords = (text: string): string => {
   return highlighted
 }
 
-const SimpleMarkdown: React.FC<SimpleMarkdownProps> = ({ content }) => {
-  // Highlight keywords trước khi render
-  const highlightedContent = useMemo(() => highlightKeywords(content), [content])
+const SimpleMarkdown: React.FC<SimpleMarkdownProps> = ({
+  content,
+  enableHighlight = false, // Thêm prop này và default = false
+  sources = [],
+  onSourceHover
+}) => {
+  // Highlight keywords trước khi render - chỉ khi enableHighlight = true
+  const highlightedContent = useMemo(() => {
+    return enableHighlight ? highlightKeywords(content) : content
+  }, [content, enableHighlight])
+
+  // Process content để wrap các số reference
+  const processedContent = useMemo(() => {
+    if (!sources || sources.length === 0) return highlightedContent
+
+    let processed = highlightedContent
+
+    // Pattern cải thiện: tìm số đơn lẻ (1-9) hoặc số có nhiều chữ số
+    // Tránh match với số trong markdown lists, code blocks, etc.
+    // Match số được bao quanh bởi khoảng trắng hoặc ở cuối/cuối câu
+    const referencePattern = /\b([1-9]\d*)\b(?=\s|$|[.,;:!?])/g
+
+    // Chỉ replace nếu số đó nằm trong range của sources (1-based index)
+    processed = processed.replace(referencePattern, (match, numStr, offset) => {
+      const num = parseInt(numStr, 10)
+      // Chỉ xử lý nếu số nằm trong range của sources (1 đến sources.length)
+      if (num >= 1 && num <= sources.length) {
+        // Kiểm tra xem có phải là số trong markdown list không (ví dụ: "1. item")
+        const afterMatch = processed.substring(offset + match.length, offset + match.length + 2)
+
+        // Nếu có dấu chấm ngay sau số, có thể là markdown list, bỏ qua
+        if (afterMatch.trim().startsWith('.')) {
+          return match
+        }
+
+        return `[SOURCE_REF_${num}]`
+      }
+      return match
+    })
+
+    return processed
+  }, [highlightedContent, sources])
 
   return (
     <div className="markdown-content prose prose-sm max-w-none">
@@ -113,7 +155,53 @@ const SimpleMarkdown: React.FC<SimpleMarkdownProps> = ({ content }) => {
           h4: ({ ...props }) => <h4 className="mt-2 mb-1 text-base font-semibold" {...props} />,
 
           // Paragraphs với line height tốt hơn
-          p: ({ ...props }) => <p className="mb-3 leading-relaxed last:mb-0" {...props} />,
+          p: ({ children, ...props }) => {
+            // Process children để tìm và replace source references
+            const processChildren = (node: React.ReactNode): React.ReactNode | React.ReactNode[] => {
+              if (typeof node === 'string') {
+                // Split string by source reference markers
+                const parts = node.split(/(\[SOURCE_REF_\d+\])/g)
+                return parts.map((part, idx) => {
+                  const match = part.match(/\[SOURCE_REF_(\d+)\]/)
+                  if (match) {
+                    const sourceIndex = parseInt(match[1], 10) - 1 // Convert to 0-based
+                    return (
+                      <span
+                        key={idx}
+                        className="source-reference inline-flex h-5 w-5 cursor-pointer items-center justify-center rounded-full bg-gray-200 text-xs font-medium text-gray-700 transition-colors hover:bg-blue-500 hover:text-white"
+                        onMouseEnter={() => onSourceHover?.(sourceIndex)}
+                        onMouseLeave={() => onSourceHover?.(null)}
+                      >
+                        {match[1]}
+                      </span>
+                    )
+                  }
+                  return part
+                })
+              }
+
+              if (React.isValidElement(node)) {
+                const element = node as React.ReactElement<{ children?: React.ReactNode }>
+                return React.cloneElement(element, {
+                  children: React.Children.map(element.props.children, processChildren)
+                })
+              }
+
+              if (Array.isArray(node)) {
+                return node.map(processChildren)
+              }
+
+              return node
+            }
+
+            const processedChildren = React.Children.map(children, processChildren)
+
+            return (
+              <p className="mb-3 leading-relaxed last:mb-0" {...props}>
+                {processedChildren}
+              </p>
+            )
+          },
 
           // Lists với styling đẹp hơn
           ul: ({ ...props }) => <ul className="mb-3 ml-4 list-disc space-y-1 last:mb-0" {...props} />,
@@ -191,7 +279,7 @@ const SimpleMarkdown: React.FC<SimpleMarkdownProps> = ({ content }) => {
           )
         }}
       >
-        {highlightedContent}
+        {processedContent}
       </ReactMarkdown>
     </div>
   )
