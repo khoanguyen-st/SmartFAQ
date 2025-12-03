@@ -4,6 +4,7 @@ export interface ChatSource {
   title: string
   chunkId?: string | null
   relevance?: number | null
+  summary?: string | null // Thêm field summary
 }
 
 export interface NewSessionResponse {

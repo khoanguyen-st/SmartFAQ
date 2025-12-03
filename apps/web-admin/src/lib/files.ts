@@ -1,5 +1,6 @@
+const UPLOAD_MAX_MB = Number(import.meta.env.VITE_UPLOAD_MAX_MB) || 50
 export const MAX_FILES = 20
-export const MAX_SIZE = 1000 * 1024 * 1024
+export const MAX_SIZE = UPLOAD_MAX_MB * 1024 * 1024
 
 const allowedExtensions = ['.pdf', '.doc', '.docx', '.txt', '.md']
 
@@ -35,42 +36,50 @@ export const validateFiles = (
     return { valid: [], error: `You can upload up to ${MAX_FILES} files only.` }
   }
 
+  const errors: string[] = []
+
   const sizeValid = files.filter(f => f.size <= MAX_SIZE)
   if (sizeValid.length < files.length) {
-    return { valid: sizeValid, error: 'Some files were rejected (max 10MB each).' }
+    errors.push(`${files.length - sizeValid.length} file(s) rejected (max ${UPLOAD_MAX_MB}MB each)`)
   }
 
-  // Check for duplicates within the new files array itself
   const seenNames = new Set<string>()
-  const duplicatesInBatch: string[] = []
-  for (const f of files) {
+  const noDuplicatesInBatch = sizeValid.filter(f => {
     const lowerName = f.name.toLowerCase()
     if (seenNames.has(lowerName)) {
-      duplicatesInBatch.push(f.name)
-    } else {
-      seenNames.add(lowerName)
+      return false
     }
-  }
-  if (duplicatesInBatch.length > 0) {
-    return { valid: [], error: 'Duplicate file detected. Please upload unique files only.' }
+    seenNames.add(lowerName)
+    return true
+  })
+
+  if (noDuplicatesInBatch.length < sizeValid.length) {
+    errors.push(`${sizeValid.length - noDuplicatesInBatch.length} duplicate file(s) in batch removed`)
   }
 
-  // Check for duplicates against existing files
-  const duplicateFiles = files.filter(f => existingNames.includes(f.name.toLowerCase()))
-  if (duplicateFiles.length > 0) {
-    return { valid: [], error: 'Duplicate file detected. Please upload unique files only.' }
+  const noDuplicatesWithExisting = noDuplicatesInBatch.filter(f => !existingNames.includes(f.name.toLowerCase()))
+
+  if (noDuplicatesWithExisting.length < noDuplicatesInBatch.length) {
+    const count = noDuplicatesInBatch.length - noDuplicatesWithExisting.length
+    errors.push(`${count} file(s) already exist`)
   }
 
-  const typeValid = sizeValid.filter(f => {
+  const typeValid = noDuplicatesWithExisting.filter(f => {
     const mimeOk = SUPPORTED_TYPES.includes(f.type)
     const ext = f.name.substring(f.name.lastIndexOf('.')).toLowerCase()
     const extOk = allowedExtensions.includes(ext)
     return mimeOk || extOk
   })
 
-  if (typeValid.length < sizeValid.length) {
-    return { valid: typeValid, error: ' Unsupported file type, only supported formats: PDF, DOCX, MD, TXT' }
+  if (typeValid.length < noDuplicatesWithExisting.length) {
+    const count = noDuplicatesWithExisting.length - typeValid.length
+    errors.push(`${count} file(s) have unsupported format`)
   }
 
-  return { valid: typeValid, error: null }
+  const errorMessage = errors.length > 0 ? errors.join('. ') + '.' : null
+
+  return {
+    valid: typeValid,
+    error: errorMessage
+  }
 }

@@ -6,8 +6,8 @@ Smart FAQ system sử dụng RAG (Retrieval-Augmented Generation) để trả l�
 
 ### Technology Stack
 
-- **LLM:** Google Gemini 2.0 Flash (via Gemini API)
-- **Embeddings:** HuggingFace multilingual-e5-small (local)
+- **LLM:** Google Gemini 2.5 Flash (via Gemini API)
+- **Embeddings:** HuggingFace multilingual-e5-base (local)
 - **Vector Store:** Chroma (HTTP client)
 - **Framework:** LangChain v1.0
 - **Backend:** FastAPI + Python 3.11+
@@ -127,7 +127,7 @@ LLM_TEMPERATURE=0.3
 LLM_MAX_TOKENS=2048
 
 # HuggingFace Embeddings
-EMBED_MODEL=intfloat/multilingual-e5-small
+EMBED_MODEL=intfloat/multilingual-e5-base
 EMBED_DEVICE=cpu  # or cuda
 EMBED_NORMALIZE=true
 EMBED_BATCH=32
@@ -141,13 +141,22 @@ CHROMA_METRIC=cosine
 CONFIDENCE_THRESHOLD=0.65
 TOP_K_RETRIEVAL=5
 MAX_CONTEXT_CHARS=8000
+
+# MongoDB (chat persistence)
+MONGO_URL=mongodb://localhost:27017
+MONGO_DB=smartfaq
+MONGO_CHAT_COLLECTION=chat_messages
+MONGO_SESSION_COLLECTION=chat_sessions
 ```
+
+- Chat sessions are dual-written to Postgres and MongoDB.
+- Chat messages, sources, and query logs are persisted in MongoDB only.
 
 ## 📊 RAG Components
 
 ### 1. Embedder (`embedder.py`)
 
-Converts text to vector embeddings using multilingual-e5-small.
+Converts text to vector embeddings using multilingual-e5-base.
 
 ```python
 from app.rag.embedder import get_embeddings
@@ -452,7 +461,7 @@ echo $GOOGLE_API_KEY
 # Download model first
 python -c "
 from sentence_transformers import SentenceTransformer
-SentenceTransformer('intfloat/multilingual-e5-small')
+SentenceTransformer('intfloat/multilingual-e5-base')
 "
 ```
 
@@ -462,7 +471,7 @@ SentenceTransformer('intfloat/multilingual-e5-small')
 - [Migration Guide](MIGRATION_V1.md) - Upgrading to v1
 - [LangChain v1 Docs](https://docs.langchain.com/oss/python/releases/langchain-v1)
 - [Gemini API](https://ai.google.dev/gemini-api/docs)
-- [multilingual-e5-small](https://huggingface.co/intfloat/multilingual-e5-small)
+- [multilingual-e5-base](https://huggingface.co/intfloat/multilingual-e5-base)
 
 ## 🤝 Contributing
 

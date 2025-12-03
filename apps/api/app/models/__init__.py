@@ -1,6 +1,6 @@
 """Database models package."""
 
-from .chat import ChatMessage, ChatRole, ChatSession
+from .chat import Channel, ChatRole, ChatSession
 from .config import Base
 from .config_entry import ConfigEntry
 from .department import Department
@@ -19,11 +19,12 @@ __all__ = [
     "Document",
     "DocumentVersion",
     "Department",
+    "UserDepartment",
     "QueryLog",
     "FallbackLog",
     "ConfigEntry",
     "TokenBlacklist",
     "ChatSession",
-    "ChatMessage",
     "ChatRole",
+    "Channel",
 ]

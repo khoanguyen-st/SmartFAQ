@@ -12,6 +12,8 @@ services:
       - db
       - redis
       - chroma
+      - mongo
+      - minio
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 
   web-student:
@@ -68,8 +70,47 @@ services:
     ports:
       - "${CHROMA_PORT_EXTERNAL:-8001}:8000"
 
+  mongo:
+    image: mongo:7.0
+    env_file: ./.env.docker
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_USERNAME:-smartfaq}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD:-smartfaq}
+      MONGO_INITDB_DATABASE: ${MONGO_DB:-smartfaq}
+    volumes:
+      - mongo-data:/data/db
+    ports:
+      - "${MONGO_PORT_EXTERNAL:-27017}:27017"
+    command: ["--bind_ip_all"]
+
+  minio:
+    image: minio/minio:latest
+    container_name: minio
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+    volumes:
+      - minio-data:/data
+    command: server /data --console-address ":9001"
+
+  create_minio_bucket:
+    image: minio/mc
+    depends_on:
+      - minio
+    entrypoint: >
+      /bin/sh -c "
+        sleep 5;
+        mc alias set myminio http://minio:9000 ${MINIO_ROOT_USER} ${MINIO_ROOT_PASSWORD};
+        mc mb -p myminio/${MINIO_BUCKET};
+        exit 0;
+      "
+
 volumes:
   smartfaq-db:
   redis-data:
   chroma-data:
-  
+  mongo-data:
+  minio-data:
