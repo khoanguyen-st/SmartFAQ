@@ -6,6 +6,8 @@ from fastapi import APIRouter, Depends, Form, HTTPException, UploadFile, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..core.database import get_db
+from ..core.users import get_current_user
+from ..models.user import User
 from ..schemas import schemas
 from ..services import ums
 
@@ -13,8 +15,19 @@ router = APIRouter()
 logger = logging.getLogger(__name__)
 
 
+def require_staff(current_user: User = Depends(get_current_user)):
+    if current_user.role not in ("staff", "admin"):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You do not have permission to access this resource. Staff role required.",
+        )
+    return current_user
+
+
 @router.get("/{user_id}", response_model=schemas.UserOut)
-async def get_profile(user_id: int, db: AsyncSession = Depends(get_db)):
+async def get_profile(
+    user_id: int, db: AsyncSession = Depends(get_db), _: User = Depends(require_staff)
+):
     try:
         profile = await ums.get_user_profile(user_id, db)
         if not profile:
@@ -32,7 +45,10 @@ async def get_profile(user_id: int, db: AsyncSession = Depends(get_db)):
 
 @router.put("/{user_id}")
 async def update_profile(
-    user_id: int, payload: schemas.UserUpdate, db: AsyncSession = Depends(get_db)
+    user_id: int,
+    payload: schemas.UserUpdate,
+    db: AsyncSession = Depends(get_db),
+    _: User = Depends(require_staff),
 ):
     try:
         updates = payload.dict(exclude_none=True)
@@ -55,6 +71,7 @@ async def upload_avatar(
     user_id: int,
     file: UploadFile,
     db: AsyncSession = Depends(get_db),
+    _: User = Depends(require_staff),
 ):
     try:
         if not file:
@@ -72,7 +89,9 @@ async def upload_avatar(
 
 
 @router.delete("/{user_id}/avatar")
-async def delete_avatar(user_id: int, db: AsyncSession = Depends(get_db)):
+async def delete_avatar(
+    user_id: int, db: AsyncSession = Depends(get_db), _: User = Depends(require_staff)
+):
     try:
         ok = await ums.delete_user_avatar(user_id, db)
         if not ok:
@@ -95,6 +114,7 @@ async def change_password(
     new_password: str = Form(...),
     confirm_password: str = Form(...),
     db: AsyncSession = Depends(get_db),
+    _: User = Depends(require_staff),
 ):
     try:
         if new_password != confirm_password:
