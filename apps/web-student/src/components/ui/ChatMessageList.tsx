@@ -16,24 +16,22 @@ const ChatMessageList = ({ messages, isLoading, sessionId }: ChatMessageListProp
   }, [messages, isLoading])
 
   return (
-    <div className="chat__content relative flex flex-1 flex-col overflow-y-auto scroll-smooth p-4">
+    <div className="chat__content relative z-[0] flex flex-1 flex-col overflow-y-auto scroll-smooth py-4">
       {messages.map((msg, index) => {
         const isUser = msg.role === 'user'
 
         if (isUser) {
           return (
-            <div key={index} className="mb-4 flex justify-end">
-              <div className="message message--receiver">
-                <p className="whitespace-pre-wrap">{msg.text}</p>
-              </div>
+            <div key={index} className="message message--receiver">
+              <p className="whitespace-pre-wrap">{msg.text}</p>
             </div>
           )
         }
 
         if (msg.role === 'system') {
           return (
-            <div key={index} className="mb-4 flex items-center justify-center text-center">
-              <p className="text-sm whitespace-pre-wrap text-gray-400">{msg.text}</p>
+            <div key={index} className="mb-4 flex items-end-safe justify-center text-center">
+              <p className="text-sm whitespace-pre-wrap text-[#a6a6a6]">{msg.text}</p>
             </div>
           )
         }

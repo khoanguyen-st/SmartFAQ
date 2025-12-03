@@ -6,12 +6,31 @@
   --color-white: #fff;
   --color-black: #000;
   --color-blue: #003087;
+  --color-blue-2: #003087;
+
   --color-dark: #111827;
   --color-dark-1: #1f2937;
   --color-dark-2: #6b7280;
   --color-gray-1: #f3f4f6;
   --color-gray-2: #f9fafb;
   --color-gray-3: #e5e7eb;
+}
+
+:host {
+  display: block;
+  /* Reset lại các biến cơ bản */
+  line-height: 1.5;
+  -webkit-text-size-adjust: 100%;
+  font-family: ui-sans-serif, system-ui, sans-serif;
+  color: #111827; 
+}
+
+/* Quan trọng: Fix lỗi box-sizing bị mất trong shadow dom */
+:host *, :host *::before, :host *::after {
+  box-sizing: border-box;
+  border-width: 0;
+  border-style: solid;
+  border-color: #e5e7eb;
 }
 
 @theme {
@@ -26,13 +45,9 @@
   --color-primary-800: #065f46;
   --color-primary-900: #064e3b;
   --color-primary-950: #022c22;
-
   --font-family-sans: Inter, system-ui, sans-serif;
 }
 
-.chat {
-
-}
 
 .chat__content{
   flex-grow: 1;
@@ -41,20 +56,13 @@
   scrollbar-width: none;
 }
 
-
-.chat__content::-webkit-scrollbar-track {
-  margin-top: 20px ;
-  margin-bottom: 20px ;
-}
-
-
 .message {
   display: flex;
   flex-direction: column;
   max-width: 75%;
   text-align: start;
   padding: 16px;
-  margin-bottom: 16px;
+  margin-bottom: 24px;
   line-height: 20px;
   font-size: 14px;
   font-weight: 400;
@@ -64,20 +72,16 @@
   white-space: pre-wrap;
 }
 
-.message__actions {
-
-}
-
 .message--receiver {
   align-self: flex-end;
-  border-radius: 16px 0 16px 16px;
+  border-radius: 24px 0 24px 24px;
   background: var(--color-blue);
   color: var(--color-white);
 }
 
 .message--sender {
   align-self: flex-start;
-  border-radius: 0 16px 16px 16px;
+  border-radius: 0 24px 24px 24px;
   background: var(--color-gray-1);
   color: var(--color-dark);
 }
@@ -103,22 +107,21 @@
   text-align: start;
   outline: none;
   color: var(--color-dark);
-  border: 1px solid var(--color-gray-3);
+  border: 2px solid #b0c1da;
   -ms-overflow-style: none;
   scrollbar-width: none;
-  padding: 12px 40px 10px 16px;
+  padding: 14px 48px 10px 20px;
+  margin: 0;
+  margin-top: 2px;
+  margin-bottom: 8px;
+  transition-duration: .15s;
 }
 
-.Chat__footer-input:focus {
+.Chat__footer-input:focus , .Chat__footer-input:hover{
   outline: none;
-  border: 1px solid var(--color-dark-2);
-}
-
-.Chat__footer-input:focus ~ label
-, .Chat__footer-input:valid ~ label  {
- user-select: none;
- opacity: 0;
- transition: all 0.15s ease-in-out;
+  border: 2px solid #1677FF;
+  box-shadow: 0px 0px 3px #1677FF;
+  transition-duration: .15s;
 }
 
 .open-button {

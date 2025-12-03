@@ -162,7 +162,7 @@ const UploadedFile = forwardRef<UploadedFileHandle, UploadedFileProps>(({ isComp
                       e.stopPropagation()
                       handleOpenDeleteModal(file)
                     }}
-                    className="absolute -top-2 -right-2 z-10 hidden h-5 w-5 items-center justify-center rounded-full bg-red-500 text-white shadow-md ring-2 ring-white transition-all group-hover:flex"
+                    className="absolute -top-2 -right-2 hidden h-5 w-5 items-center justify-center rounded-full bg-red-500 text-white shadow-md ring-2 ring-white transition-all group-hover:flex"
                     title="Delete file"
                   >
                     <img src={trashUrl} alt="delete" className="h-3 w-3" />

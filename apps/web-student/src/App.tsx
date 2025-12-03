@@ -1,6 +1,6 @@
 import { Navigate, Route, Routes } from 'react-router-dom'
 
-import ChatWidget from './components/Chatbot/ChatWidget'
+import ChatWidget from './pages/ChatWidget'
 import FullPageChat from './pages/FullPageChat'
 import { I18nProvider } from './lib/i18n'
 

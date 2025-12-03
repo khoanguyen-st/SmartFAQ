@@ -14,8 +14,7 @@ const ChatHeader = ({
   additionalActions
 }: ChatHeaderProps) => {
   return (
-    <div className="chat__header sticky top-0 z-10 flex items-center justify-between border-b border-[#E5E7EB] bg-white px-6 py-4">
-      {/* Left Side: Logo & Title */}
+    <div className="chat__header sticky top-0 flex items-center justify-between border-b border-[#E5E7EB] bg-white px-6 py-3">
       <div className="flex items-center">
         <img
           src={LogoGreenwich}
@@ -30,12 +29,9 @@ const ChatHeader = ({
         </div>
       </div>
 
-      {/* Right Side: Actions */}
-      <div className="flex items-center gap-3">
-        {/* Render các nút phụ (Delete) nếu có */}
-        {additionalActions && <div className="flex items-center">{additionalActions}</div>}
 
-        {/* Render nút chính (Close/Expand) */}
+      <div className="flex items-center gap-2">
+        {additionalActions && <div className="flex items-center">{additionalActions}</div>}
         {actionNode && <div>{actionNode}</div>}
       </div>
     </div>

@@ -47,12 +47,10 @@ const AssistantMessage = ({ message, sessionId }: AssistantMessageProps) => {
   }
 
   return (
-    <div className="mb-4 flex w-full items-start gap-3">
-      <div className="message message--sender">
+      <div className="message message--sender gap-3">
         <p className="whitespace-pre-wrap">{message.text}</p>
 
         {/* Action Bar*/}
-
         <div className="mt-2 flex items-center gap-2 border-t border-[#E5E7EB] pt-2 pl-1">
           <button onClick={handleCopy} className="cursor-pointer transition">
             {isCopied ? (
@@ -62,7 +60,6 @@ const AssistantMessage = ({ message, sessionId }: AssistantMessageProps) => {
             )}
           </button>
 
-          {/* Nút Thumb Up */}
           <button onClick={() => handleFeedback('up')} className={`mx-2 cursor-pointer transition`} title="Helpful">
             {feedbackStatus === 'up' ? (
               <LikeIconFill className="h-3.5 w-3.5 text-[#6b7280] hover:text-[#008b3c]" />
@@ -71,7 +68,6 @@ const AssistantMessage = ({ message, sessionId }: AssistantMessageProps) => {
             )}
           </button>
 
-          {/* Nút Thumb Down */}
           <button onClick={() => handleFeedback('down')} className={`cursor-pointer transition`}>
             {feedbackStatus === 'down' ? (
               <LikeIconFill className="h-3.5 w-3.5 rotate-180 text-[#6b7280] hover:text-[#9e1d1d]" />
@@ -81,7 +77,6 @@ const AssistantMessage = ({ message, sessionId }: AssistantMessageProps) => {
           </button>
         </div>
       </div>
-    </div>
   )
 }
 
