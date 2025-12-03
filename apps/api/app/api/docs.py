@@ -5,8 +5,10 @@ import os
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
 from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.future import select
 
 from ..core.database import get_db
+from ..models import document as document_model
 from ..schemas import document
 from ..services import dms
 
@@ -178,4 +180,37 @@ async def delete_document(doc_id: int, db: AsyncSession = Depends(get_db)):
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to delete document.",
+        ) from exc
+
+
+@router.get("/documents/status")
+async def get_documents_by_status(
+    document_status: str | None = None, db: AsyncSession = Depends(get_db)
+):
+    try:
+        stmt = select(document_model.Document)
+        if document_status:
+            stmt = stmt.where(document_model.Document.status == document_status)
+
+        result = await db.execute(stmt)
+        docs = result.scalars().all()
+
+        return {
+            "documents": [
+                {
+                    "document_id": doc.id,
+                    "title": doc.title,
+                    "status": doc.status,
+                    "current_version_id": doc.current_version_id,
+                }
+                for doc in docs
+            ]
+        }
+    except HTTPException:
+        raise
+    except Exception as exc:
+        logger.exception("Failed to fetch documents by status")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to fetch documents by status.",
         ) from exc
