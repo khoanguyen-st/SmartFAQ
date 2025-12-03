@@ -37,8 +37,6 @@ const Users: React.FC = () => {
   const [createDialogOpen, setCreateDialogOpen] = useState(false)
   const [editDialogOpen, setEditDialogOpen] = useState(false)
   const [selectedUser, setSelectedUser] = useState<User | null>(null)
-
-  // 2. Cập nhật type cho state confirmDialog để sử dụng values từ Constant
   const [confirmDialog, setConfirmDialog] = useState<{
     open: boolean
     type: typeof USER_ACTIONS.LOCK | typeof USER_ACTIONS.UNLOCK | typeof USER_ACTIONS.RESET_PASSWORD
@@ -51,10 +49,8 @@ const Users: React.FC = () => {
 
   const filterRef = useRef<HTMLDivElement>(null)
 
-  // Lọc User
   const filteredUsers = useUserFilters({ users, searchQuery, selectedDepartments, selectedStatuses })
 
-  // Phân trang
   const { paginatedItems: paginatedUsers, totalPages } = usePagination({
     items: filteredUsers,
     page,
@@ -85,7 +81,6 @@ const Users: React.FC = () => {
     setEditDialogOpen(true)
   }
 
-  // 3. Sử dụng USER_ACTIONS.LOCK
   const handleLock = (userId: number) => {
     const user = users.find(u => u.id === userId)
     if (user) {
@@ -98,7 +93,6 @@ const Users: React.FC = () => {
     }
   }
 
-  // 4. Sử dụng USER_ACTIONS.UNLOCK
   const handleUnlock = (userId: number) => {
     const user = users.find(u => u.id === userId)
     if (user) {
@@ -111,7 +105,6 @@ const Users: React.FC = () => {
     }
   }
 
-  // 5. Sử dụng USER_ACTIONS.RESET_PASSWORD
   const handleResetPassword = (user: User) => {
     setConfirmDialog({
       open: true,
@@ -127,7 +120,6 @@ const Users: React.FC = () => {
     setActionLoading(true)
     try {
       const userId = parseInt(confirmDialog.userId)
-      // 6. Switch case dùng Constant
       switch (confirmDialog.type) {
         case USER_ACTIONS.LOCK:
           await lockUser(userId)
