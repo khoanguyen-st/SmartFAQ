@@ -7,7 +7,10 @@ from typing import Dict, List, Optional
 from app.rag.guardrail import GuardrailService
 from app.rag.llm import LLMWrapper
 from app.rag.normalizer import UnifiedNormalizer
-from app.rag.prompts import get_master_analyzer_prompt
+from app.rag.prompts import (
+    get_master_analyzer_prompt,
+    get_rewrite_question_prompt,
+)
 from app.rag.retriever import Retriever
 from app.rag.types import MasterAnalysis
 
@@ -42,54 +45,53 @@ class RAGOrchestrator:
 
         final_search_query = raw_q
 
-        if history and len(history) > 0:
+        if history and self._should_contextualize(raw_q, history):
             try:
                 history_subset = history[-2:]
                 history_text = "\n".join(
-                    [f"{h.get('role', 'user')}: {h.get('text', '')}" for h in history_subset]
+                    f"{h.get('role','user')}: {h.get('text','')}" for h in history_subset
                 )
-                rewrite_system = (
-                    "Bạn là trợ lý AI của Đại học Greenwich Việt Nam.\n "
-                    "Nhiệm vụ: Viết lại câu hỏi nối tiếp (follow-up) thành câu hỏi độc lập, đầy đủ chủ ngữ dựa trên lịch sử chat. "
-                    "QUAN TRỌNG: Nếu câu hỏi mơ hồ hoặc thiếu chủ ngữ (ví dụ: 'thư viện', 'học phí là bao nhiêu'), "
-                    "LUÔN LUÔN mặc định người dùng đang hỏi về 'Đại học Greenwich Việt Nam'. "
-                    "TUYỆT ĐỐI KHÔNG gán câu hỏi cho các trường khác ngay cả khi chúng xuất hiện trong lịch sử chat. "
-                    "Giữ nguyên ngôn ngữ của người dùng (Tiếng Việt hoặc Tiếng Anh). "
-                    'Output JSON: {{"standalone_question": "..."}}'
-                )
+
+                rewrite_system = get_rewrite_question_prompt()
                 rewrite_input = f"Chat History:\n{history_text}\n\nFollow-up Question: {raw_q}"
 
                 rewrite_result = await self.llm.invoke_json(rewrite_system, rewrite_input)
-                if rewrite_result and "standalone_question" in rewrite_result:
-                    final_search_query = rewrite_result["standalone_question"]
-                    if final_search_query != raw_q:
-                        logger.info(
-                            f" [Contextualizer] Rewritten: '{raw_q}' -> '{final_search_query}'"
-                        )
+
+                if isinstance(rewrite_result, dict):
+                    standalone = (rewrite_result.get("standalone_question") or "").strip()
+                    if standalone:
+                        final_search_query = standalone
+
+                if final_search_query != raw_q:
+                    logger.info(f"[Contextualizer] Rewritten: '{raw_q}' -> '{final_search_query}'")
             except Exception as e:
                 logger.error(f"Contextualizer Error: {e}")
+                final_search_query = raw_q
 
         norm_result = await self.normalizer.understand(final_search_query)
         detected_lang = norm_result["language"]
         refined_q = norm_result["normalized_text"]
-        logger.info(f" [Normalizer] Refined: '{refined_q}' | Detected Lang: {detected_lang}")
+
+        logger.info(f"[Normalizer] Refined: '{refined_q}' | Detected Lang: {detected_lang}")
 
         if detected_lang in ["vi", "en"]:
             target_lang = detected_lang
         else:
-            target_lang = language if language else "en"
+            target_lang = language or "en"
+
         try:
             analysis_dict = await self.llm.invoke_json(get_master_analyzer_prompt(), refined_q)
             if isinstance(analysis_dict, dict):
                 analysis = MasterAnalysis(**analysis_dict)
             else:
                 analysis = MasterAnalysis(status="valid", sub_questions=[refined_q])
+
         except Exception as e:
-            logger.warning(f"Master Analysis Failed: {e}. Fallback to valid.")
+            logger.warning(f"Master Analysis Failed: {e}. Using fallback.")
             analysis = MasterAnalysis(status="valid", sub_questions=[refined_q])
 
         logger.info(
-            f" [Analyzer] Status: {analysis.status} | Sub-questions: {analysis.sub_questions}"
+            f"[Analyzer] Status: {analysis.status} | Sub-questions: {analysis.sub_questions}"
         )
 
         if analysis.status == "blocked":
@@ -100,43 +102,82 @@ class RAGOrchestrator:
             msg = self._get_greeting_msg(target_lang)
             return self._response(msg, [], 1.0, t0, False)
 
-        # 5. Retrieval
-        sub_qs = analysis.sub_questions if analysis.sub_questions else [refined_q]
+        sub_qs = analysis.sub_questions or [refined_q]
         sub_qs = sub_qs[:3]
 
         all_docs = []
-        for q in sub_qs:
+        for sq in sub_qs:
             try:
-                docs = self.retriever.retrieve(q, top_k=3)
+                docs = self.retriever.retrieve(sq, top_k=3)
                 all_docs.extend(docs)
             except Exception as e:
-                logger.error(f"Retrieve failed for '{q}': {e}")
+                logger.error(f"Retriever error for '{sq}': {e}")
 
         unique_docs = self._deduplicate(all_docs)
 
-        logger.info(f" [Retriever] Found {len(unique_docs)} unique docs for {len(sub_qs)} queries.")
+        logger.info(
+            f"[Retriever] Found {len(unique_docs)} unique docs for {len(sub_qs)} sub-queries"
+        )
 
         if not unique_docs:
-            logger.info(" [Retriever] No documents found. Triggering fallback.")
             fb = (
                 "Tôi không tìm thấy thông tin phù hợp trong tài liệu."
                 if target_lang == "vi"
                 else "I could not find information in the documents."
             )
-            return self._response(fb, [], 0.0, t0, True)
+            return self._response(fb, [], 0, t0, True)
 
         try:
-            logger.info(f" [Generator] Generating answer in '{target_lang}'...")
+            logger.info(f"[Generator] Generating answer in '{target_lang}'...")
             ans = await self.llm.generate_answer_async(
                 refined_q, unique_docs, target_language=target_lang
             )
             conf = self.retriever.calculate_confidence(unique_docs)
 
-            logger.info(f"--- [Query End] Success | Latency: {int((time.time() - t0) * 1000)}ms")
+            logger.info(f"--- [Query End] Success | Latency: {int((time.time()-t0)*1000)}ms")
             return self._response(ans, self._fmt_sources(unique_docs), conf, t0, False)
+
         except Exception:
-            logger.exception("System Error during generation")
+            logger.exception("Error during answer generation")
             return self._response("System Error", [], 0, t0, True)
+
+    def _should_contextualize(self, question: str, history: Optional[List[Dict]]) -> bool:
+        """
+        Detect follow-up questions using natural-language heuristics.
+        No prefix lists. Clean & minimal.
+        """
+        if not history:
+            return False
+
+        q = (question or "").strip().lower()
+        if not q:
+            return False
+
+        words = q.split()
+
+        if len(words) <= 3:
+            return True
+
+        interrogatives = [
+            "là",
+            "làm",
+            "bao",
+            "bao nhiêu",
+            "mấy",
+            "gì",
+            "như thế nào",
+            "sao",
+            "vì sao",
+            "ở đâu",
+            "khi nào",
+        ]
+        if not any(token in q for token in interrogatives):
+            return True
+
+        if "?" not in q:
+            return True
+
+        return False
 
     def _response(self, ans, srcs, conf, t0, fb):
         return {
