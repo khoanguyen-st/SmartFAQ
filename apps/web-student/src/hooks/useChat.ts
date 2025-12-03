@@ -5,6 +5,14 @@ const CUSTOM_WELCOME_MSG = 'Xin chào!\nTôi là trợ lý ảo Greenwich (Smart
 const SYNC_CHANNEL_NAME = 'greenwich_chat_sync_channel'
 const STORAGE_KEY = 'chat_session_id'
 
+// Detect channel from URL path
+function detectChannel(): string {
+  const path = window.location.pathname
+  if (path.includes('/chat')) return 'chatstudent'
+  if (path.includes('/widget')) return 'widget'
+  return 'widget' // default
+}
+
 export const useChat = (initialSessionId?: string | null) => {
   const [sessionId, setSessionId] = useState<string | null>(initialSessionId || null)
   const [messages, setMessages] = useState<ChatHistoryMessage[]>([])
@@ -63,14 +71,16 @@ export const useChat = (initialSessionId?: string | null) => {
           setSessionId(targetId)
           await fetchHistory(targetId)
         } else {
-          const newSession = await startNewChatSession()
+          const newSession = await startNewChatSession(detectChannel())
           setSessionId(newSession.sessionId)
           localStorage.setItem(STORAGE_KEY, newSession.sessionId)
-          setMessages([{
+          setMessages([
+            {
               role: 'system',
               text: CUSTOM_WELCOME_MSG,
               timestamp: new Date().toISOString()
-            }])
+            }
+          ])
         }
       } catch (err) {
         setError('Cannot connect to chat service.')
@@ -88,7 +98,7 @@ export const useChat = (initialSessionId?: string | null) => {
     if (!sessionId) return
 
     const channel = new BroadcastChannel(SYNC_CHANNEL_NAME)
-    channel.onmessage = (event) => {
+    channel.onmessage = event => {
       if (event.data.type === 'NEED_REFRESH') {
         fetchHistory(sessionId)
       }
@@ -147,15 +157,15 @@ export const useChat = (initialSessionId?: string | null) => {
     [sessionId]
   )
 
-  // 5. CLEAR CHAT 
+  // 5. CLEAR CHAT
   // -------------------------------------------------------
   const clearChat = async () => {
     setSessionId(null)
 
     const welcomeMsg: ChatHistoryMessage = {
-        role: 'system',
-        text: CUSTOM_WELCOME_MSG,
-        timestamp: new Date().toISOString()
+      role: 'system',
+      text: CUSTOM_WELCOME_MSG,
+      timestamp: new Date().toISOString()
     }
     setMessages([welcomeMsg])
     messagesRef.current = [welcomeMsg]
@@ -166,17 +176,16 @@ export const useChat = (initialSessionId?: string | null) => {
       localStorage.removeItem(STORAGE_KEY)
 
       // 2. Tạo session mới
-      const newSession = await startNewChatSession()
+      const newSession = await startNewChatSession(detectChannel())
       setSessionId(newSession.sessionId)
 
       // 3. Lưu session MỚI vào Storage
-      localStorage.setItem(STORAGE_KEY, newSession.sessionId) 
+      localStorage.setItem(STORAGE_KEY, newSession.sessionId)
 
       // 4. Báo cho các tab khác biết (để chúng nó cũng reload/clear theo)
       const channel = new BroadcastChannel(SYNC_CHANNEL_NAME)
       channel.postMessage({ type: 'NEED_REFRESH' })
       channel.close()
-      
     } catch (e) {
       console.error(e)
     } finally {

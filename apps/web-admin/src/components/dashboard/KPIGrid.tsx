@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { useMetrics } from '@/hooks/useMetrics'
 
 interface KPI {
@@ -5,8 +6,19 @@ interface KPI {
   value: string
 }
 
-const KPIGrid = () => {
-  const { data, loading } = useMetrics()
+interface KPIGridProps {
+  autoRefresh?: boolean
+  refreshKey?: number
+}
+
+const KPIGrid = ({ autoRefresh = false, refreshKey = 0 }: KPIGridProps) => {
+  const { data, loading, refresh } = useMetrics(autoRefresh)
+
+  useEffect(() => {
+    if (refreshKey > 0) {
+      refresh()
+    }
+  }, [refreshKey, refresh])
 
   const kpis: KPI[] = [
     {

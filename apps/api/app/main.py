@@ -4,7 +4,8 @@ import logging
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from .api import admin, auth, chat, docs, fallback, staff
+from .api import admin, auth, chat, dashboard, docs, fallback, staff
+from .api import settings as settings_api
 from .core.config import settings
 from .rag.embedder import get_embeddings
 from .rag.llm import LLMWrapper
@@ -45,6 +46,8 @@ def create_app() -> FastAPI:
     app.include_router(docs.router, prefix="/api/docs", tags=["documents"])
     app.include_router(chat.router, prefix="/api/chat", tags=["chat"])
     app.include_router(fallback.router, prefix="/api/fallback", tags=["fallback"])
+    app.include_router(dashboard.router, prefix="/api/dashboard", tags=["dashboard"])
+    app.include_router(settings_api.router, prefix="/api", tags=["settings"])
     app.include_router(admin.router, prefix="/api/user", tags=["user"])
     app.include_router(staff.router, prefix="/api/user", tags=["user"])
 

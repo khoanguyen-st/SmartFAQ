@@ -127,7 +127,9 @@ class ChatService:
         if mongo_channel_raw and mongo_channel != session.channel:
             session.channel = mongo_channel
 
-        session.language = payload.language or session.language or "en"
+        # Auto-detect language from question if not explicitly provided
+        detected_lang = detect_language(payload.question) if payload.question else "en"
+        session.language = payload.language or detected_lang or session.language or "en"
         now = self._now()
         updates: dict[str, Any] = {"language": session.language, "updatedAt": now}
         if mongo_channel_raw != session.channel:
@@ -175,6 +177,9 @@ class ChatService:
             "tokensIn": safe_int(rag_response.get("tokens_in")),
             "tokensOut": safe_int(rag_response.get("tokens_out")),
             "fallback": fallback_triggered,
+            "lang": session.language,
+            "channel": session.channel,
+            "userAgent": session.user_agent,
         }
 
         question_id = str(uuid4())

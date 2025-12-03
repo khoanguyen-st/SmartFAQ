@@ -8,7 +8,6 @@ import styleText from '../styles.css?inline'
 const WIDGET_ID = 'my-chat-widget-root'
 
 export const initWidget = () => {
-  console.log('CSS Loaded:', styleText)
   if (document.getElementById(WIDGET_ID)) {
     return
   }

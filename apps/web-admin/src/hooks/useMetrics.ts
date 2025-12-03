@@ -1,18 +1,34 @@
 import { useEffect, useState } from 'react'
 
-import { fetchMetrics } from '../lib/api'
+import { fetchDashboardMetrics, DashboardMetrics } from '../lib/api'
 
-export const useMetrics = () => {
-  const [data, setData] = useState<Record<string, unknown> | null>(null)
+export const useMetrics = (autoRefresh = false, intervalMs = 30000) => {
+  const [data, setData] = useState<DashboardMetrics | null>(null)
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  const loadMetrics = async () => {
+    try {
+      setLoading(true)
+      setError(null)
+      const metrics = await fetchDashboardMetrics()
+      setData(metrics)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load metrics')
+      console.error(err)
+    } finally {
+      setLoading(false)
+    }
+  }
 
   useEffect(() => {
-    setLoading(true)
-    fetchMetrics()
-      .then((metrics: Record<string, unknown>) => setData(metrics))
-      .catch(error => console.error(error))
-      .finally(() => setLoading(false))
-  }, [])
+    loadMetrics()
 
-  return { data, loading }
+    if (autoRefresh) {
+      const intervalId = setInterval(loadMetrics, intervalMs)
+      return () => clearInterval(intervalId)
+    }
+  }, [autoRefresh, intervalMs])
+
+  return { data, loading, error, refresh: loadMetrics }
 }

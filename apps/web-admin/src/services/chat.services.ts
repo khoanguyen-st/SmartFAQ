@@ -72,7 +72,8 @@ export async function startNewChatSession(): Promise<NewSessionResponse> {
     },
     body: JSON.stringify({
       userAgent: navigator.userAgent,
-      language: navigator.language
+      language: navigator.language,
+      channel: 'chatstaff'
     })
   })
   if (!res.ok) {

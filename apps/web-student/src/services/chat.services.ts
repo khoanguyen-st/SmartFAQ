@@ -63,7 +63,7 @@ export interface ChatConfidenceResponse {
 /**
  * Starts a new chat session.
  */
-export async function startNewChatSession(): Promise<NewSessionResponse> {
+export async function startNewChatSession(channel?: string): Promise<NewSessionResponse> {
   const res = await fetch(`${API_BASE_URL}/api/chat/new-session`, {
     method: 'POST',
     headers: {
@@ -71,7 +71,8 @@ export async function startNewChatSession(): Promise<NewSessionResponse> {
     },
     body: JSON.stringify({
       userAgent: navigator.userAgent,
-      language: navigator.language
+      language: navigator.language,
+      channel: channel || 'widget'
     })
   })
   if (!res.ok) {
