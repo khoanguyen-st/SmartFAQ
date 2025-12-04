@@ -1,8 +1,7 @@
-import { useEffect } from 'react'
+import { useEffect, useState, useCallback, useMemo } from 'react'
 import { NavLink, useNavigate, Outlet } from 'react-router-dom'
 import { cn } from '@/lib/utils'
 import { logout } from '@/lib/api'
-import { useState, useCallback, useMemo } from 'react'
 import educationUrl from '@/assets/icons/education.svg'
 import userUrl from '@/assets/icons/user.svg'
 import chevronDownUrl from '@/assets/icons/chevron-down.svg'
@@ -13,13 +12,14 @@ type ImgCompProps = React.ImgHTMLAttributes<HTMLImageElement>
 const EducationIcon: React.FC<ImgCompProps> = props => <img src={educationUrl} alt="edu" {...props} />
 const UserIcon: React.FC<ImgCompProps> = props => <img src={userUrl} alt="upload" {...props} />
 
-const navItems = [
+// Định nghĩa tất cả các item có thể có
+const ALL_NAV_ITEMS = [
   { path: 'dashboard', label: 'Dashboard' },
   { path: 'users', label: 'Users' },
+  { path: 'departments', label: 'Departments' },
   { path: 'logs', label: 'Logs' },
   { path: 'settings', label: 'Settings' },
-  { path: 'view-chat', label: 'View Chat' },
-  { path: 'departments', label: 'Departments' }
+  { path: 'view-chat', label: 'View Chat' }
 ]
 
 const ShellLayout = () => {
@@ -65,6 +65,26 @@ const ShellLayout = () => {
     fetchUserInfo()
   }, [])
 
+  // Logic phân quyền hiển thị Menu
+  const navItems = useMemo(() => {
+    if (!userInfo) return []
+
+    // ADMIN: dashboard, user, department, system log, system settings
+    // (Lưu ý: Theo yêu cầu của bạn admin không có 'view-chat')
+    if (userInfo.role === 'admin') {
+      return ALL_NAV_ITEMS.filter(item => ['dashboard', 'users', 'departments', 'logs', 'settings'].includes(item.path))
+    }
+
+    // USER (STAFF): dashboard, system log, system setting, view chat
+    // (Lưu ý: Ẩn users và departments)
+    if (userInfo.role === 'staff' || userInfo.role === 'user') {
+      return ALL_NAV_ITEMS.filter(item => ['dashboard', 'logs', 'settings', 'view-chat'].includes(item.path))
+    }
+
+    // Default fallback (nếu role lạ)
+    return []
+  }, [userInfo])
+
   const handleDepartmentChange = useCallback((departmentId: number) => {
     setSelectedDepartment(departmentId)
     localStorage.setItem('selected_department_id', departmentId.toString())
@@ -83,7 +103,6 @@ const ShellLayout = () => {
       await logout()
       navigate('/login')
     } catch {
-      // Even if logout fails, clear token and redirect
       localStorage.removeItem('access_token')
       navigate('/login')
     }
@@ -134,7 +153,7 @@ const ShellLayout = () => {
         </button>
       </aside>
     ),
-    [isSidebarOpen, toggleSidebar, handleNavigation, handleLogout]
+    [isSidebarOpen, toggleSidebar, handleNavigation, handleLogout, navItems] // Thêm navItems vào dependency
   )
 
   return (
@@ -197,7 +216,7 @@ const ShellLayout = () => {
                       <span>Profile</span>
                     </button>
 
-                    {/* Department Selector - Only show if user has multiple departments */}
+                    {/* Department Selector */}
                     {userInfo && userInfo.departments.length > 1 && (
                       <>
                         <div className="my-2 border-t border-gray-200" />
