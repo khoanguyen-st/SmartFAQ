@@ -43,6 +43,13 @@ class RAGMetrics:
     confidence: float = 0.0
     fallback_triggered: bool = False
 
+    # Retrieval quality metrics
+    avg_retrieval_score: float = 0.0
+    max_retrieval_score: float = 0.0
+    min_retrieval_score: float = 0.0
+    score_variance: float = 0.0
+    diversity_score: float = 0.0  # Ratio of unique docs to total contexts
+
     # Error tracking
     error_type: Optional[ErrorType] = None
     error_message: Optional[str] = None
@@ -84,6 +91,11 @@ class RAGMetrics:
             "num_unique_docs": self.num_unique_docs,
             "confidence": round(self.confidence, 3),
             "fallback_triggered": self.fallback_triggered,
+            "avg_retrieval_score": round(self.avg_retrieval_score, 3),
+            "max_retrieval_score": round(self.max_retrieval_score, 3),
+            "min_retrieval_score": round(self.min_retrieval_score, 3),
+            "score_variance": round(self.score_variance, 3),
+            "diversity_score": round(self.diversity_score, 3),
             "error_type": self.error_type.value if self.error_type else None,
             "error_message": self.error_message,
         }

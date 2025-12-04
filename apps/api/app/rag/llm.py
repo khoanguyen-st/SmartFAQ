@@ -59,29 +59,58 @@ class LLMWrapper:
         logger.info(f"LLM initialized with model: {llm_model}")
 
         self.system_prompt = (
-            "Bạn là trợ lý AI của Đại học Greenwich Việt Nam.\n\n"
-            "NHIỆM VỤ: Trả lời câu hỏi sinh viên dựa trên Context bên dưới.\n\n"
-            "QUY TẮC:\n"
-            "1. LUÔN LUÔN trả lời bằng ngôn ngữ của câu hỏi (Vietnamese hoặc English)\n"
-            "2. Sử dụng thông tin từ Context để trả lời\n"
-            "3. Nếu câu hỏi NGẮN (1-2 từ), cung cấp thông tin TỔNG QUAN từ Context\n"
-            "4. Nếu Context có thông tin liên quan, LUÔN trả lời (không được từ chối)\n"
-            "5. CHỈ nói 'Tôi không tìm thấy...' khi Context HOÀN TOÀN không liên quan\n\n"
+            "Bạn là trợ lý AI thông minh của Đại học Greenwich Việt Nam.\n\n"
+            "NHIỆM VỤ: Tổng hợp thông tin từ nhiều Context sources để trả lời TOÀN DIỆN.\n\n"
+            "QUY TẮC QUAN TRỌNG:\n"
+            "1. NGÔN NGỮ: Trả lời bằng ngôn ngữ của câu hỏi (Vietnamese/English)\n"
+            "2. TỔNG HỢP: Kết hợp thông tin từ TẤT CẢ sources liên quan\n"
+            "3. ĐẦY ĐỦ: Với câu hỏi ngắn (1-3 từ), cung cấp thông tin TOÀN DIỆN:\n"
+            "   - Định nghĩa/Giới thiệu\n"
+            "   - Thông tin chi tiết (điều kiện, quy định, số liệu)\n"
+            "   - Liên hệ/Tham khảo (nếu có)\n"
+            "4. TRÍCH DẪN: Luôn cite nguồn với format (Nguồn X - tên file)\n"
+            "5. CHỈ từ chối khi Context HOÀN TOÀN không liên quan\n\n"
             "FORMAT:\n"
-            "• Dùng bullet points (•) để liệt kê\n"
-            "• Nêu rõ số liệu, deadline, điều kiện quan trọng\n"
-            "• Bao gồm email/link nếu có trong Context\n\n"
+            "• Dùng bullet points (•) cho danh sách\n"
+            "• Nhóm thông tin theo chủ đề\n"
+            "• Làm nổi bật số liệu, deadline quan trọng\n"
+            "• Thêm email/link nếu có\n\n"
             "VÍ DỤ CÁCH TRẢ LỜI:\n\n"
-            'Câu hỏi: "Học phí"\n'
-            'Trả lời: "Học phí năm 2024-2025:\n'
-            "• Hệ chuẩn: 120 triệu/năm\n"
-            "• Hệ chất lượng cao: 150 triệu/năm\n"
-            'Liên hệ: finance@greenwich.edu.vn"\n\n'
-            'Câu hỏi: "CNTT"\n'
-            'Trả lời: "Ngành Công nghệ thông tin:\n'
-            "• Thời gian: 4 năm\n"
-            "• Chuyên ngành: Software Engineering, Cyber Security\n"
-            '• Cơ hội việc làm: Developer, System Admin, Security Analyst"\n'
+            "--- VÍ DỤ 1: Short Query ---\n"
+            'Câu hỏi: "Chương trình 3+0"\n'
+            "Context: [5 sources về chương trình liên kết, ngành học, học phí]\n"
+            "Trả lời:\n"
+            '"Chương trình 3+0 (liên kết quốc tế Greenwich):"\n\n'
+            "**Giới thiệu:**\n"
+            "• Chương trình liên kết với Đại học Greenwich (Anh Quốc)\n"
+            "• Sinh viên học toàn bộ 3 năm tại Việt Nam\n"
+            "• Nhận bằng cử nhân quốc tế\n\n"
+            "**Ngành học:**\n"
+            "• Công nghệ thông tin (IT)\n"
+            "• Quản trị kinh doanh (Business)\n"
+            "• Kế toán - Tài chính\n\n"
+            "**Học phí:** 150-180 triệu VNĐ/năm (tùy ngành)\n\n"
+            "**Điều kiện:** Tốt nghiệp THPT, IELTS 5.5+ hoặc tương đương\n\n"
+            '(Nguồn 1 - 3+0.pdf, Nguồn 2 - Quy chế Đào tạo F2G.pdf)"\n\n'
+            "--- VÍ DỤ 2: Specific Question ---\n"
+            'Câu hỏi: "Làm thế nào để tôi được nhận thưởng"\n'
+            "Context: [3 sources về điều kiện khen thưởng]\n"
+            "Trả lời:\n"
+            '"Để được xét khen thưởng học sinh giỏi:"\n\n'
+            "**Điều kiện:**\n"
+            "• GPA ≥ 3.6/4.0 hoặc ≥ 8.5/10\n"
+            "• Không có môn nào dưới 7.0\n"
+            "• Không vi phạm kỷ luật\n\n"
+            "**Mức thưởng:**\n"
+            "• Xuất sắc: 5 triệu VNĐ + giảm 50% học phí kỳ sau\n"
+            "• Giỏi: 3 triệu VNĐ + giảm 30% học phí kỳ sau\n"
+            "• Khá: 1 triệu VNĐ\n\n"
+            "**Thủ tục:** Nộp đơn qua phòng Công tác sinh viên trước 30/6\n\n"
+            '(Nguồn 1 - Sổ tay Sinh viên 2025.pdf, Nguồn 2 - Quy chế Đào tạo.pdf)"\n\n'
+            "QUAN TRỌNG:\n"
+            "- KHÔNG bỏ qua thông tin quan trọng từ Context\n"
+            "- KHÔNG tự thêm thông tin không có trong Context\n"
+            "- LUÔN structure câu trả lời rõ ràng, dễ đọc\n"
         )
 
         self.prompt = ChatPromptTemplate.from_messages(
@@ -111,16 +140,52 @@ class LLMWrapper:
         contexts: Sequence[Union[Document, Dict[str, Any]]],
         max_sources: int = 10,
     ) -> str:
-        """Format contexts with more sources to provide richer information."""
+        """Format contexts grouped by document for better comprehension."""
+        from collections import defaultdict
+
+        # Group contexts by source document
+        grouped = defaultdict(list)
+        for ctx in contexts[:max_sources]:
+            if isinstance(ctx, Document):
+                source = ctx.metadata.get("source") or ctx.metadata.get("document_id") or "Unknown"
+                grouped[source].append(ctx)
+            else:
+                meta = ctx.get("metadata", {}) or {}
+                source = meta.get("source") or meta.get("document_id") or "Unknown"
+                grouped[source].append(ctx)
+
+        # Format grouped contexts
         pieces = []
-        for i, ctx in enumerate(contexts[:max_sources], start=1):
-            pieces.append(_doc_to_text(ctx, i))
+        source_idx = 1
+
+        for source, source_contexts in grouped.items():
+            # Add document header
+            source_name = source.split("/")[-1] if "/" in source else source
+            pieces.append(f"=== NGUỒN {source_idx}: {source_name} ===")
+
+            # Add all chunks from this source
+            for ctx in source_contexts:
+                if isinstance(ctx, Document):
+                    content = ctx.page_content or ""
+                    page = ctx.metadata.get("page")
+                else:
+                    content = ctx.get("text", "") or ""
+                    meta = ctx.get("metadata", {}) or {}
+                    page = meta.get("page")
+
+                page_info = f" (trang {page})" if page else ""
+                pieces.append(f"{content}{page_info}")
+
+            pieces.append("")  # Empty line between sources
+            source_idx += 1
+
         joined = "\n\n".join(pieces).strip()
         clipped = _clip(joined, self.max_context_chars)
 
-        # Debug log to verify contexts are being passed
+        # Debug log
         logger.debug(
-            f"Formatted {len(pieces)} contexts, total chars: {len(joined)} (clipped to {len(clipped)})"
+            f"Formatted {len(grouped)} unique sources, {len(contexts[:max_sources])} total contexts, "
+            f"chars: {len(joined)} (clipped to {len(clipped)})"
         )
 
         return clipped

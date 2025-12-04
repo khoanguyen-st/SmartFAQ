@@ -18,8 +18,19 @@ from ..services import dms
 logger = logging.getLogger(__name__)
 
 
-async def _process_single_document(db: AsyncSession, doc: Document) -> None:
-    await db.refresh(doc, ["versions", "current_version"])
+async def _process_single_document(db: AsyncSession, doc_id: int) -> None:
+    # Load document in this session with relationships
+    stmt = (
+        select(Document)
+        .where(Document.id == doc_id)
+        .options(selectinload(Document.current_version), selectinload(Document.versions))
+    )
+    result = await db.execute(stmt)
+    doc = result.scalar_one_or_none()
+
+    if not doc:
+        logger.warning("Document %s not found in database", doc_id)
+        return
 
     object_name: Optional[str] = None
     try:
@@ -133,7 +144,7 @@ async def process_requests_once() -> None:
                     async with AsyncSessionLocal() as doc_db:
                         try:
                             logger.info("Processing document ID: %s", doc.id)
-                            await _process_single_document(doc_db, doc)
+                            await _process_single_document(doc_db, doc.id)
                         except Exception:
                             logger.exception("Error processing document ID: %s", doc.id)
 
