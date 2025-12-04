@@ -24,21 +24,11 @@ const TrendsChart = ({ refreshKey = 0 }: TrendsChartProps) => {
     loadTrends()
   }, [loadTrends, refreshKey])
 
-  const openModal = useCallback(() => {
-    // TODO: Implement modal functionality
-  }, [])
-
   return (
     <>
       <section className="rounded-2xl bg-white p-6 shadow-lg shadow-slate-900/10">
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-xl font-semibold text-slate-900">Weekly Activity</h2>
-          <button
-            onClick={openModal}
-            className="rounded-full bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-md transition duration-150 ease-in-out hover:bg-indigo-700"
-          >
-            Upload Document
-          </button>
         </div>
 
         <hr className="mb-4 border-gray-100" />

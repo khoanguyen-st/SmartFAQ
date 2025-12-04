@@ -38,9 +38,54 @@ def detect_language(text: str, llm_wrapper=None, async_: bool = False) -> str:
 
     clean_text = text.strip()
 
+    # Check for Vietnamese accents
     if has_vietnamese_accent(clean_text):
         return "vi"
 
+    # Check for common Vietnamese words (unaccented)
+    vietnamese_keywords = [
+        "hoc",
+        "phi",
+        "truong",
+        "sinh",
+        "vien",
+        "nganh",
+        "chuong",
+        "trinh",
+        "thoi",
+        "bao",
+        "luu",
+        "dang",
+        "ky",
+        "bong",
+        "cntt",
+        "qtkd",
+        "nhu",
+        "the",
+        "nao",
+        "lam",
+        "sao",
+        "duoc",
+        "khong",
+        "toi",
+        "ban",
+        "cho",
+        "can",
+        "phai",
+        "cua",
+        "voi",
+        "thi",
+        "diem",
+    ]
+
+    lower_text = clean_text.lower()
+    vietnamese_word_count = sum(1 for keyword in vietnamese_keywords if keyword in lower_text)
+
+    # If multiple Vietnamese keywords found, likely Vietnamese
+    if vietnamese_word_count >= 2:
+        return "vi"
+
+    # Use fasttext as fallback
     if _lid_model is None:
         _load_lid_model()
 

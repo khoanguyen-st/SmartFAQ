@@ -18,7 +18,8 @@ const KPIGrid = ({ autoRefresh = false, refreshKey = 0 }: KPIGridProps) => {
     if (refreshKey > 0) {
       refresh()
     }
-  }, [refreshKey, refresh])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [refreshKey])
 
   const kpis: KPI[] = [
     {

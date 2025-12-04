@@ -7,6 +7,7 @@ from typing import Dict, List, Optional
 
 from google.api_core import exceptions as google_exceptions
 
+from app.core.config import settings
 from app.rag.guardrail import GuardrailService
 from app.rag.llm import LLMWrapper
 from app.rag.metrics import ErrorType, RAGMetrics
@@ -147,14 +148,19 @@ class RAGOrchestrator:
 
         # Retrieval stage with query expansion
         sub_qs = analysis.sub_questions or [refined_q]
-        sub_qs = sub_qs[:3]
+        sub_qs = sub_qs[: settings.MAX_SUB_QUERIES]
 
         # Expand queries for better coverage (especially for short queries)
         expanded_queries = []
-        for sq in sub_qs:
-            expansions = self.query_expander.expand_query(sq, max_expansions=2)
-            expanded_queries.extend(expansions)
-            logger.debug(f"[{request_id}] Query '{sq}' expanded to: {expansions}")
+        if settings.QUERY_EXPANSION_ENABLED:
+            for sq in sub_qs:
+                expansions = self.query_expander.expand_query(
+                    sq, max_expansions=settings.QUERY_EXPANSION_MAX
+                )
+                expanded_queries.extend(expansions)
+                logger.debug(f"[{request_id}] Query '{sq}' expanded to: {expansions}")
+        else:
+            expanded_queries = sub_qs
 
         # Deduplicate
         seen = set()
@@ -171,8 +177,8 @@ class RAGOrchestrator:
         all_docs = []
         for sq in unique_queries:
             try:
-                # Use higher top_k for expanded queries to ensure coverage
-                docs = self.retriever.retrieve(sq, top_k=5)
+                # Use configurable top_k for each query
+                docs = self.retriever.retrieve(sq, top_k=settings.TOP_K_PER_QUERY)
                 all_docs.extend(docs)
             except Exception as e:
                 logger.error(f"[{request_id}] Retrieval error for '{sq}': {e}")
@@ -186,8 +192,23 @@ class RAGOrchestrator:
             set(d.get("document_id") for d in unique_docs if d.get("document_id"))
         )
 
+        # Calculate retrieval quality metrics
+        if unique_docs:
+            scores = [d.get("score", 0.0) for d in unique_docs if d.get("score") is not None]
+            if scores:
+                metrics.avg_retrieval_score = sum(scores) / len(scores)
+                metrics.max_retrieval_score = max(scores)
+                metrics.min_retrieval_score = min(scores)
+                # Calculate variance
+                mean = metrics.avg_retrieval_score
+                metrics.score_variance = sum((s - mean) ** 2 for s in scores) / len(scores)
+            metrics.diversity_score = (
+                metrics.num_unique_docs / metrics.num_contexts if metrics.num_contexts > 0 else 0.0
+            )
+
         logger.info(
-            f"[{request_id}] Retrieved {metrics.num_contexts} contexts from {metrics.num_unique_docs} docs"
+            f"[{request_id}] Retrieved {metrics.num_contexts} contexts from {metrics.num_unique_docs} docs "
+            f"(avg_score={metrics.avg_retrieval_score:.3f}, diversity={metrics.diversity_score:.3f})"
         )
 
         if not unique_docs:

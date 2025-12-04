@@ -5,7 +5,9 @@ import { logout } from '@/lib/api'
 import { useState, useCallback, useMemo } from 'react'
 import educationUrl from '@/assets/icons/education.svg'
 import userUrl from '@/assets/icons/user.svg'
+import chevronDownUrl from '@/assets/icons/chevron-down.svg'
 import { Menu, X } from 'lucide-react'
+import { getCurrentUserInfo, type CurrentUserInfo } from '@/services/auth.services'
 
 type ImgCompProps = React.ImgHTMLAttributes<HTMLImageElement>
 const EducationIcon: React.FC<ImgCompProps> = props => <img src={educationUrl} alt="edu" {...props} />
@@ -16,13 +18,15 @@ const navItems = [
   { path: 'users', label: 'Users' },
   { path: 'logs', label: 'Logs' },
   { path: 'settings', label: 'Settings' },
-  { path: 'uploaded', label: 'Uploaded Documents' },
   { path: 'view-chat', label: 'View Chat' },
-  { path: 'profile', label: 'Profile' }
+  { path: 'departments', label: 'Departments' }
 ]
 
 const ShellLayout = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
+  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false)
+  const [userInfo, setUserInfo] = useState<CurrentUserInfo | null>(null)
+  const [selectedDepartment, setSelectedDepartment] = useState<number | null>(null)
 
   const navigate = useNavigate()
 
@@ -33,6 +37,39 @@ const ShellLayout = () => {
       navigate('/login')
     }
   }, [navigate])
+
+  // Fetch user info and departments
+  useEffect(() => {
+    const fetchUserInfo = async () => {
+      try {
+        const token = localStorage.getItem('access_token')
+        if (!token) return
+
+        // Fetch current user info from API
+        const data = await getCurrentUserInfo()
+        setUserInfo(data)
+
+        // Set default department from localStorage or first department
+        const savedDeptId = localStorage.getItem('selected_department_id')
+        if (savedDeptId) {
+          setSelectedDepartment(parseInt(savedDeptId))
+        } else if (data.departments.length > 0) {
+          setSelectedDepartment(data.departments[0].id)
+          localStorage.setItem('selected_department_id', data.departments[0].id.toString())
+        }
+      } catch (error) {
+        console.error('Failed to fetch user info:', error)
+      }
+    }
+
+    fetchUserInfo()
+  }, [])
+
+  const handleDepartmentChange = useCallback((departmentId: number) => {
+    setSelectedDepartment(departmentId)
+    localStorage.setItem('selected_department_id', departmentId.toString())
+    setIsUserMenuOpen(false)
+  }, [])
 
   const toggleSidebar = useCallback(() => setIsSidebarOpen(prev => !prev), [])
   const handleNavigation = useCallback(() => {
@@ -124,9 +161,97 @@ const ShellLayout = () => {
                 <p className="text-sm text-gray-500">Document-based chatbot training system</p>
               </div>
             </div>
-            <div className="flex items-center gap-2 text-gray-700">
-              <UserIcon />
-              <span className="text-sm font-medium">BO User</span>
+
+            {/* User Menu Dropdown */}
+            <div className="relative">
+              <button
+                onMouseEnter={() => setIsUserMenuOpen(true)}
+                onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
+                className="flex items-center gap-2 rounded-lg px-3 py-2 text-gray-700 transition-colors hover:bg-gray-100"
+              >
+                <UserIcon />
+                <span className="text-sm font-medium">{userInfo?.username || 'BO User'}</span>
+                <img
+                  src={chevronDownUrl}
+                  alt="menu"
+                  className={cn('h-4 w-4 transition-transform duration-200', isUserMenuOpen && 'rotate-180')}
+                />
+              </button>
+
+              {/* Dropdown Menu */}
+              {isUserMenuOpen && (
+                <div
+                  onMouseLeave={() => setIsUserMenuOpen(false)}
+                  className="absolute top-full right-0 mt-2 w-64 rounded-lg border border-gray-200 bg-white shadow-lg"
+                >
+                  <div className="py-2">
+                    {/* Profile Link */}
+                    <button
+                      onClick={() => {
+                        navigate('/profile')
+                        setIsUserMenuOpen(false)
+                      }}
+                      className="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-gray-700 transition-colors hover:bg-gray-50"
+                    >
+                      <UserIcon className="h-5 w-5" />
+                      <span>Profile</span>
+                    </button>
+
+                    {/* Department Selector - Only show if user has multiple departments */}
+                    {userInfo && userInfo.departments.length > 1 && (
+                      <>
+                        <div className="my-2 border-t border-gray-200" />
+                        <div className="px-4 py-2">
+                          <p className="mb-2 text-xs font-semibold text-gray-500 uppercase">Select Department</p>
+                          {userInfo.departments.map(dept => (
+                            <button
+                              key={dept.id}
+                              onClick={() => handleDepartmentChange(dept.id)}
+                              className={cn(
+                                'mb-1 flex w-full items-center justify-between rounded-md px-3 py-2 text-left text-sm transition-colors',
+                                selectedDepartment === dept.id
+                                  ? 'bg-[#003087] text-white'
+                                  : 'text-gray-700 hover:bg-gray-100'
+                              )}
+                            >
+                              <span>{dept.name}</span>
+                              {selectedDepartment === dept.id && (
+                                <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
+                                  <path
+                                    fillRule="evenodd"
+                                    d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                                    clipRule="evenodd"
+                                  />
+                                </svg>
+                              )}
+                            </button>
+                          ))}
+                        </div>
+                      </>
+                    )}
+
+                    {/* Logout */}
+                    <div className="mt-2 border-t border-gray-200" />
+                    <button
+                      onClick={() => {
+                        handleLogout()
+                        setIsUserMenuOpen(false)
+                      }}
+                      className="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-red-600 transition-colors hover:bg-red-50"
+                    >
+                      <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+                        />
+                      </svg>
+                      <span>Logout</span>
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </header>

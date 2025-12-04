@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 
 import { fetchDashboardMetrics, DashboardMetrics } from '../lib/api'
 
@@ -7,7 +7,7 @@ export const useMetrics = (autoRefresh = false, intervalMs = 30000) => {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const loadMetrics = async () => {
+  const loadMetrics = useCallback(async () => {
     try {
       setLoading(true)
       setError(null)
@@ -19,7 +19,7 @@ export const useMetrics = (autoRefresh = false, intervalMs = 30000) => {
     } finally {
       setLoading(false)
     }
-  }
+  }, [])
 
   useEffect(() => {
     loadMetrics()
@@ -28,7 +28,7 @@ export const useMetrics = (autoRefresh = false, intervalMs = 30000) => {
       const intervalId = setInterval(loadMetrics, intervalMs)
       return () => clearInterval(intervalId)
     }
-  }, [autoRefresh, intervalMs])
+  }, [autoRefresh, intervalMs, loadMetrics])
 
   return { data, loading, error, refresh: loadMetrics }
 }

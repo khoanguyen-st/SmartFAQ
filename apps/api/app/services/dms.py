@@ -170,9 +170,31 @@ async def async_session_scope():
 
 
 async def enqueue_single_document(file: UploadFile) -> dict:
-    content = await file.read()
     orig_name = file.filename or "upload.bin"
     _, ext = os.path.splitext(orig_name)
+
+    # Validate file size before reading entire content
+    file.file.seek(0, 2)  # Seek to end
+    size = file.file.tell()
+    file.file.seek(0)  # Reset to beginning
+
+    max_bytes = int(settings.UPLOAD_MAX_MB) * 1024 * 1024
+    if size > max_bytes:
+        raise HTTPException(
+            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+            detail=f"File size exceeds maximum allowed size of {settings.UPLOAD_MAX_MB} MB",
+        )
+
+    # Read file in chunks to avoid memory issues
+    chunk_size = 8 * 1024 * 1024  # 8MB chunks
+    content = bytearray()
+    while True:
+        chunk = await file.read(chunk_size)
+        if not chunk:
+            break
+        content.extend(chunk)
+
+    content = bytes(content)
 
     object_name = None
     doc_id = None

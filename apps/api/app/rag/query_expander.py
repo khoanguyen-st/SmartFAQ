@@ -64,8 +64,23 @@ class QueryExpander:
         Returns:
             List of queries including original and expansions
         """
+        from app.core.config import settings
+
         query_lower = query.lower().strip()
         queries = [query]
+
+        # Skip expansion for very short queries based on config
+        if len(query_lower.split()) < settings.QUERY_EXPANSION_MIN_WORDS:
+            # Only add context variations for very short queries
+            queries.extend(self._add_context_variations(query))
+            seen = set()
+            unique_queries = []
+            for q in queries:
+                q_normalized = q.lower().strip()
+                if q_normalized not in seen:
+                    seen.add(q_normalized)
+                    unique_queries.append(q)
+            return unique_queries[: max_expansions + 1]
 
         # Check domain-specific expansions
         for key, expansions in self.domain_expansions.items():

@@ -22,50 +22,10 @@ const UnansweredPanel = ({ refreshKey = 0 }: UnansweredPanelProps) => {
     loadUnanswered()
   }, [loadUnanswered, refreshKey])
 
-  const handleExportCSV = () => {
-    if (items.length === 0) return
-
-    // Create CSV content
-    const headers = ['ID', 'Question', 'Reason', 'Channel', 'Created At', 'Status']
-    const csvRows = [
-      headers.join(','),
-      ...items.map(item =>
-        [
-          item.id,
-          `"${item.question.replace(/"/g, '""')}"`,
-          `"${item.reason.replace(/"/g, '""')}"`,
-          item.channel || 'N/A',
-          new Date(item.createdAt).toISOString(),
-          item.status
-        ].join(',')
-      )
-    ]
-
-    const csvContent = csvRows.join('\n')
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
-    const link = document.createElement('a')
-    const url = URL.createObjectURL(blob)
-
-    link.setAttribute('href', url)
-    link.setAttribute('download', `unanswered-questions-${new Date().toISOString().split('T')[0]}.csv`)
-    link.style.visibility = 'hidden'
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
-  }
-
   return (
     <section className="rounded-2xl bg-white p-6 shadow-lg shadow-slate-900/10">
       <div className="mb-4 flex items-center justify-between gap-4">
         <h2 className="text-xl font-semibold text-slate-900">Unanswered Questions</h2>
-        <button
-          type="button"
-          onClick={handleExportCSV}
-          disabled={items.length === 0}
-          className="text-primary-600 hover:text-primary-700 border-none bg-transparent font-semibold disabled:text-slate-400"
-        >
-          Export CSV
-        </button>
       </div>
 
       {loading ? (

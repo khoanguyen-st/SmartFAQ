@@ -210,7 +210,8 @@ class Retriever:
 
         # Diversity bonus: prefer results from multiple different documents
         unique_docs = len(set(ctx.get("document_id") for ctx in contexts if ctx.get("document_id")))
-        diversity_bonus = min(1.0, unique_docs / 3.0)  # Target: at least 3 different docs
+        diversity_target = settings.CONFIDENCE_DIVERSITY_TARGET
+        diversity_bonus = min(1.0, unique_docs / diversity_target)
 
         # Calculate base confidence from top scores with decay
         top_n = min(3, len(contexts))
@@ -417,15 +418,15 @@ class Retriever:
                 rrf += 1.0 / (k_param + rank_lex)
             ctx["score_rrf_raw"] = rrf
 
-        # Chuẩn hóa về [0,1] dựa trên điểm RRF tối đa khi cả hai nguồn cùng đứng hạng 1.
-        for ctx in fused.values():
-            raw = ctx.get("score_rrf_raw", 0.0)
-            denom = 0.0
-            if ctx.get("rank_vec") is not None:
-                denom += 1.0 / (k_param + 1.0)
-            if ctx.get("rank_lex") is not None:
-                denom += 1.0 / (k_param + 1.0)
-            ctx["score"] = min(raw / denom, 1.0) if denom > 0 else 0.0
+        # Normalize based on actual max score in this batch
+        max_rrf = max((ctx.get("score_rrf_raw", 0.0) for ctx in fused.values()), default=1.0)
+        if max_rrf > 0:
+            for ctx in fused.values():
+                raw = ctx.get("score_rrf_raw", 0.0)
+                ctx["score"] = min(raw / max_rrf, 1.0)
+        else:
+            for ctx in fused.values():
+                ctx["score"] = 0.0
 
         ordered = sorted(fused.values(), key=lambda c: c.get("score", 0.0), reverse=True)
         return ordered[:top_k]

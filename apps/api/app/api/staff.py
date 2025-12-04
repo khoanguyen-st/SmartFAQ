@@ -1,8 +1,10 @@
 """Staff management endpoints (async version)."""
 
+import io
 import logging
 
 from fastapi import APIRouter, Depends, Form, HTTPException, UploadFile, status
+from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..core.database import get_db
@@ -22,6 +24,26 @@ def require_staff(current_user: User = Depends(get_current_user)):
             detail="You do not have permission to access this resource. Staff role required.",
         )
     return current_user
+
+
+@router.get("/me")
+async def get_current_user_info(
+    db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)
+):
+    """Get current user info with departments."""
+    try:
+        user_info = await ums.get_current_user_info(current_user.id, db)
+        if not user_info:
+            raise HTTPException(404, "User not found")
+        return user_info
+    except HTTPException:
+        raise
+    except Exception as exc:
+        logger.exception("Failed to fetch current user info")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to fetch user info.",
+        ) from exc
 
 
 @router.get("/{user_id}", response_model=schemas.UserOut)
@@ -132,4 +154,31 @@ async def change_password(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to change password.",
+        ) from exc
+
+
+@router.get("/files/{file_key:path}")
+async def get_file(file_key: str):
+    """Get file from MinIO by file key (object path)."""
+    try:
+        response = await ums.get_file_from_minio(file_key)
+        content = response.read()
+
+        # Determine content type based on file extension
+        content_type = "application/octet-stream"
+        if file_key.lower().endswith((".png", ".jpg", ".jpeg")):
+            ext = file_key.lower().split(".")[-1]
+            content_type = f"image/{ext if ext != 'jpg' else 'jpeg'}"
+
+        return StreamingResponse(
+            io.BytesIO(content),
+            media_type=content_type,
+        )
+    except HTTPException:
+        raise
+    except Exception as exc:
+        logger.exception("Failed to get file %s", file_key)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to get file.",
         ) from exc

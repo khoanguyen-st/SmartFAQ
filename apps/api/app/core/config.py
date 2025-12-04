@@ -40,13 +40,23 @@ class Settings(BaseSettings):
 
     CONFIDENCE_THRESHOLD: float = Field(0.65, alias="CONFIDENCE_THRESHOLD")
     CONFIDENCE_DECAY: float = Field(0.6, alias="CONFIDENCE_DECAY")
+    CONFIDENCE_DIVERSITY_TARGET: int = Field(3, alias="CONFIDENCE_DIVERSITY_TARGET")
+
     HYBRID_ENABLED: bool = Field(True, alias="HYBRID_ENABLED")
     HYBRID_K_VEC: int = Field(20, alias="HYBRID_K_VEC")
     HYBRID_K_LEX: int = Field(20, alias="HYBRID_K_LEX")
     HYBRID_FUSION_K: int = Field(60, alias="HYBRID_FUSION_K")
     HYBRID_MAX_DOCS: int = Field(5000, alias="HYBRID_MAX_DOCS")
+
     MAX_CONTEXT_CHARS: int = Field(8000, alias="MAX_CONTEXT_CHARS")
     TOP_K_RETRIEVAL: int = Field(5, alias="TOP_K_RETRIEVAL")
+    MAX_SUB_QUERIES: int = Field(3, alias="MAX_SUB_QUERIES")
+    TOP_K_PER_QUERY: int = Field(5, alias="TOP_K_PER_QUERY")
+
+    # Query Expansion Settings
+    QUERY_EXPANSION_ENABLED: bool = Field(True, alias="QUERY_EXPANSION_ENABLED")
+    QUERY_EXPANSION_MAX: int = Field(1, alias="QUERY_EXPANSION_MAX")
+    QUERY_EXPANSION_MIN_WORDS: int = Field(3, alias="QUERY_EXPANSION_MIN_WORDS")
 
     UPLOAD_DIR: str = Field("./uploads", alias="UPLOAD_DIR")
     UPLOAD_MAX_MB: int = Field(50, alias="UPLOAD_MAX_MB")

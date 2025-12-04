@@ -37,6 +37,21 @@ class SmartNormalizer:
             "cn": "chuyên ngành",
         }
 
+        # Common typos and variations
+        self.typo_map = {
+            "nganh": "ngành",
+            "nghành": "ngành",
+            "hoc": "học",
+            "phi": "phí",
+            "truong": "trường",
+            "sinh vien": "sinh viên",
+            "giang vien": "giảng viên",
+            "thoi hoc": "thôi học",
+            "bao luu": "bảo lưu",
+            "hoc bong": "học bổng",
+            "dang ky": "đăng ký",
+        }
+
     def _capitalize_first_char(self, text: str) -> str:
         if not text:
             return ""
@@ -59,6 +74,10 @@ class SmartNormalizer:
 
         t = text.strip().lower()
         cleaned = re.sub(r"\s+", " ", t)
+
+        # Fix common typos first
+        for typo, correct in self.typo_map.items():
+            cleaned = cleaned.replace(typo, correct)
 
         tokens = cleaned.split()
         changed = False

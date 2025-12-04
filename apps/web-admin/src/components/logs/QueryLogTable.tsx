@@ -46,50 +46,6 @@ const QueryLogTable = () => {
     loadLogs()
   }, [currentPage, search, showFallbackOnly, selectedLang, selectedChannel])
 
-  const handleExportCSV = () => {
-    if (logs.length === 0) return
-
-    const headers = [
-      'Timestamp',
-      'Question',
-      'Answer',
-      'Confidence',
-      'Fallback',
-      'Language',
-      'Channel',
-      'Response Time',
-      'Feedback'
-    ]
-    const csvRows = [
-      headers.join(','),
-      ...logs.map(log =>
-        [
-          new Date(log.timestamp).toISOString(),
-          `"${log.question.replace(/"/g, '""')}"`,
-          `"${(log.answer || '').replace(/"/g, '""')}"`,
-          log.confidence ? (log.confidence * 100).toFixed(1) + '%' : 'N/A',
-          log.fallback ? 'Yes' : 'No',
-          log.lang,
-          log.channel || 'N/A',
-          log.responseMs ? log.responseMs + 'ms' : 'N/A',
-          log.feedback || 'N/A'
-        ].join(',')
-      )
-    ]
-
-    const csvContent = csvRows.join('\n')
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
-    const link = document.createElement('a')
-    const url = URL.createObjectURL(blob)
-
-    link.setAttribute('href', url)
-    link.setAttribute('download', `query-logs-${new Date().toISOString().split('T')[0]}.csv`)
-    link.style.visibility = 'hidden'
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
-  }
-
   const handleClearFilters = () => {
     setSearch('')
     setShowFallbackOnly(false)
@@ -112,16 +68,7 @@ const QueryLogTable = () => {
             placeholder="Search in answers..."
             className="focus:border-primary-600 focus:ring-primary-600/20 rounded-lg border border-indigo-200 px-3.5 py-2.5 text-base focus:ring-2 focus:outline-none"
           />
-          <div className="flex gap-3">
-            <button
-              type="button"
-              onClick={handleExportCSV}
-              disabled={logs.length === 0}
-              className="bg-primary-600 hover:bg-primary-700 cursor-pointer rounded-full border border-transparent px-4 py-2 text-sm font-semibold text-white disabled:bg-slate-300"
-            >
-              Export CSV
-            </button>
-          </div>
+          <div className="flex gap-3"></div>
         </div>
 
         {/* Filter Controls */}

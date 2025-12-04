@@ -1,0 +1,262 @@
+{
+  "test-1": [
+    {
+      "id": 1764828627883,
+      "type": "receiver",
+      "content": ["Chương trình 3+0"]
+    },
+    {
+      "id": "ec80e4b1-e9a9-499b-86b4-5fdd7b234931",
+      "type": "sender",
+      "content": [
+        "Về chương trình 3+0:",
+        "*   Sinh viên được phép chuyển ngành sau khi kết thúc học kỳ, và cần đăng ký chương trình."
+      ],
+      "sources": [
+        {
+          "title": "documents/Sổ tay Sinh viên_2025.pdf",
+
+          "chunkId": null,
+
+          "relevance": 1
+        },
+        {
+          "title": "documents/Quy chế Đào tạo F2G.pdf",
+
+          "chunkId": null,
+
+          "relevance": 1
+        },
+
+        {
+          "title": "documents/Quy chế Đào tạo F2G.pdf",
+
+          "chunkId": null,
+
+          "relevance": 1
+        },
+
+        {
+          "title": "documents/Quy chế Đào tạo F2G.pdf",
+
+          "chunkId": null,
+
+          "relevance": 1
+        },
+
+        {
+          "title": "documents/Quy chế Đào tạo F2G.pdf",
+
+          "chunkId": null,
+
+          "relevance": 0.992831119990598
+        },
+
+        {
+          "title": "documents/Sổ tay Sinh viên_2025.pdf",
+
+          "chunkId": null,
+
+          "relevance": 0.9853372434017595
+        },
+        {
+          "title": "documents/3+0.pdf",
+          "chunkId": null,
+          "relevance": 0.9761774868157846
+        },
+        {
+          "title": "documents/Quy chế Đào tạo F2G.pdf",
+
+          "chunkId": null,
+
+          "relevance": 0.9245901639344263
+        },
+
+        {
+          "title": "documents/Quy chế Đào tạo F2G.pdf",
+
+          "chunkId": null,
+
+          "relevance": 0.5245901639344263
+        },
+
+        {
+          "title": "documents/Sổ tay Sinh viên_2025.pdf",
+
+          "chunkId": null,
+
+          "relevance": 0.5163934426229508
+        },
+        {
+          "title": "documents/Quy chế Đào tạo F2G.pdf",
+
+          "chunkId": null,
+
+          "relevance": 0.5161290322580645
+        },
+
+        {
+          "title": "documents/3+0.pdf",
+          "chunkId": null,
+          "relevance": 0.5113030226060451
+        }
+      ],
+      "chatId": "ec80e4b1-e9a9-499b-86b4-5fdd7b234931"
+    },
+    {
+      "id": 1764828648195,
+      "type": "receiver",
+      "content": ["nghành CNTT"]
+    },
+    {
+      "id": "fdc4ac13-f9ef-492a-aa8b-6e29734cab1e",
+      "type": "sender",
+      "content": [
+        "Có, ngành Công nghệ thông tin thuộc chương trình Cử nhân Quốc tế Greenwich (3+0) tại Greenwich Việt Nam.",
+        "",
+        "Cụ thể:",
+        "*   Chương trình Cử nhân Quốc tế Greenwich (3+0) là chương trình liên kết giữa Trường Đại học FPT với Đại học Greenwich (Vương Quốc Anh) (Nguồn 2).",
+        "*   Quyết định số 1460/QĐ-ĐHFPT ngày 28 tháng 12 năm 2021 của Chủ tịch Hội đồng Trường Đại học FPT đã cho phép thực hiện chương trình Liên kết Quốc tế trình độ Đại học giữa Trường Đại học FPT và Đại học Greenwich (Vương Quốc Anh) ngành Công nghệ thông tin mô hình 3+0 (Nguồn 3).",
+        "*   Ngành Công nghệ thông tin có các chuyên ngành hẹp bao gồm: Công nghệ thông tin và Trí tuệ nhân tạo (Nguồn 6)."
+      ],
+      "sources": [
+        {
+          "title": "documents/Sổ tay Sinh viên_2025.pdf",
+
+          "chunkId": null,
+
+          "relevance": 1
+        },
+        {
+          "title": "documents/3+0.pdf",
+          "chunkId": null,
+          "relevance": 1
+        },
+        {
+          "title": "documents/3+0.pdf",
+          "chunkId": null,
+          "relevance": 0.9611086294013123
+        },
+        {
+          "title": "documents/3+0.pdf",
+          "chunkId": null,
+          "relevance": 0.9608739837398372
+        },
+        {
+          "title": "documents/Sổ tay Sinh viên_2025.pdf",
+
+          "chunkId": null,
+
+          "relevance": 0.9539412710144416
+        },
+        {
+          "title": "documents/Sổ tay Sinh viên_2025.pdf",
+
+          "chunkId": null,
+
+          "relevance": 0.9171399933177412
+        },
+        {
+          "title": "documents/3+0.pdf",
+          "chunkId": null,
+          "relevance": 0.911501012243324
+        }
+      ],
+      "chatId": "fdc4ac13-f9ef-492a-aa8b-6e29734cab1e"
+    }
+  ],
+  "test-2": [
+    {
+      "id": 1764828814756,
+      "type": "receiver",
+      "content": ["How to I received a reward"]
+    },
+    {
+      "id": "fcbdccde-7c4b-48ef-a60f-9ee581ec4a07",
+      "type": "sender",
+      "content": [
+        "To receive a reward:",
+        "*   Your average score for subjects/modules is used to consider reward schemes and classifications.",
+        "*   You can also refer to the Scholarship Policy for more details on receiving scholarships, which are a form of reward.",
+        "",
+        "(Sources: documents/3+0.pdf (page 12), documents/Quy chế Đào tạo F2G.pdf (page 12), documents/Sổ tay Sinh viên_2025.pdf (page 14))"
+      ],
+      "sources": [
+        {
+          "title": "documents/3+0.pdf",
+          "chunkId": null,
+          "relevance": 1
+        },
+        {
+          "title": "documents/Quy chế Đào tạo F2G.pdf",
+          "chunkId": null,
+          "relevance": 0.9472941176470587
+        },
+        {
+          "title": "documents/Sổ tay Sinh viên_2025.pdf",
+          "chunkId": null,
+          "relevance": 0.512
+        },
+        {
+          "title": "documents/Sổ tay Sinh viên_2025.pdf",
+          "chunkId": null,
+          "relevance": 0.5037419354838709
+        },
+        {
+          "title": "documents/Quy chế Đào tạo F2G.pdf",
+          "chunkId": null,
+          "relevance": 0.5037419354838709
+        }
+      ],
+      "chatId": "fcbdccde-7c4b-48ef-a60f-9ee581ec4a07"
+    },
+    {
+      "id": 1764828847270,
+      "type": "receiver",
+      "content": ["Làm thế nào để tôi được nhận thưởng"]
+    },
+    {
+      "id": "9821ff74-e503-4539-b798-c05c9ceff8a0",
+      "type": "sender",
+      "content": [
+        "Để được xét nhận các chế độ khen thưởng:",
+        "• Điểm trung bình các học phần/môn học sẽ được sử dụng để xét.",
+        "",
+        "(Nguồn 1 - documents/3+0.pdf (trang 12), Nguồn 2 - documents/Quy chế Đào tạo F2G.pdf (trang 12))"
+      ],
+      "sources": [
+        {
+          "title": "documents/3+0.pdf",
+          "chunkId": null,
+          "relevance": 1
+        },
+        {
+          "title": "documents/Quy chế Đào tạo F2G.pdf",
+          "chunkId": null,
+          "relevance": 0.9888965741062997
+        },
+        {
+          "title": "documents/Sổ tay Sinh viên_2025.pdf",
+          "chunkId": null,
+          "relevance": 0.5672838778157802
+        },
+        {
+          "title": "documents/Quy chế Đào tạo F2G.pdf",
+          "chunkId": null,
+          "relevance": 0.5672838778157802
+        },
+        {
+          "title": "documents/Sổ tay Sinh viên_2025.pdf",
+          "chunkId": null,
+          "relevance": 0.5581341378510095
+        }
+      ],
+      "chatId": "9821ff74-e503-4539-b798-c05c9ceff8a0"
+    },
+    {
+      "id": 1764828899273,
+      "type": "receiver",
+      "content": ["Làm thế nào để tôi được nhận thưởng"]
+    }
+  ]
+}

@@ -42,6 +42,51 @@ type FileItem = IUploadedFile | PendingFile
 
 const PENDING_FILES_KEY = 'pending_upload_files'
 
+const getStatusInfo = (status?: 'REQUEST' | 'PROCESSING' | 'ACTIVE' | 'FAIL') => {
+  switch (status) {
+    case 'REQUEST':
+      return {
+        label: 'Pending',
+        color: 'text-orange-600',
+        bgColor: 'bg-orange-50',
+        icon: '⏳',
+        description: 'Waiting to be processed'
+      }
+    case 'PROCESSING':
+      return {
+        label: 'Processing',
+        color: 'text-blue-600',
+        bgColor: 'bg-blue-50',
+        icon: '⚙️',
+        description: 'Currently processing'
+      }
+    case 'ACTIVE':
+      return {
+        label: 'Active',
+        color: 'text-green-600',
+        bgColor: 'bg-green-50',
+        icon: '✓',
+        description: 'Ready to use'
+      }
+    case 'FAIL':
+      return {
+        label: 'Failed',
+        color: 'text-red-600',
+        bgColor: 'bg-red-50',
+        icon: '✕',
+        description: 'Processing failed'
+      }
+    default:
+      return {
+        label: 'Unknown',
+        color: 'text-gray-600',
+        bgColor: 'bg-gray-50',
+        icon: '?',
+        description: 'Status unknown'
+      }
+  }
+}
+
 const savePendingFiles = (files: PendingFile[]) => {
   try {
     sessionStorage.setItem(PENDING_FILES_KEY, JSON.stringify(files))
@@ -183,6 +228,19 @@ const UploadedFile = forwardRef<UploadedFileHandle, UploadedFileProps>(({ isComp
       clearInterval(interval)
     }
   }, [pendingFiles.length, refreshFiles])
+
+  // Refresh files with non-ACTIVE status periodically
+  useEffect(() => {
+    const hasProcessingFiles = files.some(file => file.status && ['REQUEST', 'PROCESSING'].includes(file.status))
+
+    if (!hasProcessingFiles) return
+
+    const interval = setInterval(() => {
+      refreshFiles()
+    }, 5000) // Check every 5 seconds
+
+    return () => clearInterval(interval)
+  }, [files, refreshFiles])
 
   useEffect(() => {
     savePendingFiles(pendingFiles)
@@ -347,19 +405,28 @@ const UploadedFile = forwardRef<UploadedFileHandle, UploadedFileProps>(({ isComp
         <div className={cn('space-y-3', isCompact && 'flex w-full flex-col items-center space-y-3')}>
           {allFiles.map(file => {
             const isPending = isPendingFile(file)
+            const fileStatus = !isPending ? (file as IUploadedFile).status : undefined
+            const statusInfo = getStatusInfo(fileStatus)
+            const isProcessing = fileStatus === 'REQUEST' || fileStatus === 'PROCESSING'
+            const isFailed = fileStatus === 'FAIL'
+            const isActive = fileStatus === 'ACTIVE'
 
             return (
               <div
                 key={file.id}
                 className={cn(
-                  'group relative border border-[#E5E7EB] bg-white transition-all duration-500',
+                  'group relative border transition-all duration-500',
                   !isCompact && 'flex h-[70px] w-full items-center justify-between rounded-lg bg-[#F9FAFB] px-4',
-                  isCompact && 'flex h-14 w-14 items-center justify-center rounded-xl shadow-sm hover:border-red-200',
-                  isPending && 'border-blue-300 opacity-60'
+                  isCompact && 'flex h-14 w-14 items-center justify-center rounded-xl shadow-sm',
+                  isPending && 'border-blue-300 bg-blue-50 opacity-60',
+                  !isPending && isProcessing && 'border-blue-200 bg-blue-50/50',
+                  !isPending && isFailed && 'border-red-200 bg-red-50/50',
+                  !isPending && isActive && 'border-[#E5E7EB] bg-white hover:border-red-200',
+                  !isPending && !fileStatus && 'border-[#E5E7EB] bg-white'
                 )}
-                title={`File: ${file.name}\nSize: ${formatFileSize(file.size)}${isPending ? '\nStatus: Processing...' : ''}`}
+                title={`File: ${file.name}\nSize: ${formatFileSize(file.size)}${isPending ? '\nStatus: Processing...' : fileStatus ? `\nStatus: ${statusInfo.description}` : ''}`}
               >
-                {isPending && (
+                {(isPending || isProcessing) && (
                   <div className="absolute inset-0 z-10 flex items-center justify-center rounded-lg bg-transparent">
                     <svg
                       className="h-5 w-5 animate-spin text-indigo-400"
@@ -408,10 +475,13 @@ const UploadedFile = forwardRef<UploadedFileHandle, UploadedFileProps>(({ isComp
                         <p
                           className={cn(
                             'truncate text-sm font-medium text-[#111827]',
-                            !isPending && 'cursor-pointer transition-colors hover:text-indigo-600 hover:underline'
+                            !isPending &&
+                              isActive &&
+                              'cursor-pointer transition-colors hover:text-indigo-600 hover:underline',
+                            isFailed && 'text-red-600'
                           )}
-                          onClick={() => !isPending && handleViewFile(file.id)}
-                          title={isPending ? 'Processing...' : 'Click to view file'}
+                          onClick={() => !isPending && isActive && handleViewFile(file.id)}
+                          title={isPending ? 'Processing...' : isActive ? 'Click to view file' : statusInfo.description}
                         >
                           {file.name}
                         </p>
@@ -420,6 +490,11 @@ const UploadedFile = forwardRef<UploadedFileHandle, UploadedFileProps>(({ isComp
                             <span className="text-blue-600 italic">Processing... Please wait</span>
                           ) : (
                             <>
+                              {fileStatus && (
+                                <span className={cn('mr-2 font-medium', statusInfo.color)}>
+                                  {statusInfo.icon} {statusInfo.label}
+                                </span>
+                              )}
                               Uploaded: {formatDate((file as IUploadedFile).uploadDate)}
                               {` • ${formatFileSize(file.size)}`}
                             </>
@@ -428,7 +503,7 @@ const UploadedFile = forwardRef<UploadedFileHandle, UploadedFileProps>(({ isComp
                       </div>
                     </div>
 
-                    {!isPending && (
+                    {!isPending && isActive && (
                       <div className="flex shrink-0 items-center gap-2">
                         <button
                           onClick={() => handleReplace(file.id)}
