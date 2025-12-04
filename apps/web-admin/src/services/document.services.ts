@@ -1,4 +1,5 @@
 import { API_BASE_URL } from '../lib/api'
+import { MAX_SIZE } from '@/lib/files'
 
 export interface IUploadedFile {
   id: string
@@ -62,7 +63,7 @@ const DOCS_BASE_URL = `${API_BASE_URL}/api/docs`
 
 export const fetchKnowledgeFiles = async (): Promise<IUploadedFile[]> => {
   try {
-    const response = await fetch(`${DOCS_BASE_URL}`)
+    const response = await fetch(`${DOCS_BASE_URL}/`)
     if (!response.ok) {
       const errorText = await response.text()
       console.error(`API Error - Status: ${response.status} on GET /api/docs/`, errorText)
@@ -81,8 +82,7 @@ export const fetchKnowledgeFiles = async (): Promise<IUploadedFile[]> => {
 }
 
 export const uploadKnowledgeFiles = async (files: File[]): Promise<IUploadedFile[]> => {
-  const MAX_FILE_SIZE = 50 * 1024 * 1024
-
+  const MAX_FILE_SIZE = MAX_SIZE
   const ALLOWED_EXTENSIONS = ['pdf', 'doc', 'docx', 'txt', 'md']
 
   for (const file of files) {
@@ -109,7 +109,7 @@ export const uploadKnowledgeFiles = async (files: File[]): Promise<IUploadedFile
   })
 
   try {
-    const response = await fetch(`${DOCS_BASE_URL}`, {
+    const response = await fetch(`${DOCS_BASE_URL}/`, {
       method: 'POST',
       body: formData
     })
@@ -226,5 +226,68 @@ export const deleteKnowledgeFile = async (fileId: string): Promise<{ id: string 
   } catch (error) {
     console.error('Failed to delete file:', error)
     throw error instanceof Error ? error : new Error('Failed to delete file')
+  }
+}
+
+export const searchKnowledgeFiles = async (name: string): Promise<IUploadedFile[]> => {
+  try {
+    const response = await fetch(`${DOCS_BASE_URL}/search?name=${encodeURIComponent(name)}`)
+    if (!response.ok) {
+      const errorText = await response.text()
+      console.error(`API Error - Status: ${response.status} on GET /api/docs/search`, errorText)
+      throw new Error(`Failed to search documents. Server responded with status: ${response.status}`)
+    }
+
+    const data: { documents?: BackendDocument[] } = await response.json()
+    const documents: BackendDocument[] = data.documents || []
+    return documents.map(mapBackendToFrontend)
+  } catch (error) {
+    console.error('Failed to search knowledge files:', error)
+    throw error instanceof Error ? error : new Error('Unable to search files due to network error or server issue.')
+  }
+}
+
+export const filterKnowledgeFiles = async (format: string): Promise<IUploadedFile[]> => {
+  try {
+    const response = await fetch(`${DOCS_BASE_URL}/filter?format=${encodeURIComponent(format)}`)
+    if (!response.ok) {
+      const errorText = await response.text()
+      console.error(`API Error - Status: ${response.status} on GET /api/docs/filter`, errorText)
+      throw new Error(`Failed to filter documents. Server responded with status: ${response.status}`)
+    }
+
+    const data: { documents?: BackendDocument[] } = await response.json()
+    const documents: BackendDocument[] = data.documents || []
+    return documents.map(mapBackendToFrontend)
+  } catch (error) {
+    console.error('Failed to filter knowledge files:', error)
+    throw error instanceof Error ? error : new Error('Unable to filter files due to network error or server issue.')
+  }
+}
+
+export interface DocumentStatus {
+  document_id: number
+  title: string
+  status: string
+  current_version_id: number | null
+}
+
+export const fetchDocumentsByStatus = async (status: string): Promise<DocumentStatus[]> => {
+  try {
+    const response = await fetch(`${DOCS_BASE_URL}/documents/status?document_status=${encodeURIComponent(status)}`)
+    if (!response.ok) {
+      const errorText = await response.text()
+      console.error(`API Error - Status: ${response.status} on GET /api/docs/documents/status`, errorText)
+      throw new Error(`Failed to fetch documents by status. Server responded with status: ${response.status}`)
+    }
+
+    const data: { documents?: DocumentStatus[] } = await response.json()
+    const documents: DocumentStatus[] = data.documents || []
+    return documents
+  } catch (error) {
+    console.error('Failed to fetch documents by status:', error)
+    throw error instanceof Error
+      ? error
+      : new Error('Unable to fetch documents by status due to network error or server issue.')
   }
 }

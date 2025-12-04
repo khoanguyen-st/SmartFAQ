@@ -1,7 +1,7 @@
 """add chat sessions
 
 Revision ID: 03fd80152102
-Revises: 
+Revises:
 Create Date: 2025-11-03 16:09:04.886309
 
 """

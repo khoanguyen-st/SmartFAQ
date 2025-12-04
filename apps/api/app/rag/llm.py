@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import logging
 from typing import Any, Dict, Optional, Sequence, Union
 
@@ -11,7 +12,6 @@ from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_google_genai import ChatGoogleGenerativeAI
 
 from app.core.config import settings
-from app.rag.utils.language import normalize_language_code
 
 logger = logging.getLogger(__name__)
 
@@ -37,11 +37,6 @@ def _doc_to_text(doc: Union[Document, Dict[str, Any]], idx: int) -> str:
 
 
 class LLMWrapper:
-    """
-    Wrapper for Google Gemini LLM using LangChain v1.
-    Uses langchain-google-genai for Gemini API integration.
-    """
-
     def __init__(
         self,
         model: Optional[str] = None,
@@ -51,117 +46,110 @@ class LLMWrapper:
     ):
         llm_model = model or settings.LLM_MODEL
         llm_temperature = temperature if temperature is not None else settings.LLM_TEMPERATURE
-        llm_max_tokens = max_tokens or settings.LLM_MAX_TOKENS
+        llm_max_tokens = max_tokens or getattr(settings, "LLM_MAX_TOKENS", 512)
 
         self.llm = ChatGoogleGenerativeAI(
             model=llm_model,
             temperature=llm_temperature,
             max_output_tokens=llm_max_tokens,
-            google_api_key=settings.GOOGLE_API_KEY,
+            google_api_key=getattr(settings, "GOOGLE_API_KEY", None),
             max_retries=2,
         )
 
         logger.info(f"LLM initialized with model: {llm_model}")
 
-        # ---- Prompt ----
         self.system_prompt = (
-            "Bạn là trợ lý AI của Đại học Greenwich Việt Nam.\n"
-            "Nhiệm vụ: Trả lời câu hỏi của sinh viên dựa trên thông tin được cung cấp.\n\n"
-            "Quy tắc:\n"
-            "1. Trả lời bằng cùng ngôn ngữ với câu hỏi của người dùng.\n"
-            "2. CHỈ sử dụng thông tin từ context được cung cấp để trả lời nội dung chính.\n"
-            '3. Nếu context không chứa thông tin phù hợp, trả lời: "Tôi không tìm thấy thông tin về vấn đề này" bằng ngôn ngữ của người dùng.\n'
-            "4. Trả lời ngắn gọn, rõ ràng, thân thiện.\n"
-            "5. Nếu có link/email/số điện thoại trong context, hãy đưa vào câu trả lời.\n"
-            "6. Nếu câu hỏi mang tính chào hỏi hoặc xã giao, hãy đáp lại lịch sự và đề nghị hỗ trợ thêm.\n"
+            "Bạn là trợ lý AI của Đại học Greenwich Việt Nam.\n\n"
+            "NHIỆM VỤ: Trả lời câu hỏi sinh viên dựa trên Context bên dưới.\n\n"
+            "QUY TẮC:\n"
+            "1. LUÔN LUÔN trả lời bằng ngôn ngữ của câu hỏi (Vietnamese hoặc English)\n"
+            "2. Sử dụng thông tin từ Context để trả lời\n"
+            "3. Nếu câu hỏi NGẮN (1-2 từ), cung cấp thông tin TỔNG QUAN từ Context\n"
+            "4. Nếu Context có thông tin liên quan, LUÔN trả lời (không được từ chối)\n"
+            "5. CHỈ nói 'Tôi không tìm thấy...' khi Context HOÀN TOÀN không liên quan\n\n"
+            "FORMAT:\n"
+            "• Dùng bullet points (•) để liệt kê\n"
+            "• Nêu rõ số liệu, deadline, điều kiện quan trọng\n"
+            "• Bao gồm email/link nếu có trong Context\n\n"
+            "VÍ DỤ CÁCH TRẢ LỜI:\n\n"
+            'Câu hỏi: "Học phí"\n'
+            'Trả lời: "Học phí năm 2024-2025:\n'
+            "• Hệ chuẩn: 120 triệu/năm\n"
+            "• Hệ chất lượng cao: 150 triệu/năm\n"
+            'Liên hệ: finance@greenwich.edu.vn"\n\n'
+            'Câu hỏi: "CNTT"\n'
+            'Trả lời: "Ngành Công nghệ thông tin:\n'
+            "• Thời gian: 4 năm\n"
+            "• Chuyên ngành: Software Engineering, Cyber Security\n"
+            '• Cơ hội việc làm: Developer, System Admin, Security Analyst"\n'
         )
 
         self.prompt = ChatPromptTemplate.from_messages(
             [
                 ("system", self.system_prompt),
-                (
-                    "system",
-                    "Target language code: {target_language}. Always respond entirely in this language. "
-                    "If the code is 'auto', detect the question's language and match it.",
-                ),
+                ("system", "REQUIRED OUTPUT LANGUAGE: {target_language}"),
                 ("system", "Context:\n{context}"),
                 ("human", "{question}"),
             ]
         )
         self.direct_prompt = ChatPromptTemplate.from_messages(
             [
-                (
-                    "system",
-                    "Bạn là trợ lý AI thân thiện của Đại học Greenwich Việt Nam. "
-                    "Luôn trả lời ngắn gọn, rõ ràng, thân thiện. "
-                    "Trả lời bằng cùng ngôn ngữ với câu hỏi của người dùng. "
-                    "Nếu câu hỏi chỉ là lời chào hoặc xã giao, hãy đáp lại phù hợp và hỏi xem bạn có thể hỗ trợ gì thêm. "
-                    "Chỉ cung cấp thông tin về Greenwich khi câu hỏi liên quan.",
-                ),
-                (
-                    "system",
-                    "Target language code: {target_language}. Always respond entirely in this language. "
-                    "If the code is 'auto', detect and mirror the question's language.",
-                ),
+                ("system", "You are a helpful AI Assistant of Greenwich Vietnam."),
+                ("system", "REQUIRED OUTPUT LANGUAGE: {target_language}"),
                 MessagesPlaceholder(variable_name="history"),
                 ("human", "{question}"),
             ]
         )
 
-        # ---- Chain ----
         self.parser = StrOutputParser()
         self.chain = self.prompt | self.llm | self.parser
         self.direct_chain = self.direct_prompt | self.llm | self.parser
-
-        # ---- Params ----
         self.max_context_chars = max_context_chars
 
     def format_contexts(
         self,
         contexts: Sequence[Union[Document, Dict[str, Any]]],
-        max_sources: int = 8,
+        max_sources: int = 10,
     ) -> str:
-        """
-        Ghép context với nguồn, có clip để tránh vượt giới hạn.
-        """
+        """Format contexts with more sources to provide richer information."""
         pieces = []
         for i, ctx in enumerate(contexts[:max_sources], start=1):
             pieces.append(_doc_to_text(ctx, i))
         joined = "\n\n".join(pieces).strip()
-        return _clip(joined, self.max_context_chars)
+        clipped = _clip(joined, self.max_context_chars)
+
+        # Debug log to verify contexts are being passed
+        logger.debug(
+            f"Formatted {len(pieces)} contexts, total chars: {len(joined)} (clipped to {len(clipped)})"
+        )
+
+        return clipped
 
     @staticmethod
-    def _resolve_language(language: str | None) -> str:
-        return normalize_language_code(language, default="auto")
+    def _resolve_language(language: Optional[str] = None) -> str:
+        if language is None:
+            return "en"
+
+        if isinstance(language, (tuple, list)) and language:
+            lang = language[0]
+        else:
+            lang = language
+
+        if not isinstance(lang, str):
+            return "en"
+
+        c = lang.strip().lower()
+        if c.startswith("vi"):
+            return "vi"
+        if c.startswith("en"):
+            return "en"
+        return "en"
 
     def _fallback_no_context(self, language: str | None = None) -> str:
         code = self._resolve_language(language)
-        if code == "en":
-            return "I couldn't find information about this topic."
-        return "Tôi không tìm thấy thông tin về vấn đề này"
-
-    def generate_answer(
-        self,
-        question: str,
-        contexts: Sequence[Union[Document, Dict[str, Any]]],
-        *,
-        target_language: str | None = None,
-    ) -> str:
-        lang = self._resolve_language(target_language)
-        if not contexts:
-            return self._fallback_no_context(lang)
-
-        context_text = self.format_contexts(contexts)
-        if not context_text.strip():
-            return self._fallback_no_context(lang)
-
-        return self.chain.invoke(
-            {
-                "context": context_text,
-                "question": question.strip(),
-                "target_language": lang,
-            }
-        )
+        if code == "vi":
+            return "Tôi không tìm thấy thông tin về vấn đề này trong tài liệu."
+        return "I could not find information about this topic in the documents."
 
     async def generate_answer_async(
         self,
@@ -179,18 +167,24 @@ class LLMWrapper:
             return self._fallback_no_context(lang)
 
         try:
-            return await self.chain.ainvoke(
+            answer = await self.chain.ainvoke(
                 {
                     "context": context_text,
                     "question": question.strip(),
                     "target_language": lang,
                 }
             )
+
+            # Validate response is not empty
+            if not answer or not answer.strip():
+                logger.warning(f"LLM returned empty response for: {question[:50]}")
+                return self._fallback_no_context(lang)
+
+            return answer
+
         except google_exceptions.ResourceExhausted as e:
             logger.error(f"Gemini API quota exceeded: {e}")
-            raise RuntimeError(
-                "API quota exceeded. Please try again later or contact support."
-            ) from e
+            raise RuntimeError("API quota exceeded.") from e
         except Exception as e:
             logger.error(f"Error generating answer: {e}")
             raise
@@ -202,11 +196,7 @@ class LLMWrapper:
         *,
         target_language: str | None = None,
     ) -> str:
-        """
-        Invoke the underlying Gemini chat model without any retrieval context.
-        """
         lang = self._resolve_language(target_language)
-
         clean_question = question.strip()
         if not clean_question:
             return self._fallback_no_context(lang)
@@ -239,11 +229,17 @@ class LLMWrapper:
                     "target_language": lang,
                 }
             )
-        except google_exceptions.ResourceExhausted as e:
-            logger.error(f"Gemini API quota exceeded: {e}")
-            raise RuntimeError(
-                "API quota exceeded. Please try again later or contact support."
-            ) from e
         except Exception as e:
             logger.error(f"Error generating direct answer: {e}")
             raise
+
+    async def invoke_json(self, system_prompt: str, user_input: str) -> Optional[Dict[str, Any]]:
+        p = ChatPromptTemplate.from_messages([("system", system_prompt), ("human", "{input}")])
+        c = p | self.llm | self.parser
+        try:
+            raw = await c.ainvoke({"input": user_input})
+            clean = raw.strip().replace("```json", "").replace("```", "")
+            return json.loads(clean)
+        except Exception as e:
+            logger.error(f"JSON Invoke Error: {e}")
+            return None
