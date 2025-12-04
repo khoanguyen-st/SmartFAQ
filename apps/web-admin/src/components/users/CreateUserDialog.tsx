@@ -1,5 +1,6 @@
-import React, { useMemo, useState } from 'react'
+import React, { useMemo, useState, useEffect } from 'react'
 import type { CreateUserDialogProps, CreateUserDialogPayload } from '@/interfaces/create-user-dialog'
+import { fetchDepartments, type IDepartment } from '@/services/department.services'
 
 export const CreateUserDialog: React.FC<CreateUserDialogProps> = ({
   open,
@@ -13,20 +14,37 @@ export const CreateUserDialog: React.FC<CreateUserDialogProps> = ({
     email: '',
     password: '',
     role: '',
-    campus: ''
+    campus: '',
+    department_ids: []
   })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [departments, setDepartments] = useState<IDepartment[]>([])
+
+  useEffect(() => {
+    if (open) {
+      // Load departments when dialog opens
+      fetchDepartments()
+        .then(setDepartments)
+        .catch(err => console.error('Failed to load departments:', err))
+    }
+  }, [open])
 
   const isSubmitDisabled = useMemo(() => {
-    return (
+    const baseValidation =
       !formData.email ||
       !formData.username ||
       !formData.password ||
       formData.password.length < 8 ||
       !formData.role ||
       !formData.campus
-    )
+
+    // If role is staff, must select at least one department
+    if (formData.role === 'staff') {
+      return baseValidation || !formData.department_ids || formData.department_ids.length === 0
+    }
+
+    return baseValidation
   }, [formData])
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -40,6 +58,12 @@ export const CreateUserDialog: React.FC<CreateUserDialogProps> = ({
       return
     }
 
+    // Validate staff must have departments
+    if (formData.role === 'staff' && (!formData.department_ids || formData.department_ids.length === 0)) {
+      setError('Staff users must be assigned to at least one department')
+      return
+    }
+
     try {
       setLoading(true)
       await onSubmit?.(formData)
@@ -50,7 +74,8 @@ export const CreateUserDialog: React.FC<CreateUserDialogProps> = ({
         email: '',
         password: '',
         role: '',
-        campus: ''
+        campus: '',
+        department_ids: []
       })
       setError(null)
     } catch (err: unknown) {
@@ -59,6 +84,15 @@ export const CreateUserDialog: React.FC<CreateUserDialogProps> = ({
     } finally {
       setLoading(false)
     }
+  }
+
+  const toggleDepartment = (deptId: number) => {
+    setFormData(prev => ({
+      ...prev,
+      department_ids: prev.department_ids?.includes(deptId)
+        ? prev.department_ids.filter(id => id !== deptId)
+        : [...(prev.department_ids || []), deptId]
+    }))
   }
 
   if (!open) return null
@@ -140,6 +174,42 @@ export const CreateUserDialog: React.FC<CreateUserDialogProps> = ({
               <option value="CT">Can Tho</option>
             </select>
           </div>
+
+          {/* Department Selection - Only for Staff */}
+          {formData.role === 'staff' && (
+            <div>
+              <label className="mb-1 block text-sm font-medium text-slate-700">
+                Departments * <span className="text-xs font-normal text-slate-500">(Select at least one)</span>
+              </label>
+              <div className="max-h-48 overflow-y-auto rounded-xl border border-slate-200 bg-white">
+                {departments.length === 0 ? (
+                  <div className="p-4 text-center text-sm text-slate-500">No departments available</div>
+                ) : (
+                  <div className="divide-y divide-slate-100">
+                    {departments.map(dept => (
+                      <label
+                        key={dept.id}
+                        className="flex cursor-pointer items-center gap-3 p-3 transition-colors hover:bg-slate-50"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={formData.department_ids?.includes(dept.id) || false}
+                          onChange={() => toggleDepartment(dept.id)}
+                          className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                        />
+                        <span className="text-sm text-slate-700">{dept.name}</span>
+                      </label>
+                    ))}
+                  </div>
+                )}
+              </div>
+              {formData.department_ids && formData.department_ids.length > 0 && (
+                <p className="mt-1 text-xs text-slate-500">
+                  {formData.department_ids.length} department{formData.department_ids.length !== 1 ? 's' : ''} selected
+                </p>
+              )}
+            </div>
+          )}
 
           <div className="mt-6 flex items-center justify-end gap-3">
             <button

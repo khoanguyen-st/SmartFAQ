@@ -1,24 +1,38 @@
 import { useEffect, useState } from 'react'
-import { IDepartment } from '@/services/department.services'
+import type { IDepartment, IUserInDepartment } from '@/services/department.services'
 
 interface UpdateDepartmentModalProps {
   isOpen: boolean
   onClose: () => void
-  onSubmit: (data: { name: string }) => Promise<void>
+  onSubmit: (data: { name: string; user_ids: number[] }) => Promise<void>
   initialData: IDepartment | null
   isLoading?: boolean
+  availableUsers: IUserInDepartment[]
 }
 
-const UpdateDepartmentModal = ({ isOpen, onClose, onSubmit, initialData, isLoading }: UpdateDepartmentModalProps) => {
+const UpdateDepartmentModal = ({
+  isOpen,
+  onClose,
+  onSubmit,
+  initialData,
+  isLoading,
+  availableUsers
+}: UpdateDepartmentModalProps) => {
   const [name, setName] = useState('')
+  const [selectedUserIds, setSelectedUserIds] = useState<number[]>([])
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     if (isOpen && initialData) {
       setName(initialData.name || '')
+      setSelectedUserIds(initialData.users?.map(u => u.id) || [])
       setError(null)
     }
   }, [isOpen, initialData])
+
+  const toggleUserSelection = (userId: number) => {
+    setSelectedUserIds(prev => (prev.includes(userId) ? prev.filter(id => id !== userId) : [...prev, userId]))
+  }
 
   if (!isOpen || !initialData) return null
 
@@ -31,15 +45,17 @@ const UpdateDepartmentModal = ({ isOpen, onClose, onSubmit, initialData, isLoadi
       return
     }
 
-    if (trimmedName === initialData.name) {
+    if (
+      trimmedName === initialData.name &&
+      JSON.stringify(selectedUserIds.sort()) === JSON.stringify(initialData.users.map(u => u.id).sort())
+    ) {
       onClose()
       return
     }
 
     try {
       setError(null)
-      // Giữ nguyên description nếu có
-      await onSubmit({ name: trimmedName })
+      await onSubmit({ name: trimmedName, user_ids: selectedUserIds })
       onClose()
     } catch (err) {
       if (err instanceof Error) {
@@ -99,6 +115,44 @@ const UpdateDepartmentModal = ({ isOpen, onClose, onSubmit, initialData, isLoadi
                   </svg>
                   <span>{error}</span>
                 </div>
+              )}
+            </div>
+
+            {/* User Selection */}
+            <div className="mt-4 flex flex-col gap-2">
+              <label className="text-base font-medium text-gray-900">Assign Users (Optional)</label>
+              <div className="max-h-60 overflow-y-auto rounded-lg border border-gray-300 bg-white">
+                {availableUsers.length === 0 ? (
+                  <div className="p-4 text-center text-sm text-gray-500">No users available</div>
+                ) : (
+                  <div className="divide-y divide-gray-200">
+                    {availableUsers.map(user => (
+                      <label
+                        key={user.id}
+                        className="flex cursor-pointer items-center gap-3 p-3 transition-colors hover:bg-gray-50"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={selectedUserIds.includes(user.id)}
+                          onChange={() => toggleUserSelection(user.id)}
+                          className="h-4 w-4 rounded border-gray-300 text-[#003087] focus:ring-[#003087]"
+                        />
+                        <div className="min-w-0 flex-1">
+                          <div className="text-sm font-medium text-gray-900">{user.username}</div>
+                          <div className="text-xs text-gray-500">{user.email}</div>
+                        </div>
+                        <span className="rounded bg-gray-100 px-2 py-1 text-xs font-medium text-gray-600 uppercase">
+                          {user.role}
+                        </span>
+                      </label>
+                    ))}
+                  </div>
+                )}
+              </div>
+              {selectedUserIds.length > 0 && (
+                <p className="mt-1 text-sm text-gray-600">
+                  {selectedUserIds.length} user{selectedUserIds.length !== 1 ? 's' : ''} selected
+                </p>
               )}
             </div>
           </div>

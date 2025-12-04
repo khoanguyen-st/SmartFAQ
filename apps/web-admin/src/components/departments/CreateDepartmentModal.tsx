@@ -1,22 +1,36 @@
 import { useEffect, useState } from 'react'
+import type { IUserInDepartment } from '@/services/department.services'
 
 interface CreateDepartmentModalProps {
   isOpen: boolean
   onClose: () => void
-  onSubmit: (data: { name: string }) => Promise<void>
+  onSubmit: (data: { name: string; user_ids: number[] }) => Promise<void>
   isLoading?: boolean
+  availableUsers: IUserInDepartment[]
 }
 
-const CreateDepartmentModal = ({ isOpen, onClose, onSubmit, isLoading }: CreateDepartmentModalProps) => {
+const CreateDepartmentModal = ({
+  isOpen,
+  onClose,
+  onSubmit,
+  isLoading,
+  availableUsers
+}: CreateDepartmentModalProps) => {
   const [name, setName] = useState('')
+  const [selectedUserIds, setSelectedUserIds] = useState<number[]>([])
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     if (isOpen) {
       setName('')
+      setSelectedUserIds([])
       setError(null)
     }
   }, [isOpen])
+
+  const toggleUserSelection = (userId: number) => {
+    setSelectedUserIds(prev => (prev.includes(userId) ? prev.filter(id => id !== userId) : [...prev, userId]))
+  }
 
   if (!isOpen) return null
 
@@ -31,7 +45,7 @@ const CreateDepartmentModal = ({ isOpen, onClose, onSubmit, isLoading }: CreateD
 
     try {
       setError(null)
-      await onSubmit({ name: trimmedName })
+      await onSubmit({ name: trimmedName, user_ids: selectedUserIds })
       onClose()
     } catch (err) {
       // Hiển thị lỗi từ backend (vd: "Department name already exists")
@@ -97,6 +111,44 @@ const CreateDepartmentModal = ({ isOpen, onClose, onSubmit, isLoading }: CreateD
                   </svg>
                   <span>{error}</span>
                 </div>
+              )}
+            </div>
+
+            {/* User Selection */}
+            <div className="mt-4 flex flex-col gap-2">
+              <label className="text-base font-medium text-gray-900">Assign Users (Optional)</label>
+              <div className="max-h-60 overflow-y-auto rounded-lg border border-gray-300 bg-white">
+                {availableUsers.length === 0 ? (
+                  <div className="p-4 text-center text-sm text-gray-500">No users available</div>
+                ) : (
+                  <div className="divide-y divide-gray-200">
+                    {availableUsers.map(user => (
+                      <label
+                        key={user.id}
+                        className="flex cursor-pointer items-center gap-3 p-3 transition-colors hover:bg-gray-50"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={selectedUserIds.includes(user.id)}
+                          onChange={() => toggleUserSelection(user.id)}
+                          className="h-4 w-4 rounded border-gray-300 text-[#003087] focus:ring-[#003087]"
+                        />
+                        <div className="min-w-0 flex-1">
+                          <div className="text-sm font-medium text-gray-900">{user.username}</div>
+                          <div className="text-xs text-gray-500">{user.email}</div>
+                        </div>
+                        <span className="rounded bg-gray-100 px-2 py-1 text-xs font-medium text-gray-600 uppercase">
+                          {user.role}
+                        </span>
+                      </label>
+                    ))}
+                  </div>
+                )}
+              </div>
+              {selectedUserIds.length > 0 && (
+                <p className="mt-1 text-sm text-gray-600">
+                  {selectedUserIds.length} user{selectedUserIds.length !== 1 ? 's' : ''} selected
+                </p>
               )}
             </div>
           </div>

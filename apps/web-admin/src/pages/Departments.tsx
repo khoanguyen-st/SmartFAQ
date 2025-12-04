@@ -7,7 +7,9 @@ import {
   createDepartment,
   deleteDepartment,
   fetchDepartments,
+  fetchUsersForDepartment,
   IDepartment,
+  IUserInDepartment,
   updateDepartment
 } from '@/services/department.services'
 
@@ -20,6 +22,7 @@ import Next from '@/assets/icons/next.svg'
 
 const DepartmentsPage = () => {
   const [departments, setDepartments] = useState<IDepartment[]>([])
+  const [availableUsers, setAvailableUsers] = useState<IUserInDepartment[]>([])
   const [searchTerm, setSearchTerm] = useState('')
   const [isLoading, setIsLoading] = useState(false)
 
@@ -33,14 +36,17 @@ const DepartmentsPage = () => {
   const loadData = async () => {
     setIsLoading(true)
     try {
-      const data = await fetchDepartments()
-      if (Array.isArray(data)) {
-        setDepartments(data)
+      const [deptData, userData] = await Promise.all([fetchDepartments(), fetchUsersForDepartment()])
+
+      if (Array.isArray(deptData)) {
+        setDepartments(deptData)
       } else {
-        setDepartments(data as unknown as IDepartment[])
+        setDepartments(deptData as unknown as IDepartment[])
       }
+
+      setAvailableUsers(userData)
     } catch (error) {
-      console.error('Failed to load departments:', error)
+      console.error('Failed to load data:', error)
     } finally {
       setIsLoading(false)
     }
@@ -61,7 +67,7 @@ const DepartmentsPage = () => {
     return filteredData.slice(start, start + itemsPerPage)
   }, [filteredData, currentPage, itemsPerPage])
 
-  const handleCreate = async (data: { name: string }) => {
+  const handleCreate = async (data: { name: string; user_ids: number[] }) => {
     setIsLoading(true)
     try {
       await createDepartment(data)
@@ -72,7 +78,7 @@ const DepartmentsPage = () => {
     }
   }
 
-  const handleUpdate = async (data: { name: string }) => {
+  const handleUpdate = async (data: { name: string; user_ids: number[] }) => {
     if (!editingDept) return
     setIsLoading(true)
     try {
@@ -277,6 +283,7 @@ const DepartmentsPage = () => {
         onClose={() => setIsAddOpen(false)}
         onSubmit={handleCreate}
         isLoading={isLoading}
+        availableUsers={availableUsers}
       />
 
       <UpdateDepartmentModal
@@ -285,6 +292,7 @@ const DepartmentsPage = () => {
         onClose={() => setEditingDept(null)}
         onSubmit={handleUpdate}
         isLoading={isLoading}
+        availableUsers={availableUsers}
       />
 
       <DeleteDepartmentModal

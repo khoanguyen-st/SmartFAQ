@@ -13,4 +13,5 @@ export interface CreateUserDialogPayload {
   password: string
   role: string
   campus: string
+  department_ids?: number[]
 }

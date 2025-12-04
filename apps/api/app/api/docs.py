@@ -134,10 +134,15 @@ async def download_document(doc_id: int, db: AsyncSession = Depends(get_db)):
         content = response.read()
         filename = os.path.basename(object_name)
 
+        # Encode filename for Content-Disposition header to support non-ASCII characters
+        from urllib.parse import quote
+
+        encoded_filename = quote(filename)
+
         return StreamingResponse(
             io.BytesIO(content),
             media_type="application/octet-stream",
-            headers={"Content-Disposition": f"attachment; filename={filename}"},
+            headers={"Content-Disposition": f"attachment; filename*=UTF-8''{encoded_filename}"},
         )
 
     except HTTPException:
