@@ -6,10 +6,10 @@ import { CSS_CLASSES } from '@/constants'
 
 const getCampusLabel = (code: string) => {
   const map: Record<string, string> = {
-    'HN': 'Hanoi',
-    'HCM': 'Ho Chi Minh',
-    'DN': 'Danang',
-    'CT': 'Can Tho'
+    HN: 'Hanoi',
+    HCM: 'Ho Chi Minh',
+    DN: 'Danang',
+    CT: 'Can Tho'
   }
   return map[code] || code
 }
@@ -22,23 +22,22 @@ export const UserCardList: React.FC<UserCardListProps> = ({
   onUnlock,
   onResetPassword
 }) => {
-
   const getStatusConfig = (user: User) => {
     if (user.failed_attempts >= 5) {
-        return {
-            label: 'Locked',
-            className: `${CSS_CLASSES.BADGE_BASE} bg-red-100 text-red-800`
-        }
+      return {
+        label: 'Locked',
+        className: `${CSS_CLASSES.BADGE_BASE} bg-red-100 text-red-800`
+      }
     }
     if (user.is_locked) {
-        return {
-            label: 'Inactive',
-            className: `${CSS_CLASSES.BADGE_BASE} bg-amber-100 text-amber-800`
-        }
+      return {
+        label: 'Inactive',
+        className: `${CSS_CLASSES.BADGE_BASE} bg-amber-100 text-amber-800`
+      }
     }
     return {
-        label: 'Active',
-        className: `${CSS_CLASSES.BADGE_BASE} ${CSS_CLASSES.BADGE_ACTIVE}`
+      label: 'Active',
+      className: `${CSS_CLASSES.BADGE_BASE} ${CSS_CLASSES.BADGE_ACTIVE}`
     }
   }
 
@@ -54,7 +53,7 @@ export const UserCardList: React.FC<UserCardListProps> = ({
     <div className="grid gap-4 md:hidden">
       {users.map(user => {
         const status = getStatusConfig(user)
-        
+
         return (
           <div key={user.id} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
             <div className="mb-3 flex items-start justify-between">
@@ -70,12 +69,12 @@ export const UserCardList: React.FC<UserCardListProps> = ({
                 <span className="text-slate-500">Phone:</span>
                 <span className="font-medium text-slate-900">{user.phone || '-'}</span>
               </div>
-              
+
               <div className="flex justify-between">
                 <span className="text-slate-500">Role:</span>
                 <span className="font-medium text-slate-900 capitalize">{user.role}</span>
               </div>
-              
+
               <div className="flex justify-between">
                 <span className="text-slate-500">Campus:</span>
                 <span className="font-medium text-slate-900">{getCampusLabel(user.campus)}</span>

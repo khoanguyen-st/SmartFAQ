@@ -22,39 +22,54 @@ CRITICAL PRIORITY RULES:
    - If the user asks multiple distinct things in one message, break them into
      multiple items in "sub_questions".
 
-INTELLIGENT QUESTION SHAPING (SOFT RULE):
-- Sometimes the user input is only a short noun phrase, not a full question, for example:
-    "cách thanh toán học phí",
-    "cách nộp học phí",
-    "học phí",
-    "đóng tiền học",
-    "học phần",
-    "tín chỉ".
-  In these cases, you SHOULD gently turn it into a clear, general question
-  WITHOUT adding extra specific details that are not implied.
+INTELLIGENT QUESTION SHAPING FOR SHORT QUERIES:
+- When the input is very short (1-3 words like "CNTT", "học phí", "thôi học"), 
+  you MUST transform it into comprehensive questions to improve information retrieval.
 
-  Good patterns:
-    - "<X> là gì?"
-    - "Thông tin về <X> là gì?"
-    - "Tôi muốn biết thêm về <X>."
+Short Query Handling Rules:
+  1. For academic programs (CNTT, QTKD, etc.):
+     - Generate questions about: program info, curriculum, tuition
+     Example: "CNTT" -> [
+       "Thông tin chung về ngành Công nghệ thông tin",
+       "Chương trình và chuyên ngành Công nghệ thông tin",
+       "Học phí ngành Công nghệ thông tin"
+     ]
+  
+  2. For fees (học phí, tuition):
+     - Generate questions about: fee amounts, payment methods, scholarships
+     Example: "học phí" -> [
+       "Mức học phí các ngành học",
+       "Phương thức thanh toán học phí",
+       "Chính sách miễn giảm và học bổng"
+     ]
+  
+  3. For regulations (thôi học, bảo lưu, thi lại):
+     - Generate questions covering ALL cases
+     Example: "thôi học" -> [
+       "Quy định về chủ động thôi học",
+       "Các trường hợp bị buộc thôi học",
+       "Thủ tục và hồ sơ thôi học"
+     ]
+  
+  4. For facilities/services (thư viện, ký túc, phòng lab):
+     - Generate questions about: location, hours, rules
+     Example: "thư viện" -> [
+       "Địa điểm và giờ mở cửa thư viện",
+       "Quy định sử dụng thư viện",
+       "Dịch vụ của thư viện"
+     ]
 
-  Examples (illustrative, NOT hard rules):
-    "cách thanh toán học phí" -> "Thông tin về các cách thanh toán hoặc nộp học phí là gì?"
-    "cách nộp học phí" -> "Thông tin về các cách nộp học phí là gì?"
-    "học phí" -> "Thông tin về học phí của trường là gì?"
-    "đóng tiền học" -> "Thông tin về các hình thức đóng tiền học là gì?"
-    "học phần" -> "Học phần là gì?"
-
-RULES:
-- Every sub_question SHOULD be a clear, complete standalone question.
-- If you are not confident about the exact intent, keep the question generic
-  (e.g., "Thông tin về <X> là gì?") and DO NOT assume numbers, lists, conditions,
-  or other details that the user did not mention.
+IMPORTANT:
+- For queries with 3+ words that are specific, generate 1 focused question
+- For 1-2 word queries, ALWAYS generate 2-3 sub-questions for comprehensive coverage
+- Each sub-question should target a different aspect
+- Use natural Vietnamese phrasing
+- DO NOT add details the user didn't imply
 
 OUTPUT JSON ONLY:
   - status: "valid" | "greeting" | "blocked"
   - reason: "toxic" | "competitor" | "irrelevant" | null
-  - sub_questions: list of rewritten questions
+  - sub_questions: list of rewritten questions (2-3 for short queries, 1 for clear questions)
 
 User Input:
 {input}

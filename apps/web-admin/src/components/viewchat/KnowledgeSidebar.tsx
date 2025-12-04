@@ -2,7 +2,7 @@ import knowledgeUrl from '@/assets/icons/knowledge.svg'
 import plusUrl from '@/assets/icons/plus.svg'
 import sidebarUrl from '@/assets/icons/sidebar.svg'
 import { cn } from '@/lib/utils'
-import React from 'react'
+import React, { useState } from 'react'
 import UploadedFile, { UploadedFileHandle } from './UploadedFile'
 import { X } from 'lucide-react'
 import SearchFilterBar from '@/components/ui/SearchFilterBar'
@@ -22,11 +22,25 @@ const KnowledgeSidebar: React.FC<KnowledgeSidebarProps> = ({
   uploadedFileRef,
   onSearch
 }) => {
+  const [, setSelectedFormat] = useState<string>('')
+
   const handleSearch = (value: string) => {
     onSearch?.(value)
+    if (value.trim()) {
+      uploadedFileRef.current?.searchFiles(value)
+    } else {
+      uploadedFileRef.current?.refreshFiles()
+    }
   }
 
-  const handleFilter = () => {}
+  const handleFilter = (format: string) => {
+    setSelectedFormat(format)
+    if (format) {
+      uploadedFileRef.current?.filterFiles(format)
+    } else {
+      uploadedFileRef.current?.refreshFiles()
+    }
+  }
 
   return (
     <div

@@ -5,7 +5,7 @@ import {
   sendChatMessage,
   startNewChatSession
 } from '@/services/chat.services'
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useEffect, useRef, useState, useMemo } from 'react'
 import { cn } from '@/lib/utils'
 
 import inforUrl from '@/assets/icons/i-icon.svg'
@@ -61,6 +61,42 @@ type ChatMessageProps = {
 
 const ChatMessage = ({ message }: ChatMessageProps) => {
   const markdownText = message.content.join('\n')
+  const [hoveredSourceIndex, setHoveredSourceIndex] = useState<number | null>(null)
+  const [popupSourceIndex, setPopupSourceIndex] = useState<number | null>(null)
+  const [popupPosition, setPopupPosition] = useState<{ x: number; y: number } | null>(null)
+  const [clickedSourceIndex, setClickedSourceIndex] = useState<number | null>(null)
+  const sourcesRef = useRef<HTMLDivElement>(null)
+
+  // Group sources theo title để chỉ hiển thị unique titles
+  const uniqueSources = useMemo(() => {
+    if (!message.sources) return []
+
+    const titleMap = new Map<string, { title: string; indices: number[]; firstIndex: number }>()
+
+    message.sources.forEach((source, index) => {
+      if (titleMap.has(source.title)) {
+        titleMap.get(source.title)!.indices.push(index)
+      } else {
+        titleMap.set(source.title, {
+          title: source.title,
+          indices: [index],
+          firstIndex: index
+        })
+      }
+    })
+
+    return Array.from(titleMap.values())
+  }, [message.sources])
+
+  // Reset clicked state sau một thời gian - PHẢI Ở TOP LEVEL, TRƯỚC TẤT CẢ EARLY RETURNS
+  useEffect(() => {
+    if (clickedSourceIndex !== null) {
+      const timer = setTimeout(() => {
+        setClickedSourceIndex(null)
+      }, 2000) // Reset sau 2 giây
+      return () => clearTimeout(timer)
+    }
+  }, [clickedSourceIndex])
 
   if (message.type === 'system') {
     return (
@@ -80,15 +116,75 @@ const ChatMessage = ({ message }: ChatMessageProps) => {
   }
 
   if (message.type === 'sender') {
+    const handleSourceIdHover = (sourceIndex: number, event?: React.MouseEvent) => {
+      setPopupSourceIndex(sourceIndex)
+      setHoveredSourceIndex(sourceIndex)
+      if (event) {
+        setPopupPosition({
+          x: event.clientX,
+          y: event.clientY
+        })
+      }
+    }
+
+    const handleSourceIdLeave = () => {
+      setPopupSourceIndex(null)
+      setHoveredSourceIndex(null)
+      setPopupPosition(null)
+    }
+
+    // Handler cho hover từ SimpleMarkdown (không có event)
+    const handleMarkdownSourceHover = (sourceIndex: number | null) => {
+      if (sourceIndex !== null) {
+        setHoveredSourceIndex(sourceIndex)
+      } else {
+        setHoveredSourceIndex(null)
+      }
+    }
+
+    // Handler cho click vào số ID trong text
+    const handleSourceClick = (sourceIndex: number) => {
+      setClickedSourceIndex(sourceIndex)
+      setHoveredSourceIndex(sourceIndex)
+
+      // Scroll đến phần Sources
+      if (sourcesRef.current) {
+        sourcesRef.current.scrollIntoView({
+          behavior: 'smooth',
+          block: 'nearest'
+        })
+
+        // Sau khi scroll, tự động trigger hover sau một chút để hiển thị popup
+        setTimeout(() => {
+          // Tìm số ID tương ứng trong Sources và trigger hover
+          const sourceIdElement = sourcesRef.current?.querySelector(`[data-source-id="${sourceIndex}"]`) as HTMLElement
+          if (sourceIdElement) {
+            sourceIdElement.dispatchEvent(new MouseEvent('mouseenter', { bubbles: true }))
+          }
+        }, 300)
+      }
+    }
+
+    const popupSource = popupSourceIndex !== null ? message.sources?.[popupSourceIndex] : null
+
     return (
       <div className="message message--sender">
-        <SimpleMarkdown content={markdownText} />
+        <SimpleMarkdown
+          content={markdownText}
+          enableHighlight={true}
+          sources={message.sources}
+          onSourceHover={handleMarkdownSourceHover}
+          onSourceClick={handleSourceClick} // Thêm prop mới
+        />
 
         {message.sources && message.sources.length > 0 && (
-          <div className="message__reference mt-2 border-t border-gray-300 pt-2">
+          <div
+            ref={sourcesRef} // Thêm ref
+            className="message__reference mt-2 border-t border-gray-300 pt-2"
+          >
             <h4 className="mb-1 text-xs font-semibold">Sources:</h4>
-            {message.sources.map((source, index) => {
-              const filename = source.title.toLowerCase()
+            {uniqueSources.map((uniqueSource, uniqueIndex) => {
+              const filename = uniqueSource.title.toLowerCase()
               let IconComponent = TxtNoFill
               if (filename.endsWith('.pdf')) {
                 IconComponent = PdfNoFill
@@ -96,28 +192,80 @@ const ChatMessage = ({ message }: ChatMessageProps) => {
                 IconComponent = ImageNofill
               }
 
+              // Kiểm tra xem có source nào trong group này đang được hover hoặc click không
+              const isHovered = uniqueSource.indices.some(idx => hoveredSourceIndex === idx)
+              const isClicked = uniqueSource.indices.some(idx => clickedSourceIndex === idx)
+
               return (
-                <div key={index} className="group relative mt-1 flex items-center">
+                <div
+                  key={uniqueIndex}
+                  className={`group relative mt-1 flex items-center transition-all ${
+                    isHovered || isClicked ? '-ml-2 rounded border-l-4 border-blue-500 bg-blue-50 pl-2' : ''
+                  }`}
+                >
+                  {/* Hiển thị các số ID của references từ file này - mỗi ID có hover riêng */}
+                  <div className="mr-2 flex shrink-0 items-center gap-1">
+                    {uniqueSource.indices.map(sourceIndex => {
+                      const sourceId = sourceIndex + 1
+                      const isThisSourceHovered = hoveredSourceIndex === sourceIndex
+                      const isThisSourceClicked = clickedSourceIndex === sourceIndex
+
+                      return (
+                        <span
+                          key={sourceIndex}
+                          data-source-id={sourceIndex} // Thêm data attribute để có thể tìm element
+                          className={`inline-flex h-5 w-5 cursor-pointer items-center justify-center rounded-full text-xs font-medium transition-colors ${
+                            isThisSourceHovered || isThisSourceClicked
+                              ? 'bg-blue-500 text-white'
+                              : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                          }`}
+                          onMouseEnter={e => handleSourceIdHover(sourceIndex, e)}
+                          onMouseLeave={handleSourceIdLeave}
+                        >
+                          {sourceId}
+                        </span>
+                      )
+                    })}
+                  </div>
+
                   <IconComponent className="mr-2 h-3 w-3 shrink-0" />
-                  <p className="cursor-pointer truncate text-sm">{source.title}</p>
+                  <p className={`cursor-pointer truncate text-sm ${isHovered ? 'font-semibold text-blue-700' : ''}`}>
+                    {uniqueSource.title}
+                  </p>
 
                   <div className="invisible absolute top-full left-0 z-50 mt-2 w-64 rounded-lg border border-gray-200 bg-white p-3 shadow-lg group-hover:visible">
                     <div className="space-y-1">
                       <div className="flex items-center gap-2">
                         <IconComponent className="h-4 w-4 shrink-0" />
-                        <p className="text-sm font-semibold text-gray-900">{source.title}</p>
+                        <p className="text-sm font-semibold text-gray-900">{uniqueSource.title}</p>
                       </div>
 
-                      {source.relevance !== null && source.relevance !== undefined && (
-                        <p className="text-xs text-gray-600">
-                          <span className="font-medium">Relevance:</span> {(source.relevance * 100).toFixed(1)}%
-                        </p>
-                      )}
+                      {/* Hiển thị số lượng references từ file này */}
+                      <p className="text-xs text-gray-600">
+                        <span className="font-medium">References:</span> {uniqueSource.indices.length}
+                      </p>
 
-                      {source.chunkId && (
-                        <p className="text-xs text-gray-600">
-                          <span className="font-medium">Chunk ID:</span> {source.chunkId}
-                        </p>
+                      {/* Hiển thị các chunk IDs */}
+                      {uniqueSource.indices.some(idx => message.sources?.[idx]?.chunkId) && (
+                        <div className="text-xs text-gray-600">
+                          <span className="font-medium">Chunk IDs:</span>
+                          <div className="mt-1 flex flex-wrap gap-1">
+                            {uniqueSource.indices.map(sourceIndex => {
+                              const source = message.sources?.[sourceIndex]
+                              if (source?.chunkId) {
+                                return (
+                                  <span
+                                    key={sourceIndex}
+                                    className="inline-block rounded bg-gray-100 px-2 py-0.5 font-mono text-xs"
+                                  >
+                                    {source.chunkId}
+                                  </span>
+                                )
+                              }
+                              return null
+                            })}
+                          </div>
+                        </div>
                       )}
                     </div>
 
@@ -129,6 +277,43 @@ const ChatMessage = ({ message }: ChatMessageProps) => {
             })}
           </div>
         )}
+
+        {/* Popup hiển thị nội dung source khi hover vào số ID */}
+        {popupSource && popupPosition && popupSource.summary && (
+          <div
+            className="fixed z-9999 max-w-2xl rounded-lg bg-gray-800 text-white shadow-2xl"
+            style={{
+              left: `${popupPosition.x + 20}px`,
+              top: `${popupPosition.y + 20}px`,
+              maxHeight: '80vh',
+              overflow: 'auto'
+            }}
+            onMouseEnter={() => {}} // Giữ popup khi hover vào nó
+            onMouseLeave={handleSourceIdLeave}
+          >
+            <div className="space-y-3 p-4">
+              {/* Header với title */}
+              <div className="border-b border-gray-700 pb-2">
+                <h3 className="text-lg font-bold text-white">{popupSource.title}</h3>
+                <p className="mt-1 text-xs text-gray-400">
+                  Reference #{popupSourceIndex !== null ? popupSourceIndex + 1 : ''}
+                </p>
+              </div>
+
+              {/* Nội dung text */}
+              <div className="text-sm leading-relaxed whitespace-pre-wrap text-gray-200">
+                {popupSource.summary || 'No content available'}
+              </div>
+
+              {/* Metadata nếu có */}
+              {popupSource.relevance !== null && popupSource.relevance !== undefined && (
+                <div className="border-t border-gray-700 pt-2 text-xs text-gray-400">
+                  <span className="font-medium">Relevance:</span> {(popupSource.relevance * 100).toFixed(1)}%
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </div>
     )
   }
@@ -136,7 +321,7 @@ const ChatMessage = ({ message }: ChatMessageProps) => {
   if (message.type === 'receiver') {
     return (
       <div className="message message--receiver">
-        <SimpleMarkdown content={markdownText} />
+        <SimpleMarkdown content={markdownText} enableHighlight={false} />
       </div>
     )
   }

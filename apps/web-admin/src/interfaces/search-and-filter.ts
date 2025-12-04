@@ -13,6 +13,6 @@ export interface SearchBarProps {
   onSearchChange: (query: string) => void
   filterOpen: boolean
   onToggleFilter: () => void
-  filterRef: React.RefObject<HTMLDivElement> 
+  filterRef: React.RefObject<HTMLDivElement>
   renderFilterDropdown: () => React.ReactNode
 }

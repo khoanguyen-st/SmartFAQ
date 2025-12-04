@@ -10,12 +10,19 @@ RUN apk update && apk add --no-cache ca-certificates
 COPY package.json yarn.lock* ./
 
 # Install dependencies
-RUN yarn install --frozen-lockfile
+RUN yarn install
 
 # Copy source code
 COPY . .
 
+# Build widget initially (creates public/chat-widget.js)
+RUN yarn build-widget
+
 EXPOSE 5173
 
-# Development server
+# Use entrypoint script to rebuild widget on start (for volume-mounted code)
+COPY docker-entrypoint.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+
+ENTRYPOINT ["docker-entrypoint.sh"]
 CMD ["yarn", "dev", "--host", "0.0.0.0", "--port", "5173"]

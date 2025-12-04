@@ -134,15 +134,9 @@ async def create_document_record(
     current_title = await generate_unique_title(db, title)
 
     doc = Document(
-<<<<<<< HEAD
-        title=title,
-        language="en",
-        status="ACTIVE",
-=======
         title=current_title,
         language="vi",
         status="REQUEST",
->>>>>>> 30d63cbccd3dfb4452f7ad565aefdfe4b5e85709
     )
     db.add(doc)
     await db.flush()
@@ -180,69 +174,6 @@ async def enqueue_single_document(file: UploadFile) -> dict:
     orig_name = file.filename or "upload.bin"
     _, ext = os.path.splitext(orig_name)
 
-<<<<<<< HEAD
-    public_id = None
-    temp_path = None
-
-    try:
-        public_id, size, fmt = await asyncio.to_thread(upload_to_cloudinary, content, orig_name)
-
-        with NamedTemporaryFile(suffix=ext, delete=False) as tmp:
-            tmp.write(content)
-            tmp.flush()
-            temp_path = tmp.name
-
-        processor = DocumentProcessor()
-        split_docs = processor.process_document(temp_path, str(0), metadata={"title": orig_name})
-
-        try:
-            async with async_session_scope() as db:
-                doc_id = await create_document_record(
-                    db,
-                    title=orig_name,
-                    file_path=public_id,
-                    file_size=size,
-                    format=fmt,
-                )
-
-                for sd in split_docs:
-                    if "document_id" in sd.metadata:
-                        sd.metadata["document_id"] = str(doc_id)
-                    else:
-                        sd.metadata["source"] = str(doc_id)
-
-                await asyncio.to_thread(upsert_documents, split_docs)
-
-        except Exception:
-            logger.exception("Failed to save document or index chunks for %s", orig_name)
-            if public_id:
-                try:
-                    await asyncio.to_thread(destroy, public_id, resource_type="raw")
-                    logger.info("Cleaned up Cloudinary file after DB/index failure: %s", public_id)
-                except Exception as cleanup_exc:
-                    logger.error(
-                        "Failed to delete Cloudinary file %s after DB/index error: %s",
-                        public_id,
-                        cleanup_exc,
-                    )
-            raise
-
-        return {"document_id": doc_id, "public_id": public_id}
-
-    except Exception as exc:
-        if public_id:
-            try:
-                await asyncio.to_thread(destroy, public_id, resource_type="raw")
-                logger.info("Cleaned up orphaned Cloudinary file: %s", public_id)
-            except Exception as cleanup_exc:
-                logger.error(
-                    "Failed to delete Cloudinary file %s after error: %s", public_id, cleanup_exc
-                )
-        raise exc
-    finally:
-        if temp_path and os.path.exists(temp_path):
-            os.remove(temp_path)
-=======
     object_name = None
     doc_id = None
 
@@ -289,7 +220,6 @@ async def enqueue_single_document(file: UploadFile) -> dict:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to process document."
         )
->>>>>>> 30d63cbccd3dfb4452f7ad565aefdfe4b5e85709
 
 
 async def enqueue_multiple_documents(files: list[UploadFile]) -> list[dict]:
@@ -478,20 +408,6 @@ async def delete_document(doc_id: int, db: AsyncSession) -> bool:
 
     try:
         await asyncio.to_thread(delete_by_document_id, str(doc.id))
-<<<<<<< HEAD
-
-        cloudinary_delete_tasks = []
-        for v in doc.versions:
-            if v.file_path:
-                task = asyncio.to_thread(destroy, v.file_path, resource_type="raw")
-                cloudinary_delete_tasks.append(task)
-
-        if cloudinary_delete_tasks:
-            await asyncio.gather(*cloudinary_delete_tasks)
-
-        await db.delete(doc)
-        await db.commit()
-=======
         logger.info("Deleted vector data for document ID %s.", doc_id)
 
         minio_delete_tasks = []
@@ -507,7 +423,6 @@ async def delete_document(doc_id: int, db: AsyncSession) -> bool:
         await db.delete(doc)
         await db.commit()
         logger.info("Successfully deleted document record with ID %s.", doc_id)
->>>>>>> 30d63cbccd3dfb4452f7ad565aefdfe4b5e85709
 
         return True
     except Exception as exc:
@@ -518,8 +433,6 @@ async def delete_document(doc_id: int, db: AsyncSession) -> bool:
             logger.exception("Failed to rollback after delete failure for %s: %s", doc_id, rb_exc)
 
         return False
-<<<<<<< HEAD
-=======
 
 
 async def search_documents_by_name(name: str, db: AsyncSession) -> list[dict[str, Any]]:
@@ -588,4 +501,3 @@ async def filter_documents_by_format(format: str, db: AsyncSession) -> list[dict
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to filter documents by format.",
         ) from exc
->>>>>>> 30d63cbccd3dfb4452f7ad565aefdfe4b5e85709

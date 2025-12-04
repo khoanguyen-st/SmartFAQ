@@ -92,10 +92,143 @@ export async function verifyResetToken(token: string): Promise<{ valid: boolean;
 
 // Admin functions
 export async function fetchMetrics() {
-  return apiCall('/admin/metrics')
+  return apiCall('/api/dashboard/metrics')
 }
 
 export async function fetchLogs() {
   const response = await apiCall('/admin/logs')
   return response.items || []
+}
+
+// Dashboard API functions
+export interface DashboardMetrics {
+  questions_today: number
+  avg_response_time_ms: number
+  fallback_rate: number
+  active_documents: number
+}
+
+export async function fetchDashboardMetrics(): Promise<DashboardMetrics> {
+  return apiCall('/api/dashboard/metrics')
+}
+
+export interface TrendDataPoint {
+  period: string
+  questions: number
+  avg_confidence?: number
+  fallback_count: number
+}
+
+export interface TrendsResponse {
+  data: TrendDataPoint[]
+}
+
+export async function fetchWeeklyTrends(days: number = 7): Promise<TrendsResponse> {
+  return apiCall(`/api/dashboard/trends?days=${days}`)
+}
+
+export interface UnansweredQuestion {
+  id: number
+  question: string
+  reason: string
+  channel?: string
+  createdAt: string
+  status: string
+}
+
+export interface UnansweredQuestionsResponse {
+  items: UnansweredQuestion[]
+  total: number
+}
+
+export async function fetchUnansweredQuestions(limit: number = 20): Promise<UnansweredQuestionsResponse> {
+  return apiCall(`/api/dashboard/unanswered?limit=${limit}`)
+}
+
+// Query Logs API functions
+export interface QueryLogItem {
+  id: string
+  sessionId: string
+  question: string
+  answer?: string
+  confidence?: number
+  fallback: boolean
+  lang: string
+  channel?: string
+  userAgent?: string
+  responseMs?: number
+  feedback?: string
+  timestamp: string
+}
+
+export interface QueryLogsResponse {
+  items: QueryLogItem[]
+  total: number
+  page: number
+  pageSize: number
+  totalPages: number
+}
+
+export interface QueryLogsFilters {
+  page?: number
+  pageSize?: number
+  search?: string
+  fallback?: boolean
+  lang?: string
+  channel?: string
+}
+
+export async function fetchQueryLogs(filters?: QueryLogsFilters): Promise<QueryLogsResponse> {
+  const params = new URLSearchParams()
+
+  if (filters?.page) params.append('page', String(filters.page))
+  if (filters?.pageSize) params.append('pageSize', String(filters.pageSize))
+  if (filters?.search) params.append('search', filters.search)
+  if (filters?.fallback !== undefined) params.append('fallback', String(filters.fallback))
+  if (filters?.lang) params.append('lang', filters.lang)
+  if (filters?.channel) params.append('channel', filters.channel)
+
+  const queryString = params.toString()
+  return apiCall(`/api/dashboard/logs${queryString ? `?${queryString}` : ''}`)
+}
+
+// Settings API functions
+export interface SystemSettings {
+  llm_model: string
+  llm_temperature: number
+  llm_max_tokens: number
+  confidence_threshold: number
+  top_k_retrieval: number
+  max_context_chars: number
+  hybrid_enabled: boolean
+  hybrid_k_vec: number
+  hybrid_k_lex: number
+}
+
+export interface SettingsUpdateRequest {
+  llm_temperature?: number
+  llm_max_tokens?: number
+  confidence_threshold?: number
+  top_k_retrieval?: number
+  max_context_chars?: number
+  hybrid_enabled?: boolean
+  hybrid_k_vec?: number
+  hybrid_k_lex?: number
+}
+
+export interface SettingsUpdateResponse {
+  success: boolean
+  message: string
+  updated_settings: SystemSettings
+}
+
+export async function fetchSystemSettings(): Promise<SystemSettings> {
+  return apiCall('/api/settings')
+}
+
+export async function updateSystemSettings(data: SettingsUpdateRequest): Promise<SettingsUpdateResponse> {
+  return apiCall('/api/settings', {
+    method: 'PATCH',
+    body: JSON.stringify(data)
+  })
 }

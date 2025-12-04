@@ -23,6 +23,7 @@ services:
     env_file: ./.env.docker
     volumes:
       - ./apps/web-student/src:/app/src:cached
+      - ./apps/web-student/public:/app/public:cached
     ports:
       - "${WEB_STUDENT_PORT_EXTERNAL:-5173}:5173"
     depends_on:

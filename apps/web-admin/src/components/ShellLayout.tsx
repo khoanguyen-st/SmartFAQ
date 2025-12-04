@@ -1,13 +1,8 @@
-<<<<<<< HEAD
 import { useEffect } from 'react'
-import { NavLink, Outlet, useNavigate } from 'react-router-dom'
+import { NavLink, useNavigate, Outlet } from 'react-router-dom'
 import { cn } from '@/lib/utils'
 import { logout } from '@/lib/api'
-=======
-import { NavLink } from 'react-router-dom'
 import { useState, useCallback, useMemo } from 'react'
-import type { ReactNode } from 'react'
-import { cn } from '@/lib/utils'
 import educationUrl from '@/assets/icons/education.svg'
 import userUrl from '@/assets/icons/user.svg'
 import { Menu, X } from 'lucide-react'
@@ -15,7 +10,6 @@ import { Menu, X } from 'lucide-react'
 type ImgCompProps = React.ImgHTMLAttributes<HTMLImageElement>
 const EducationIcon: React.FC<ImgCompProps> = props => <img src={educationUrl} alt="edu" {...props} />
 const UserIcon: React.FC<ImgCompProps> = props => <img src={userUrl} alt="upload" {...props} />
->>>>>>> 30d63cbccd3dfb4452f7ad565aefdfe4b5e85709
 
 const navItems = [
   { path: 'dashboard', label: 'Dashboard' },
@@ -23,11 +17,13 @@ const navItems = [
   { path: 'logs', label: 'Logs' },
   { path: 'settings', label: 'Settings' },
   { path: 'uploaded', label: 'Uploaded Documents' },
-  { path: 'view-chat', label: 'View Chat' }
+  { path: 'view-chat', label: 'View Chat' },
+  { path: 'profile', label: 'Profile' }
 ]
 
-<<<<<<< HEAD
 const ShellLayout = () => {
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false)
+
   const navigate = useNavigate()
 
   useEffect(() => {
@@ -38,7 +34,14 @@ const ShellLayout = () => {
     }
   }, [navigate])
 
-  const handleLogout = async () => {
+  const toggleSidebar = useCallback(() => setIsSidebarOpen(prev => !prev), [])
+  const handleNavigation = useCallback(() => {
+    if (isSidebarOpen) {
+      setIsSidebarOpen(false)
+    }
+  }, [isSidebarOpen])
+
+  const handleLogout = useCallback(async () => {
     try {
       await logout()
       navigate('/login')
@@ -47,21 +50,7 @@ const ShellLayout = () => {
       localStorage.removeItem('access_token')
       navigate('/login')
     }
-  }
-  return (
-    <div className="flex min-h-screen bg-[#eff3fb] text-slate-900">
-      <aside className="flex w-60 flex-col bg-slate-900 px-4 py-6 text-slate-50">
-        <div className="mb-6 text-lg font-semibold">SmartFAQ Admin</div>
-        <nav className="flex flex-1 flex-col gap-2">
-=======
-const ShellLayout = ({ children }: { children: ReactNode }) => {
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false)
-  const toggleSidebar = useCallback(() => setIsSidebarOpen(prev => !prev), [])
-  const handleNavigation = useCallback(() => {
-    if (isSidebarOpen) {
-      setIsSidebarOpen(false)
-    }
-  }, [isSidebarOpen])
+  }, [navigate])
 
   const Sidebar = useMemo(
     () => (
@@ -84,7 +73,6 @@ const ShellLayout = ({ children }: { children: ReactNode }) => {
         </div>
 
         <nav className="flex flex-col gap-2">
->>>>>>> 30d63cbccd3dfb4452f7ad565aefdfe4b5e85709
           {navItems.map(item => (
             <NavLink
               key={item.path}
@@ -109,7 +97,7 @@ const ShellLayout = ({ children }: { children: ReactNode }) => {
         </button>
       </aside>
     ),
-    [isSidebarOpen, toggleSidebar, handleNavigation]
+    [isSidebarOpen, toggleSidebar, handleNavigation, handleLogout]
   )
 
   return (
@@ -142,7 +130,7 @@ const ShellLayout = ({ children }: { children: ReactNode }) => {
             </div>
           </div>
         </header>
-        <div className="flex flex-col gap-6">
+        <div className="flex flex-col gap-6 p-6">
           <Outlet />
         </div>
       </main>

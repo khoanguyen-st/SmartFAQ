@@ -47,7 +47,7 @@ async def _process_single_document(db: AsyncSession, doc: Document) -> None:
 
         processor = DocumentProcessor()
         split_docs = processor.process_document(
-            file_stream, ext, str(doc.id), metadata={"title": doc.title}
+            file_stream, ext, str(doc.id), metadata={"title": doc.title, "source": object_name}
         )
 
         await asyncio.to_thread(upsert_documents, split_docs)

@@ -12,7 +12,6 @@ export const UserActions: React.FC<UserActionsProps> = ({
   onResetPassword,
   variant = 'desktop'
 }) => {
-
   const renderEditButton = () => (
     <button
       onClick={() => onEdit?.(user)}
