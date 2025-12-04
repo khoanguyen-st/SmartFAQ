@@ -1,165 +1,187 @@
-import React, { useMemo, useState } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
+import Button from '@/components/ui/Button'
+import Input from '@/components/ui/Input'
+import Select from '@/components/ui/Select'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/Dialog'
 import type { CreateUserDialogProps, CreateUserDialogPayload } from '@/interfaces/create-user-dialog'
 
-export const CreateUserDialog: React.FC<CreateUserDialogProps> = ({
-  open,
-  onClose,
-  onSubmit,
-  onSuccess,
-  users = []
-}) => {
-  const [formData, setFormData] = useState<CreateUserDialogPayload>({
-    username: '',
-    email: '',
-    password: '',
-    role: '',
-    campus: ''
-  })
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+const initialFormState: CreateUserDialogPayload = {
+  username: '',
+  email: '',
+  password: '',
+  role: 'staff',
+  campus: 'HN',
+  phone: ''
+}
 
-  const isSubmitDisabled = useMemo(() => {
-    return (
-      !formData.email ||
-      !formData.username ||
-      !formData.password ||
-      formData.password.length < 8 ||
-      !formData.role ||
-      !formData.campus
-    )
-  }, [formData])
+export const CreateUserDialog: React.FC<CreateUserDialogProps> = ({ open, onClose, onSubmit, loading = false }) => {
+  const [formData, setFormData] = useState<CreateUserDialogPayload>(initialFormState)
+  const [errors, setErrors] = useState<Record<string, string>>({})
+
+  // State điều khiển việc mở rộng form
+  const [isExpanded, setIsExpanded] = useState(false)
+
+  // Ref lưu thời điểm vừa Focus (mở menu)
+  const focusTimeRef = useRef<number>(0)
+
+  useEffect(() => {
+    if (open) {
+      setFormData(initialFormState)
+      setErrors({})
+      setIsExpanded(false)
+      focusTimeRef.current = 0
+    }
+  }, [open])
+
+  const validate = () => {
+    const newErrors: Record<string, string> = {}
+    if (!formData.username.trim()) newErrors.username = 'Username is required'
+    if (!formData.email.trim()) newErrors.email = 'Email is required'
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) newErrors.email = 'Invalid email format'
+    if (!formData.password) newErrors.password = 'Password is required'
+    else if (formData.password.length < 6) newErrors.password = 'Password must be at least 6 characters'
+    setErrors(newErrors)
+    return Object.keys(newErrors).length === 0
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setError(null)
-
-    const isDuplicate = users.some(u => u.username.toLowerCase() === formData.username.toLowerCase())
-
-    if (isDuplicate) {
-      setError('Username already exists')
-      return
-    }
-
+    if (!validate()) return
     try {
-      setLoading(true)
-      await onSubmit?.(formData)
-      onSuccess?.()
+      await onSubmit(formData)
       onClose()
-      setFormData({
-        username: '',
-        email: '',
-        password: '',
-        role: '',
-        campus: ''
-      })
-      setError(null)
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Create failed')
-      console.error('Failed to create user:', err)
-    } finally {
-      setLoading(false)
+    } catch (error) {
+      console.error(error)
     }
   }
 
-  if (!open) return null
+  const handleChange = (field: keyof CreateUserDialogPayload, value: string) => {
+    setFormData(prev => ({ ...prev, [field]: value }))
+    if (errors[field])
+      setErrors(prev => {
+        const newErr = { ...prev }
+        delete newErr[field]
+        return newErr
+      })
+  }
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-0 sm:px-4">
-      <div className="h-full w-full overflow-y-auto bg-white p-6 shadow-2xl sm:h-auto sm:max-w-xl sm:rounded-3xl sm:p-8">
-        <div className="mb-6">
-          <h2 className="text-xl font-semibold text-slate-900 sm:text-2xl">Create New User</h2>
-          <p className="mt-1 text-sm text-slate-500">Fill in the information to create a new user</p>
-        </div>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {error && (
-            <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">{error}</div>
-          )}
+  // 1. Xử lý khi chọn giá trị MỚI (onChange luôn chạy)
+  const handleCampusChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    handleChange('campus', e.target.value)
+    e.target.blur() // Blur ngay để đóng form
+  }
 
-          <div>
-            <label className="mb-1 block text-sm font-medium text-slate-700">Email *</label>
-            <input
-              required
-              type="email"
-              value={formData.email}
-              onChange={e => setFormData({ ...formData, email: e.target.value })}
-              placeholder="Email"
-              className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm focus:border-blue-500 focus:outline-none"
-            />
-          </div>
-          <div>
-            <label className="mb-1 block text-sm font-medium text-slate-700">Username *</label>
-            <input
-              required
-              value={formData.username}
-              onChange={e => setFormData({ ...formData, username: e.target.value })}
-              placeholder="Username"
-              className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm focus:border-blue-500 focus:outline-none"
-            />
-          </div>
-          <div>
-            <label className="mb-1 block text-sm font-medium text-slate-700">Password *</label>
-            <input
-              required
-              type="password"
-              value={formData.password}
-              minLength={8}
-              onChange={e => setFormData({ ...formData, password: e.target.value })}
-              placeholder="Password (min 8 characters)"
-              className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm focus:border-blue-500 focus:outline-none"
-            />
-          </div>
-          <div>
-            <label className="mb-1 block text-sm font-medium text-slate-700">Role *</label>
-            <select
-              required
-              value={formData.role}
-              onChange={e => setFormData({ ...formData, role: e.target.value })}
-              className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm focus:border-blue-500 focus:outline-none"
-            >
-              <option value="" disabled>
-                Select Role
-              </option>
-              <option value="admin">Admin</option>
-              <option value="staff">Staff</option>
-            </select>
-          </div>
-          <div>
-            <label className="mb-1 block text-sm font-medium text-slate-700">Campus *</label>
-            <select
-              required
-              value={formData.campus}
-              onChange={e => setFormData({ ...formData, campus: e.target.value })}
-              className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm focus:border-blue-500 focus:outline-none"
-            >
-              <option value="" disabled>
-                Select Campus
-              </option>
-              <option value="HN">Hanoi</option>
-              <option value="HCM">Ho Chi Minh</option>
-              <option value="DN">Danang</option>
-              <option value="CT">Can Tho</option>
-            </select>
-          </div>
+  // 2. Xử lý khi chọn lại giá trị CŨ hoặc bấm tắt (onChange không chạy, onClick sẽ chạy)
+  const handleCampusClick = (e: React.MouseEvent<HTMLSelectElement>) => {
+    const now = Date.now()
+    // Nếu từ lúc Focus đến lúc Click > 200ms -> Đây là hành động chọn/tắt -> Blur để đóng
+    if (now - focusTimeRef.current > 200) {
+      e.currentTarget.blur()
+    }
+  }
 
-          <div className="mt-6 flex items-center justify-end gap-3">
-            <button
-              type="button"
-              onClick={onClose}
-              className="rounded-full border border-slate-200 px-6 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={loading || isSubmitDisabled}
-              className="rounded-full bg-blue-800 px-8 py-2 text-sm font-semibold text-white hover:bg-blue-900 disabled:opacity-50"
-            >
-              {loading ? 'Loading...' : 'Create'}
-            </button>
-          </div>
-        </form>
-      </div>
+  const FormInput = ({
+    id,
+    label,
+    type = 'text',
+    required = false
+  }: {
+    id: keyof CreateUserDialogPayload
+    label: string
+    type?: string
+    required?: boolean
+  }) => (
+    <div className="space-y-1">
+      <label htmlFor={id} className="text-sm font-medium text-slate-700">
+        {label} {required && <span className="text-red-500">*</span>}
+      </label>
+      <Input
+        id={id}
+        type={type}
+        value={formData[id]}
+        disabled={loading}
+        error={!!errors[id]}
+        placeholder={`Enter ${label.toLowerCase()}`}
+        onChange={e => handleChange(id, e.target.value)}
+      />
+      {errors[id] && <span className="text-xs text-red-500">{errors[id]}</span>}
     </div>
   )
+
+  return (
+    <Dialog open={open} onClose={onClose}>
+      <DialogHeader>
+        <DialogTitle>Create New User</DialogTitle>
+      </DialogHeader>
+      <DialogContent>
+        <form id="create-user-form" onSubmit={handleSubmit} className="space-y-4">
+          <FormInput id="username" label="Username" required />
+          <FormInput id="email" label="Email" type="email" required />
+          <FormInput id="phone" label="Phone Number" />
+          <FormInput id="password" label="Password" type="password" required />
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-1">
+              <label htmlFor="role" className="text-sm font-medium text-slate-700">
+                Role
+              </label>
+              <Select
+                id="role"
+                value={formData.role}
+                onChange={e => handleChange('role', e.target.value)}
+                disabled={loading}
+              >
+                <option value="staff">Staff</option>
+                <option value="admin">Admin</option>
+              </Select>
+            </div>
+            <div className="space-y-1">
+              <label htmlFor="campus" className="text-sm font-medium text-slate-700">
+                Campus
+              </label>
+              <Select
+                id="campus"
+                value={formData.campus}
+                onChange={handleCampusChange}
+                disabled={loading}
+                // Logic mở rộng/thu hẹp:
+                onFocus={() => {
+                  setIsExpanded(true)
+                  focusTimeRef.current = Date.now() // Lưu thời điểm bắt đầu mở
+                }}
+                onClick={handleCampusClick} // Xử lý click chọn lại giá trị cũ
+                onBlur={() => {
+                  setIsExpanded(false)
+                  focusTimeRef.current = 0
+                }}
+              >
+                <option value="HN">Hà Nội</option>
+                <option value="HCM">Hồ Chí Minh</option>
+                <option value="DN">Đà Nẵng</option>
+                <option value="CT">Cần Thơ</option>
+              </Select>
+            </div>
+          </div>
+
+          <div
+            className="w-full transition-all duration-120 ease-in-out"
+            style={{ height: isExpanded ? '100px' : '0px' }}
+          ></div>
+        </form>
+      </DialogContent>
+      <DialogFooter>
+        <Button variant="outline" onClick={onClose} disabled={loading} type="button">
+          Cancel
+        </Button>
+        <Button
+          form="create-user-form"
+          type="submit"
+          disabled={loading}
+          className="bg-[#003087] text-white hover:bg-[#002060]"
+        >
+          {loading ? 'Creating...' : 'Create User'}
+        </Button>
+      </DialogFooter>
+    </Dialog>
+  )
 }
-export default CreateUserDialog

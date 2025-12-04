@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react'
 import { Plus } from 'lucide-react'
-import type { User } from '@/types/users'
+import type { User, CreateUserRequest } from '@/types/users'
 import { useUsers } from '@/hooks/useUsers'
 import { useUserFilters } from '@/hooks/useUseFilters'
 import { usePagination } from '@/hooks/usePagination'
@@ -8,11 +8,12 @@ import { SearchBar, FilterDropdown } from '@/components/users/SearchAndFilter'
 import { UserTable } from '@/components/users/UserTable'
 import { UserCardList } from '@/components/users/UserCardList'
 import Pagination from '@/components/users/Pagination'
-import CreateUserDialog from '@/components/users/CreateUserDialog'
+import { CreateUserDialog } from '@/components/users/CreateUserDialog'
 import EditUserDialog from '@/components/users/EditUserDialog'
 import ConfirmDialog from '@/components/users/ConfirmDialog'
 import Toast from '@/components/Toast'
 import { USER_ACTIONS } from '@/constants/user'
+import type { CreateUserDialogPayload } from '@/interfaces/create-user-dialog'
 
 const Users: React.FC = () => {
   const {
@@ -130,7 +131,6 @@ const Users: React.FC = () => {
           setToast({ type: 'success', message: 'Active user successfully' })
           break
         case USER_ACTIONS.RESET_PASSWORD: {
-          // Lấy email từ user được chọn
           const user = users.find(u => u.id === userId)
           if (user && user.email) {
             await resetPassword(user.email)
@@ -173,7 +173,6 @@ const Users: React.FC = () => {
           </button>
         </div>
       </header>
-
       <SearchBar
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
@@ -227,7 +226,7 @@ const Users: React.FC = () => {
       <CreateUserDialog
         open={createDialogOpen}
         onClose={() => setCreateDialogOpen(false)}
-        onSubmit={data => createUser(data)}
+        onSubmit={(data: CreateUserDialogPayload) => createUser(data as CreateUserRequest)}
         onSuccess={() => {
           setToast({
             type: 'success',
@@ -235,6 +234,7 @@ const Users: React.FC = () => {
           })
         }}
         users={users}
+        loading={actionLoading}
       />
 
       <EditUserDialog
@@ -268,4 +268,5 @@ const Users: React.FC = () => {
     </div>
   )
 }
+
 export default Users
