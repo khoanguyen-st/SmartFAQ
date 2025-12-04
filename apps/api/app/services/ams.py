@@ -9,7 +9,9 @@ from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from ..models.department import Department
 from ..models.user import User
+from ..models.user_department import UserDepartment
 
 
 def hash_password(password: str) -> str:
@@ -45,6 +47,14 @@ async def create_user(data: dict, db: AsyncSession):
             detail="Invalid role. Must be 'staff' or 'admin'.",
         )
 
+    # Validate staff must have departments
+    department_ids = data.pop("department_ids", [])
+    if role == "staff" and not department_ids:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Staff users must be assigned to at least one department.",
+        )
+
     if "password" not in data:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -61,6 +71,24 @@ async def create_user(data: dict, db: AsyncSession):
     )
 
     db.add(new_user)
+    await db.flush()
+
+    # Assign departments if provided
+    if department_ids:
+        # Verify all departments exist
+        dept_result = await db.execute(select(Department).where(Department.id.in_(department_ids)))
+        departments = dept_result.scalars().all()
+        if len(departments) != len(department_ids):
+            await db.rollback()
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="One or more department IDs are invalid.",
+            )
+
+        # Create user-department associations
+        for dept_id in department_ids:
+            user_dept = UserDepartment(user_id=new_user.id, department_id=dept_id)
+            db.add(user_dept)
 
     try:
         await db.commit()

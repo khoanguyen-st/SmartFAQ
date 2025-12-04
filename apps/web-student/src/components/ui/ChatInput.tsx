@@ -33,8 +33,8 @@ const ChatInput = ({ onSend, isLoading }: ChatInputProps) => {
   }
 
   return (
-    <div className="chat__footer flex items-center justify-center rounded-b-4xl pb-5">
-      <form onSubmit={handleSubmit} className="chat__footer-form relative flex w-full items-center px-6">
+    <div className="chat__footer relative flex items-center justify-center rounded-b-4xl pb-5">
+      <form action="" className="chat__footer-form relative flex w-full items-center px-6">
         <textarea
           rows={1}
           required
@@ -42,8 +42,7 @@ const ChatInput = ({ onSend, isLoading }: ChatInputProps) => {
           ref={textareaRef}
           onKeyDown={handleKeyDown}
           onChange={e => setInput(e.target.value)}
-          placeholder={PLACEHOLDER_TEXT}
-          autoFocus
+          placeholder="Type your message"
           className="Chat__footer-input field-sizing-content h-fit max-h-42 min-h-14 w-full resize-none rounded-[28px] text-[14px] leading-6"
         />
 

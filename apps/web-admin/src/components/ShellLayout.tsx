@@ -16,9 +16,9 @@ const navItems = [
   { path: 'users', label: 'Users' },
   { path: 'logs', label: 'Logs' },
   { path: 'settings', label: 'Settings' },
+  { path: 'view-chat', label: 'View Chat' },
   { path: 'departments', label: 'Departments' },
-  { path: 'uploaded', label: 'Uploaded Documents' },
-  { path: 'view-chat', label: 'View Chat' }
+  { path: 'profile', label: 'Profile' }
 ]
 
 const ShellLayout = () => {

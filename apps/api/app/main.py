@@ -4,7 +4,7 @@ import logging
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from .api import admin, auth, chat, dashboard, docs, fallback, staff
+from .api import admin, auth, chat, dashboard, departments, docs, fallback, staff
 from .api import settings as settings_api
 from .core.config import settings
 from .rag.embedder import get_embeddings

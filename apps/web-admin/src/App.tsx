@@ -9,6 +9,7 @@ import ForgotPasswordPage from './pages/Forgotpassword'
 import CreateNewPasswordPage from './pages/Create'
 import ResetPasswordSuccessPage from './pages/Resetpasssuccess'
 import ViewChatPage from './pages/ViewChat'
+import DepartmentPage from './pages/Departments'
 import ProfilePage from './pages/Profile'
 import UploadedPage from './pages/UploadedDocuments'
 import ShellLayout from './components/ShellLayout'
@@ -27,6 +28,7 @@ const App = () => (
       <Route path="settings" element={<SettingsPage />} />
       <Route path="uploaded" element={<UploadedPage />} />
       <Route path="view-chat" element={<ViewChatPage />} />
+      <Route path="departments" element={<DepartmentPage />} />
       <Route path="profile" element={<ProfilePage />} />
       <Route path="*" element={<Navigate to="dashboard" replace />} />
     </Route>

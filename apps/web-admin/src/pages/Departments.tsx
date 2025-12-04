@@ -7,7 +7,9 @@ import {
   createDepartment,
   deleteDepartment,
   fetchDepartments,
+  fetchUsersForDepartment,
   IDepartment,
+  IUserInDepartment,
   updateDepartment
 } from '@/services/department.services'
 
@@ -20,6 +22,7 @@ import Next from '@/assets/icons/next.svg'
 
 const DepartmentsPage = () => {
   const [departments, setDepartments] = useState<IDepartment[]>([])
+  const [availableUsers, setAvailableUsers] = useState<IUserInDepartment[]>([])
   const [searchTerm, setSearchTerm] = useState('')
   const [isLoading, setIsLoading] = useState(false)
 
@@ -33,14 +36,17 @@ const DepartmentsPage = () => {
   const loadData = async () => {
     setIsLoading(true)
     try {
-      const data = await fetchDepartments()
-      if (Array.isArray(data)) {
-        setDepartments(data)
+      const [deptData, userData] = await Promise.all([fetchDepartments(), fetchUsersForDepartment()])
+
+      if (Array.isArray(deptData)) {
+        setDepartments(deptData)
       } else {
-        setDepartments(data as unknown as IDepartment[])
+        setDepartments(deptData as unknown as IDepartment[])
       }
+
+      setAvailableUsers(userData)
     } catch (error) {
-      console.error('Failed to load departments:', error)
+      console.error('Failed to load data:', error)
     } finally {
       setIsLoading(false)
     }
@@ -61,30 +67,24 @@ const DepartmentsPage = () => {
     return filteredData.slice(start, start + itemsPerPage)
   }, [filteredData, currentPage, itemsPerPage])
 
-  const handleCreate = async (data: { name: string; description: string }) => {
+  const handleCreate = async (data: { name: string; user_ids: number[] }) => {
     setIsLoading(true)
     try {
       await createDepartment(data)
       await loadData()
       setIsAddOpen(false)
-    } catch (error) {
-      console.error(error)
-      alert('Failed to create department')
     } finally {
       setIsLoading(false)
     }
   }
 
-  const handleUpdate = async (data: { name: string; description: string }) => {
+  const handleUpdate = async (data: { name: string; user_ids: number[] }) => {
     if (!editingDept) return
     setIsLoading(true)
     try {
       await updateDepartment(editingDept.id, data)
       await loadData()
       setEditingDept(null)
-    } catch (error) {
-      console.error(error)
-      alert('Failed to update department')
     } finally {
       setIsLoading(false)
     }
@@ -121,8 +121,8 @@ const DepartmentsPage = () => {
   }
 
   return (
-    <div className="flex h-[calc(100vh-81px)] w-full flex-col overflow-hidden bg-[#F9FAFB] p-4 font-sans text-[#111827] md:pt-[50px] md:pr-[100px] md:pb-[85px] md:pl-[100px]">
-      <div className="mb-6 flex shrink-0 flex-col gap-4 md:mb-[45px] md:flex-row md:items-center md:justify-between">
+    <div className="dept-page-wrapper">
+      <div className="dept-header-section">
         <div>
           <h3 className="text-2xl leading-tight font-bold text-[#111827] md:text-[40px]">List of Department</h3>
           <p className="text-sm leading-6 font-normal text-[#637381] md:text-base md:leading-8">Manage departments</p>
@@ -137,7 +137,7 @@ const DepartmentsPage = () => {
         </button>
       </div>
 
-      <div className="mb-6 shrink-0 rounded-lg bg-white shadow-sm md:mb-[45px]">
+      <div className="dept-search-section">
         <div className="relative w-full">
           <input
             type="text"
@@ -153,7 +153,7 @@ const DepartmentsPage = () => {
         </div>
       </div>
 
-      <div className="flex flex-col overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
+      <div className="dept-table-wrapper">
         <div className="w-full border-b border-[#EEEEEE] bg-white pr-1.5">
           <table className="w-full min-w-full table-fixed border-collapse">
             <thead>
@@ -172,7 +172,7 @@ const DepartmentsPage = () => {
           </table>
         </div>
 
-        <div className="max-h-[365px] flex-1 overflow-y-auto [scrollbar-gutter:stable] [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-gray-300 hover:[&::-webkit-scrollbar-thumb]:bg-gray-400 [&::-webkit-scrollbar-track]:bg-transparent">
+        <div className="max-h-[370px] flex-1 overflow-y-auto [scrollbar-gutter:stable] [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-gray-300 hover:[&::-webkit-scrollbar-thumb]:bg-gray-400 [&::-webkit-scrollbar-track]:bg-transparent">
           <table className="w-full min-w-full table-fixed border-collapse">
             <tbody>
               {currentData.length === 0 ? (
@@ -183,17 +183,14 @@ const DepartmentsPage = () => {
                 </tr>
               ) : (
                 currentData.map(dept => (
-                  <tr
-                    key={dept.id}
-                    className="border-b border-[#EEEEEE] transition-colors last:border-b-0 hover:bg-gray-50"
-                  >
-                    <td className="w-[15%] py-4 text-center text-sm font-medium text-[#637381] md:w-[10%] md:py-6 md:text-base">
+                  <tr key={dept.id} className="dept-table-row">
+                    <td className="w-[15%] text-center text-sm font-medium text-[#637381] md:w-[10%] md:text-base">
                       {dept.id}
                     </td>
-                    <td className="w-[60%] truncate px-2 py-4 text-center text-sm font-medium text-[#637381] md:w-[70%] md:px-6 md:text-base">
+                    <td className="w-[60%] truncate px-2 text-center text-sm font-medium text-[#637381] md:w-[70%] md:px-6 md:text-base">
                       {dept.name}
                     </td>
-                    <td className="w-[25%] py-4 md:w-[20%] md:py-6">
+                    <td className="w-[25%] md:w-[20%]">
                       <div className="flex items-center justify-center gap-2 md:gap-2.5">
                         <button
                           onClick={() => setEditingDept(dept)}
@@ -220,7 +217,7 @@ const DepartmentsPage = () => {
         </div>
       </div>
 
-      <div className="z-20 mt-auto flex shrink-0 flex-wrap items-center justify-center gap-4 bg-transparent pt-4 md:justify-end md:pt-0">
+      <div className="dept-pagination-section">
         <div className="mr-6 hidden text-base font-medium text-[#202224] opacity-60 sm:block">
           Showing {(currentPage - 1) * itemsPerPage + 1}-{Math.min(currentPage * itemsPerPage, filteredData.length)} of{' '}
           {filteredData.length}
@@ -286,6 +283,7 @@ const DepartmentsPage = () => {
         onClose={() => setIsAddOpen(false)}
         onSubmit={handleCreate}
         isLoading={isLoading}
+        availableUsers={availableUsers}
       />
 
       <UpdateDepartmentModal
@@ -294,6 +292,7 @@ const DepartmentsPage = () => {
         onClose={() => setEditingDept(null)}
         onSubmit={handleUpdate}
         isLoading={isLoading}
+        availableUsers={availableUsers}
       />
 
       <DeleteDepartmentModal

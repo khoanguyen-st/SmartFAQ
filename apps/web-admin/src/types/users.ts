@@ -30,4 +30,5 @@ export type CreateUserRequest = {
   phone?: string
   address?: string
   image?: string
+  department_ids?: number[]
 }

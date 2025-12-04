@@ -7,6 +7,7 @@ export interface IUploadedFile {
   size: number
   type: string
   uploadDate: string
+  status?: 'REQUEST' | 'PROCESSING' | 'ACTIVE' | 'FAIL'
 }
 
 interface BackendDocument {
@@ -55,7 +56,8 @@ const mapBackendToFrontend = (doc: BackendDocument): IUploadedFile => {
     name: fileName,
     size: doc.current_file_size || 0,
     type: fileExtension,
-    uploadDate: doc.created_at || new Date().toISOString()
+    uploadDate: doc.created_at || new Date().toISOString(),
+    status: doc.status as 'REQUEST' | 'PROCESSING' | 'ACTIVE' | 'FAIL'
   }
 }
 
