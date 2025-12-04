@@ -16,12 +16,14 @@
 **Retrieved:** 12 sources with high relevance (many with score = 1.0)
 
 **Actual Response:**
+
 ```
 "Về chương trình 3+0:
 * Sinh viên được phép chuyển ngành sau khi kết thúc học kỳ, và cần đăng ký chương trình."
 ```
 
 **Expected Response:**
+
 ```
 Chương trình 3+0 (liên kết quốc tế Greenwich):
 
@@ -39,7 +41,8 @@ Chương trình 3+0 (liên kết quốc tế Greenwich):
 **Điều kiện:** Tốt nghiệp THPT, IELTS 5.5+ hoặc tương đương
 ```
 
-**Root Cause:** 
+**Root Cause:**
+
 1. ❌ Master Analyzer không expand short query
 2. ❌ LLM không tổng hợp đúng từ multiple sources
 3. ❌ Answer prompt không đủ rõ ràng
@@ -61,6 +64,7 @@ Chương trình 3+0 (liên kết quốc tế Greenwich):
 **User Query:** "How to I received a reward" (English with grammar errors)
 
 **Response:**
+
 ```
 To receive a reward:
 * Your average score for subjects/modules is used to consider reward schemes and classifications.
@@ -68,6 +72,7 @@ To receive a reward:
 ```
 
 **Missing Information:**
+
 - GPA requirements
 - Reward amounts
 - Application procedures
@@ -78,6 +83,7 @@ To receive a reward:
 #### ❌ **Problem 4: Master Analyzer Ignores Short Query Rules**
 
 **Evidence:**
+
 - "Chương trình 3+0" (2 words) → Should expand to 2-3 sub-questions
 - "CNTT" (1 word) → Should expand
 - "học phí" (1-2 words) → Should expand
@@ -91,12 +97,14 @@ To receive a reward:
 ### 1. **Rewritten Master Analyzer Prompt**
 
 #### Changes:
+
 - ✅ **Reduced from 88 lines to 65 lines** - Less verbose, more focused
 - ✅ **Added CONCRETE EXAMPLES** - Shows LLM exactly what to do
 - ✅ **Explicit JSON format** - No markdown wrapping
 - ✅ **Clear priority order** - Toxicity → Competitor → Greeting → Valid
 
 #### Key Improvements:
+
 ```python
 # OLD: Vague instructions
 "For 1-2 word queries, ALWAYS generate 2-3 sub-questions for comprehensive coverage"
@@ -114,8 +122,9 @@ Output: {
 ```
 
 **Examples Added:**
+
 - ✅ "Chương trình 3+0" → 3 sub-questions
-- ✅ "CNTT" → 3 sub-questions  
+- ✅ "CNTT" → 3 sub-questions
 - ✅ "học phí" → 3 sub-questions
 - ✅ "thôi học" → 3 sub-questions
 - ✅ "Làm thế nào để tôi được nhận thưởng" → 1 focused question
@@ -125,6 +134,7 @@ Output: {
 ### 2. **Drastically Improved Answer Generation Prompt**
 
 #### Old Prompt Issues:
+
 ```python
 "3. Nếu câu hỏi NGẮN (1-2 từ), cung cấp thông tin TỔNG QUAN từ Context"
 # ❌ Vague - "TỔNG QUAN" không rõ nghĩa là gì
@@ -133,6 +143,7 @@ Output: {
 ```
 
 #### New Prompt with Examples:
+
 ```python
 --- VÍ DỤ 1: Short Query ---
 Câu hỏi: "Chương trình 3+0"
@@ -157,6 +168,7 @@ Trả lời:
 ```
 
 **Key Changes:**
+
 - ✅ **Concrete examples** showing exact format
 - ✅ **Section headers** (Giới thiệu, Ngành học, Học phí, Điều kiện)
 - ✅ **Source citations** format
@@ -167,6 +179,7 @@ Trả lời:
 ### 3. **Enhanced Normalization with Typo Fixing**
 
 #### Added Typo Map:
+
 ```python
 self.typo_map = {
     "nganh": "ngành",
@@ -183,6 +196,7 @@ self.typo_map = {
 ```
 
 **Flow:**
+
 ```
 Input: "nghành CNTT"
 → Fix typos: "ngành CNTT"
@@ -199,8 +213,8 @@ Input: "nghành CNTT"
 
 ```python
 vietnamese_keywords = [
-    "hoc", "phi", "truong", "sinh", "vien", "nganh", 
-    "chuong", "trinh", "thoi", "bao", "luu", "dang", 
+    "hoc", "phi", "truong", "sinh", "vien", "nganh",
+    "chuong", "trinh", "thoi", "bao", "luu", "dang",
     "ky", "bong", "cntt", "qtkd", "nhu", "the", "nao",
     "lam", "sao", "duoc", "khong", "toi", "ban", "cho"
 ]
@@ -215,6 +229,7 @@ vietnamese_keywords = [
 ### 5. **Context Formatting - Group by Document**
 
 **Old:**
+
 ```
 [Nguồn 1 - documents/3+0.pdf (trang 5)]
 Content...
@@ -227,6 +242,7 @@ Content...
 ```
 
 **New:**
+
 ```
 === NGUỒN 1: 3+0.pdf ===
 Content from page 5...
@@ -237,6 +253,7 @@ Content from page 2...
 ```
 
 **Benefits:**
+
 - ✅ Easier for LLM to see content from same document
 - ✅ Better context comprehension
 - ✅ Clearer source attribution
@@ -248,30 +265,33 @@ Content from page 2...
 
 ### Before vs After
 
-| Metric | Before | After (Expected) |
-|--------|--------|------------------|
-| Short query answer quality | ❌ Poor (incomplete) | ✅ Comprehensive |
-| Sub-question expansion | ❌ Rarely works | ✅ Reliable |
-| Typo handling | ❌ Not fixed | ✅ Auto-corrected |
-| Vietnamese detection | 🟡 OK | ✅ Excellent |
-| Context comprehension | 🟡 Fragmented | ✅ Grouped & clear |
-| Source citation | ❌ Inconsistent | ✅ Structured |
+| Metric                     | Before               | After (Expected)   |
+| -------------------------- | -------------------- | ------------------ |
+| Short query answer quality | ❌ Poor (incomplete) | ✅ Comprehensive   |
+| Sub-question expansion     | ❌ Rarely works      | ✅ Reliable        |
+| Typo handling              | ❌ Not fixed         | ✅ Auto-corrected  |
+| Vietnamese detection       | 🟡 OK                | ✅ Excellent       |
+| Context comprehension      | 🟡 Fragmented        | ✅ Grouped & clear |
+| Source citation            | ❌ Inconsistent      | ✅ Structured      |
 
 ### Specific Test Cases
 
 #### Test Case 1: "Chương trình 3+0"
+
 ```
 BEFORE: "Sinh viên được phép chuyển ngành..."  ❌
 AFTER:  Comprehensive answer with sections     ✅
 ```
 
-#### Test Case 2: "nghành CNTT" 
+#### Test Case 2: "nghành CNTT"
+
 ```
 BEFORE: Typo not fixed                         ❌
 AFTER:  Auto-corrected to "Ngành CNTT"         ✅
 ```
 
 #### Test Case 3: "How to I received a reward"
+
 ```
 BEFORE: Shallow answer                         ❌
 AFTER:  Detailed conditions + amounts + steps  ✅
@@ -282,6 +302,7 @@ AFTER:  Detailed conditions + amounts + steps  ✅
 ## 🧪 Testing Checklist
 
 ### Unit Tests
+
 - [ ] Master Analyzer expands "Chương trình 3+0" to 2-3 questions
 - [ ] Master Analyzer expands "CNTT" to 2-3 questions
 - [ ] Master Analyzer keeps "Làm thế nào để..." as 1 question
@@ -290,6 +311,7 @@ AFTER:  Detailed conditions + amounts + steps  ✅
 - [ ] Language detection catches unaccented Vietnamese
 
 ### Integration Tests
+
 - [ ] Test with "Chương trình 3+0" → Verify comprehensive answer
 - [ ] Test with "nghành CNTT" → Verify typo fixed
 - [ ] Test with "How to receive reward" → Verify detailed answer
@@ -297,6 +319,7 @@ AFTER:  Detailed conditions + amounts + steps  ✅
 - [ ] Test with "thôi học" → Verify all cases covered
 
 ### Manual QA
+
 ```bash
 # Test queries
 curl -X POST http://localhost:8000/api/chat \
@@ -317,6 +340,7 @@ curl -X POST http://localhost:8000/api/chat \
 ## 🚀 Deployment
 
 ### Files Modified
+
 ```
 app/rag/prompts.py          - Master Analyzer & Answer prompts
 app/rag/llm.py              - Context formatting & system prompt
@@ -327,11 +351,13 @@ app/rag/language.py         - Improved Vietnamese detection
 ### Deployment Steps
 
 1. **Backup current version:**
+
 ```bash
 git stash save "backup-before-test-case-fixes"
 ```
 
 2. **Deploy changes:**
+
 ```bash
 docker compose restart api
 # or
@@ -339,6 +365,7 @@ make restart-api
 ```
 
 3. **Verify with test queries:**
+
 ```bash
 # Monitor logs
 docker compose logs -f api | grep "Master Analysis"
@@ -347,6 +374,7 @@ docker compose logs -f api | grep "Retrieved"
 ```
 
 4. **Check metrics:**
+
 ```bash
 tail -f logs/rag_metrics.json | jq '.metrics | {
   avg_score: .avg_retrieval_score,
@@ -358,6 +386,7 @@ tail -f logs/rag_metrics.json | jq '.metrics | {
 ### Rollback Plan
 
 If issues arise:
+
 ```bash
 git stash pop  # Restore previous version
 docker compose restart api
@@ -391,16 +420,19 @@ Monitor these for 24-48 hours post-deployment:
 ## 🔮 Future Improvements
 
 ### Short Term (Next Sprint)
+
 1. Add unit tests for all prompt examples
 2. Create evaluation dataset from test cases
 3. Monitor and tune based on production data
 
 ### Medium Term
+
 1. Implement semantic reranking for better context selection
 2. Add query intent classification (factual vs opinion vs procedural)
 3. Fine-tune confidence thresholds per query type
 
 ### Long Term
+
 1. Build feedback loop from user ratings
 2. A/B test different prompt variations
 3. Consider RAG evaluation framework (RAGAS)

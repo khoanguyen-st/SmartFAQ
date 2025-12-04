@@ -26,11 +26,20 @@ async def get_settings() -> SystemSettings:
         llm_temperature=settings.LLM_TEMPERATURE,
         llm_max_tokens=settings.LLM_MAX_TOKENS,
         confidence_threshold=settings.CONFIDENCE_THRESHOLD,
+        confidence_decay=settings.CONFIDENCE_DECAY,
+        confidence_diversity_target=settings.CONFIDENCE_DIVERSITY_TARGET,
         top_k_retrieval=settings.TOP_K_RETRIEVAL,
         max_context_chars=settings.MAX_CONTEXT_CHARS,
+        max_sub_queries=settings.MAX_SUB_QUERIES,
+        top_k_per_query=settings.TOP_K_PER_QUERY,
         hybrid_enabled=settings.HYBRID_ENABLED,
         hybrid_k_vec=settings.HYBRID_K_VEC,
         hybrid_k_lex=settings.HYBRID_K_LEX,
+        hybrid_fusion_k=settings.HYBRID_FUSION_K,
+        hybrid_max_docs=settings.HYBRID_MAX_DOCS,
+        query_expansion_enabled=settings.QUERY_EXPANSION_ENABLED,
+        query_expansion_max=settings.QUERY_EXPANSION_MAX,
+        query_expansion_min_words=settings.QUERY_EXPANSION_MIN_WORDS,
     )
 
 
@@ -79,6 +88,45 @@ async def update_settings(payload: SettingsUpdateRequest) -> SettingsUpdateRespo
         settings.HYBRID_K_LEX = payload.hybrid_k_lex
         updated_fields.append("hybrid_k_lex")
 
+    if payload.hybrid_fusion_k is not None:
+        settings.HYBRID_FUSION_K = payload.hybrid_fusion_k
+        updated_fields.append("hybrid_fusion_k")
+
+    if payload.hybrid_max_docs is not None:
+        settings.HYBRID_MAX_DOCS = payload.hybrid_max_docs
+        updated_fields.append("hybrid_max_docs")
+
+    # Update confidence settings
+    if payload.confidence_decay is not None:
+        settings.CONFIDENCE_DECAY = payload.confidence_decay
+        updated_fields.append("confidence_decay")
+
+    if payload.confidence_diversity_target is not None:
+        settings.CONFIDENCE_DIVERSITY_TARGET = payload.confidence_diversity_target
+        updated_fields.append("confidence_diversity_target")
+
+    # Update query settings
+    if payload.max_sub_queries is not None:
+        settings.MAX_SUB_QUERIES = payload.max_sub_queries
+        updated_fields.append("max_sub_queries")
+
+    if payload.top_k_per_query is not None:
+        settings.TOP_K_PER_QUERY = payload.top_k_per_query
+        updated_fields.append("top_k_per_query")
+
+    # Update query expansion settings
+    if payload.query_expansion_enabled is not None:
+        settings.QUERY_EXPANSION_ENABLED = payload.query_expansion_enabled
+        updated_fields.append("query_expansion_enabled")
+
+    if payload.query_expansion_max is not None:
+        settings.QUERY_EXPANSION_MAX = payload.query_expansion_max
+        updated_fields.append("query_expansion_max")
+
+    if payload.query_expansion_min_words is not None:
+        settings.QUERY_EXPANSION_MIN_WORDS = payload.query_expansion_min_words
+        updated_fields.append("query_expansion_min_words")
+
     # Try to persist to .env file
     try:
         _persist_to_env_file(payload)
@@ -90,16 +138,25 @@ async def update_settings(payload: SettingsUpdateRequest) -> SettingsUpdateRespo
         llm_temperature=settings.LLM_TEMPERATURE,
         llm_max_tokens=settings.LLM_MAX_TOKENS,
         confidence_threshold=settings.CONFIDENCE_THRESHOLD,
+        confidence_decay=settings.CONFIDENCE_DECAY,
+        confidence_diversity_target=settings.CONFIDENCE_DIVERSITY_TARGET,
         top_k_retrieval=settings.TOP_K_RETRIEVAL,
         max_context_chars=settings.MAX_CONTEXT_CHARS,
+        max_sub_queries=settings.MAX_SUB_QUERIES,
+        top_k_per_query=settings.TOP_K_PER_QUERY,
         hybrid_enabled=settings.HYBRID_ENABLED,
         hybrid_k_vec=settings.HYBRID_K_VEC,
         hybrid_k_lex=settings.HYBRID_K_LEX,
+        hybrid_fusion_k=settings.HYBRID_FUSION_K,
+        hybrid_max_docs=settings.HYBRID_MAX_DOCS,
+        query_expansion_enabled=settings.QUERY_EXPANSION_ENABLED,
+        query_expansion_max=settings.QUERY_EXPANSION_MAX,
+        query_expansion_min_words=settings.QUERY_EXPANSION_MIN_WORDS,
     )
 
     return SettingsUpdateResponse(
         success=True,
-        message=f"Updated {len(updated_fields)} setting(s): {', '.join(updated_fields)}",
+        message="Updated setting(s) successfully",
         updated_settings=updated_settings,
     )
 
@@ -131,6 +188,24 @@ def _persist_to_env_file(payload: SettingsUpdateRequest) -> None:
         updates["HYBRID_K_VEC"] = str(payload.hybrid_k_vec)
     if payload.hybrid_k_lex is not None:
         updates["HYBRID_K_LEX"] = str(payload.hybrid_k_lex)
+    if payload.hybrid_fusion_k is not None:
+        updates["HYBRID_FUSION_K"] = str(payload.hybrid_fusion_k)
+    if payload.hybrid_max_docs is not None:
+        updates["HYBRID_MAX_DOCS"] = str(payload.hybrid_max_docs)
+    if payload.confidence_decay is not None:
+        updates["CONFIDENCE_DECAY"] = str(payload.confidence_decay)
+    if payload.confidence_diversity_target is not None:
+        updates["CONFIDENCE_DIVERSITY_TARGET"] = str(payload.confidence_diversity_target)
+    if payload.max_sub_queries is not None:
+        updates["MAX_SUB_QUERIES"] = str(payload.max_sub_queries)
+    if payload.top_k_per_query is not None:
+        updates["TOP_K_PER_QUERY"] = str(payload.top_k_per_query)
+    if payload.query_expansion_enabled is not None:
+        updates["QUERY_EXPANSION_ENABLED"] = str(payload.query_expansion_enabled).lower()
+    if payload.query_expansion_max is not None:
+        updates["QUERY_EXPANSION_MAX"] = str(payload.query_expansion_max)
+    if payload.query_expansion_min_words is not None:
+        updates["QUERY_EXPANSION_MIN_WORDS"] = str(payload.query_expansion_min_words)
 
     # Update or append lines
     updated_lines = []
