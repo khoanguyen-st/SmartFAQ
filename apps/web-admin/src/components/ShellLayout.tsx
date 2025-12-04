@@ -1,13 +1,19 @@
-import { NavLink } from 'react-router-dom'
-import { useState, useCallback, useMemo } from 'react'
-import type { ReactNode } from 'react'
+import { useEffect } from 'react'
+import { NavLink, useNavigate, Outlet } from 'react-router-dom'
 import { cn } from '@/lib/utils'
-import Education from '../assets/icon/education.svg?react'
-import UserIcon from '../assets/icon/user.svg?react'
+import { logout } from '@/lib/api'
+import { useState, useCallback, useMemo } from 'react'
+import educationUrl from '@/assets/icons/education.svg'
+import userUrl from '@/assets/icons/user.svg'
 import { Menu, X } from 'lucide-react'
+
+type ImgCompProps = React.ImgHTMLAttributes<HTMLImageElement>
+const EducationIcon: React.FC<ImgCompProps> = props => <img src={educationUrl} alt="edu" {...props} />
+const UserIcon: React.FC<ImgCompProps> = props => <img src={userUrl} alt="upload" {...props} />
 
 const navItems = [
   { path: 'dashboard', label: 'Dashboard' },
+  { path: 'users', label: 'Users' },
   { path: 'logs', label: 'Logs' },
   { path: 'settings', label: 'Settings' },
   { path: 'departments', label: 'Departments' },
@@ -15,14 +21,36 @@ const navItems = [
   { path: 'view-chat', label: 'View Chat' }
 ]
 
-const ShellLayout = ({ children }: { children: ReactNode }) => {
+const ShellLayout = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
+
+  const navigate = useNavigate()
+
+  useEffect(() => {
+    // Check if user is authenticated
+    const token = localStorage.getItem('access_token')
+    if (!token) {
+      navigate('/login')
+    }
+  }, [navigate])
+
   const toggleSidebar = useCallback(() => setIsSidebarOpen(prev => !prev), [])
   const handleNavigation = useCallback(() => {
     if (isSidebarOpen) {
       setIsSidebarOpen(false)
     }
   }, [isSidebarOpen])
+
+  const handleLogout = useCallback(async () => {
+    try {
+      await logout()
+      navigate('/login')
+    } catch {
+      // Even if logout fails, clear token and redirect
+      localStorage.removeItem('access_token')
+      navigate('/login')
+    }
+  }, [navigate])
 
   const Sidebar = useMemo(
     () => (
@@ -61,9 +89,15 @@ const ShellLayout = ({ children }: { children: ReactNode }) => {
             </NavLink>
           ))}
         </nav>
+        <button
+          onClick={handleLogout}
+          className="mt-auto rounded-lg bg-transparent px-3.5 py-2 text-sm text-red-400 transition-colors duration-200 hover:bg-red-600/20 hover:text-red-300"
+        >
+          Logout
+        </button>
       </aside>
     ),
-    [isSidebarOpen, toggleSidebar, handleNavigation]
+    [isSidebarOpen, toggleSidebar, handleNavigation, handleLogout]
   )
 
   return (
@@ -83,7 +117,7 @@ const ShellLayout = ({ children }: { children: ReactNode }) => {
                 {isSidebarOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
               </button>
               <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#003087]">
-                <Education />
+                <EducationIcon />
               </div>
               <div className="hidden sm:block">
                 <h1 className="text-xl font-semibold text-gray-900">Greenwich SmartFAQ</h1>
@@ -96,7 +130,9 @@ const ShellLayout = ({ children }: { children: ReactNode }) => {
             </div>
           </div>
         </header>
-        <div className="flex flex-col gap-6">{children}</div>
+        <div className="flex flex-col gap-6 p-6">
+          <Outlet />
+        </div>
       </main>
     </div>
   )

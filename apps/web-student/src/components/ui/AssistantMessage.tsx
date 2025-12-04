@@ -6,6 +6,7 @@ import CopyIcon from '@/assets/icons/copy-outline.svg?react'
 import CopiedIcon from '@/assets/icons/copy-fill.svg?react'
 import LikeIcon from '@/assets/icons/like-outline.svg?react'
 import LikeIconFill from '@/assets/icons/like-fill.svg?react'
+import SimpleMarkdown from './SimpleMarkdown'
 
 interface AssistantMessageProps {
   message: ChatHistoryMessage
@@ -51,7 +52,7 @@ const AssistantMessage = ({ message, sessionId }: AssistantMessageProps) => {
 
   return (
     <div className="message message--sender">
-      <p className="whitespace-pre-wrap">{message.text}</p>
+      <SimpleMarkdown content={message.text} />
 
       {/* Action Bar*/}
       <div className="mt-2 flex items-center gap-2 border-t border-[#E5E7EB] pt-2 pl-1">

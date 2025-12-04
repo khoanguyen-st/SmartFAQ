@@ -1,4 +1,15 @@
-export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8000'
+// Get API URL from widget config (if embedded) or env variable
+
+const getApiBaseUrl = () => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  if (typeof window !== 'undefined' && (window as any).__CHAT_WIDGET_API_URL__) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return (window as any).__CHAT_WIDGET_API_URL__
+  }
+  return import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8000'
+}
+
+export const API_BASE_URL = getApiBaseUrl()
 
 // API client with error handling
 async function apiClient<T>(endpoint: string, options?: RequestInit): Promise<T> {

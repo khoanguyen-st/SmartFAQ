@@ -1,77 +1,351 @@
-import { FormEvent, useState } from 'react'
+import { FormEvent, useEffect, useState } from 'react'
+import { AlertCircle, CheckCircle2, Info, Loader2, Save } from 'lucide-react'
+import { fetchSystemSettings, updateSystemSettings, SystemSettings, SettingsUpdateRequest } from '@/lib/api'
 
-const defaultValues = {
-  confidenceThreshold: 60,
-  topK: 5,
-  maxWords: 300,
-  fallbackChannels: ['Email'],
-  quickActions: ['Admission requirements', 'Tuition fees'],
-  welcomeText: 'Welcome to Greenwich SmartFAQ'
+interface SettingField {
+  key: keyof SystemSettings
+  label: string
+  type: 'number' | 'boolean' | 'text'
+  min?: number
+  max?: number
+  step?: number
+  description: string
+  helpText: string
+  category: 'llm' | 'retrieval' | 'hybrid'
 }
 
-const SettingsForm = () => {
-  const [values, setValues] = useState(defaultValues)
+const SETTING_FIELDS: SettingField[] = [
+  // LLM Settings
+  {
+    key: 'llm_temperature',
+    label: 'AI Creativity',
+    type: 'number',
+    min: 0,
+    max: 2,
+    step: 0.1,
+    description: 'Controls how creative the AI responses are',
+    helpText:
+      'Lower values (0-0.3) = More focused and consistent. Higher values (0.7-2.0) = More creative but less predictable.',
+    category: 'llm'
+  },
+  {
+    key: 'llm_max_tokens',
+    label: 'Maximum Response Length',
+    type: 'number',
+    min: 128,
+    max: 8192,
+    step: 128,
+    description: 'Maximum number of words in AI responses',
+    helpText: 'Controls how long the answers can be. 512 tokens ≈ 380 words. Longer responses cost more.',
+    category: 'llm'
+  },
 
-  const handleSubmit = (event: FormEvent) => {
+  // Retrieval Settings
+  {
+    key: 'confidence_threshold',
+    label: 'Answer Confidence Threshold',
+    type: 'number',
+    min: 0,
+    max: 1,
+    step: 0.05,
+    description: 'Minimum confidence level to show an answer',
+    helpText:
+      'If AI confidence is below this threshold, a fallback message is shown instead. Higher = stricter (fewer answers, but more accurate).',
+    category: 'retrieval'
+  },
+  {
+    key: 'top_k_retrieval',
+    label: 'Documents to Consider',
+    type: 'number',
+    min: 1,
+    max: 20,
+    step: 1,
+    description: 'How many documents to search through',
+    helpText:
+      'The system will look through this many documents to find the best answer. More documents = better context but slower.',
+    category: 'retrieval'
+  },
+  {
+    key: 'max_context_chars',
+    label: 'Maximum Context Size',
+    type: 'number',
+    min: 1000,
+    max: 32000,
+    step: 1000,
+    description: 'Maximum amount of text to give to the AI',
+    helpText: 'Controls how much information the AI can read before answering. 8000 characters ≈ 1500 words.',
+    category: 'retrieval'
+  },
+
+  // Hybrid Search Settings
+  {
+    key: 'hybrid_enabled',
+    label: 'Smart Search (Hybrid)',
+    type: 'boolean',
+    description: 'Use both keyword and AI-powered search',
+    helpText:
+      'When enabled, the system uses both traditional keyword search and AI semantic search for better results.',
+    category: 'hybrid'
+  },
+  {
+    key: 'hybrid_k_vec',
+    label: 'AI Search Results',
+    type: 'number',
+    min: 5,
+    max: 50,
+    step: 5,
+    description: 'Number of AI semantic search results',
+    helpText: 'How many results to get from AI-powered similarity search. Only applies when Smart Search is enabled.',
+    category: 'hybrid'
+  },
+  {
+    key: 'hybrid_k_lex',
+    label: 'Keyword Search Results',
+    type: 'number',
+    min: 5,
+    max: 50,
+    step: 5,
+    description: 'Number of keyword search results',
+    helpText: 'How many results to get from traditional keyword matching. Only applies when Smart Search is enabled.',
+    category: 'hybrid'
+  }
+]
+
+const SettingsForm = () => {
+  const [settings, setSettings] = useState<SystemSettings | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [success, setSuccess] = useState<string | null>(null)
+  const [expandedCategory, setExpandedCategory] = useState<string | null>('llm')
+
+  useEffect(() => {
+    loadSettings()
+  }, [])
+
+  const loadSettings = async () => {
+    try {
+      setLoading(true)
+      setError(null)
+      const data = await fetchSystemSettings()
+      setSettings(data)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load settings')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleSubmit = async (event: FormEvent) => {
     event.preventDefault()
+    if (!settings) return
+
+    try {
+      setSaving(true)
+      setError(null)
+      setSuccess(null)
+
+      const updateData: SettingsUpdateRequest = {
+        llm_temperature: settings.llm_temperature,
+        llm_max_tokens: settings.llm_max_tokens,
+        confidence_threshold: settings.confidence_threshold,
+        top_k_retrieval: settings.top_k_retrieval,
+        max_context_chars: settings.max_context_chars,
+        hybrid_enabled: settings.hybrid_enabled,
+        hybrid_k_vec: settings.hybrid_k_vec,
+        hybrid_k_lex: settings.hybrid_k_lex
+      }
+
+      const response = await updateSystemSettings(updateData)
+      setSettings(response.updated_settings)
+      setSuccess(response.message)
+
+      // Auto-hide success message after 5 seconds
+      setTimeout(() => setSuccess(null), 5000)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to save settings')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const handleReset = () => {
+    loadSettings()
+    setSuccess(null)
+    setError(null)
+  }
+
+  const updateSetting = (key: keyof SystemSettings, value: unknown) => {
+    if (!settings) return
+    setSettings({ ...settings, [key]: value })
+    setSuccess(null)
+    setError(null)
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center rounded-2xl bg-white p-12 shadow-lg">
+        <Loader2 className="h-8 w-8 animate-spin text-indigo-600" />
+      </div>
+    )
+  }
+
+  if (!settings) {
+    return (
+      <div className="rounded-2xl bg-white p-6 shadow-lg">
+        <div className="flex items-center gap-2 text-red-600">
+          <AlertCircle className="h-5 w-5" />
+          <p>Failed to load settings. Please try refreshing the page.</p>
+        </div>
+      </div>
+    )
+  }
+
+  const categories = {
+    llm: { title: 'AI Model Settings' },
+    retrieval: { title: 'Search & Retrieval' },
+    hybrid: { title: 'Advanced Search' }
   }
 
   return (
-    <form
-      onSubmit={handleSubmit}
-      className="grid grid-cols-1 gap-4 rounded-2xl bg-white p-7 shadow-lg shadow-slate-900/10 sm:grid-cols-2 lg:grid-cols-3"
-    >
-      <label className="flex flex-col gap-2 text-sm text-slate-700">
-        Confidence Threshold
-        <input
-          type="number"
-          value={values.confidenceThreshold}
-          onChange={event =>
-            setValues(prev => ({
-              ...prev,
-              confidenceThreshold: Number(event.target.value)
-            }))
-          }
-          className="focus:border-primary-600 focus:ring-primary-600/20 rounded-lg border border-indigo-200 px-3.5 py-2.5 text-base font-normal focus:ring-2 focus:outline-none"
-        />
-      </label>
-      <label className="flex flex-col gap-2 text-sm text-slate-700">
-        Top K Documents
-        <input
-          type="number"
-          value={values.topK}
-          onChange={event => setValues(prev => ({ ...prev, topK: Number(event.target.value) }))}
-          className="focus:border-primary-600 focus:ring-primary-600/20 rounded-lg border border-indigo-200 px-3.5 py-2.5 text-base font-normal focus:ring-2 focus:outline-none"
-        />
-      </label>
-      <label className="flex flex-col gap-2 text-sm text-slate-700">
-        Max Words
-        <input
-          type="number"
-          value={values.maxWords}
-          onChange={event =>
-            setValues(prev => ({
-              ...prev,
-              maxWords: Number(event.target.value)
-            }))
-          }
-          className="focus:border-primary-600 focus:ring-primary-600/20 rounded-lg border border-indigo-200 px-3.5 py-2.5 text-base font-normal focus:ring-2 focus:outline-none"
-        />
-      </label>
-      <label className="col-span-full flex flex-col gap-2 text-sm text-slate-700">
-        Welcome Message
-        <textarea
-          value={values.welcomeText}
-          onChange={event => setValues(prev => ({ ...prev, welcomeText: event.target.value }))}
-          className="focus:border-primary-600 focus:ring-primary-600/20 min-h-[120px] resize-y rounded-lg border border-indigo-200 px-3.5 py-2.5 text-base font-normal focus:ring-2 focus:outline-none"
-        />
-      </label>
-      <button
-        type="submit"
-        className="bg-primary-600 hover:bg-primary-700 col-span-full cursor-pointer justify-self-end rounded-full border-none px-6 py-2.5 text-base font-semibold text-white"
-      >
-        Save Settings
-      </button>
+    <form onSubmit={handleSubmit} className="space-y-6">
+      {/* Status Messages */}
+      {error && (
+        <div className="flex items-center gap-3 rounded-lg border border-red-200 bg-red-50 p-4">
+          <AlertCircle className="h-5 w-5 shrink-0 text-red-600" />
+          <p className="text-sm text-red-800">{error}</p>
+        </div>
+      )}
+
+      {success && (
+        <div className="flex items-center gap-3 rounded-lg border border-green-200 bg-green-50 p-4">
+          <CheckCircle2 className="h-5 w-5 shrink-0 text-green-600" />
+          <p className="text-sm text-green-800">{success}</p>
+        </div>
+      )}
+
+      {/* Read-only Model Info */}
+      <div className="rounded-2xl border border-indigo-100 bg-linear-to-br from-indigo-50 to-purple-50 p-6 shadow-sm">
+        <div className="flex items-start gap-3">
+          <Info className="mt-0.5 h-5 w-5 shrink-0 text-indigo-600" />
+          <div>
+            <h3 className="mb-1 font-semibold text-slate-900">Current AI Model</h3>
+            <p className="mb-2 text-sm text-slate-700">
+              <span className="rounded border border-indigo-200 bg-white px-2 py-1 font-mono">
+                {settings.llm_model}
+              </span>
+            </p>
+            <p className="text-xs text-slate-600">
+              This is the AI language model powering the chatbot. Model selection is configured via environment
+              variables.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Settings by Category */}
+      {Object.entries(categories).map(([categoryKey, categoryInfo]) => {
+        const categoryFields = SETTING_FIELDS.filter(f => f.category === categoryKey)
+        const isExpanded = expandedCategory === categoryKey
+
+        return (
+          <div key={categoryKey} className="overflow-hidden rounded-2xl bg-white shadow-lg shadow-slate-900/10">
+            <button
+              type="button"
+              onClick={() => setExpandedCategory(isExpanded ? null : categoryKey)}
+              className="flex w-full items-center justify-between p-6 transition-colors hover:bg-slate-50"
+            >
+              <h3 className="text-lg font-semibold text-slate-900">{categoryInfo.title}</h3>
+              <span className="text-slate-400">{isExpanded ? '−' : '+'}</span>
+            </button>
+
+            {isExpanded && (
+              <div className="space-y-6 border-t border-slate-100 p-6">
+                {categoryFields.map(field => (
+                  <div key={field.key} className="space-y-2">
+                    <label className="flex items-center gap-2 text-sm font-medium text-slate-700">
+                      {field.label}
+                      <span className="text-xs font-normal text-slate-500">({field.description})</span>
+                    </label>
+
+                    <div className="flex items-start gap-3">
+                      {field.type === 'boolean' ? (
+                        <label className="relative inline-flex cursor-pointer items-center">
+                          <input
+                            type="checkbox"
+                            checked={settings[field.key] as boolean}
+                            onChange={e => updateSetting(field.key, e.target.checked)}
+                            className="peer sr-only"
+                          />
+                          <div className="peer h-6 w-11 rounded-full bg-gray-200 peer-checked:bg-indigo-600 peer-focus:ring-4 peer-focus:ring-indigo-300 peer-focus:outline-none after:absolute after:start-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:after:translate-x-full peer-checked:after:border-white rtl:peer-checked:after:-translate-x-full"></div>
+                          <span className="ms-3 text-sm font-medium text-gray-900">
+                            {settings[field.key] ? 'Enabled' : 'Disabled'}
+                          </span>
+                        </label>
+                      ) : (
+                        <div className="flex flex-1 items-center gap-3">
+                          <input
+                            type="range"
+                            min={field.min}
+                            max={field.max}
+                            step={field.step}
+                            value={settings[field.key] as number}
+                            onChange={e => updateSetting(field.key, parseFloat(e.target.value))}
+                            className="h-2 flex-1 cursor-pointer appearance-none rounded-lg bg-gray-200 accent-indigo-600"
+                          />
+                          <input
+                            type="number"
+                            min={field.min}
+                            max={field.max}
+                            step={field.step}
+                            value={settings[field.key] as number}
+                            onChange={e => updateSetting(field.key, parseFloat(e.target.value))}
+                            className="w-24 rounded-lg border border-indigo-200 px-3 py-2 text-sm focus:border-indigo-600 focus:ring-2 focus:ring-indigo-600/20 focus:outline-none"
+                          />
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="flex items-start gap-2 rounded-lg bg-slate-50 p-3 text-xs text-slate-600">
+                      <Info className="mt-0.5 h-3.5 w-3.5 shrink-0 text-slate-400" />
+                      <p>{field.helpText}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )
+      })}
+
+      {/* Action Buttons */}
+      <div className="flex items-center justify-end gap-3">
+        <button
+          type="button"
+          onClick={handleReset}
+          disabled={saving}
+          className="rounded-lg border border-slate-300 bg-white px-5 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          Reset
+        </button>
+        <button
+          type="submit"
+          disabled={saving}
+          className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-6 py-2.5 text-sm font-semibold text-white hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          {saving ? (
+            <>
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Saving...
+            </>
+          ) : (
+            <>
+              <Save className="h-4 w-4" />
+              Save Settings
+            </>
+          )}
+        </button>
+      </div>
     </form>
   )
 }

@@ -50,8 +50,8 @@ uvicorn app.main:app --reload
 
 | Component      | Technology                                |
 | -------------- | ----------------------------------------- |
-| **LLM**        | Google Gemini 2.0 Flash (via Gemini API)  |
-| **Embeddings** | multilingual-e5-small (HuggingFace local) |
+| **LLM**        | Google Gemini 2.5 Flash (via Gemini API)  |
+| **Embeddings** | multilingual-e5-base (HuggingFace local) |
 | **Vector DB**  | Chroma (HTTP client-server)               |
 | **Framework**  | LangChain v1.0                            |
 | **Backend**    | FastAPI + Python 3.11+                    |

@@ -33,7 +33,7 @@ const ChatWidget = () => {
   }
 
   return (
-    <div className="fixed right-10 bottom-10 z-[999]">
+    <div className="fixed right-10 bottom-10 z-999">
       <ConfirmModal isOpen={showConfirm} onClose={() => setShowConfirm(false)} onConfirm={handleConfirmDelete} />
       <div
         className={`chat flex flex-col overflow-hidden rounded-4xl bg-white shadow-2xl shadow-slate-400 ${

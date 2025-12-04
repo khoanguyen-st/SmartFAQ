@@ -1,17 +1,23 @@
-"""Pydantic schemas for API payloads and responses."""
+"""Pydantic schemas package."""
 
-from .schemas import (
-    DocumentCreate,
-    DocumentOut,
-    DocumentUpdate,
-    DocumentVersionOut,
-    UserOut,
+from .auth import (
+    ForgotPasswordRequest,
+    LogoutResponse,
+    RefreshTokenRequest,
+    ResetPasswordRequest,
+    Token,
+    UnlockAccountResponse,
+    UserLogin,
+    UserMe,
 )
 
 __all__ = [
-    "DocumentCreate",
-    "DocumentOut",
-    "DocumentUpdate",
-    "DocumentVersionOut",
-    "UserOut",
+    "UserLogin",
+    "Token",
+    "ForgotPasswordRequest",
+    "ResetPasswordRequest",
+    "RefreshTokenRequest",
+    "LogoutResponse",
+    "UserMe",
+    "UnlockAccountResponse",
 ]

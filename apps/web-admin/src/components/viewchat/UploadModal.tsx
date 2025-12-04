@@ -24,7 +24,6 @@ const UploadModal = ({ isOpen, onClose, onFilesUploaded }: UploadModalProps) => 
   const [fileObjects, setFileObjects] = useState<Map<string, File>>(new Map())
   const [selectedFiles, setSelectedFiles] = useState<string[]>([])
   const [error, setError] = useState<string | null>(null)
-  const [success, setSuccess] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -34,7 +33,6 @@ const UploadModal = ({ isOpen, onClose, onFilesUploaded }: UploadModalProps) => 
       setFileObjects(new Map())
       setSelectedFiles([])
       setError(null)
-      setSuccess(false)
       setIsSaving(false)
     }
   }, [isOpen])
@@ -64,22 +62,23 @@ const UploadModal = ({ isOpen, onClose, onFilesUploaded }: UploadModalProps) => 
       files.map(f => f.name.toLowerCase())
     )
 
-    if (error) {
-      setError(error)
-      return
+    if (valid.length > 0) {
+      const mapped = mapFiles(valid)
+      setFiles(prev => [...prev, ...mapped])
+
+      setFileObjects(prev => {
+        const newMap = new Map(prev)
+        valid.forEach(file => {
+          const fileItem = mapped.find(f => f.name === file.name)
+          if (fileItem) newMap.set(fileItem.id, file)
+        })
+        return newMap
+      })
     }
 
-    const mapped = mapFiles(valid)
-    setFiles(prev => [...prev, ...mapped])
-
-    setFileObjects(prev => {
-      const newMap = new Map(prev)
-      valid.forEach(file => {
-        const fileItem = mapped.find(f => f.name === file.name)
-        if (fileItem) newMap.set(fileItem.id, file)
-      })
-      return newMap
-    })
+    if (error) {
+      setError(error)
+    }
   }
 
   const handleRemoveSelected = () => {
@@ -108,7 +107,7 @@ const UploadModal = ({ isOpen, onClose, onFilesUploaded }: UploadModalProps) => 
       if (!newFile) return
 
       if (newFile.size > MAX_SIZE) {
-        setError('Invalid file (max 10MB).')
+        setError('Invalid file (max 50MB).')
         return
       }
 
@@ -142,8 +141,6 @@ const UploadModal = ({ isOpen, onClose, onFilesUploaded }: UploadModalProps) => 
 
     setError(null)
     setIsSaving(true)
-    setSuccess(true)
-
     const filesInfo = files.map(file => {
       const fileObj = fileObjects.get(file.id)
       const fileType = fileObj?.name.split('.').pop()?.toLowerCase() || 'file'
@@ -237,7 +234,7 @@ const UploadModal = ({ isOpen, onClose, onFilesUploaded }: UploadModalProps) => 
             </p>
             <p className="mt-1 text-xs text-gray-500">
               Supported formats: PDF,DOC, DOCX, TXT, MD <br />
-              Maximum 20 files per upload, each ≤ 10MB
+              Maximum 20 files per upload, each ≤ 50MB
             </p>
 
             <div className="mx-auto mt-3 w-4/5 sm:w-1/2">
@@ -372,12 +369,6 @@ const UploadModal = ({ isOpen, onClose, onFilesUploaded }: UploadModalProps) => 
           </div>
         </div>
       </div>
-
-      {success && (
-        <div className="fixed right-4 bottom-4 animate-bounce rounded-lg bg-green-500 px-5 py-3 text-sm text-white shadow-lg sm:right-6 sm:bottom-6">
-          Files are being processed in the background...
-        </div>
-      )}
     </div>
   )
 }

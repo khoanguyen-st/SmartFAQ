@@ -26,5 +26,4 @@ else
   echo "Or run: $PYTHON_CMD scripts/check_migrations.py --auto-merge"
   exit 1
 fi
-
 cd ../..

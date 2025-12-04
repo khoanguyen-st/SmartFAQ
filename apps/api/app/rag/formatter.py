@@ -13,16 +13,6 @@ DEFAULT_PAGE = None
 
 
 class ResponseFormatter:
-    """
-    Formats LLM-generated answers with text formatting and source attribution.
-
-    Handles:
-    - Markdown/HTML-safe formatting
-    - Source citations at bottom
-    - Error handling for invalid/empty responses
-    - Linkable document references
-    """
-
     def __init__(self, document_preview_url: Optional[str] = None):
         self.document_preview_url = document_preview_url
 

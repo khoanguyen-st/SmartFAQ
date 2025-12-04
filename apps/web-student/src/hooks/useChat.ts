@@ -7,6 +7,14 @@ const CUSTOM_WELCOME_MSG = 'Xin chào!\nTôi là trợ lý ảo Greenwich (Smart
 const SYNC_CHANNEL_NAME = 'greenwich_chat_sync_channel'
 const STORAGE_KEY = 'chat_session_id'
 
+// Detect channel from URL path
+function detectChannel(): string {
+  const path = window.location.pathname
+  if (path.includes('/chat')) return 'chatstudent'
+  if (path.includes('/widget')) return 'widget'
+  return 'widget' // default
+}
+
 export const useChat = (initialSessionId?: string | null) => {
 
   const { t } = useI18n()
@@ -67,7 +75,7 @@ export const useChat = (initialSessionId?: string | null) => {
           setSessionId(targetId)
           await fetchHistory(targetId)
         } else {
-          const newSession = await startNewChatSession()
+          const newSession = await startNewChatSession(detectChannel())
           setSessionId(newSession.sessionId)
           localStorage.setItem(STORAGE_KEY, newSession.sessionId)
           setMessages([
@@ -182,7 +190,7 @@ export const useChat = (initialSessionId?: string | null) => {
       localStorage.removeItem(STORAGE_KEY)
 
       // 2. Tạo session mới
-      const newSession = await startNewChatSession()
+      const newSession = await startNewChatSession(detectChannel())
       setSessionId(newSession.sessionId)
 
       // 3. Lưu session MỚI vào Storage

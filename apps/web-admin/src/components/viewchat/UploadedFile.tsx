@@ -7,14 +7,22 @@ import txtUrl from '@/assets/icons/txt.svg'
 import editUrl from '@/assets/icons/edit.svg'
 import { MAX_SIZE } from '@/lib/files'
 import { cn } from '@/lib/utils'
-import { forwardRef, useCallback, useEffect, useImperativeHandle, useState } from 'react'
+import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from 'react'
 import { API_BASE_URL } from '../../lib/api'
-import { IUploadedFile, deleteKnowledgeFile, fetchKnowledgeFiles } from '../../services/document.services'
+import {
+  IUploadedFile,
+  deleteKnowledgeFile,
+  fetchKnowledgeFiles,
+  searchKnowledgeFiles,
+  filterKnowledgeFiles
+} from '../../services/document.services'
 import DeleteConfirmationModal from './DeleteConfirmationModal'
 
 export interface UploadedFileHandle {
   refreshFiles: () => Promise<void>
   addPendingFiles: (files: { name: string; size: number; type: string }[]) => void
+  searchFiles: (searchTerm: string) => Promise<void>
+  filterFiles: (format: string | undefined) => Promise<void>
 }
 
 interface UploadedFileProps {
@@ -27,9 +35,41 @@ interface PendingFile {
   size: number
   type: string
   isPending: true
+  timestamp: number
 }
 
 type FileItem = IUploadedFile | PendingFile
+
+const PENDING_FILES_KEY = 'pending_upload_files'
+
+const savePendingFiles = (files: PendingFile[]) => {
+  try {
+    sessionStorage.setItem(PENDING_FILES_KEY, JSON.stringify(files))
+  } catch (e) {
+    console.error('Failed to save pending files:', e)
+  }
+}
+
+const loadPendingFiles = (): PendingFile[] => {
+  try {
+    const stored = sessionStorage.getItem(PENDING_FILES_KEY)
+    if (!stored) return []
+
+    const files: PendingFile[] = JSON.parse(stored)
+    return files
+  } catch (e) {
+    console.error('Failed to load pending files:', e)
+    return []
+  }
+}
+
+const clearPendingFiles = () => {
+  try {
+    sessionStorage.removeItem(PENDING_FILES_KEY)
+  } catch (e) {
+    console.error('Failed to clear pending files:', e)
+  }
+}
 
 const formatFileSize = (bytes: number): string => {
   if (bytes === 0) return '0 Bytes'
@@ -45,12 +85,12 @@ const isPendingFile = (file: FileItem): file is PendingFile => {
 
 const UploadedFile = forwardRef<UploadedFileHandle, UploadedFileProps>(({ isCompact = false }, ref) => {
   const [files, setFiles] = useState<IUploadedFile[]>([])
-  const [pendingFiles, setPendingFiles] = useState<PendingFile[]>([])
+  const [pendingFiles, setPendingFiles] = useState<PendingFile[]>(() => loadPendingFiles())
   const [isInitialLoading, setIsInitialLoading] = useState(true)
   const [loadError, setLoadError] = useState<string | null>(null)
   const [fileToDelete, setFileToDelete] = useState<IUploadedFile | null>(null)
-
   const [error, setError] = useState<string | null>(null)
+  const hasInitialized = useRef(false)
 
   const refreshFiles = useCallback(async () => {
     setLoadError(null)
@@ -59,7 +99,29 @@ const UploadedFile = forwardRef<UploadedFileHandle, UploadedFileProps>(({ isComp
 
       setPendingFiles(prev => {
         const fetchedNames = new Set(fetchedFiles.map(f => f.name.toLowerCase()))
-        return prev.filter(pf => !fetchedNames.has(pf.name.toLowerCase()))
+
+        let remaining = prev.filter(pf => !fetchedNames.has(pf.name.toLowerCase()))
+
+        if (remaining.length > 0) {
+          remaining = remaining.filter(pf => {
+            const pendingBaseName = pf.name.toLowerCase().replace(/\.[^/.]+$/, '')
+
+            const hasMatch = fetchedFiles.some(f => {
+              const fetchedBaseName = f.name.toLowerCase().replace(/\.[^/.]+$/, '')
+              return fetchedBaseName.includes(pendingBaseName) || pendingBaseName.includes(fetchedBaseName)
+            })
+
+            return !hasMatch
+          })
+        }
+
+        savePendingFiles(remaining)
+
+        if (remaining.length === 0 && prev.length > 0) {
+          clearPendingFiles()
+        }
+
+        return remaining
       })
 
       setFiles(fetchedFiles)
@@ -71,37 +133,73 @@ const UploadedFile = forwardRef<UploadedFileHandle, UploadedFileProps>(({ isComp
     }
   }, [])
 
-  const addPendingFiles = useCallback(
-    (newFiles: { name: string; size: number; type: string }[]) => {
-      const pending: PendingFile[] = newFiles.map(file => ({
-        id: `pending-${Date.now()}-${Math.random()}`,
-        name: file.name,
-        size: file.size,
-        type: file.type,
-        isPending: true
-      }))
+  const addPendingFiles = useCallback((newFiles: { name: string; size: number; type: string }[]) => {
+    const now = Date.now()
+    const pending: PendingFile[] = newFiles.map(file => ({
+      id: `pending-${now}-${Math.random()}`,
+      name: file.name,
+      size: file.size,
+      type: file.type,
+      isPending: true,
+      timestamp: now
+    }))
 
-      setPendingFiles(prev => [...prev, ...pending])
+    setPendingFiles(prev => {
+      const updated = [...prev, ...pending]
+      savePendingFiles(updated)
+      return updated
+    })
+  }, [])
 
-      const pollInterval = setInterval(async () => {
+  useEffect(() => {
+    if (pendingFiles.length === 0) return
+
+    const MAX_WAIT_TIME = 3 * 60 * 1000
+
+    const checkPendingFiles = async () => {
+      setPendingFiles(prev => {
+        const now = Date.now()
+        const remaining = prev.filter(file => {
+          const fileAge = now - file.timestamp
+          return fileAge <= MAX_WAIT_TIME
+        })
+
+        if (remaining.length < prev.length) {
+          setError('Upload timeout - some files processing took too long')
+        }
+
+        savePendingFiles(remaining)
+        return remaining
+      })
+
+      if (pendingFiles.length > 0) {
         await refreshFiles()
-      }, 2000)
+      }
+    }
 
-      setTimeout(() => {
-        clearInterval(pollInterval)
-      }, 30000)
-    },
-    [refreshFiles]
-  )
+    const interval = setInterval(checkPendingFiles, 10000)
+
+    return () => {
+      clearInterval(interval)
+    }
+  }, [pendingFiles.length, refreshFiles])
+
+  useEffect(() => {
+    savePendingFiles(pendingFiles)
+  }, [pendingFiles])
 
   useImperativeHandle(ref, () => ({
     refreshFiles,
-    addPendingFiles
+    addPendingFiles,
+    searchFiles,
+    filterFiles
   }))
 
   useEffect(() => {
+    if (hasInitialized.current) return
+    hasInitialized.current = true
     refreshFiles()
-  })
+  }, [refreshFiles])
 
   useEffect(() => {
     if (error) {
@@ -117,39 +215,81 @@ const UploadedFile = forwardRef<UploadedFileHandle, UploadedFileProps>(({ isComp
   const handleDeleteFile = async (fileId: string) => {
     try {
       await deleteKnowledgeFile(fileId)
-      await refreshFiles()
     } catch (e) {
-      alert('Error deleting file!')
       console.error(e)
+    } finally {
       await refreshFiles()
     }
   }
 
-  const handleReplace = (fileId: string) => {
-    const input = document.createElement('input')
-    input.type = 'file'
-    input.accept = '.pdf,.doc,.docx,.txt,.md'
-    input.onchange = (e: Event) => {
-      const target = e.target as HTMLInputElement
-      const newFile = target.files?.[0]
-      if (!newFile) return
-
-      if (newFile.size > MAX_SIZE) {
-        alert('Invalid file (max 10MB).')
+  const searchFiles = useCallback(
+    async (searchTerm: string) => {
+      if (!searchTerm.trim()) {
+        await refreshFiles()
         return
       }
 
-      const existingNames = files.filter(f => f.id !== fileId).map(f => f.name.toLowerCase())
+      setLoadError(null)
+      try {
+        const searchedFiles = await searchKnowledgeFiles(searchTerm)
+        setFiles(searchedFiles)
+      } catch (e) {
+        console.error('Failed to search knowledge files:', e)
+        setLoadError('Failed to search knowledge files.')
+      }
+    },
+    [refreshFiles]
+  )
 
-      if (existingNames.includes(newFile.name.toLowerCase())) {
-        alert('Duplicate file detected. Please upload unique files only.')
+  const filterFiles = useCallback(
+    async (format: string | undefined) => {
+      const formatStr = typeof format === 'string' ? format : ''
+
+      if (!formatStr || !formatStr.trim()) {
+        await refreshFiles()
         return
       }
 
-      setFiles(prev => prev.map(f => (f.id === fileId ? { ...f, name: newFile.name, size: newFile.size } : f)))
-    }
-    input.click()
-  }
+      setLoadError(null)
+      try {
+        const filteredFiles = await filterKnowledgeFiles(formatStr)
+        setFiles(filteredFiles)
+      } catch (e) {
+        console.error('Failed to filter knowledge files:', e)
+        setLoadError('Failed to filter knowledge files.')
+      }
+    },
+    [refreshFiles]
+  )
+
+  const handleReplace = useCallback(
+    (fileId: string) => {
+      const input = document.createElement('input')
+      input.type = 'file'
+      input.accept = '.pdf,.doc,.docx,.txt,.md'
+      input.onchange = (e: Event) => {
+        const target = e.target as HTMLInputElement
+        const newFile = target.files?.[0]
+        if (!newFile) return
+
+        if (newFile.size > MAX_SIZE) {
+          alert('Invalid file (max 10MB).')
+          return
+        }
+
+        const existingNames = files.filter(f => f.id !== fileId).map(f => f.name.toLowerCase())
+
+        if (existingNames.includes(newFile.name.toLowerCase())) {
+          alert('Duplicate file detected. Please upload unique files only.')
+          return
+        }
+
+        setFiles(prev => prev.map(f => (f.id === fileId ? { ...f, name: newFile.name, size: newFile.size } : f)))
+      }
+      input.click()
+    },
+    [files]
+  )
 
   const getFileIcon = (fileType: string) => {
     const className = isCompact ? 'h-6 w-6' : 'h-[18px] w-[18px]'
@@ -215,9 +355,9 @@ const UploadedFile = forwardRef<UploadedFileHandle, UploadedFileProps>(({ isComp
                   'group relative border border-[#E5E7EB] bg-white transition-all duration-500',
                   !isCompact && 'flex h-[70px] w-full items-center justify-between rounded-lg bg-[#F9FAFB] px-4',
                   isCompact && 'flex h-14 w-14 items-center justify-center rounded-xl shadow-sm hover:border-red-200',
-                  isPending && 'opacity-20'
+                  isPending && 'border-blue-300 opacity-60'
                 )}
-                title={`File: ${file.name}\nSize: ${formatFileSize(file.size)}`}
+                title={`File: ${file.name}\nSize: ${formatFileSize(file.size)}${isPending ? '\nStatus: Processing...' : ''}`}
               >
                 {isPending && (
                   <div className="absolute inset-0 z-10 flex items-center justify-center rounded-lg bg-transparent">
@@ -253,7 +393,7 @@ const UploadedFile = forwardRef<UploadedFileHandle, UploadedFileProps>(({ isComp
                           e.stopPropagation()
                           handleOpenDeleteModal(file as IUploadedFile)
                         }}
-                        className="absolute -top-2 -right-2 z-10 hidden h-5 w-5 items-center justify-center rounded-full bg-red-500 text-white shadow-md ring-2 ring-white transition-all group-hover:flex"
+                        className="absolute -top-2 -right-2 z-10 hidden h-5 w-5 items-center justify-center rounded-full bg-gray-200 text-white shadow-md ring-2 ring-white transition-all group-hover:flex"
                         title="Delete file"
                       >
                         <img src={trashUrl} alt="delete" className="h-3 w-3" />
@@ -277,7 +417,7 @@ const UploadedFile = forwardRef<UploadedFileHandle, UploadedFileProps>(({ isComp
                         </p>
                         <p className="text-xs text-[#6B7280]">
                           {isPending ? (
-                            <span className="italic">Processing...</span>
+                            <span className="text-blue-600 italic">Processing... Please wait</span>
                           ) : (
                             <>
                               Uploaded: {formatDate((file as IUploadedFile).uploadDate)}
