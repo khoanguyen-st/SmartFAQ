@@ -1,5 +1,13 @@
 import { API_BASE_URL } from '@/lib/api'
 
+export const FEEDBACK_TYPES = {
+  UP: 'up',
+  DOWN: 'down',
+  RESET: 'reset'
+} as const;
+
+export type FeedbackType = typeof FEEDBACK_TYPES[keyof typeof FEEDBACK_TYPES];
+
 export interface ChatSource {
   title: string
   chunkId?: string | null
@@ -23,7 +31,7 @@ export interface ChatQueryResponse {
 export interface FeedbackRequest {
   chatId: string
   sessionId: string
-  feedback: 'up' | 'down' | 'reset'
+  feedback: FeedbackType;
   comment?: string
 }
 

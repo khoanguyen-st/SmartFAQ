@@ -16,7 +16,7 @@ const ChatMessageList = ({ messages, isLoading, sessionId }: ChatMessageListProp
   }, [messages, isLoading])
 
   return (
-    <div className="chat__content relative z-[0] flex flex-1 flex-col overflow-y-auto scroll-smooth py-4">
+    <div className="chat__content relative flex flex-1 flex-col overflow-y-auto scroll-smooth py-4">
       {messages.map((msg, index) => {
         const isUser = msg.role === 'user'
 

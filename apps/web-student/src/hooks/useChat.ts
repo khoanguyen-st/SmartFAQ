@@ -1,4 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
+import { useI18n } from '@/lib/i18n'
+import {toast} from 'react-hot-toast'
 import { startNewChatSession, sendChatMessage, getChatHistory, ChatHistoryMessage } from '@/services/chat.services'
 
 const CUSTOM_WELCOME_MSG = 'Xin chào!\nTôi là trợ lý ảo Greenwich (Smart FAQ)'
@@ -6,6 +8,9 @@ const SYNC_CHANNEL_NAME = 'greenwich_chat_sync_channel'
 const STORAGE_KEY = 'chat_session_id'
 
 export const useChat = (initialSessionId?: string | null) => {
+
+  const { t } = useI18n()
+
   const [sessionId, setSessionId] = useState<string | null>(initialSessionId || null)
   const [messages, setMessages] = useState<ChatHistoryMessage[]>([])
   const [isLoading, setIsLoading] = useState(false)
@@ -26,9 +31,7 @@ export const useChat = (initialSessionId?: string | null) => {
       isFetchingRef.current = true
       const history = await getChatHistory(currentId)
 
-      // Nếu lịch sử trả về RỖNG (Session mới chưa chat gì)
       if (history.messages.length === 0) {
-        // Tự động set tin nhắn chào mừng
         setMessages([
           {
             role: 'system',
@@ -37,16 +40,17 @@ export const useChat = (initialSessionId?: string | null) => {
           }
         ])
       }
-      // Nếu có tin nhắn và khác với hiện tại thì mới cập nhật
       else if (history.messages.length !== messagesRef.current.length) {
         setMessages(history.messages)
       }
     } catch (err) {
       console.error('Fetch history error:', err)
+      // 3. Hiển thị Toast Error khi fetch lỗi (Xử lý cho cả BroadcastChannel & Visibility)
+      toast.error(t('errorFetch'))
     } finally {
       isFetchingRef.current = false
     }
-  }, [])
+  }, [t])
 
   // 2. INIT SESSION
   useEffect(() => {
@@ -75,7 +79,7 @@ export const useChat = (initialSessionId?: string | null) => {
           ])
         }
       } catch (err) {
-        setError('Cannot connect to chat service.')
+        setError(t('errorConnect'))
         console.error(err)
       } finally {
         setIsLoading(false)
@@ -83,31 +87,39 @@ export const useChat = (initialSessionId?: string | null) => {
     }
 
     initSession()
-  }, [initialSessionId, fetchHistory])
+  }, [initialSessionId, fetchHistory, t])
 
   // 3. SYNC EVENTS
   useEffect(() => {
     if (!sessionId) return
 
-    const channel = new BroadcastChannel(SYNC_CHANNEL_NAME)
-    channel.onmessage = event => {
-      if (event.data.type === 'NEED_REFRESH') {
-        fetchHistory(sessionId)
-      }
-    }
+    try {
+        const channel = new BroadcastChannel(SYNC_CHANNEL_NAME)
+        
+        channel.onmessage = event => {
 
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible') {
-        fetchHistory(sessionId)
-      }
-    }
+          if (event.data?.type === 'NEED_REFRESH') {
 
-    document.addEventListener('visibilitychange', handleVisibilityChange)
-    return () => {
-      channel.close()
-      document.removeEventListener('visibilitychange', handleVisibilityChange)
+            fetchHistory(sessionId)
+          }
+        }
+
+        const handleVisibilityChange = () => {
+          if (document.visibilityState === 'visible') {
+            fetchHistory(sessionId)
+          }
+        }
+
+        document.addEventListener('visibilitychange', handleVisibilityChange)
+        
+        return () => {
+          channel.close()
+          document.removeEventListener('visibilitychange', handleVisibilityChange)
+        }
+    } catch (error) {
+        console.error("BroadcastChannel not supported or failed:", error)
     }
-  }, [sessionId, fetchHistory])
+  }, [sessionId, fetchHistory, t])
 
   //4. SEND MESSAGE
   const sendMessage = useCallback(
@@ -141,16 +153,18 @@ export const useChat = (initialSessionId?: string | null) => {
         channel.postMessage({ type: 'NEED_REFRESH' })
         channel.close()
       } catch (err) {
-        setError(`Failed to send message: ${err instanceof Error ? err.message : 'Unknown error'}`)
+       const errorMessage = err instanceof Error ? err.message : 'Unknown error'
+      console.error(errorMessage)
+      toast.error(t('errorSend'))
+      setError(t('errorSend'))
       } finally {
         setIsLoading(false)
       }
     },
-    [sessionId]
+    [sessionId, t]
   )
 
   // 5. CLEAR CHAT
-  // -------------------------------------------------------
   const clearChat = async () => {
     setSessionId(null)
 

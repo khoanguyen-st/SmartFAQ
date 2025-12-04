@@ -25,8 +25,9 @@ export default defineConfig(({ mode }) => {
     build: {
       outDir: isWidgetBuild ? 'dist/widget' : 'dist',
       emptyOutDir: true,
+
       // Vẫn giữ false để gom css lại xử lý
-      cssCodeSplit: false,
+      cssCodeSplit: isWidgetBuild ? false : true,
 
       lib: isWidgetBuild
         ? {

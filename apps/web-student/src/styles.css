@@ -6,7 +6,6 @@
   --color-white: #fff;
   --color-black: #000;
   --color-blue: #003087;
-  --color-blue-2: #003087;
   --color-dark: #111827;
   --color-dark-1: #1f2937;
   --color-dark-2: #6b7280;
@@ -15,13 +14,26 @@
   --color-gray-3: #e5e7eb;
 }
 
+
+
 :host {
   display: block;
   line-height: 1.5;
   -webkit-text-size-adjust: 100%;
   font-family: ui-sans-serif, system-ui, sans-serif;
-  color: #111827;
+  color-scheme: light;
+  font-family: 'Inter', system-ui, sans-serif;
+  --color-white: #fff;
+  --color-black: #000;
+  --color-blue: #003087;
+  --color-dark: #111827;
+  --color-dark-1: #1f2937;
+  --color-dark-2: #6b7280;
+  --color-gray-1: #f3f4f6;
+  --color-gray-2: #f9fafb;
+  --color-gray-3: #e5e7eb;
 }
+
 :host *,
 :host *::before,
 :host *::after {
@@ -31,12 +43,12 @@
   border-color: #e5e7eb;
 }
 
-
 .chat__content {
   flex-grow: 1;
   padding: 24px 24px 72px 24px;
   overflow: auto;
   scrollbar-width: none;
+  border-top: 1px solid #E5E7EB;
 }
 
 .message {
@@ -58,14 +70,14 @@
 .message--receiver {
   align-self: flex-end;
   border-radius: 24px 0 24px 24px;
-  background: var(--color-blue);
+  background: #003087;
   color: var(--color-white);
 }
 
 .message--sender {
   align-self: flex-start;
   border-radius: 0 24px 24px 24px;
-  background: var(--color-gray-1);
+  background: #f3f4f6;
   color: var(--color-dark);
 }
 
@@ -113,16 +125,5 @@
   right: 40px;
 }
 
-@layer base {
-  :root {
-    color-scheme: light;
-  }
-  body {
-    @apply m-0 bg-slate-50 font-sans;
-  }
 
-  a {
-    @apply no-underline;
-    color: inherit;
-  }
-}
+

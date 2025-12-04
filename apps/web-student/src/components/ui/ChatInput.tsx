@@ -1,6 +1,8 @@
+import { useRef } from 'react'
 import SendIcon from '@/assets/icons/send.svg'
 import { FormEvent, useState, KeyboardEvent } from 'react'
 
+const PLACEHOLDER_TEXT = 'Type your message'
 interface ChatInputProps {
   onSend: (msg: string) => void
   isLoading: boolean
@@ -9,11 +11,18 @@ interface ChatInputProps {
 const ChatInput = ({ onSend, isLoading }: ChatInputProps) => {
   const [input, setInput] = useState('')
 
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
+
   const handleSubmit = (e?: FormEvent) => {
     e?.preventDefault()
     if (!input.trim() || isLoading) return
+
     onSend(input)
     setInput('')
+
+    setTimeout(() => {
+      textareaRef.current?.focus()
+    }, 0)
   }
 
   const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
@@ -24,16 +33,17 @@ const ChatInput = ({ onSend, isLoading }: ChatInputProps) => {
   }
 
   return (
-    <div className="chat__footer relative flex items-center justify-center rounded-b-4xl pb-5">
-      <form action="" className="chat__footer-form relative flex w-full items-center px-6">
+    <div className="chat__footer flex items-center justify-center rounded-b-4xl pb-5">
+      <form onSubmit={handleSubmit} className="chat__footer-form relative flex w-full items-center px-6">
         <textarea
           rows={1}
           required
-          disabled={isLoading}
           value={input}
+          ref={textareaRef}
           onKeyDown={handleKeyDown}
           onChange={e => setInput(e.target.value)}
-          placeholder="Type your message"
+          placeholder={PLACEHOLDER_TEXT}
+          autoFocus
           className="Chat__footer-input field-sizing-content h-fit max-h-42 min-h-14 w-full resize-none rounded-[28px] text-[14px] leading-6"
         />
 

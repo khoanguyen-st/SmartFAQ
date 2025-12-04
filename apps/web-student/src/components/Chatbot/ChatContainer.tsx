@@ -21,7 +21,7 @@ export const ChatContainer = ({
   sessionId
 }: ChatContainerProps) => {
   return (
-    <div className="flex h-full w-full flex-col bg-white">
+    <div className="flex h-full w-full flex-col bg-white relative">
       <ChatHeader actionNode={headerAction} additionalActions={headerAdditionalActions} />
       <ChatMessageList messages={messages} isLoading={isLoading} sessionId={sessionId || null} />
       <ChatInput onSend={onSend} isLoading={isLoading} />

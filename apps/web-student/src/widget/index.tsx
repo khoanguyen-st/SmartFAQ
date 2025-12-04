@@ -15,33 +15,30 @@ export const initWidget = () => {
   const widgetHost = document.createElement('div')
   widgetHost.id = WIDGET_ID
   widgetHost.style.position = 'fixed'
-  widgetHost.style.zIndex = '2147483647'
-  widgetHost.style.bottom = '0'
-  widgetHost.style.right = '0'
+  widgetHost.style.zIndex = '999999'
   document.body.appendChild(widgetHost)
 
-  //Tạo Shadow DOM
   const shadowRoot = widgetHost.attachShadow({ mode: 'open' })
 
-  //Nhúng CSS (Tailwind) vào trong Shadow
+  const fixedStyleText = styleText.replace(':root', ':host')
+
   const styleTag = document.createElement('style')
-  styleTag.textContent = styleText
+  styleTag.textContent = fixedStyleText
   shadowRoot.appendChild(styleTag)
 
-  // 4. Tạo điểm Mount cho React
   const mountPoint = document.createElement('div')
   mountPoint.id = 'root-mount'
-  mountPoint.className = 'widget-app antialiased'
+  mountPoint.className = 'widget-app antialiased font-sans'
 
   mountPoint.style.fontSize = '16px'
   mountPoint.style.lineHeight = '1.5'
-
-  mountPoint.style.width = '100%'
-  mountPoint.style.height = '100%'
+  mountPoint.style.setProperty('--color-blue', '#003087')
+  mountPoint.style.setProperty('--color-white', '#ffffff')
+  mountPoint.style.setProperty('--color-gray-bg', '#f3f4f6')
+  mountPoint.style.setProperty('--color-dark', '#111827')
 
   shadowRoot.appendChild(mountPoint)
 
-  // Mount React App
   const root = ReactDOM.createRoot(mountPoint)
   root.render(
     <React.StrictMode>

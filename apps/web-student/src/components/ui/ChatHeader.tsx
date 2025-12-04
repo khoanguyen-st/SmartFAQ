@@ -14,7 +14,7 @@ const ChatHeader = ({
   additionalActions
 }: ChatHeaderProps) => {
   return (
-    <div className="chat__header sticky top-0 flex items-center justify-between border-b border-[#E5E7EB] bg-white px-6 py-3">
+    <div className="chat__header sticky top-0 flex items-center justify-between bg-white px-6 py-3">
       <div className="flex items-center">
         <img
           src={LogoGreenwich}

@@ -5,13 +5,27 @@ const translations = {
     welcome: 'Welcome to Greenwich SmartFAQ',
     prompt: 'Ask me anything about Greenwich University',
     feedback: 'Was this helpful?',
-    getHelp: 'Get Help from Student Affairs Department'
+    getHelp: 'Get Help from Student Affairs Department',
+    copy: 'Copy',
+    copied: 'Copied!',
+    helpful: 'Helpful',
+    notHelpful: 'Not helpful',
+    errorFetch: 'Unable to synchronize chat history.',
+    errorSend: 'Failed to send message. Please try again.',
+    errorConnect: 'Cannot connect to chat service.'
   },
   vi: {
     welcome: 'Chào mừng đến với Greenwich SmartFAQ',
     prompt: 'Hãy hỏi bất cứ điều gì về Greenwich University',
     feedback: 'Câu trả lời có hữu ích không?',
-    getHelp: 'Liên hệ Phòng Công tác Sinh viên'
+    getHelp: 'Liên hệ Phòng Công tác Sinh viên',
+    copy: 'Sao chép',
+    copied: 'Đã sao chép!',
+    helpful: 'Hữu ích',
+    notHelpful: 'Không hữu ích',
+    errorFetch: 'Không thể đồng bộ lịch sử chat.',
+    errorSend: 'Gửi tin nhắn thất bại. Vui lòng thử lại.',
+    errorConnect: 'Không thể kết nối đến dịch vụ chat.'
   }
 }
 

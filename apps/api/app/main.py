@@ -20,6 +20,7 @@ def create_app() -> FastAPI:
             # Development
             "http://localhost:5173",  # web-student dev
             "http://localhost:5174",  # web-admin dev
+            "http://localhost:8000",  # local server
             # Production - Cloudflare Pages
             "https://smartfaq-admin.pages.dev",
             "https://smartfaq-student.pages.dev",

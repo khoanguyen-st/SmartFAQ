@@ -15,8 +15,6 @@ const ChatWidget = () => {
 
   const handleExpand = () => {
     if (sessionId) {
-      // localhost:5173
-      // https://your-domain.com
       const HOST_URL = import.meta.env.VITE_BASE_URL || 'http://localhost:5173'
 
       const url = `${HOST_URL}/chat?sessionId=${sessionId}`
@@ -36,9 +34,9 @@ const ChatWidget = () => {
   return (
     <div className="fixed right-10 bottom-10">
       <div
-        className={`chat flex flex-col overflow-hidden rounded-4xl bg-white shadow-2xl shadow-slate-400 ${
+        className={`chat overflow-hidden rounded-4xl bg-white shadow-2xl shadow-slate-400 ${
           isOpen
-            ? 'm-9 h-160 w-120 translate-y-0 opacity-100 transition-all duration-300 ease-in-out'
+            ? 'm-9 h-160 w-120 opacity-100 transition-all duration-300 ease-in-out'
             : 'h-0 w-0 opacity-0 transition-all duration-300 ease-in-out'
         } origin-bottom-right`}
       >

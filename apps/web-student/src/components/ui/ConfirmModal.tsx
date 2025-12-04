@@ -2,6 +2,13 @@ import React from 'react'
 import WarningIcon from '@/assets/icons/warning.svg?react'
 import CloseIcon from '@/assets/icons/close-x.svg?react'
 
+
+const CONFIRM_MODAL = {
+  TITLE: 'Delete this chat?',
+  MESSAGE: 'This will delete all current chat history and cannot be recovered.',
+  BUTTON_CANCEL: 'Cancel',
+  BUTTON_CONFIRM: 'Delete'
+}
 interface ConfirmModalProps {
   isOpen: boolean
   onClose: () => void
@@ -14,8 +21,8 @@ const ConfirmModal: React.FC<ConfirmModalProps> = ({
   isOpen,
   onClose,
   onConfirm,
-  title = 'Delete this chat?',
-  message = 'This will delete all current chat history and cannot be recovered.'
+  title = CONFIRM_MODAL.TITLE,
+  message = CONFIRM_MODAL.MESSAGE
 }) => {
   if (!isOpen) return null
 
@@ -41,13 +48,13 @@ const ConfirmModal: React.FC<ConfirmModalProps> = ({
             onClick={onClose}
             className="rounded-xl border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none"
           >
-            Cancel
+            {CONFIRM_MODAL.BUTTON_CANCEL}
           </button>
           <button
             onClick={onConfirm}
             className="rounded-xl bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 focus:outline-none"
           >
-            Delete
+            {CONFIRM_MODAL.BUTTON_CONFIRM}
           </button>
         </div>
       </div>
