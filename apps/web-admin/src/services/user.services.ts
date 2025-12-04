@@ -17,10 +17,21 @@ export interface ChangePasswordRequest {
 
 // Helper to get JWT headers
 const getAuthHeaders = () => {
-  const token = localStorage.getItem('accessToken') || ''
+  const token = localStorage.getItem('access_token') || ''
   return {
     Authorization: `Bearer ${token}`
   }
+}
+
+// Helper to build full image URL from file key
+const getImageUrl = (fileKey: string | null): string | null => {
+  if (!fileKey) return null
+  // If it's already a full URL, return as is
+  if (fileKey.startsWith('http://') || fileKey.startsWith('https://')) {
+    return fileKey
+  }
+  // Otherwise, build URL using the /api/user/files endpoint
+  return `${API_BASE_URL}/api/user/files/${fileKey}`
 }
 
 /** ----------------------------------------
@@ -47,7 +58,8 @@ export async function getUserProfile(userId: number): Promise<UserProfile> {
     phoneNumber: data.phone || '',
     address: data.address || '',
     // FIX: Backend trả về 'image', Frontend dùng 'avatar_url'
-    avatar_url: data.image || null
+    // Convert MinIO file key to full URL
+    avatar_url: getImageUrl(data.image)
   }
 }
 
@@ -80,7 +92,7 @@ export async function updateUserProfile(userId: number, data: Partial<UserProfil
 /** ----------------------------------------
  * UPLOAD AVATAR: POST /api/user/{id}/avatar
  * -----------------------------------------*/
-export async function uploadAvatar(userId: number, file: File): Promise<{ status: string; item: string }> {
+export async function uploadAvatar(userId: number, file: File): Promise<{ status: string; image: string }> {
   const formData = new FormData()
   formData.append('file', file)
 
@@ -95,7 +107,13 @@ export async function uploadAvatar(userId: number, file: File): Promise<{ status
   })
 
   if (!res.ok) throw new Error('Failed to upload avatar')
-  return res.json()
+
+  const data = await res.json()
+  // Convert file key to full URL before returning
+  return {
+    status: data.status,
+    image: getImageUrl(data.item?.image) || ''
+  }
 }
 
 /** ----------------------------------------

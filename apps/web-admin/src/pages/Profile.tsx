@@ -5,12 +5,11 @@ import avatarDefaultUrl from '@/assets/icons/user-avatar.svg'
 import warningUrl from '@/assets/icons/warning.svg'
 import ChangePasswordModal from '@/components/profile/ChangePasswordModal'
 import { UserProfile, deleteAvatar, getUserProfile, updateUserProfile, uploadAvatar } from '@/services/user.services'
+import { getCurrentUserInfo } from '@/services/auth.services'
 import { useEffect, useRef, useState } from 'react'
 
 const ProfilePage = () => {
-  // TODO: Trong thực tế, userId nên lấy từ AuthContext hoặc JWT Decode
-  const userId = 1
-
+  const [userId, setUserId] = useState<number | null>(null)
   const [profile, setProfile] = useState<UserProfile | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -36,7 +35,13 @@ const ProfilePage = () => {
     const fetchProfile = async () => {
       try {
         setLoading(true)
-        const data = await getUserProfile(userId)
+
+        // Get current user info to retrieve userId
+        const userInfo = await getCurrentUserInfo()
+        setUserId(userInfo.id)
+
+        // Fetch full profile with userId
+        const data = await getUserProfile(userInfo.id)
         setProfile(data)
       } catch (err) {
         console.error(err)
@@ -46,12 +51,12 @@ const ProfilePage = () => {
       }
     }
     fetchProfile()
-  }, [userId])
+  }, [])
 
   // --- Handle Avatar Upload ---
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
-    if (file && profile) {
+    if (file && profile && userId) {
       // 1. Optimistic Update: Hiển thị ảnh ngay lập tức để UX mượt
       const objectUrl = URL.createObjectURL(file)
       setProfile(prev => (prev ? { ...prev, avatar_url: objectUrl } : null))
@@ -61,8 +66,8 @@ const ProfilePage = () => {
         const res = await uploadAvatar(userId, file)
 
         // 3. Cập nhật lại URL chính thức từ server trả về (nếu có)
-        if (res.item) {
-          setProfile(prev => (prev ? { ...prev, avatar_url: res.item } : null))
+        if (res.image) {
+          setProfile(prev => (prev ? { ...prev, avatar_url: res.image } : null))
         }
       } catch (err) {
         console.error('Upload failed:', err)
@@ -80,6 +85,8 @@ const ProfilePage = () => {
   }
 
   const confirmDeleteImage = async () => {
+    if (!userId) return
+
     try {
       await deleteAvatar(userId)
       setProfile(prev => (prev ? { ...prev, avatar_url: null } : null))
@@ -103,7 +110,7 @@ const ProfilePage = () => {
   }
 
   const saveEdit = async () => {
-    if (editingField && profile) {
+    if (editingField && profile && userId) {
       try {
         // Gửi API update
         await updateUserProfile(userId, { [editingField]: tempValue })
@@ -233,7 +240,7 @@ const ProfilePage = () => {
       <ChangePasswordModal
         isOpen={isChangePassModalOpen}
         onClose={() => setIsChangePassModalOpen(false)}
-        userId={userId}
+        userId={userId || 1}
       />
 
       {isDeleteModalOpen && (

@@ -31,6 +31,28 @@ async def _process_single_document(db: AsyncSession, doc: Document) -> None:
         if not object_name:
             raise RuntimeError("No file path available for document")
 
+        # Check file size before processing to prevent memory issues
+        try:
+            stat = await asyncio.to_thread(
+                dms.minio_client.stat_object, dms.BUCKET_NAME, object_name
+            )
+            file_size_mb = stat.size / (1024 * 1024)
+            max_process_mb = int(getattr(settings, "MAX_PROCESS_FILE_SIZE_MB", 100))
+
+            if file_size_mb > max_process_mb:
+                logger.error(
+                    "Document %s file size %.2f MB exceeds max processable size %d MB",
+                    doc.id,
+                    file_size_mb,
+                    max_process_mb,
+                )
+                doc.status = "FAIL"
+                db.add(doc)
+                await db.commit()
+                return
+        except Exception as stat_exc:
+            logger.warning("Failed to stat file %s: %s, continuing anyway", object_name, stat_exc)
+
         doc.status = "PROCESSING"
         db.add(doc)
         await db.commit()
@@ -102,12 +124,22 @@ async def process_requests_once() -> None:
             if not docs:
                 return
 
-            for doc in docs:
-                try:
-                    logger.info("Processing document ID: %s", doc.id)
-                    await _process_single_document(db, doc)
-                except Exception:
-                    logger.exception("Error processing document ID: %s", doc.id)
+            # Process documents concurrently with a limit to prevent resource exhaustion
+            max_concurrent = int(getattr(settings, "MAX_CONCURRENT_PROCESSING", 3))
+            semaphore = asyncio.Semaphore(max_concurrent)
+
+            async def process_with_semaphore(doc):
+                async with semaphore:
+                    async with AsyncSessionLocal() as doc_db:
+                        try:
+                            logger.info("Processing document ID: %s", doc.id)
+                            await _process_single_document(doc_db, doc)
+                        except Exception:
+                            logger.exception("Error processing document ID: %s", doc.id)
+
+            # Process all documents concurrently (with semaphore limiting parallelism)
+            tasks = [process_with_semaphore(doc) for doc in docs]
+            await asyncio.gather(*tasks, return_exceptions=True)
 
         except Exception:
             logger.exception("Failed to fetch REQUEST documents for processing")
