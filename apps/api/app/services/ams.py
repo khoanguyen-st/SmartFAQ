@@ -8,6 +8,7 @@ from fastapi import HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload  # <-- QUAN TRỌNG: Import cái này
 
 from ..models.department import Department
 from ..models.user import User
@@ -25,7 +26,8 @@ def hash_password(password: str) -> str:
 
 async def list_users(db: AsyncSession, role: Optional[str] = None) -> List[User]:
     """List only internal users (staff & admin)."""
-    stmt = select(User).where(User.role.in_(["staff", "admin"]))
+    # --- SỬA: Thêm .options(selectinload(User.departments)) ---
+    stmt = select(User).options(selectinload(User.departments)).where(User.role.in_(["staff", "admin"]))
 
     if role:
         stmt = stmt.where(User.role == role)
@@ -35,7 +37,10 @@ async def list_users(db: AsyncSession, role: Optional[str] = None) -> List[User]
 
 
 async def get_user(user_id: int, db: AsyncSession):
-    result = await db.execute(select(User).where(User.id == user_id))
+    # --- SỬA: Thêm .options(selectinload(User.departments)) ---
+    result = await db.execute(
+        select(User).options(selectinload(User.departments)).where(User.id == user_id)
+    )
     return result.scalar_one_or_none()
 
 
@@ -92,8 +97,12 @@ async def create_user(data: dict, db: AsyncSession):
 
     try:
         await db.commit()
-        await db.refresh(new_user)
-        return new_user
+        # Không dùng refresh đơn thuần, mà query lại để lấy cả relationship
+        # Tránh lỗi MissingGreenlet khi truy cập departments trong Async
+        stmt = select(User).options(selectinload(User.departments)).where(User.id == new_user.id)
+        result = await db.execute(stmt)
+        return result.scalar_one()
+        
     except IntegrityError:
         await db.rollback()
         raise HTTPException(

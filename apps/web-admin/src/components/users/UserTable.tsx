@@ -1,3 +1,4 @@
+// apps/web-admin/src/components/users/UserTable.tsx
 import React from 'react'
 import type { User } from '@/types/users'
 import type { UserTableProps } from '@/interfaces/user-table'
@@ -63,9 +64,14 @@ export const UserTable: React.FC<UserTableProps> = ({ users, loading, onEdit, on
               <td className="px-6 py-3 text-center whitespace-nowrap">{user.phone || '-'}</td>
               <td className="px-6 py-3 text-center whitespace-nowrap capitalize">{user.role}</td>
               <td className="px-6 py-3 text-center whitespace-nowrap">{user.campus}</td>
+              
+              {/* --- PHẦN HIỂN THỊ DEPARTMENT --- */}
               <td className="px-6 py-3 text-center whitespace-nowrap">
-                {user.departments && user.departments.length > 0 ? user.departments.map(d => d.name).join(', ') : '-'}
+                {user.departments && user.departments.length > 0 
+                  ? user.departments.map(d => d.name).join(', ') 
+                  : '-'}
               </td>
+              {/* -------------------------------- */}
 
               <td className="px-6 py-3 text-center whitespace-nowrap">
                 <span className={statusConfig.className}>{statusConfig.label}</span>
