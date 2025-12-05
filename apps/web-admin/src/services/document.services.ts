@@ -65,7 +65,14 @@ const DOCS_BASE_URL = `${API_BASE_URL}/api/docs`
 
 export const fetchKnowledgeFiles = async (): Promise<IUploadedFile[]> => {
   try {
-    const response = await fetch(`${DOCS_BASE_URL}/`)
+    const response = await fetch(`${DOCS_BASE_URL}/`, {
+      headers: {
+        'Content-Type': 'application/json',
+        ...(localStorage.getItem('access_token')
+          ? { Authorization: `Bearer ${localStorage.getItem('access_token')}` }
+          : {})
+      }
+    })
     if (!response.ok) {
       const errorText = await response.text()
       console.error(`API Error - Status: ${response.status} on GET /api/docs/`, errorText)
@@ -113,7 +120,12 @@ export const uploadKnowledgeFiles = async (files: File[]): Promise<IUploadedFile
   try {
     const response = await fetch(`${DOCS_BASE_URL}/`, {
       method: 'POST',
-      body: formData
+      body: formData,
+      headers: {
+        ...(localStorage.getItem('access_token')
+          ? { Authorization: `Bearer ${localStorage.getItem('access_token')}` }
+          : {})
+      }
     })
 
     if (!response.ok) {
@@ -212,7 +224,12 @@ export const deleteKnowledgeFile = async (fileId: string): Promise<{ id: string 
     }
 
     const response = await fetch(`${DOCS_BASE_URL}/${fileId}`, {
-      method: 'DELETE'
+      method: 'DELETE',
+      headers: {
+        ...(localStorage.getItem('access_token')
+          ? { Authorization: `Bearer ${localStorage.getItem('access_token')}` }
+          : {})
+      }
     })
 
     if (!response.ok) {
@@ -233,7 +250,14 @@ export const deleteKnowledgeFile = async (fileId: string): Promise<{ id: string 
 
 export const searchKnowledgeFiles = async (name: string): Promise<IUploadedFile[]> => {
   try {
-    const response = await fetch(`${DOCS_BASE_URL}/search?name=${encodeURIComponent(name)}`)
+    const response = await fetch(`${DOCS_BASE_URL}/search?name=${encodeURIComponent(name)}`, {
+      headers: {
+        'Content-Type': 'application/json',
+        ...(localStorage.getItem('access_token')
+          ? { Authorization: `Bearer ${localStorage.getItem('access_token')}` }
+          : {})
+      }
+    })
     if (!response.ok) {
       const errorText = await response.text()
       console.error(`API Error - Status: ${response.status} on GET /api/docs/search`, errorText)
@@ -251,7 +275,14 @@ export const searchKnowledgeFiles = async (name: string): Promise<IUploadedFile[
 
 export const filterKnowledgeFiles = async (format: string): Promise<IUploadedFile[]> => {
   try {
-    const response = await fetch(`${DOCS_BASE_URL}/filter?format=${encodeURIComponent(format)}`)
+    const response = await fetch(`${DOCS_BASE_URL}/filter?format=${encodeURIComponent(format)}`, {
+      headers: {
+        'Content-Type': 'application/json',
+        ...(localStorage.getItem('access_token')
+          ? { Authorization: `Bearer ${localStorage.getItem('access_token')}` }
+          : {})
+      }
+    })
     if (!response.ok) {
       const errorText = await response.text()
       console.error(`API Error - Status: ${response.status} on GET /api/docs/filter`, errorText)
@@ -276,7 +307,14 @@ export interface DocumentStatus {
 
 export const fetchDocumentsByStatus = async (status: string): Promise<DocumentStatus[]> => {
   try {
-    const response = await fetch(`${DOCS_BASE_URL}/documents/status?document_status=${encodeURIComponent(status)}`)
+    const response = await fetch(`${DOCS_BASE_URL}/documents/status?document_status=${encodeURIComponent(status)}`, {
+      headers: {
+        'Content-Type': 'application/json',
+        ...(localStorage.getItem('access_token')
+          ? { Authorization: `Bearer ${localStorage.getItem('access_token')}` }
+          : {})
+      }
+    })
     if (!response.ok) {
       const errorText = await response.text()
       console.error(`API Error - Status: ${response.status} on GET /api/docs/documents/status`, errorText)
@@ -287,7 +325,6 @@ export const fetchDocumentsByStatus = async (status: string): Promise<DocumentSt
     const documents: DocumentStatus[] = data.documents || []
     return documents
   } catch (error) {
-    console.error('Failed to fetch documents by status:', error)
     throw error instanceof Error
       ? error
       : new Error('Unable to fetch documents by status due to network error or server issue.')
