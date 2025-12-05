@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { NavLink, useNavigate, Outlet } from 'react-router-dom'
+import { NavLink, useNavigate, Outlet, useLocation } from 'react-router-dom'
 import { cn } from '@/lib/utils'
 import { logout } from '@/lib/api'
 import { useState, useCallback, useMemo } from 'react'
@@ -18,7 +18,7 @@ const navItems = [
   { path: 'users', label: 'Users' },
   { path: 'logs', label: 'Logs' },
   { path: 'settings', label: 'Settings' },
-  { path: 'view-chat', label: 'View Chat' },
+  { path: 'view-chat', label: 'View Chat', noPadding: true },
   { path: 'departments', label: 'Departments' }
 ]
 
@@ -27,6 +27,8 @@ const ShellLayout = () => {
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false)
   const [userInfo, setUserInfo] = useState<CurrentUserInfo | null>(null)
   const [selectedDepartment, setSelectedDepartment] = useState<number | null>(null)
+  const location = useLocation()
+  const currentNavItem = useMemo(() => navItems.find(item => location.pathname.includes(item.path)), [location])
 
   const navigate = useNavigate()
 
@@ -255,7 +257,7 @@ const ShellLayout = () => {
             </div>
           </div>
         </header>
-        <div className="flex flex-col gap-6 p-6">
+        <div className={cn('flex flex-col gap-6', !currentNavItem?.noPadding && 'p-6')}>
           <Outlet />
         </div>
       </main>
