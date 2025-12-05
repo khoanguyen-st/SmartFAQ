@@ -1,11 +1,3 @@
-// apps/web-admin/src/types/users.ts
-
-// 1. Định nghĩa type cho Department
-export interface Department {
-  id: number
-  name: string
-}
-
 export interface User {
   id: number
   username: string
@@ -19,7 +11,6 @@ export interface User {
   locked_until?: string | null
   is_locked: boolean
   created_at: string
-  departments: Department[]
 }
 
 export interface UserQuery {
