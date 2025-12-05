@@ -38,12 +38,11 @@ const UpdateDepartmentModal = ({ isOpen, onClose, onSubmit, initialData, isLoadi
 
     try {
       setError(null)
-      // Giữ nguyên description nếu có
       await onSubmit({ name: trimmedName })
       onClose()
     } catch (err) {
       if (err instanceof Error) {
-        setError(err.message) // Hiển thị lỗi từ backend
+        setError(err.message)
       } else {
         setError('An error occurred')
       }
