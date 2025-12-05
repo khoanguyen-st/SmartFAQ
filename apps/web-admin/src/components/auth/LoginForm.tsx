@@ -1,10 +1,10 @@
 import React, { useState } from 'react'
 import { Link } from 'react-router-dom'
 
-import eyeIcon from '../../assets/icons/eye.svg'
-import userIcon from '../../assets/icons/email.svg'
-import eyeOffIcon from '../../assets/icons/eye-off.svg'
-import ChevronDown from '../../assets/icons/chevron-down.svg'
+import eyeIcon from '@/assets/icons/eye.svg'
+import userIcon from '@/assets/icons/email.svg'
+import eyeOffIcon from '@/assets/icons/eye-off.svg'
+import ChevronDown from '@/assets/icons/chevron-down.svg'
 
 interface LoginFormProps {
   onSubmit: (email: string, password: string, campus_id: 'DN' | 'HCM' | 'HN' | 'CT') => Promise<void>
@@ -46,9 +46,9 @@ const LoginForm = ({ onSubmit, error }: LoginFormProps) => {
             className="w-full appearance-none rounded-lg border border-gray-300 px-4 py-2 pr-10 outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-600"
             required
           >
+            <option value="HN">Hà Nội</option>
             <option value="HCM">Hồ Chí Minh</option>
             <option value="DN">Đà Nẵng</option>
-            <option value="HN">Hà Nội</option>
             <option value="CT">Cần Thơ</option>
           </select>
 

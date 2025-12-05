@@ -1,5 +1,5 @@
 import React from 'react'
-import AleartTriangle from '../../assets/icon/warning.svg?react'
+import AleartTriangle from '@/assets/icon/warning.svg?react'
 
 interface DeleteConfirmationModalProps {
   isOpen: boolean

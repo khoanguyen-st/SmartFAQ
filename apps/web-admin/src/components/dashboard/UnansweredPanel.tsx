@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 
-import { fetchUnansweredQuestions, UnansweredQuestion } from '../../lib/api'
+import { fetchUnansweredQuestions, UnansweredQuestion } from '@/lib/api'
 
 interface UnansweredPanelProps {
   refreshKey?: number

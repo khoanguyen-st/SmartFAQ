@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 
 import { Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 
-import { fetchWeeklyTrends, TrendDataPoint } from '../../lib/api'
+import { fetchWeeklyTrends, TrendDataPoint } from '@/lib/api'
 
 interface TrendsChartProps {
   refreshKey?: number

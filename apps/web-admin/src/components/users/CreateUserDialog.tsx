@@ -2,6 +2,9 @@ import React, { useMemo, useState, useEffect } from 'react'
 import type { CreateUserDialogProps, CreateUserDialogPayload } from '@/interfaces/create-user-dialog'
 import { fetchDepartments, type IDepartment } from '@/services/department.services'
 
+
+import ChevronDown from '@/assets/icons/chevron-down.svg'
+
 export const CreateUserDialog: React.FC<CreateUserDialogProps> = ({
   open,
   onClose,
@@ -148,7 +151,7 @@ export const CreateUserDialog: React.FC<CreateUserDialogProps> = ({
               required
               value={formData.role}
               onChange={e => setFormData({ ...formData, role: e.target.value })}
-              className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm focus:border-blue-500 focus:outline-none"
+              className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm focus:border-blue-500 focus:outline-none "
             >
               <option value="" disabled>
                 Select Role
@@ -173,6 +176,8 @@ export const CreateUserDialog: React.FC<CreateUserDialogProps> = ({
               <option value="DN">Danang</option>
               <option value="CT">Can Tho</option>
             </select>
+
+            
           </div>
 
           {/* Department Selection - Only for Staff */}

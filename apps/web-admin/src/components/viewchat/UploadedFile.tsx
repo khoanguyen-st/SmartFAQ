@@ -8,14 +8,14 @@ import editUrl from '@/assets/icons/edit.svg'
 import { MAX_SIZE } from '@/lib/files'
 import { cn } from '@/lib/utils'
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from 'react'
-import { API_BASE_URL } from '../../lib/api'
+import { API_BASE_URL } from '@/lib/api'
 import {
   IUploadedFile,
   deleteKnowledgeFile,
   fetchKnowledgeFiles,
   searchKnowledgeFiles,
   filterKnowledgeFiles
-} from '../../services/document.services'
+} from '@/services/document.services'
 import DeleteConfirmationModal from './DeleteConfirmationModal'
 
 export interface UploadedFileHandle {

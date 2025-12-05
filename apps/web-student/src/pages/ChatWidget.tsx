@@ -17,7 +17,7 @@ const ChatWidget = () => {
     if (sessionId) {
       const HOST_URL = import.meta.env.VITE_BASE_URL || 'http://localhost:5173'
 
-      const url = `${HOST_URL}/chat?sessionId=${sessionId}`
+      const url = `${HOST_URL}/chat?sessionId=${sessionId}` //Function callback
       window.open(url, '_blank')
     }
   }

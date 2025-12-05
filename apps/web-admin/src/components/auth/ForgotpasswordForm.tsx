@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import userIcon from '../../assets/icons/email.svg'
+import userIcon from '@/assets/icons/email.svg'
 
 interface ForgotPasswordFormProps {
   onSubmit: (email: string) => Promise<void>
