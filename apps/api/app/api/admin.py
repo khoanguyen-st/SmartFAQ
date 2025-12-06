@@ -39,6 +39,7 @@ async def list_users(
             detail="Invalid role parameter. Must be 'staff' or 'admin'.",
         )
     try:
+        # Hàm này đã được sửa trong ams.py để trả về departments
         items = await ams.list_users(db, role=role)
         return {"items": items}
     except Exception as exc:
@@ -61,6 +62,7 @@ async def create_user(
 ):
     try:
         data = payload.dict()
+        # Hàm này đã được sửa để return user có department
         result = await ams.create_user(data, db)
         return {"item": result}
     except Exception as exc:

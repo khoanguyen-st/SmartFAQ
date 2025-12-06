@@ -1,3 +1,4 @@
+// apps/web-admin/src/components/users/UserTable.tsx
 import React from 'react'
 import type { User } from '@/types/users'
 import type { UserTableProps } from '@/interfaces/user-table'
@@ -28,7 +29,7 @@ export const UserTable: React.FC<UserTableProps> = ({ users, loading, onEdit, on
     if (loading) {
       return (
         <tr>
-          <td colSpan={8} className="px-6 py-12 text-center text-sm text-slate-500">
+          <td colSpan={9} className="px-6 py-12 text-center text-sm text-slate-500">
             Loading...
           </td>
         </tr>
@@ -38,7 +39,7 @@ export const UserTable: React.FC<UserTableProps> = ({ users, loading, onEdit, on
     if (users.length === 0) {
       return (
         <tr>
-          <td colSpan={8} className="px-6 py-12 text-center text-sm text-slate-500">
+          <td colSpan={9} className="px-6 py-12 text-center text-sm text-slate-500">
             No users found
           </td>
         </tr>
@@ -63,6 +64,15 @@ export const UserTable: React.FC<UserTableProps> = ({ users, loading, onEdit, on
               <td className="px-6 py-3 text-center whitespace-nowrap">{user.phone || '-'}</td>
               <td className="px-6 py-3 text-center whitespace-nowrap capitalize">{user.role}</td>
               <td className="px-6 py-3 text-center whitespace-nowrap">{user.campus}</td>
+              
+              {/* --- PHẦN HIỂN THỊ DEPARTMENT --- */}
+              <td className="px-6 py-3 text-center whitespace-nowrap">
+                {user.departments && user.departments.length > 0 
+                  ? user.departments.map(d => d.name).join(', ') 
+                  : '-'}
+              </td>
+              {/* -------------------------------- */}
+
               <td className="px-6 py-3 text-center whitespace-nowrap">
                 <span className={statusConfig.className}>{statusConfig.label}</span>
               </td>
@@ -84,9 +94,9 @@ export const UserTable: React.FC<UserTableProps> = ({ users, loading, onEdit, on
   }
 
   return (
-    <div className="hidden overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm md:block">
-      <table className="w-full">
-        <thead className="bg-white text-xs text-black uppercase">
+    <div className="hidden max-h-[360px] overflow-auto rounded-xl border border-slate-200 bg-white shadow-sm md:block">
+      <table className="w-full border-collapse">
+        <thead className="sticky top-0 z-10 bg-white text-xs text-black uppercase shadow-sm">
           <tr style={{ height: '60px' }}>
             <th className="px-6 py-3 text-center font-bold whitespace-nowrap">ID</th>
             <th className="px-6 py-3 text-center font-bold whitespace-nowrap">Username</th>
@@ -94,6 +104,7 @@ export const UserTable: React.FC<UserTableProps> = ({ users, loading, onEdit, on
             <th className="px-6 py-3 text-center font-bold whitespace-nowrap">Phone Number</th>
             <th className="px-6 py-3 text-center font-bold whitespace-nowrap">Role</th>
             <th className="px-6 py-3 text-center font-bold whitespace-nowrap">Campus</th>
+            <th className="px-6 py-3 text-center font-bold whitespace-nowrap">Department</th>
             <th className="px-6 py-3 text-center font-bold whitespace-nowrap">Status</th>
             <th className="px-6 py-3 text-center font-bold whitespace-nowrap">Action</th>
           </tr>

@@ -1,7 +1,16 @@
 from datetime import datetime
-from typing import Optional
+from typing import Optional, List  # <-- Cần thêm List
 
 from pydantic import BaseModel, EmailStr
+
+
+# --- THÊM MỚI: Schema để hiển thị Department ---
+class DepartmentOut(BaseModel):
+    id: int
+    name: str
+
+    class Config:
+        from_attributes = True
 
 
 class UserBase(BaseModel):
@@ -40,6 +49,9 @@ class UserOut(UserBase):
     locked_until: Optional[datetime]
     is_locked: bool
     created_at: datetime
+    
+    # --- THÊM MỚI: Trường departments trả về list ---
+    departments: List[DepartmentOut] = [] 
 
 
 class TokenData(BaseModel):
