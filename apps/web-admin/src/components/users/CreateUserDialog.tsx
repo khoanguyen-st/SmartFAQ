@@ -168,10 +168,10 @@ export const CreateUserDialog: React.FC<CreateUserDialogProps> = ({
               <option value="" disabled>
                 Select Campus
               </option>
-              <option value="HN">Hanoi</option>
-              <option value="HCM">Ho Chi Minh</option>
-              <option value="DN">Danang</option>
-              <option value="CT">Can Tho</option>
+              <option value="HN">Hà Nội</option>
+              <option value="HCM">Hồ Chí Minh</option>
+              <option value="DN">Đà Nẵng</option>
+              <option value="CT">Cần Thơ</option>
             </select>
           </div>
 

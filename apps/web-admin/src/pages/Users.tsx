@@ -1,6 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react'
 import { Plus } from 'lucide-react'
-import type { User } from '@/types/users'
+// 1. Import thêm type Department và hàm fetchDepartments
+import type { User, Department } from '@/types/users'
+import { fetchDepartments } from '@/services/department.services'
+
 import { useUsers } from '@/hooks/useUsers'
 import { useUserFilters } from '@/hooks/useUseFilters'
 import { usePagination } from '@/hooks/usePagination'
@@ -31,6 +34,10 @@ const Users: React.FC = () => {
   } = useUsers()
 
   const [searchQuery, setSearchQuery] = useState('')
+  
+  // 2. KHAI BÁO BIẾN CÒN THIẾU (Nguyên nhân gây lỗi)
+  const [availableDepartments, setAvailableDepartments] = useState<Department[]>([])
+  
   const [selectedDepartments, setSelectedDepartments] = useState<string[]>([])
   const [selectedStatuses, setSelectedStatuses] = useState<string[]>([])
   const [filterOpen, setFilterOpen] = useState(false)
@@ -48,6 +55,24 @@ const Users: React.FC = () => {
   const [toast, setToast] = useState<{ type: 'success' | 'error' | 'warning'; message: string } | null>(null)
 
   const filterRef = useRef<HTMLDivElement>(null)
+
+  // 3. THÊM USE EFFECT ĐỂ LẤY DỮ LIỆU TỪ API
+  useEffect(() => {
+    const loadDepartments = async () => {
+      try {
+        const data = await fetchDepartments()
+        // Map dữ liệu từ service về đúng format Department
+        const mappedDepts: Department[] = data.map((d: any) => ({
+          id: d.id,
+          name: d.name
+        }))
+        setAvailableDepartments(mappedDepts)
+      } catch (err) {
+        console.error('Failed to load departments', err)
+      }
+    }
+    loadDepartments()
+  }, [])
 
   const filteredUsers = useUserFilters({ users, searchQuery, selectedDepartments, selectedStatuses })
 
@@ -130,7 +155,6 @@ const Users: React.FC = () => {
           setToast({ type: 'success', message: 'Active user successfully' })
           break
         case USER_ACTIONS.RESET_PASSWORD: {
-          // Lấy email từ user được chọn
           const user = users.find(u => u.id === userId)
           if (user && user.email) {
             await resetPassword(user.email)
@@ -187,6 +211,8 @@ const Users: React.FC = () => {
             onToggleDepartment={dept => toggleValue(dept, selectedDepartments, setSelectedDepartments)}
             onToggleStatus={status => toggleValue(status, selectedStatuses, setSelectedStatuses)}
             onClearFilters={handleClearFilters}
+            // 4. TRUYỀN BIẾN availableDepartments VÀO ĐÂY (Hết lỗi)
+            departments={availableDepartments} 
           />
         )}
       />
