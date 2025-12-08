@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Optional, List  # <-- Cần thêm List
+from typing import List, Optional  # <-- Cần thêm List
 
 from pydantic import BaseModel, EmailStr
 
@@ -41,6 +41,7 @@ class UserUpdate(BaseModel):
     campus: Optional[str] = None
     role: Optional[str] = None
     password: Optional[str] = None
+    department_ids: Optional[List[int]] = None
 
 
 class UserOut(UserBase):
@@ -49,9 +50,9 @@ class UserOut(UserBase):
     locked_until: Optional[datetime]
     is_locked: bool
     created_at: datetime
-    
+
     # --- THÊM MỚI: Trường departments trả về list ---
-    departments: List[DepartmentOut] = [] 
+    departments: List[DepartmentOut] = []
 
 
 class TokenData(BaseModel):

@@ -4,10 +4,10 @@ import type { EditUserDialogProps } from '@/interfaces/edit-user-dialog'
 import { fetchDepartments } from '@/services/department.services'
 
 const CAMPUS_OPTIONS = [
-  { label: 'Hanoi', value: 'HN' },
-  { label: 'Ho Chi Minh', value: 'HCM' },
-  { label: 'Danang', value: 'DN' },
-  { label: 'Can Tho', value: 'CT' }
+  { label: 'Hà Nội', value: 'HN' },
+  { label: 'Hồ Chí Minh', value: 'HCM' },
+  { label: 'Đà Nẵng', value: 'DN' },
+  { label: 'Cần Thơ', value: 'CT' }
 ]
 
 export const EditUserDialog: React.FC<EditUserDialogProps> = ({
@@ -22,7 +22,7 @@ export const EditUserDialog: React.FC<EditUserDialogProps> = ({
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [campusOpen, setCampusOpen] = useState(false)
-  
+
   const [departmentOpen, setDepartmentOpen] = useState(false)
   const [availableDepartments, setAvailableDepartments] = useState<Department[]>([])
   const [selectedDepartmentIds, setSelectedDepartmentIds] = useState<number[]>([])
@@ -33,10 +33,8 @@ export const EditUserDialog: React.FC<EditUserDialogProps> = ({
         const data = await fetchDepartments()
         // --- SỬA LỖI ESLINT 1: Định nghĩa kiểu rõ ràng thay vì dùng any ---
         // Kiểm tra xem data có phải mảng không, nếu không thì ép kiểu về object có items
-        const mappedDepts: Department[] = Array.isArray(data) 
-          ? data 
-          : (data as { items: Department[] }).items || []
-        
+        const mappedDepts: Department[] = Array.isArray(data) ? data : (data as { items: Department[] }).items || []
+
         setAvailableDepartments(mappedDepts)
       } catch (err) {
         console.error('Failed to load departments', err)
@@ -51,7 +49,7 @@ export const EditUserDialog: React.FC<EditUserDialogProps> = ({
       setError(null)
       setCampusOpen(false)
       setDepartmentOpen(false)
-      
+
       const userDeptIds = user.departments?.map(d => d.id) || []
       setSelectedDepartmentIds(userDeptIds)
     }
@@ -116,7 +114,7 @@ export const EditUserDialog: React.FC<EditUserDialogProps> = ({
       // --- SỬA LỖI ESLINT 2: Dùng unknown trước khi ép về Partial<User> ---
       // Điều này "đánh lừa" TypeScript một cách an toàn để chấp nhận department_ids
       await onSubmit?.(user.id, submitData as unknown as Partial<User>)
-      
+
       onSuccess?.()
       onClose()
     } catch (err: unknown) {
@@ -212,7 +210,7 @@ export const EditUserDialog: React.FC<EditUserDialogProps> = ({
               {departmentOpen && (
                 <div className="absolute left-0 z-20 mt-2 w-full rounded-xl border border-slate-200 bg-white p-4 shadow-xl">
                   {availableDepartments.length > 0 ? (
-                    <ul className="space-y-3 text-sm max-h-48 overflow-y-auto">
+                    <ul className="max-h-48 space-y-3 overflow-y-auto text-sm">
                       {availableDepartments.map(dept => {
                         const isChecked = selectedDepartmentIds.includes(dept.id)
                         return (
@@ -239,7 +237,6 @@ export const EditUserDialog: React.FC<EditUserDialogProps> = ({
                 </div>
               )}
             </div>
-
           </form>
         </div>
 
