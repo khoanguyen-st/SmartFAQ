@@ -14,6 +14,9 @@ from ..schemas.settings import (
     SettingsUpdateResponse,
     SystemSettings,
 )
+from ..core.config import settings
+
+ENV_FILE = os.getenv("SETTINGS_ENV_FILE", ".env")
 
 ENV_FILE = os.getenv("SETTINGS_ENV_FILE", ".env")
 
