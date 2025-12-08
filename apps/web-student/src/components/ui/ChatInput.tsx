@@ -25,7 +25,7 @@ const ChatInput = ({ onSend, isLoading }: ChatInputProps) => {
 
   return (
     <div className="chat__footer relative flex items-center justify-center rounded-b-4xl pb-5">
-      <form action="" className="chat__footer-form relative flex w-full items-center px-6">
+      <form onSubmit={handleSubmit} action="" method="post" className="chat__footer-form relative flex w-full items-center px-6">
         <textarea
           rows={1}
           required

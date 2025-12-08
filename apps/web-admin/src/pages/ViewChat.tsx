@@ -458,6 +458,16 @@ const ViewChatPage = () => {
     }
   }
 
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault()
+      const form = e.currentTarget.form
+      if (form) {
+        form.requestSubmit()
+      }
+    }
+  }
+
   const handleSend = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     const trimmedInput = userText.trim()
@@ -559,7 +569,7 @@ const ViewChatPage = () => {
           )}
         </div>
 
-        <div className="chat__footer flex min-h-[88px] flex-col px-3 py-3 sm:min-h-24 sm:px-6 sm:py-4">
+        <div className="chat__footer flex flex-col px-3 py-3 sm:px-6 sm:py-4">
           <form
             onSubmit={handleSend}
             action=""
@@ -568,22 +578,23 @@ const ViewChatPage = () => {
             autoComplete="off"
           >
             <div className="relative flex w-full items-center">
-              <input
-                type="text"
+              <textarea
+                rows={1}
                 name="user-input"
                 id="user-input"
                 value={userText}
+                onKeyDown={handleKeyDown}
                 onChange={e => setUserText(e.target.value)}
                 placeholder={!sessionId ? 'Connecting to chat...' : 'Ask a question about your uploaded documents...'}
                 disabled={!sessionId}
-                className="chat__input h-[40px] w-full rounded-4xl border border-[#D1D5DB] px-3 py-2 pr-[52px] text-sm placeholder:text-[13px] placeholder:leading-[20px] disabled:bg-gray-100 sm:h-[44px] sm:px-4 sm:pr-[60px] sm:placeholder:text-[14px]"
+                className="chat__input field-sizing-content h-fit max-h-42 min-h-14 w-full resize-none rounded-[28px] text-[14px] leading-6"
               />
               <button
                 type="submit"
                 disabled={!sessionId || isLoading || userText.trim().length === 0}
-                className="chat__submit absolute top-1/2 right-1 flex h-[32px] w-[32px] -translate-y-1/2 items-center justify-center rounded-full bg-[#003087] transition-all hover:bg-[#002060] disabled:cursor-not-allowed disabled:opacity-50 sm:right-2 sm:h-[36px] sm:w-[40px]"
+                className="chat__submit absolute right-2 bottom-4 flex h-10 w-10 cursor-pointer items-center justify-center rounded-full bg-[#003087] disabled:opacity-60"
               >
-                <SendIcon className="h-4 w-4 shrink-0" />
+                <SendIcon className="h-5 w-5 shrink-0" />
               </button>
             </div>
           </form>

@@ -4,15 +4,13 @@ import { cn } from '@/lib/utils'
 import { logout } from '@/lib/api'
 import { useState, useCallback, useMemo } from 'react'
 import educationUrl from '@/assets/icons/education.svg'
-import userUrl from '@/assets/icons/user.svg'
 import chevronDownUrl from '@/assets/icons/chevron-down.svg'
+import avatarDefaultUrl from '@/assets/icons/user-avatar.svg'
 import { Menu, X } from 'lucide-react'
 import { getCurrentUserInfo, type CurrentUserInfo } from '@/services/auth.services'
 
 type ImgCompProps = React.ImgHTMLAttributes<HTMLImageElement>
 const EducationIcon: React.FC<ImgCompProps> = props => <img src={educationUrl} alt="edu" {...props} />
-const UserIcon: React.FC<ImgCompProps> = props => <img src={userUrl} alt="upload" {...props} />
-
 const navItems = [
   { path: 'dashboard', label: 'Dashboard' },
   { path: 'users', label: 'Users' },
@@ -41,31 +39,43 @@ const ShellLayout = () => {
   }, [navigate])
 
   // Fetch user info and departments
-  useEffect(() => {
-    const fetchUserInfo = async () => {
-      try {
-        const token = localStorage.getItem('access_token')
-        if (!token) return
+  const fetchUserInfo = useCallback(async () => {
+    try {
+      const token = localStorage.getItem('access_token')
+      if (!token) return
 
-        // Fetch current user info from API
-        const data = await getCurrentUserInfo()
-        setUserInfo(data)
+      // Fetch current user info from API
+      const data = await getCurrentUserInfo()
+      setUserInfo(data)
 
-        // Set default department from localStorage or first department
-        const savedDeptId = localStorage.getItem('selected_department_id')
-        if (savedDeptId) {
-          setSelectedDepartment(parseInt(savedDeptId))
-        } else if (data.departments.length > 0) {
-          setSelectedDepartment(data.departments[0].id)
-          localStorage.setItem('selected_department_id', data.departments[0].id.toString())
-        }
-      } catch (error) {
-        console.error('Failed to fetch user info:', error)
+      // Set default department from localStorage or first department
+      const savedDeptId = localStorage.getItem('selected_department_id')
+      if (savedDeptId) {
+        setSelectedDepartment(parseInt(savedDeptId))
+      } else if (data.departments.length > 0) {
+        setSelectedDepartment(data.departments[0].id)
+        localStorage.setItem('selected_department_id', data.departments[0].id.toString())
       }
+    } catch (error) {
+      console.error('Failed to fetch user info:', error)
+    }
+  }, [])
+
+  useEffect(() => {
+    fetchUserInfo()
+  }, [fetchUserInfo])
+
+  // Listen for avatar update events from Profile page
+  useEffect(() => {
+    const handleAvatarUpdate = () => {
+      fetchUserInfo()
     }
 
-    fetchUserInfo()
-  }, [])
+    window.addEventListener('userAvatarUpdated', handleAvatarUpdate)
+    return () => {
+      window.removeEventListener('userAvatarUpdated', handleAvatarUpdate)
+    }
+  }, [fetchUserInfo])
 
   const handleDepartmentChange = useCallback((departmentId: number) => {
     setSelectedDepartment(departmentId)
@@ -171,7 +181,7 @@ const ShellLayout = () => {
                 onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
                 className="flex items-center gap-2 rounded-lg px-3 py-2 text-gray-700 transition-colors hover:bg-gray-100"
               >
-                <UserIcon />
+                <img src={userInfo?.image || avatarDefaultUrl} alt="user" className="h-8 w-8 rounded-full bg-center" />
                 <span className="text-sm font-medium">{userInfo?.username || 'BO User'}</span>
                 <img
                   src={chevronDownUrl}
@@ -195,7 +205,7 @@ const ShellLayout = () => {
                       }}
                       className="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-gray-700 transition-colors hover:bg-gray-50"
                     >
-                      <UserIcon className="h-5 w-5" />
+                      <img src={userInfo?.image || avatarDefaultUrl} alt="user" className="h-8 w-8 rounded-full bg-center" />
                       <span>Profile</span>
                     </button>
 

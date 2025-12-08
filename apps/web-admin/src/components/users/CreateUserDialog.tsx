@@ -2,6 +2,8 @@ import React, { useMemo, useState, useEffect } from 'react'
 import type { CreateUserDialogProps, CreateUserDialogPayload } from '@/interfaces/create-user-dialog'
 import { fetchDepartments, type IDepartment } from '@/services/department.services'
 
+import ChevronDown from '@/assets/icons/chevron-down.svg'
+
 export const CreateUserDialog: React.FC<CreateUserDialogProps> = ({
   open,
   onClose,
@@ -157,7 +159,7 @@ export const CreateUserDialog: React.FC<CreateUserDialogProps> = ({
               <option value="staff">Staff</option>
             </select>
           </div>
-          <div>
+          <div className="relative w-full">
             <label className="mb-1 block text-sm font-medium text-slate-700">Campus *</label>
             <select
               required
@@ -173,6 +175,9 @@ export const CreateUserDialog: React.FC<CreateUserDialogProps> = ({
               <option value="DN">Danang</option>
               <option value="CT">Can Tho</option>
             </select>
+            <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center top-1/2 ">
+              <img src={ChevronDown} alt="chevron-down" className="h-5 w-5" />
+            </span>
           </div>
 
           {/* Department Selection - Only for Staff */}
