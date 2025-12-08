@@ -4,11 +4,13 @@ from functools import lru_cache
 
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
+import os
 
+ENV_FILE = os.getenv("SETTINGS_ENV_FILE", ".env")
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
-        env_file=".env", env_file_encoding="utf-8", case_sensitive=False, extra="ignore"
+        env_file=ENV_FILE, env_file_encoding="utf-8", case_sensitive=False, extra="ignore"
     )
 
     env: str = Field("development", alias="APP_ENV")
@@ -91,7 +93,6 @@ class Settings(BaseSettings):
     mongo_db: str = Field("smartfaq", alias="MONGO_DB")
     mongo_chat_collection: str = Field("chat_messages", alias="MONGO_CHAT_COLLECTION")
     mongo_session_collection: str = Field("chat_sessions", alias="MONGO_SESSION_COLLECTION")
-
 
 @lru_cache(maxsize=1)
 def get_settings() -> Settings:

@@ -121,7 +121,7 @@ async def _process_single_document(db: AsyncSession, doc_id: int) -> None:
 async def process_requests_once() -> None:
     async with AsyncSessionLocal() as db:
         try:
-            logger.info("Fetching documents with status 'REQUEST' for processing...")
+            # logger.info("Fetching documents with status 'REQUEST' for processing...")
             stmt = (
                 select(Document)
                 .where(Document.status == "REQUEST")
@@ -130,7 +130,7 @@ async def process_requests_once() -> None:
             result = await db.execute(stmt)
             docs = result.scalars().all()
 
-            logger.info("Found %d documents to process.", len(docs))
+            # logger.info("Found %d documents to process.", len(docs))
 
             if not docs:
                 return
@@ -158,12 +158,12 @@ async def process_requests_once() -> None:
 
 async def start_periodic_task() -> None:
     interval = int(getattr(settings, "CRON_INTERVAL_SECONDS", 30))
-    logger.info("Starting document processing cron with interval %s seconds", interval)
+    # logger.info("Starting document processing cron with interval %s seconds", interval)
     try:
         while True:
-            logger.info("Starting a new processing cycle.")
+            # logger.info("Starting a new processing cycle.")
             await process_requests_once()
-            logger.info("Processing cycle completed. Sleeping for %s seconds.", interval)
+            # logger.info("Processing cycle completed. Sleeping for %s seconds.", interval)
             await asyncio.sleep(interval)
     except asyncio.CancelledError:
         logger.info("Document processing cron cancelled")

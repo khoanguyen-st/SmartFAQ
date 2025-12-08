@@ -72,7 +72,7 @@ Output: {{
 
 KEY POINTS:
 - Each sub-question targets different aspects (definition, cost, procedure, benefits)
-- Use natural Vietnamese phrasing
+- Use natural user input language phrasing
 - Be specific and actionable
 - DO NOT add details user didn't imply
 

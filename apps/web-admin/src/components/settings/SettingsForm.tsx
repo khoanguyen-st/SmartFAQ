@@ -1,11 +1,11 @@
+import { fetchSystemSettings, SettingsUpdateRequest, SystemSettings, updateSystemSettings } from '@/lib/api'
+import { AlertCircle, CheckCircle2, Eye, EyeOff, Info, Loader2, Save } from 'lucide-react'
 import { FormEvent, useEffect, useState } from 'react'
-import { AlertCircle, CheckCircle2, Info, Loader2, Save } from 'lucide-react'
-import { fetchSystemSettings, updateSystemSettings, SystemSettings, SettingsUpdateRequest } from '@/lib/api'
 
 interface SettingField {
   key: keyof SystemSettings
   label: string
-  type: 'number' | 'boolean' | 'text'
+  type: 'number' | 'boolean' | 'text' | 'password'
   min?: number
   max?: number
   step?: number
@@ -16,6 +16,14 @@ interface SettingField {
 
 const SETTING_FIELDS: SettingField[] = [
   // LLM Settings
+  {
+    key: 'google_api_key',
+    label: 'Google API Key',
+    type: 'password',
+    description: 'API key for Google Gemini',
+    helpText: 'Your Google API key for accessing Gemini AI models. Get one from https://aistudio.google.com/app/apikey',
+    category: 'llm'
+  },
   {
     key: 'llm_temperature',
     label: 'AI Creativity',
@@ -118,6 +126,7 @@ const SettingsForm = () => {
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
   const [expandedCategory, setExpandedCategory] = useState<string | null>('llm')
+  const [showApiKey, setShowApiKey] = useState(false)
 
   useEffect(() => {
     loadSettings()
@@ -146,6 +155,7 @@ const SettingsForm = () => {
       setSuccess(null)
 
       const updateData: SettingsUpdateRequest = {
+        google_api_key: settings.google_api_key,
         llm_temperature: settings.llm_temperature,
         llm_max_tokens: settings.llm_max_tokens,
         confidence_threshold: settings.confidence_threshold,
@@ -282,6 +292,24 @@ const SettingsForm = () => {
                             {settings[field.key] ? 'Enabled' : 'Disabled'}
                           </span>
                         </label>
+                      ) : field.type === 'password' ? (
+                        <div className="flex flex-1 items-center gap-2">
+                          <input
+                            type={showApiKey ? 'text' : 'password'}
+                            value={settings[field.key] as string}
+                            onChange={e => updateSetting(field.key, e.target.value)}
+                            placeholder="Enter your Google API key"
+                            className="flex-1 rounded-lg border border-indigo-200 px-3 py-2 text-sm font-mono focus:border-indigo-600 focus:ring-2 focus:ring-indigo-600/20 focus:outline-none"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowApiKey(!showApiKey)}
+                            className="rounded-lg border border-slate-300 bg-white p-2 hover:bg-slate-50"
+                            title={showApiKey ? 'Hide API key' : 'Show API key'}
+                          >
+                            {showApiKey ? <EyeOff className="h-4 w-4 text-slate-600" /> : <Eye className="h-4 w-4 text-slate-600" />}
+                          </button>
+                        </div>
                       ) : (
                         <div className="flex flex-1 items-center gap-3">
                           <input
