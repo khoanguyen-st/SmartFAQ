@@ -20,6 +20,7 @@ class UserBase(BaseModel):
 class UserCreate(UserBase):
     password: str
     role: str
+    department_ids: list[int] = []
 
 
 class UserUpdate(BaseModel):

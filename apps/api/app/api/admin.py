@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 
 def require_admin(current_user: User = Depends(get_current_user)):
-    if current_user.role != "admin":
+    if current_user.role not in ("admin"):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="You do not have permission to access this resource. Admin role required.",
@@ -72,7 +72,7 @@ async def create_user(
 
 
 @router.put(
-    "/{user_id}",
+    "/admin/{user_id}",
     response_model=Dict[str, str],
     status_code=status.HTTP_200_OK,
 )

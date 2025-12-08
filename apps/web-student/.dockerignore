@@ -15,3 +15,6 @@ yarn-error.log*
 coverage
 .vscode
 .idea
+
+# Don't copy built widget - will be rebuilt in container
+public/chat-widget.js

@@ -5,8 +5,28 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Greenwich SmartFAQ - Admin</title>
   </head>
+
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
+
+    <!-- SmartFAQ Chat Widget -->
+    <!-- Widget is automatically served from web-student dev server at port 5173 -->
+    <script src="http://localhost:5173/chat-widget.js"></script>
+    <script>
+      // Wait for widget to load
+      window.addEventListener('load', function () {
+        if (window.ChatWidget) {
+          window.ChatWidget.init({
+            apiBaseUrl: 'http://localhost:8000',
+            position: {
+              bottom: '20px',
+              right: '20px'
+            },
+            zIndex: 9999
+          })
+        }
+      })
+    </script>
   </body>
 </html>
