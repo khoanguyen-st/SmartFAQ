@@ -23,7 +23,6 @@ from app.utils.logging_config import setup_rag_metrics_logger
 
 logger = logging.getLogger(__name__)
 
-# Setup dedicated RAG metrics logger with JSON formatting
 rag_metrics_logger = setup_rag_metrics_logger("logs/rag_metrics.json")
 
 
@@ -44,7 +43,6 @@ class RAGOrchestrator:
         history: Optional[List[Dict]] = None,
         language: Optional[str] = None,
     ) -> Dict:
-        # Initialize metrics tracking
         request_id = str(uuid.uuid4())[:8]
         metrics = RAGMetrics(request_id=request_id, question=question)
 
@@ -59,12 +57,10 @@ class RAGOrchestrator:
             metrics.error_type = ErrorType.UNKNOWN
             metrics.error_message = "Empty question"
             metrics.finalize()
-            logger.warning(f"{metrics}")
             return self._response("Please input a valid question.", [], 0, t0, True, metrics)
 
         final_search_query = raw_q
 
-        # Contextualization stage
         if history and self._should_contextualize(raw_q, history):
             try:
                 metrics.start_stage("contextualize")
@@ -91,7 +87,6 @@ class RAGOrchestrator:
                 logger.error(f"[{request_id}] Contextualization error: {e}")
                 final_search_query = raw_q
 
-        # Normalization stage
         metrics.start_stage("normalize")
         try:
             norm_result = await self.normalizer.understand(final_search_query)
@@ -110,12 +105,8 @@ class RAGOrchestrator:
             detected_lang = "en"
             metrics.language = detected_lang
 
-        if detected_lang in ["vi", "en"]:
-            target_lang = detected_lang
-        else:
-            target_lang = language or "en"
+        target_lang = detected_lang if detected_lang in ["vi", "en"] else (language or "en")
 
-        # Master analysis stage
         metrics.start_stage("analyze")
         try:
             analysis_dict = await self.llm.invoke_json(get_master_analyzer_prompt(), refined_q)
@@ -130,27 +121,19 @@ class RAGOrchestrator:
             logger.warning(f"[{request_id}] Master Analysis Failed: {e}. Using fallback.")
             analysis = MasterAnalysis(status="valid", sub_questions=[refined_q])
 
-        logger.info(
-            f"[{request_id}] Analysis: {analysis.status} | Sub-questions: {len(analysis.sub_questions or [])}"
-        )
-
         if analysis.status == "blocked":
             msg = self._get_blocked_msg(analysis.reason, target_lang)
             metrics.finalize()
-            logger.info(f"{metrics}")
             return self._response(msg, [], 1.0, t0, False, metrics)
 
         if analysis.status == "greeting":
             msg = self._get_greeting_msg(target_lang)
             metrics.finalize()
-            logger.info(f"{metrics}")
             return self._response(msg, [], 1.0, t0, False, metrics)
 
-        # Retrieval stage with query expansion
         sub_qs = analysis.sub_questions or [refined_q]
         sub_qs = sub_qs[: settings.MAX_SUB_QUERIES]
 
-        # Expand queries for better coverage (especially for short queries)
         expanded_queries = []
         if settings.QUERY_EXPANSION_ENABLED:
             for sq in sub_qs:
@@ -158,11 +141,9 @@ class RAGOrchestrator:
                     sq, max_expansions=settings.QUERY_EXPANSION_MAX
                 )
                 expanded_queries.extend(expansions)
-                logger.debug(f"[{request_id}] Query '{sq}' expanded to: {expansions}")
         else:
             expanded_queries = sub_qs
 
-        # Deduplicate
         seen = set()
         unique_queries = []
         for q in expanded_queries:
@@ -177,7 +158,6 @@ class RAGOrchestrator:
         all_docs = []
         for sq in unique_queries:
             try:
-                # Use configurable top_k for each query
                 docs = self.retriever.retrieve(sq, top_k=settings.TOP_K_PER_QUERY)
                 all_docs.extend(docs)
             except Exception as e:
@@ -192,14 +172,12 @@ class RAGOrchestrator:
             set(d.get("document_id") for d in unique_docs if d.get("document_id"))
         )
 
-        # Calculate retrieval quality metrics
         if unique_docs:
             scores = [d.get("score", 0.0) for d in unique_docs if d.get("score") is not None]
             if scores:
                 metrics.avg_retrieval_score = sum(scores) / len(scores)
                 metrics.max_retrieval_score = max(scores)
                 metrics.min_retrieval_score = min(scores)
-                # Calculate variance
                 mean = metrics.avg_retrieval_score
                 metrics.score_variance = sum((s - mean) ** 2 for s in scores) / len(scores)
             metrics.diversity_score = (
@@ -207,8 +185,7 @@ class RAGOrchestrator:
             )
 
         logger.info(
-            f"[{request_id}] Retrieved {metrics.num_contexts} contexts from {metrics.num_unique_docs} docs "
-            f"(avg_score={metrics.avg_retrieval_score:.3f}, diversity={metrics.diversity_score:.3f})"
+            f"[{request_id}] Retrieved {metrics.num_contexts} contexts from {metrics.num_unique_docs} docs"
         )
 
         if not unique_docs:
@@ -220,17 +197,16 @@ class RAGOrchestrator:
             metrics.error_type = ErrorType.RETRIEVAL_EMPTY
             metrics.fallback_triggered = True
             metrics.finalize()
-            logger.warning(f"{metrics}")
             return self._response(fb, [], 0, t0, True, metrics)
 
-        # Generation stage
         metrics.start_stage("generate")
         try:
             logger.info(f"[{request_id}] Generating answer in '{target_lang}'...")
-
+            ans = await self.llm.generate_answer_async(
+                refined_q, unique_docs, target_language=target_lang
+            )
             metrics.generation_ms = metrics.end_stage("generate")
 
-            # Calculate confidence with num_sub_queries context
             conf = self.retriever.calculate_confidence(
                 unique_docs, num_sub_queries=metrics.num_sub_queries
             )
@@ -240,78 +216,60 @@ class RAGOrchestrator:
                 logger.info(
                     f"[{metrics.request_id}] CONF < THRESHOLD ({conf} < {settings.CONFIDENCE_THRESHOLD}) → FALLBACK"
                 )
-
-                logger.info(f"[{metrics.request_id}] target_lang={target_lang}")
-                logger.info(f"[{metrics.request_id}] unique_docs={len(unique_docs)}")
-
                 metrics.fallback_triggered = True
+
                 dept_counts: Dict[int, int] = {}
-                for idx, d in enumerate(unique_docs, start=1):
-                    logger.info(
-                        f"[{metrics.request_id}] Doc#{idx}: "
-                        f"doc_id={d.get('document_id')}, "
-                        f"dept={d.get('department_id')}, "
-                        f"score={d.get('score')}, "
-                        f"source={d.get('source')}, "
-                        f"page={d.get('page')}"
-                    )
+                for d in unique_docs:
                     dept_id = d.get("department_id")
                     if dept_id is None:
-                        logger.info(f"[{metrics.request_id}] Doc#{idx} → department_id=None → skip")
                         continue
                     try:
-                        dept_id = int(dept_id)
+                        d_id = int(dept_id)
+                        dept_counts[d_id] = dept_counts.get(d_id, 0) + 1
                     except (TypeError, ValueError):
-                        logger.info(
-                            f"[{metrics.request_id}] Doc#{idx} → department_id invalid ({dept_id}) → skip"
-                        )
                         continue
-                    dept_counts[dept_id] = dept_counts.get(dept_id, 0) + 1
-
-                logger.info(f"[{metrics.request_id}] Dept counts: {dept_counts}")
 
                 dominant_dept_id: Optional[int] = None
                 if dept_counts:
                     dominant_dept_id = max(dept_counts.items(), key=lambda x: x[1])[0]
 
-                logger.info(
-                    f"[{metrics.request_id}] Dominant department for fallback: {dominant_dept_id}"
-                )
-
                 if target_lang == "vi":
                     if dominant_dept_id == 1:
-                        low_conf_msg = (
-                            "Tôi không chắc chắn lắm về câu trả lời dựa trên tài liệu hiện có. "
-                            "Bạn vui lòng liên hệ:\n"
+                        contact = (
                             "Phòng CTSV: Điện thoại: 02367.305.767, Email: sro.gre.dn@fe.edu.vn"
                         )
                     elif dominant_dept_id == 2:
-                        low_conf_msg = (
-                            "Tôi không chắc chắn lắm về câu trả lời dựa trên tài liệu hiện có. "
-                            "Bạn vui lòng liên hệ:\n"
+                        contact = (
                             "Phòng TS: Điện thoại: 02367.305.767, Email: acad.gre.dn@fe.edu.vn"
                         )
                     else:
-                        low_conf_msg = (
-                            "Tôi không chắc chắn lắm về câu trả lời dựa trên tài liệu hiện có. "
-                            "Bạn có thể liên hệ bộ phận tư vấn để được hỗ trợ chi tiết hơn."
-                        )
-                else:
-                    low_conf_msg = (
-                        "I'm not very confident in this answer based on the available documents. "
-                        "Please contact the appropriate department for more accurate information."
-                    )
-                logger.info(f"[{metrics.request_id}] Fallback message selected: {low_conf_msg}")
+                        contact = "bộ phận tư vấn để được hỗ trợ chi tiết hơn."
 
-                metrics.finalize()
-                return self._response(
-                    low_conf_msg,
-                    self._fmt_sources(unique_docs),
-                    conf,
-                    t0,
-                    True,
-                    metrics,
-                )
+                    warning = (
+                        f" Lưu ý: Câu trả lời dưới đây có độ tin cậy thấp dựa trên tài liệu hiện có.\n"
+                        f"Để chính xác nhất, vui lòng liên hệ: {contact}\n"
+                        f"{'-'*30}\n\n"
+                    )
+                else:
+                    if dominant_dept_id == 1:
+                        contact = "Student Affairs Office:\nPhone: 02367.305.767, Email: sro.gre.dn@fe.edu.vn"
+                    elif dominant_dept_id == 2:
+                        contact = "Academic Administration Office:\nPhone: 02367.305.767, Email: acad.gre.dn@fe.edu.vn"
+                    else:
+                        contact = "consulting department for further assistance."
+
+                    warning = (
+                        f" Warning: The answer below has low confidence based on available documents.\n"
+                        f"For accuracy, please contact: {contact}\n"
+                        f"{'-'*30}\n\n"
+                    )
+
+                ans = f"{warning}{ans}"
+
+            metrics.finalize()
+            return self._response(
+                ans, self._fmt_sources(unique_docs), conf, t0, metrics.fallback_triggered, metrics
+            )
 
         except google_exceptions.ResourceExhausted as e:
             metrics.generation_ms = metrics.end_stage("generate")
@@ -319,8 +277,6 @@ class RAGOrchestrator:
             metrics.error_message = "API quota exceeded"
             metrics.fallback_triggered = True
             metrics.finalize()
-
-            logger.error(f"{metrics}")
             logger.error(f"[{request_id}] Gemini API quota exceeded: {e}")
 
             fallback_msg = (
@@ -336,8 +292,6 @@ class RAGOrchestrator:
             metrics.error_message = str(e)
             metrics.fallback_triggered = True
             metrics.finalize()
-
-            logger.error(f"{metrics}")
             logger.exception(f"[{request_id}] Error during answer generation")
 
             error_msg = (
@@ -348,10 +302,6 @@ class RAGOrchestrator:
             return self._response(error_msg, [], 0, t0, True, metrics)
 
     def _should_contextualize(self, question: str, history: Optional[List[Dict]]) -> bool:
-        """
-        Detect follow-up questions using natural-language heuristics.
-        No prefix lists. Clean & minimal.
-        """
         if not history:
             return False
 
@@ -360,7 +310,6 @@ class RAGOrchestrator:
             return False
 
         words = q.split()
-
         if len(words) <= 3:
             return True
 
@@ -394,7 +343,6 @@ class RAGOrchestrator:
             "latency_ms": int((time.time() - t0) * 1000),
         }
 
-        # Include metrics for debugging/monitoring if available
         if metrics:
             response["request_id"] = metrics.request_id
             response["metrics"] = {
@@ -404,7 +352,6 @@ class RAGOrchestrator:
                 "language": metrics.language,
             }
 
-            # Log metrics to dedicated JSON logger for monitoring
             rag_metrics_logger.info(
                 "RAG request completed",
                 extra={
@@ -416,27 +363,20 @@ class RAGOrchestrator:
         return response
 
     def _deduplicate(self, docs):
-        """
-        Deduplicate documents while preserving diversity.
-        Keeps best score for each unique chunk.
-        """
         seen = {}
         for d in docs:
             chunk_id = d.get("chunk_id")
             if chunk_id:
-                # If we've seen this chunk, keep the one with higher score
                 if chunk_id in seen:
                     if d.get("score", 0) > seen[chunk_id].get("score", 0):
                         seen[chunk_id] = d
                 else:
                     seen[chunk_id] = d
             else:
-                # No chunk_id, use text preview as fallback
                 text_key = d.get("text", "")[:100]
                 if text_key not in seen:
                     seen[text_key] = d
 
-        # Sort by score (highest first) and return
         result = list(seen.values())
         result.sort(key=lambda x: x.get("score", 0), reverse=True)
         return result
