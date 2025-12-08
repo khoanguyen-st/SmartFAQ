@@ -29,10 +29,6 @@ REFUSAL_MESSAGES = {
         "vi": "Hệ thống đang bận, vui lòng thử lại sau.",
         "en": "The system is busy, please try again later.",
     },
-    "default": {
-        "vi": "Tôi không thể trả lời câu hỏi này.",
-        "en": "I cannot answer this question.",
-    },
 }
 
 

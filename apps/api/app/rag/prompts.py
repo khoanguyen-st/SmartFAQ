@@ -72,7 +72,7 @@ Output: {{
 
 KEY POINTS:
 - Each sub-question targets different aspects (definition, cost, procedure, benefits)
-- Use natural Vietnamese phrasing
+- Use natural user input language phrasing
 - Be specific and actionable
 - DO NOT add details user didn't imply
 
@@ -93,10 +93,15 @@ def get_rewrite_question_prompt() -> str:
         "Bạn là trợ lý AI của Đại học Greenwich Việt Nam.\n"
         "Nhiệm vụ: Viết lại câu hỏi follow-up thành câu hỏi độc lập, đầy đủ chủ ngữ.\n"
         "Nếu câu hỏi đã rõ ràng và độc lập thì giữ nguyên.\n"
-        "Nếu câu hỏi mơ hồ hoặc phụ thuộc ngữ cảnh, và lịch sử chat liên quan đến "
-        "Đại học Greenwich Việt Nam thì mặc định rằng người dùng hỏi về trường.\n"
+        "Nếu câu hỏi mơ hồ hoặc phụ thuộc ngữ cảnh, và lịch sử chat liên quan đến Đại học Greenwich Việt Nam thì mặc định rằng người dùng hỏi về trường.\n"
         "Nếu ngữ cảnh không rõ, giữ nguyên ý nghĩa gốc và không gán sang trường khác.\n"
         "Không giải thích. Chỉ trả về duy nhất một JSON object với trường:\n"
+        "QUY TẮC QUAN TRỌNG VỀ NGÔN NGỮ:\n"
+        "1. Input là Tiếng Anh -> Output PHẢI là Tiếng Anh.\n"
+        "2. Input là Tiếng Việt -> Output là Tiếng Việt.\n"
+        "Ví dụ:\n"
+        "Input: 'tuition' -> Output: 'What is the tuition fee of Greenwich Vietnam?'\n"
+        "Input: 'học phí' -> Output: 'Học phí của đại học Greenwich Việt Nam là bao nhiêu?'\n"
         '  "standalone_question"\n'
     )
 

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import os
 from pathlib import Path
 
 from fastapi import APIRouter
@@ -14,6 +15,8 @@ from ..schemas.settings import (
     SystemSettings,
 )
 
+ENV_FILE = os.getenv("SETTINGS_ENV_FILE", ".env")
+
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/settings", tags=["settings"])
 
@@ -22,6 +25,7 @@ router = APIRouter(prefix="/settings", tags=["settings"])
 async def get_settings() -> SystemSettings:
     """Get current system settings."""
     return SystemSettings(
+        google_api_key=settings.GOOGLE_API_KEY,
         llm_model=settings.LLM_MODEL,
         llm_temperature=settings.LLM_TEMPERATURE,
         llm_max_tokens=settings.LLM_MAX_TOKENS,
@@ -54,6 +58,10 @@ async def update_settings(payload: SettingsUpdateRequest) -> SettingsUpdateRespo
     updated_fields = []
 
     # Update LLM settings
+    if payload.google_api_key is not None:
+        settings.GOOGLE_API_KEY = payload.google_api_key
+        updated_fields.append("google_api_key")
+
     if payload.llm_temperature is not None:
         settings.LLM_TEMPERATURE = payload.llm_temperature
         updated_fields.append("llm_temperature")
@@ -163,15 +171,19 @@ async def update_settings(payload: SettingsUpdateRequest) -> SettingsUpdateRespo
 
 def _persist_to_env_file(payload: SettingsUpdateRequest) -> None:
     """Persist settings to .env file."""
-    env_file = Path(".env")
+    env_file = Path(ENV_FILE)
     if not env_file.exists():
-        logger.warning(".env file not found, skipping persistence")
+        logger.warning(f".env file not found at {env_file.absolute()}, skipping persistence")
         return
+
+    logger.info(f"Attempting to persist settings to {env_file.absolute()}")
 
     # Read current .env content
     lines = env_file.read_text().splitlines()
     updates = {}
 
+    if payload.google_api_key is not None:
+        updates["GOOGLE_API_KEY"] = payload.google_api_key
     if payload.llm_temperature is not None:
         updates["LLM_TEMPERATURE"] = str(payload.llm_temperature)
     if payload.llm_max_tokens is not None:
@@ -215,6 +227,9 @@ def _persist_to_env_file(payload: SettingsUpdateRequest) -> None:
         if "=" in line and not line.strip().startswith("#"):
             key = line.split("=")[0].strip()
             if key in updates:
+                old_value = line.split("=", 1)[1].strip()
+                new_value = updates[key]
+                logger.debug(f"Updating {key}: '{old_value}' -> '{new_value}'")
                 updated_lines.append(f"{key}={updates[key]}")
                 updated_keys.add(key)
             else:
@@ -225,8 +240,34 @@ def _persist_to_env_file(payload: SettingsUpdateRequest) -> None:
     # Append new keys that weren't found
     for key, value in updates.items():
         if key not in updated_keys:
+            logger.debug(f"Appending new key {key}={value}")
             updated_lines.append(f"{key}={value}")
 
     # Write back to file
-    env_file.write_text("\n".join(updated_lines) + "\n")
-    logger.info(f"Persisted {len(updates)} settings to .env file")
+    try:
+        env_file.write_text("\n".join(updated_lines) + "\n")
+        logger.info(
+            f"Successfully persisted {len(updates)} settings to .env file: {list(updates.keys())}"
+        )
+
+        # Verify write was successful
+        if env_file.stat().st_size == 0:
+            logger.error(".env file is empty after write!")
+            raise IOError("Failed to write to .env file")
+
+        # Verify each key exists in file
+        verify_lines = env_file.read_text().splitlines()
+        for key in updates:
+            found = any(
+                line.startswith(f"{key}=")
+                for line in verify_lines
+                if not line.strip().startswith("#")
+            )
+            if found:
+                logger.debug(f"Verified {key} exists in .env file")
+            else:
+                logger.warning(f"Failed to verify {key} in .env file after write")
+
+    except Exception as e:
+        logger.error(f"Error writing to .env file: {e}")
+        raise

@@ -152,6 +152,7 @@ class _BM25LexicalIndex:
                     "chunk_id": meta.get("chunk_id"),
                     "page": meta.get("page"),
                     "source": meta.get("source"),
+                    "department_id": meta.get("department_id"),
                 }
             )
         return results
@@ -264,6 +265,7 @@ class Retriever:
                 "chunk_id": d.metadata.get("chunk_id"),
                 "page": d.metadata.get("page"),
                 "source": d.metadata.get("source"),
+                "department_id": d.metadata.get("department_id"),
             }
             for d in docs
         ]
@@ -287,6 +289,7 @@ class Retriever:
                     "chunk_id": meta.get("chunk_id"),
                     "page": meta.get("page"),
                     "source": meta.get("source"),
+                    "department_id": meta.get("department_id"),
                 }
             )
         return contexts

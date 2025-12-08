@@ -227,9 +227,7 @@ class RAGOrchestrator:
         metrics.start_stage("generate")
         try:
             logger.info(f"[{request_id}] Generating answer in '{target_lang}'...")
-            ans = await self.llm.generate_answer_async(
-                refined_q, unique_docs, target_language=target_lang
-            )
+
             metrics.generation_ms = metrics.end_stage("generate")
 
             # Calculate confidence with num_sub_queries context
@@ -238,9 +236,82 @@ class RAGOrchestrator:
             )
             metrics.confidence = conf
 
-            metrics.finalize()
-            logger.info(f"{metrics}")
-            return self._response(ans, self._fmt_sources(unique_docs), conf, t0, False, metrics)
+            if conf < settings.CONFIDENCE_THRESHOLD:
+                logger.info(
+                    f"[{metrics.request_id}] CONF < THRESHOLD ({conf} < {settings.CONFIDENCE_THRESHOLD}) → FALLBACK"
+                )
+
+                logger.info(f"[{metrics.request_id}] target_lang={target_lang}")
+                logger.info(f"[{metrics.request_id}] unique_docs={len(unique_docs)}")
+
+                metrics.fallback_triggered = True
+                dept_counts: Dict[int, int] = {}
+                for idx, d in enumerate(unique_docs, start=1):
+                    logger.info(
+                        f"[{metrics.request_id}] Doc#{idx}: "
+                        f"doc_id={d.get('document_id')}, "
+                        f"dept={d.get('department_id')}, "
+                        f"score={d.get('score')}, "
+                        f"source={d.get('source')}, "
+                        f"page={d.get('page')}"
+                    )
+                    dept_id = d.get("department_id")
+                    if dept_id is None:
+                        logger.info(f"[{metrics.request_id}] Doc#{idx} → department_id=None → skip")
+                        continue
+                    try:
+                        dept_id = int(dept_id)
+                    except (TypeError, ValueError):
+                        logger.info(
+                            f"[{metrics.request_id}] Doc#{idx} → department_id invalid ({dept_id}) → skip"
+                        )
+                        continue
+                    dept_counts[dept_id] = dept_counts.get(dept_id, 0) + 1
+
+                logger.info(f"[{metrics.request_id}] Dept counts: {dept_counts}")
+
+                dominant_dept_id: Optional[int] = None
+                if dept_counts:
+                    dominant_dept_id = max(dept_counts.items(), key=lambda x: x[1])[0]
+
+                logger.info(
+                    f"[{metrics.request_id}] Dominant department for fallback: {dominant_dept_id}"
+                )
+
+                if target_lang == "vi":
+                    if dominant_dept_id == 1:
+                        low_conf_msg = (
+                            "Tôi không chắc chắn lắm về câu trả lời dựa trên tài liệu hiện có. "
+                            "Bạn vui lòng liên hệ:\n"
+                            "Phòng CTSV: Điện thoại: 02367.305.767, Email: sro.gre.dn@fe.edu.vn"
+                        )
+                    elif dominant_dept_id == 2:
+                        low_conf_msg = (
+                            "Tôi không chắc chắn lắm về câu trả lời dựa trên tài liệu hiện có. "
+                            "Bạn vui lòng liên hệ:\n"
+                            "Phòng TS: Điện thoại: 02367.305.767, Email: acad.gre.dn@fe.edu.vn"
+                        )
+                    else:
+                        low_conf_msg = (
+                            "Tôi không chắc chắn lắm về câu trả lời dựa trên tài liệu hiện có. "
+                            "Bạn có thể liên hệ bộ phận tư vấn để được hỗ trợ chi tiết hơn."
+                        )
+                else:
+                    low_conf_msg = (
+                        "I'm not very confident in this answer based on the available documents. "
+                        "Please contact the appropriate department for more accurate information."
+                    )
+                logger.info(f"[{metrics.request_id}] Fallback message selected: {low_conf_msg}")
+
+                metrics.finalize()
+                return self._response(
+                    low_conf_msg,
+                    self._fmt_sources(unique_docs),
+                    conf,
+                    t0,
+                    True,
+                    metrics,
+                )
 
         except google_exceptions.ResourceExhausted as e:
             metrics.generation_ms = metrics.end_stage("generate")

@@ -8,6 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
 from ..core.database import get_db
+from ..core.users import get_current_user
 from ..models import document as document_model
 from ..schemas import document
 from ..services import dms
@@ -16,7 +17,7 @@ router = APIRouter()
 logger = logging.getLogger(__name__)
 
 
-@router.get("/")
+@router.get("/", dependencies=[Depends(get_current_user)])
 async def list_docs(db: AsyncSession = Depends(get_db)):
     try:
         items = await dms.list_documents(db)
@@ -37,11 +38,13 @@ async def create_docs(
     title: str | None = Form(None),
     category: str | None = Form(None),
     tags: str | None = Form(None),
+    current_user: dict = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     try:
+        user_id = current_user.id
         if files:
-            results = await dms.enqueue_multiple_documents(files)
+            results = await dms.enqueue_multiple_documents(files, user_id=user_id)
             return {"status": "accepted", "items": results}
 
         if not title:
@@ -50,7 +53,7 @@ async def create_docs(
         payload = document.DocumentCreate(title=title, category=category, tags=tags, language="vi")
 
         data = payload.dict()
-        data["created_by"] = None
+        data["created_by"] = user_id
         result = await dms.create_metadata_document(data, db)
         return {"item": result, "status": status.HTTP_201_CREATED}
 
