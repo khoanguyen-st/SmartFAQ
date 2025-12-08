@@ -8,13 +8,12 @@ from pathlib import Path
 
 from fastapi import APIRouter
 
-from ..core.config import settings
+from ..core.config import reload_settings, settings
 from ..schemas.settings import (
     SettingsUpdateRequest,
     SettingsUpdateResponse,
     SystemSettings,
 )
-from ..core.config import settings
 
 ENV_FILE = os.getenv("SETTINGS_ENV_FILE", ".env")
 
@@ -139,6 +138,9 @@ async def update_settings(payload: SettingsUpdateRequest) -> SettingsUpdateRespo
     # Try to persist to .env file
     try:
         _persist_to_env_file(payload)
+        # Reload settings from file to get updated values
+        reload_settings()
+        logger.info("Settings reloaded from environment file")
     except Exception as e:
         logger.warning(f"Failed to persist settings to .env file: {e}")
 

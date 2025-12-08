@@ -99,4 +99,10 @@ def get_settings() -> Settings:
     return Settings()
 
 
+def reload_settings() -> Settings:
+    """Clear cache and reload settings from environment/file."""
+    get_settings.cache_clear()
+    return get_settings()
+
+
 settings = get_settings()
