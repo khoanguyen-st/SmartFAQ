@@ -219,8 +219,8 @@ const DepartmentsPage = () => {
 
       <div className="dept-pagination-section">
         <div className="mr-6 hidden text-base font-medium text-[#202224] opacity-60 sm:block">
-          Showing {(currentPage - 1) * itemsPerPage + 1}-{Math.min(currentPage * itemsPerPage, filteredData.length)} of{' '}
-          {filteredData.length}
+          Showing {filteredData.length === 0 ? 0 : (currentPage - 1) * itemsPerPage + 1}-
+          {Math.min(currentPage * itemsPerPage, filteredData.length)} of {filteredData.length}
         </div>
 
         <div className="flex items-center gap-3">
@@ -250,7 +250,7 @@ const DepartmentsPage = () => {
 
           <button
             onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-            disabled={currentPage === totalPages}
+            disabled={currentPage >= totalPages}
             className="flex h-6 w-6 items-center justify-center rounded hover:bg-gray-200 disabled:opacity-50"
           >
             <img src={Next} alt="next" className="h-3 w-3" />
