@@ -17,13 +17,13 @@ Tạo file `tests/evaluation/test_cases.json`:
   {
     "question": "Học phí năm học 2024 là bao nhiêu?",
     "relevant_doc_ids": ["tuition_2024"],
-    "category": "tuition",
+    "department_id": 1,
     "language": "vi"
   },
   {
     "question": "CNTT",
     "relevant_doc_ids": ["program_cntt"],
-    "category": "program",
+    "department_id": 2,
     "language": "vi"
   }
 ]
@@ -111,7 +111,7 @@ Top-K: 5
 {
   "question": "Câu hỏi test",
   "relevant_doc_ids": ["doc_id_1", "doc_id_2"],
-  "category": "tuition",
+  "department_id": 1,
   "language": "vi"
 }
 ```
@@ -124,7 +124,7 @@ Top-K: 5
   "relevant_doc_ids": ["tuition_2024"],
   "relevant_chunk_ids": ["chunk_abc", "chunk_def"],
   "expected_answer": "Học phí năm 2024 là 25 triệu đồng/năm",
-  "category": "tuition",
+  "department_id": 1,
   "language": "vi"
 }
 ```
@@ -135,7 +135,8 @@ Top-K: 5
 - `relevant_doc_ids` (required): IDs của documents relevant
 - `relevant_chunk_ids` (optional): IDs của chunks relevant (chi tiết hơn doc-level)
 - `expected_answer` (optional): Câu trả lời mong đợi (để đánh giá answer quality)
-- `category` (optional): Category của câu hỏi (tuition, program, policy, etc.)
+- `department_id` (optional nhưng nên có): Phòng ban sở hữu tài liệu (khớp `documents.department_id`)
+- `category` (optional): Tag để phân nhóm/đánh giá coverage (không được lưu trong DB)
 - `language` (optional): Ngôn ngữ (vi, en)
 
 ## How to Get Document/Chunk IDs
@@ -178,13 +179,13 @@ for result in results:
 
 ### 1. Diverse Test Cases
 
-Cover nhiều categories:
+Cover nhiều phòng ban:
 ```json
 [
-  {"category": "tuition", "question": "Học phí..."},
-  {"category": "program", "question": "CNTT..."},
-  {"category": "policy", "question": "Thôi học..."},
-  {"category": "scholarship", "question": "Học bổng..."}
+  {"department_id": 1, "question": "Học phí..."},
+  {"department_id": 2, "question": "CNTT..."},
+  {"department_id": 3, "question": "Thôi học..."},
+  {"department_id": 5, "question": "Học bổng..."}
 ]
 ```
 
@@ -201,7 +202,7 @@ Test queries có nhiều ý nghĩa:
 {
   "question": "Thôi học",
   "relevant_doc_ids": ["voluntary_withdrawal", "forced_withdrawal"],
-  "category": "policy"
+  "department_id": 3
 }
 ```
 
@@ -256,6 +257,41 @@ jobs:
           name: evaluation-results
           path: apps/api/tests/evaluation/results.json
 ```
+
+## Confidence Benchmarking Pipeline
+
+### 1. Prepare Expected Answers
+
+- Add curated test cases with `expected_answer` to `apps/api/test-case.json`.
+- Each entry should contain `question`, `relevant_doc_ids`, and the canonical fact we expect the model to state.
+
+```json
+{
+  "question": "Học phí năm học 2024 là bao nhiêu?",
+  "expected_answer": "Học phí năm học 2024-2025 dao động 150-180 triệu VNĐ mỗi năm tùy ngành.",
+  "relevant_doc_ids": ["tuition_2024"],
+  "department_id": 1,
+  "language": "vi"
+}
+```
+
+### 2. Run the Benchmark
+
+```bash
+cd apps/api
+python scripts/run_confidence_benchmark.py \
+  --cases test-case.json \
+  --output tests/evaluation/confidence_report.json
+```
+
+The script queries the RAG orchestrator, compares answers against `expected_answer`, and reports:
+
+- **Accuracy & Coverage** of the answers judged correct.
+- **Brier score / Expected calibration error** for the confidence field.
+- **Recommended confidence threshold** (maximizes F1 between precision/recall).
+- **Calibration buckets** showing how accuracy aligns with confidence ranges.
+
+Use these metrics to tune `CONFIDENCE_THRESHOLD`, monitor regressions, or gate deployments.
 
 ## Troubleshooting
 

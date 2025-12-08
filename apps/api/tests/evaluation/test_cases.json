@@ -2,61 +2,61 @@
   {
     "question": "Học phí năm học 2024 là bao nhiêu?",
     "relevant_doc_ids": ["tuition_2024"],
-    "category": "tuition",
+    "department_id": 1,
     "language": "vi"
   },
   {
     "question": "CNTT",
     "relevant_doc_ids": ["program_cntt"],
-    "category": "program",
+    "department_id": 2,
     "language": "vi"
   },
   {
     "question": "Điều kiện thôi học",
     "relevant_doc_ids": ["withdrawal_policy"],
-    "category": "policy",
+    "department_id": 3,
     "language": "vi"
   },
   {
     "question": "Làm thế nào để đăng ký học lại môn?",
     "relevant_doc_ids": ["course_retake_procedure"],
-    "category": "procedure",
+    "department_id": 4,
     "language": "vi"
   },
   {
     "question": "Học bổng có những loại nào?",
     "relevant_doc_ids": ["scholarship_types"],
-    "category": "scholarship",
+    "department_id": 5,
     "language": "vi"
   },
   {
     "question": "Quy định về điểm danh",
     "relevant_doc_ids": ["attendance_policy"],
-    "category": "policy",
+    "department_id": 3,
     "language": "vi"
   },
   {
     "question": "Thời gian nộp học phí",
     "relevant_doc_ids": ["tuition_deadline"],
-    "category": "tuition",
+    "department_id": 1,
     "language": "vi"
   },
   {
     "question": "Điều kiện tốt nghiệp đại học",
     "relevant_doc_ids": ["graduation_requirements"],
-    "category": "graduation",
+    "department_id": 6,
     "language": "vi"
   },
   {
     "question": "Chương trình đào tạo ngành Khoa học máy tính",
     "relevant_doc_ids": ["program_cs"],
-    "category": "program",
+    "department_id": 2,
     "language": "vi"
   },
   {
     "question": "Cách đăng ký học phần online",
     "relevant_doc_ids": ["course_registration_online"],
-    "category": "procedure",
+    "department_id": 4,
     "language": "vi"
   }
 ]

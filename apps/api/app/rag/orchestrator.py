@@ -43,6 +43,7 @@ class RAGOrchestrator:
         top_k: int = 5,
         history: Optional[List[Dict]] = None,
         language: Optional[str] = None,
+        department_id: Optional[int] = None,
     ) -> Dict:
         # Initialize metrics tracking
         request_id = str(uuid.uuid4())[:8]
@@ -175,10 +176,13 @@ class RAGOrchestrator:
 
         metrics.start_stage("retrieve")
         all_docs = []
+        where_filter = {"department_id": department_id} if department_id is not None else None
         for sq in unique_queries:
             try:
                 # Use configurable top_k for each query
-                docs = self.retriever.retrieve(sq, top_k=settings.TOP_K_PER_QUERY)
+                docs = self.retriever.retrieve(
+                    sq, top_k=settings.TOP_K_PER_QUERY, where=where_filter
+                )
                 all_docs.extend(docs)
             except Exception as e:
                 logger.error(f"[{request_id}] Retrieval error for '{sq}': {e}")
