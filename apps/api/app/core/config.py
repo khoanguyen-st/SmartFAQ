@@ -101,6 +101,13 @@ def get_settings() -> Settings:
 
 def reload_settings() -> Settings:
     """Clear cache and reload settings from environment/file."""
+    from dotenv import load_dotenv
+
+    # Reload .env file to update os.environ
+    env_file_path = os.getenv("SETTINGS_ENV_FILE", ".env")
+    load_dotenv(env_file_path, override=True)
+
+    # Clear cache and create new settings instance
     get_settings.cache_clear()
     return get_settings()
 
