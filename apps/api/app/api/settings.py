@@ -8,7 +8,7 @@ from pathlib import Path
 
 from fastapi import APIRouter
 
-from ..core.config import settings
+from ..core.config import reload_settings, settings
 from ..schemas.settings import (
     SettingsUpdateRequest,
     SettingsUpdateResponse,
@@ -138,10 +138,14 @@ async def update_settings(payload: SettingsUpdateRequest) -> SettingsUpdateRespo
     # Try to persist to .env file
     try:
         _persist_to_env_file(payload)
+        # Reload settings from file to get updated values
+        reload_settings()
+        logger.info("Settings reloaded from environment file")
     except Exception as e:
         logger.warning(f"Failed to persist settings to .env file: {e}")
 
     updated_settings = SystemSettings(
+        google_api_key=settings.GOOGLE_API_KEY,
         llm_model=settings.LLM_MODEL,
         llm_temperature=settings.LLM_TEMPERATURE,
         llm_max_tokens=settings.LLM_MAX_TOKENS,
