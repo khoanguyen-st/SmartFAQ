@@ -8,6 +8,7 @@ from ..models.chat import Channel, ChatRole, Language
 class FeedbackStatus(str, Enum):
     UP = "up"
     DOWN = "down"
+    RESET = "reset"
 
 
 FEEDBACK_MESSAGES: dict[str, str] = {

@@ -158,7 +158,6 @@ export const useChat = (initialSessionId?: string | null) => {
   )
 
   // 5. CLEAR CHAT
-  // -------------------------------------------------------
   const clearChat = async () => {
     setSessionId(null)
 
