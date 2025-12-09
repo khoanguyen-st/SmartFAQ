@@ -85,7 +85,6 @@ const ShellLayout = () => {
       await logout()
       navigate('/login')
     } catch {
-      // Even if logout fails, clear token and redirect
       localStorage.removeItem('access_token')
       navigate('/login')
     }
@@ -96,15 +95,16 @@ const ShellLayout = () => {
       <aside
         className={cn(
           'z-50 flex w-60 flex-col bg-slate-900 px-4 py-6 text-slate-50 transition-transform duration-300',
-          'fixed inset-y-0 left-0 shadow-2xl',
-          isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
+          'lg:fixed lg:inset-y-0 lg:left-0 lg:translate-x-0',
+          'fixed inset-y-0 left-0 shadow-2xl lg:shadow-none',
+          isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
         )}
       >
         <div className="mb-6 flex items-center justify-between">
           <div className="text-lg font-semibold">SmartFAQ Admin</div>
           <button
             onClick={toggleSidebar}
-            className="rounded-full p-1 text-slate-300 transition-colors hover:bg-slate-700 hover:text-white"
+            className="rounded-full p-1 text-slate-300 transition-colors hover:bg-slate-700 hover:text-white lg:hidden"
             aria-label="Đóng Sidebar"
           >
             <X className="h-6 w-6" />
@@ -141,19 +141,19 @@ const ShellLayout = () => {
 
   return (
     <div className="flex min-h-screen bg-[#eff3fb] text-slate-900">
-      {isSidebarOpen && <div className="fixed inset-0 z-40 bg-black/50" onClick={toggleSidebar} />}
+      {isSidebarOpen && <div className="fixed inset-0 z-40 bg-black/50 lg:hidden" onClick={toggleSidebar} />}
       {Sidebar}
 
-      <main className="w-full flex-1 overflow-y-auto">
+      <main className="w-full flex-1 overflow-y-auto lg:ml-60">
         <header className="sticky top-0 z-20 border-b border-gray-200 bg-white px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <button
                 onClick={toggleSidebar}
-                className="p-1 text-gray-600 transition-colors hover:text-gray-800"
+                className="p-1 text-gray-600 transition-colors hover:text-gray-800 lg:hidden"
                 aria-label={isSidebarOpen ? 'Đóng menu' : 'Mở menu'}
               >
-                {isSidebarOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+                <Menu className="h-6 w-6" />
               </button>
               <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#003087]">
                 <EducationIcon />
