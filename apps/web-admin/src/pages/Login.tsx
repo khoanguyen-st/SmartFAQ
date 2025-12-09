@@ -2,7 +2,7 @@ import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import LoginForm from '../components/auth/LoginForm'
 import logo from '../assets/icons/logo.svg'
-import loginGif from '../assets/icons/login.gif'
+import loginGif from '../assets/icons/login-once.gif'
 import { login } from '../lib/api'
 
 const LoginPage: React.FC = () => {
