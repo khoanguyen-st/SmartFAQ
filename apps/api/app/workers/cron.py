@@ -6,7 +6,6 @@ from typing import Optional
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import selectinload
 
 from ..core.config import settings
 from ..core.database import AsyncSessionLocal
@@ -19,12 +18,7 @@ logger = logging.getLogger(__name__)
 
 
 async def _process_single_document(db: AsyncSession, doc_id: int) -> None:
-    # Load document in this session with relationships
-    stmt = (
-        select(Document)
-        .where(Document.id == doc_id)
-        .options(selectinload(Document.current_version), selectinload(Document.versions))
-    )
+    stmt = select(Document).where(Document.id == doc_id, Document.is_deleted.is_(False))
     result = await db.execute(stmt)
     doc = result.scalar_one_or_none()
 
@@ -34,15 +28,11 @@ async def _process_single_document(db: AsyncSession, doc_id: int) -> None:
 
     object_name: Optional[str] = None
     try:
-        if doc.current_version and doc.current_version.file_path:
-            object_name = doc.current_version.file_path
-        elif doc.versions and len(doc.versions) > 0:
-            object_name = doc.versions[0].file_path
+        object_name = doc.file_path
 
         if not object_name:
             raise RuntimeError("No file path available for document")
 
-        # Check file size before processing to prevent memory issues
         try:
             stat = await asyncio.to_thread(
                 dms.minio_client.stat_object, dms.BUCKET_NAME, object_name
@@ -122,10 +112,8 @@ async def process_requests_once() -> None:
     async with AsyncSessionLocal() as db:
         try:
             logger.info("Fetching documents with status 'REQUEST' for processing...")
-            stmt = (
-                select(Document)
-                .where(Document.status == "REQUEST")
-                .options(selectinload(Document.current_version), selectinload(Document.versions))
+            stmt = select(Document).where(
+                Document.status == "REQUEST", Document.is_deleted.is_(False)
             )
             result = await db.execute(stmt)
             docs = result.scalars().all()
@@ -135,7 +123,6 @@ async def process_requests_once() -> None:
             if not docs:
                 return
 
-            # Process documents concurrently with a limit to prevent resource exhaustion
             max_concurrent = int(getattr(settings, "MAX_CONCURRENT_PROCESSING", 3))
             semaphore = asyncio.Semaphore(max_concurrent)
 
@@ -148,7 +135,6 @@ async def process_requests_once() -> None:
                         except Exception:
                             logger.exception("Error processing document ID: %s", doc.id)
 
-            # Process all documents concurrently (with semaphore limiting parallelism)
             tasks = [process_with_semaphore(doc) for doc in docs]
             await asyncio.gather(*tasks, return_exceptions=True)
 
