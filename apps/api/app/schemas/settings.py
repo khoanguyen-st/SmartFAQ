@@ -8,6 +8,7 @@ class SystemSettings(BaseModel):
 
     # LLM Settings
     llm_model: str = Field(..., description="Language model name")
+    google_api_key: str = Field("", description="Google API Key for Gemini")
     llm_temperature: float = Field(..., ge=0.0, le=2.0, description="Model creativity (0-2)")
     llm_max_tokens: int = Field(..., ge=128, le=8192, description="Maximum response length")
 
@@ -47,6 +48,8 @@ class SettingsUpdateRequest(BaseModel):
     """Request to update specific settings."""
 
     # LLM Settings (optional)
+    llm_model: str | None = Field(None, description="Language model name")
+    google_api_key: str | None = Field(None, description="Google API Key for Gemini")
     llm_temperature: float | None = Field(None, ge=0.0, le=2.0)
     llm_max_tokens: int | None = Field(None, ge=128, le=8192)
 

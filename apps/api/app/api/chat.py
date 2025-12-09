@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import logging
-from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -28,14 +27,23 @@ logger = logging.getLogger(__name__)
 if not logger.handlers:
     logging.basicConfig(level=logging.INFO)
 
-_rag_orchestrator: Optional[RAGOrchestrator] = None
-
 
 def get_rag_orchestrator() -> RAGOrchestrator:
-    global _rag_orchestrator
-    if _rag_orchestrator is None:
-        _rag_orchestrator = RAGOrchestrator()
-    return _rag_orchestrator
+    """Create a new RAGOrchestrator instance with current settings.
+
+    This ensures that each request uses the latest LLM model configuration
+    from settings, allowing dynamic switching between Gemini and Local AI.
+    """
+    from ..core.config import settings
+    from ..rag.llm import LLMWrapper
+
+    llm_wrapper = LLMWrapper(
+        model=settings.LLM_MODEL,
+        temperature=settings.LLM_TEMPERATURE,
+        max_tokens=settings.LLM_MAX_TOKENS,
+    )
+
+    return RAGOrchestrator(llm_wrapper=llm_wrapper)
 
 
 QUERY_RATE_LIMITER = RateLimiter(

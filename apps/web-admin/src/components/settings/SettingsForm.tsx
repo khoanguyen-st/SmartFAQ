@@ -146,6 +146,8 @@ const SettingsForm = () => {
       setSuccess(null)
 
       const updateData: SettingsUpdateRequest = {
+        llm_model: settings.llm_model,
+        google_api_key: settings.google_api_key,
         llm_temperature: settings.llm_temperature,
         llm_max_tokens: settings.llm_max_tokens,
         confidence_threshold: settings.confidence_threshold,
@@ -224,21 +226,95 @@ const SettingsForm = () => {
         </div>
       )}
 
-      {/* Read-only Model Info */}
-      <div className="rounded-2xl border border-indigo-100 bg-linear-to-br from-indigo-50 to-purple-50 p-6 shadow-sm">
+      {/* AI Model Selection */}
+      <div className="rounded-2xl border border-indigo-100 bg-gradient-to-br from-indigo-50 to-purple-50 p-6 shadow-sm">
         <div className="flex items-start gap-3">
           <Info className="mt-0.5 h-5 w-5 shrink-0 text-indigo-600" />
-          <div>
-            <h3 className="mb-1 font-semibold text-slate-900">Current AI Model</h3>
-            <p className="mb-2 text-sm text-slate-700">
-              <span className="rounded border border-indigo-200 bg-white px-2 py-1 font-mono">
-                {settings.llm_model}
-              </span>
+          <div className="flex-1">
+            <h3 className="mb-2 font-semibold text-slate-900">AI Model Selection</h3>
+            <p className="mb-4 text-xs text-slate-600">
+              Choose between Google Gemini (cloud-based) or Local AI (self-hosted) model
             </p>
-            <p className="text-xs text-slate-600">
-              This is the AI language model powering the chatbot. Model selection is configured via environment
-              variables.
-            </p>
+
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={() => updateSetting('llm_model', 'gemini-2.5-flash')}
+                className={`flex-1 rounded-lg border-2 p-4 text-left transition-all ${
+                  settings.llm_model.includes('gemini')
+                    ? 'border-indigo-600 bg-white shadow-md'
+                    : 'border-indigo-200 bg-white/50 hover:border-indigo-400'
+                }`}
+              >
+                <div className="mb-1 flex items-center gap-2">
+                  <div
+                    className={`h-3 w-3 rounded-full ${
+                      settings.llm_model.includes('gemini') ? 'bg-indigo-600' : 'bg-slate-300'
+                    }`}
+                  />
+                  <span className="font-semibold text-slate-900">Google Gemini</span>
+                </div>
+                <p className="text-xs text-slate-600">Cloud-based AI model</p>
+                <p className="mt-1 font-mono text-xs text-slate-500">gemini-2.5-flash</p>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => updateSetting('llm_model', 'llama-3.2-3b-instruct')}
+                className={`flex-1 rounded-lg border-2 p-4 text-left transition-all ${
+                  settings.llm_model.includes('llama') || settings.llm_model.includes('local')
+                    ? 'border-indigo-600 bg-white shadow-md'
+                    : 'border-indigo-200 bg-white/50 hover:border-indigo-400'
+                }`}
+              >
+                <div className="mb-1 flex items-center gap-2">
+                  <div
+                    className={`h-3 w-3 rounded-full ${
+                      settings.llm_model.includes('llama') || settings.llm_model.includes('local')
+                        ? 'bg-indigo-600'
+                        : 'bg-slate-300'
+                    }`}
+                  />
+                  <span className="font-semibold text-slate-900">Local AI</span>
+                </div>
+                <p className="text-xs text-slate-600">Self-hosted AI model</p>
+                <p className="mt-1 font-mono text-xs text-slate-500">llama-3.2-3b-instruct</p>
+              </button>
+            </div>
+
+            {/* Google API Key Input - Only shown when Gemini is selected */}
+            {settings.llm_model.includes('gemini') && (
+              <div className="mt-4 rounded-lg border-2 border-indigo-200 bg-white p-4">
+                <label className="mb-2 block text-sm font-medium text-slate-900">
+                  Google API Key
+                  <span className="ml-1 text-red-500">*</span>
+                </label>
+                <input
+                  type="password"
+                  value={settings.google_api_key}
+                  placeholder="Enter your Google API Key (AIza...)"
+                  className="w-full rounded-lg border border-slate-300 px-3 py-2 font-mono text-sm focus:border-indigo-600 focus:ring-2 focus:ring-indigo-600/20 focus:outline-none"
+                  onChange={e => updateSetting('google_api_key', e.target.value)}
+                />
+                <p className="mt-2 text-xs text-slate-600">
+                  <strong>Note:</strong> Your API key is required to use Google Gemini. Get your key from{' '}
+                  <a
+                    href="https://makersuite.google.com/app/apikey"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-indigo-600 underline hover:text-indigo-700"
+                  >
+                    Google AI Studio
+                  </a>
+                </p>
+              </div>
+            )}
+
+            <div className="mt-3 rounded-lg border border-blue-100 bg-blue-50 p-3">
+              <p className="text-xs text-blue-800">
+                <strong>Current:</strong> <span className="font-mono">{settings.llm_model}</span>
+              </p>
+            </div>
           </div>
         </div>
       </div>

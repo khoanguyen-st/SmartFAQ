@@ -48,15 +48,31 @@ class LLMWrapper:
         llm_temperature = temperature if temperature is not None else settings.LLM_TEMPERATURE
         llm_max_tokens = max_tokens or getattr(settings, "LLM_MAX_TOKENS", 512)
 
-        self.llm = ChatGoogleGenerativeAI(
-            model=llm_model,
-            temperature=llm_temperature,
-            max_output_tokens=llm_max_tokens,
-            google_api_key=getattr(settings, "GOOGLE_API_KEY", None),
-            max_retries=2,
-        )
+        is_gemini = "gemini" in llm_model.lower()
 
-        logger.info(f"LLM initialized with model: {llm_model}")
+        if is_gemini:
+            self.llm = ChatGoogleGenerativeAI(
+                model=llm_model,
+                temperature=llm_temperature,
+                max_output_tokens=llm_max_tokens,
+                google_api_key=getattr(settings, "GOOGLE_API_KEY", None),
+                max_retries=2,
+            )
+            logger.info(f"LLM initialized with Google Gemini model: {llm_model}")
+        else:
+            from langchain_openai import ChatOpenAI
+
+            local_base_url = getattr(settings, "LOCAL_LLM_BASE_URL", "http://localhost:11434/v1")
+
+            self.llm = ChatOpenAI(
+                model=llm_model,
+                temperature=llm_temperature,
+                max_tokens=llm_max_tokens,
+                base_url=local_base_url,
+                api_key="not-needed",
+                max_retries=2,
+            )
+            logger.info(f"LLM initialized with Local AI model: {llm_model} at {local_base_url}")
 
         self.system_prompt = (
             "Bạn là trợ lý AI thông minh của Đại học Greenwich Việt Nam.\n\n"

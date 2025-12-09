@@ -23,6 +23,7 @@ async def get_settings() -> SystemSettings:
     """Get current system settings."""
     return SystemSettings(
         llm_model=settings.LLM_MODEL,
+        google_api_key=settings.GOOGLE_API_KEY,
         llm_temperature=settings.LLM_TEMPERATURE,
         llm_max_tokens=settings.LLM_MAX_TOKENS,
         confidence_threshold=settings.CONFIDENCE_THRESHOLD,
@@ -54,6 +55,14 @@ async def update_settings(payload: SettingsUpdateRequest) -> SettingsUpdateRespo
     updated_fields = []
 
     # Update LLM settings
+    if payload.llm_model is not None:
+        settings.LLM_MODEL = payload.llm_model
+        updated_fields.append("llm_model")
+
+    if payload.google_api_key is not None:
+        settings.GOOGLE_API_KEY = payload.google_api_key
+        updated_fields.append("google_api_key")
+
     if payload.llm_temperature is not None:
         settings.LLM_TEMPERATURE = payload.llm_temperature
         updated_fields.append("llm_temperature")
@@ -135,6 +144,7 @@ async def update_settings(payload: SettingsUpdateRequest) -> SettingsUpdateRespo
 
     updated_settings = SystemSettings(
         llm_model=settings.LLM_MODEL,
+        google_api_key=settings.GOOGLE_API_KEY,
         llm_temperature=settings.LLM_TEMPERATURE,
         llm_max_tokens=settings.LLM_MAX_TOKENS,
         confidence_threshold=settings.CONFIDENCE_THRESHOLD,
@@ -172,6 +182,10 @@ def _persist_to_env_file(payload: SettingsUpdateRequest) -> None:
     lines = env_file.read_text().splitlines()
     updates = {}
 
+    if payload.llm_model is not None:
+        updates["LLM_MODEL"] = str(payload.llm_model)
+    if payload.google_api_key is not None:
+        updates["GOOGLE_API_KEY"] = str(payload.google_api_key)
     if payload.llm_temperature is not None:
         updates["LLM_TEMPERATURE"] = str(payload.llm_temperature)
     if payload.llm_max_tokens is not None:
