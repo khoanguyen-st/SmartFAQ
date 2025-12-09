@@ -63,9 +63,16 @@ const mapBackendToFrontend = (doc: BackendDocument): IUploadedFile => {
 
 const DOCS_BASE_URL = `${API_BASE_URL}/api/docs`
 
+const getAuthHeaders = (): HeadersInit => {
+  const accessToken = localStorage.getItem('access_token')
+  return accessToken ? { Authorization: `Bearer ${accessToken}` } : {}
+}
+
 export const fetchKnowledgeFiles = async (): Promise<IUploadedFile[]> => {
   try {
-    const response = await fetch(`${DOCS_BASE_URL}/`)
+    const response = await fetch(`${DOCS_BASE_URL}/`, {
+      headers: getAuthHeaders()
+    })
     if (!response.ok) {
       const errorText = await response.text()
       console.error(`API Error - Status: ${response.status} on GET /api/docs/`, errorText)
@@ -113,6 +120,7 @@ export const uploadKnowledgeFiles = async (files: File[]): Promise<IUploadedFile
   try {
     const response = await fetch(`${DOCS_BASE_URL}/`, {
       method: 'POST',
+      headers: getAuthHeaders(),
       body: formData
     })
 
@@ -168,7 +176,9 @@ export const uploadKnowledgeFiles = async (files: File[]): Promise<IUploadedFile
 
       if (docId) {
         try {
-          const docResponse = await fetch(`${DOCS_BASE_URL}/${docId}`)
+          const docResponse = await fetch(`${DOCS_BASE_URL}/${docId}`, {
+            headers: getAuthHeaders()
+          })
           if (docResponse.ok) {
             const doc: BackendDocument = await docResponse.json()
             uploadedFiles.push(mapBackendToFrontend(doc))
@@ -212,7 +222,8 @@ export const deleteKnowledgeFile = async (fileId: string): Promise<{ id: string 
     }
 
     const response = await fetch(`${DOCS_BASE_URL}/${fileId}`, {
-      method: 'DELETE'
+      method: 'DELETE',
+      headers: getAuthHeaders()
     })
 
     if (!response.ok) {
@@ -233,7 +244,9 @@ export const deleteKnowledgeFile = async (fileId: string): Promise<{ id: string 
 
 export const searchKnowledgeFiles = async (name: string): Promise<IUploadedFile[]> => {
   try {
-    const response = await fetch(`${DOCS_BASE_URL}/search?name=${encodeURIComponent(name)}`)
+    const response = await fetch(`${DOCS_BASE_URL}/search?name=${encodeURIComponent(name)}`, {
+      headers: getAuthHeaders()
+    })
     if (!response.ok) {
       const errorText = await response.text()
       console.error(`API Error - Status: ${response.status} on GET /api/docs/search`, errorText)
@@ -251,7 +264,9 @@ export const searchKnowledgeFiles = async (name: string): Promise<IUploadedFile[
 
 export const filterKnowledgeFiles = async (format: string): Promise<IUploadedFile[]> => {
   try {
-    const response = await fetch(`${DOCS_BASE_URL}/filter?format=${encodeURIComponent(format)}`)
+    const response = await fetch(`${DOCS_BASE_URL}/filter?format=${encodeURIComponent(format)}`, {
+      headers: getAuthHeaders()
+    })
     if (!response.ok) {
       const errorText = await response.text()
       console.error(`API Error - Status: ${response.status} on GET /api/docs/filter`, errorText)
@@ -276,7 +291,9 @@ export interface DocumentStatus {
 
 export const fetchDocumentsByStatus = async (status: string): Promise<DocumentStatus[]> => {
   try {
-    const response = await fetch(`${DOCS_BASE_URL}/documents/status?document_status=${encodeURIComponent(status)}`)
+    const response = await fetch(`${DOCS_BASE_URL}/documents/status?document_status=${encodeURIComponent(status)}`, {
+      headers: getAuthHeaders()
+    })
     if (!response.ok) {
       const errorText = await response.text()
       console.error(`API Error - Status: ${response.status} on GET /api/docs/documents/status`, errorText)

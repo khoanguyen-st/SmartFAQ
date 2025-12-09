@@ -8,7 +8,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
 from ..core.database import get_db
+from ..core.users import get_current_user
 from ..models import document as document_model
+from ..models.user import User
 from ..schemas import document
 from ..services import dms
 
@@ -37,11 +39,28 @@ async def create_docs(
     title: str | None = Form(None),
     category: str | None = Form(None),
     tags: str | None = Form(None),
+    department_id: int | None = Form(None),
     db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
     try:
+        # Get department_id from user if not provided
+        final_department_id = department_id
+        if final_department_id is None:
+            # Refresh user with departments relationship
+            await db.refresh(current_user, ["departments"])
+            if current_user.departments:
+                final_department_id = current_user.departments[0].id
+                logger.info(
+                    "Auto-assigned department_id %s for user %s",
+                    final_department_id,
+                    current_user.id,
+                )
+
         if files:
-            results = await dms.enqueue_multiple_documents(files)
+            results = await dms.enqueue_multiple_documents(
+                files, current_user.id, final_department_id
+            )
             return {"status": "accepted", "items": results}
 
         if not title:
@@ -50,7 +69,8 @@ async def create_docs(
         payload = document.DocumentCreate(title=title, category=category, tags=tags, language="vi")
 
         data = payload.dict()
-        data["created_by"] = None
+        data["creator_id"] = current_user.id
+        data["department_id"] = final_department_id
         result = await dms.create_metadata_document(data, db)
         return {"item": result, "status": status.HTTP_201_CREATED}
 
@@ -118,14 +138,8 @@ async def download_document(doc_id: int, db: AsyncSession = Depends(get_db)):
         if not doc:
             raise HTTPException(404, "Document not found")
 
-        object_name = None
-        if doc["versions"]:
-            for v in doc["versions"]:
-                if v["id"] == doc["current_version_id"]:
-                    object_name = v["file_path"]
-                    break
-            if not object_name:
-                object_name = doc["versions"][0]["file_path"]
+        # Get file path directly from document
+        object_name = doc.get("versions", [{}])[0].get("file_path") if doc.get("versions") else None
 
         if not object_name:
             raise HTTPException(404, "File not found in storage")
@@ -163,9 +177,23 @@ async def update_document(
     category: str | None = Form(None),
     tags: str | None = Form(None),
     language: str | None = Form(None),
+    department_id: int | None = Form(None),
     db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
     try:
+        # Get department_id from user if not provided
+        final_department_id = department_id
+        if final_department_id is None:
+            await db.refresh(current_user, ["departments"])
+            if current_user.departments:
+                final_department_id = current_user.departments[0].id
+                logger.info(
+                    "Auto-assigned department_id %s for user %s",
+                    final_department_id,
+                    current_user.id,
+                )
+
         result = await dms.update_document(
             doc_id=doc_id,
             db=db,
@@ -174,6 +202,8 @@ async def update_document(
             category=category,
             tags=tags,
             language=language,
+            department_id=final_department_id,
+            current_user_id=current_user.id,
         )
 
         if not result:
@@ -236,7 +266,7 @@ async def get_documents_by_status(
                     "document_id": doc.id,
                     "title": doc.title,
                     "status": doc.status,
-                    "current_version_id": doc.current_version_id,
+                    "version_no": doc.version_no,
                 }
                 for doc in docs
             ]
