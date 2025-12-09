@@ -93,7 +93,7 @@ export const CreateUserDialog: React.FC<CreateUserDialogProps> = ({
         {/* Header cố định */}
         <div className="flex-none border-b border-slate-100 px-8 py-6">
           <h2 className="text-2xl font-semibold text-slate-900">Create New User</h2>
-          <p className="mt-1 text-sm text-slate-500">Enter user details below</p>
+          <p className="mt-1 text-sm text-slate-500">Create account for Student Affairs Department Staff</p>
         </div>
 
         {/* Body cuộn */}
