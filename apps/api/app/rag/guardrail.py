@@ -61,6 +61,14 @@ class GuardrailService:
         if code in ["profanity", "insult", "hate_speech", "harassment"]:
             code = "toxic"
 
-        msgs = REFUSAL_MESSAGES.get(code, REFUSAL_MESSAGES["default"])
+        msgs = REFUSAL_MESSAGES.get(code, REFUSAL_MESSAGES["irrelevant"])
 
         return {"status": "blocked", "vi": msgs["vi"], "en": msgs["en"]}
+
+    async def is_question_appropriate(self, question: str) -> bool:
+        """
+        Quick check if question is appropriate for FAQ suggestions.
+        Returns True if allowed, False if blocked.
+        """
+        result = await self.check_safety(question)
+        return result.get("status") == "allowed"

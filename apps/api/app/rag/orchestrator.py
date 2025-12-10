@@ -7,6 +7,7 @@ from typing import Dict, List, Optional
 
 from google.api_core import exceptions as google_exceptions
 
+from app.constants.departments import get_all_contacts_footer, get_department_contact_info
 from app.core.config import settings
 from app.rag.guardrail import GuardrailService
 from app.rag.llm import LLMWrapper
@@ -194,6 +195,8 @@ class RAGOrchestrator:
                 if target_lang == "vi"
                 else "I could not find information in the documents."
             )
+            contacts_footer = get_all_contacts_footer(target_lang)
+            fb = f"{fb}{contacts_footer}"
             metrics.error_type = ErrorType.RETRIEVAL_EMPTY
             metrics.fallback_triggered = True
             metrics.finalize()
@@ -207,14 +210,30 @@ class RAGOrchestrator:
             )
             metrics.generation_ms = metrics.end_stage("generate")
 
-            conf = self.retriever.calculate_confidence(
+            # Calculate retrieval quality (how good the retrieved documents are)
+            retrieval_quality = self.retriever.calculate_retrieval_quality(
                 unique_docs, num_sub_queries=metrics.num_sub_queries
             )
-            metrics.confidence = conf
+            logger.info(f"[{request_id}] Retrieval Quality: {retrieval_quality:.3f}")
 
-            if conf < settings.CONFIDENCE_THRESHOLD:
+            # Evaluate answer confidence (how confident the LLM is about the answer)
+            answer_confidence = await self.llm.evaluate_answer_confidence(
+                refined_q, ans, unique_docs
+            )
+            logger.info(f"[{request_id}] Answer Confidence: {answer_confidence:.3f}")
+
+            # Combined confidence: average of both metrics
+            final_confidence = (retrieval_quality + answer_confidence) / 2
+            metrics.confidence = final_confidence
+
+            logger.info(
+                f"[{request_id}] Final Confidence: {final_confidence:.3f} "
+                f"(retrieval={retrieval_quality:.3f}, answer={answer_confidence:.3f})"
+            )
+
+            if final_confidence < settings.CONFIDENCE_THRESHOLD:
                 logger.info(
-                    f"[{metrics.request_id}] CONF < THRESHOLD ({conf} < {settings.CONFIDENCE_THRESHOLD}) → FALLBACK"
+                    f"[{metrics.request_id}] CONF < THRESHOLD ({final_confidence:.3f} < {settings.CONFIDENCE_THRESHOLD}) → FALLBACK"
                 )
                 metrics.fallback_triggered = True
 
@@ -233,42 +252,37 @@ class RAGOrchestrator:
                 if dept_counts:
                     dominant_dept_id = max(dept_counts.items(), key=lambda x: x[1])[0]
 
+                # Get primary contact info based on dominant department
+                primary_contact = get_department_contact_info(dominant_dept_id, target_lang)
+
+                # Get footer with all contacts
+                contacts_footer = get_all_contacts_footer(target_lang)
+
                 if target_lang == "vi":
-                    if dominant_dept_id == 1:
-                        contact = (
-                            "Phòng CTSV: Điện thoại: 02367.305.767, Email: sro.gre.dn@fe.edu.vn"
-                        )
-                    elif dominant_dept_id == 2:
-                        contact = (
-                            "Phòng TS: Điện thoại: 02367.305.767, Email: acad.gre.dn@fe.edu.vn"
-                        )
-                    else:
-                        contact = "bộ phận tư vấn để được hỗ trợ chi tiết hơn."
-
                     warning = (
-                        f" Lưu ý: Câu trả lời dưới đây có độ tin cậy thấp dựa trên tài liệu hiện có.\n"
-                        f"Để chính xác nhất, vui lòng liên hệ: {contact}\n"
-                        f"{'-'*30}\n\n"
+                        f"⚠️ LƯU Ý: Câu trả lời dưới đây có độ tin cậy thấp ({final_confidence:.0%}).\n"
+                        f"Để được hỗ trợ chính xác nhất, vui lòng liên hệ: {primary_contact}\n"
+                        f"{'-'*50}\n\n"
                     )
+                    ans = f"{warning}{ans}{contacts_footer}"
                 else:
-                    if dominant_dept_id == 1:
-                        contact = "Student Affairs Office:\nPhone: 02367.305.767, Email: sro.gre.dn@fe.edu.vn"
-                    elif dominant_dept_id == 2:
-                        contact = "Academic Administration Office:\nPhone: 02367.305.767, Email: acad.gre.dn@fe.edu.vn"
-                    else:
-                        contact = "consulting department for further assistance."
-
                     warning = (
-                        f" Warning: The answer below has low confidence based on available documents.\n"
-                        f"For accuracy, please contact: {contact}\n"
-                        f"{'-'*30}\n\n"
+                        f"⚠️ WARNING: The answer below has low confidence ({final_confidence:.0%}).\n"
+                        f"For accurate assistance, please contact: {primary_contact}\n"
+                        f"{'-'*50}\n\n"
                     )
-
-                ans = f"{warning}{ans}"
+                    ans = f"{warning}{ans}{contacts_footer}"
 
             metrics.finalize()
             return self._response(
-                ans, self._fmt_sources(unique_docs), conf, t0, metrics.fallback_triggered, metrics
+                ans,
+                self._fmt_sources(unique_docs),
+                final_confidence,
+                t0,
+                metrics.fallback_triggered,
+                metrics,
+                retrieval_quality=retrieval_quality,
+                answer_confidence=answer_confidence,
             )
 
         except google_exceptions.ResourceExhausted as e:
@@ -284,6 +298,8 @@ class RAGOrchestrator:
                 if target_lang == "vi"
                 else "The system is currently overloaded. Please try again in a few minutes."
             )
+            contacts_footer = get_all_contacts_footer(target_lang)
+            fallback_msg = f"{fallback_msg}{contacts_footer}"
             return self._response(fallback_msg, [], 0, t0, True, metrics)
 
         except Exception as e:
@@ -299,6 +315,8 @@ class RAGOrchestrator:
                 if target_lang == "vi"
                 else "A system error occurred. Please try again."
             )
+            contacts_footer = get_all_contacts_footer(target_lang)
+            error_msg = f"{error_msg}{contacts_footer}"
             return self._response(error_msg, [], 0, t0, True, metrics)
 
     def _should_contextualize(self, question: str, history: Optional[List[Dict]]) -> bool:
@@ -334,11 +352,22 @@ class RAGOrchestrator:
 
         return False
 
-    def _response(self, ans, srcs, conf, t0, fb, metrics: Optional[RAGMetrics] = None):
+    def _response(
+        self,
+        ans,
+        srcs,
+        conf,
+        t0,
+        fb,
+        metrics: Optional[RAGMetrics] = None,
+        retrieval_quality: Optional[float] = None,
+        answer_confidence: Optional[float] = None,
+    ):
         response = {
             "answer": ans,
             "sources": srcs,
             "confidence": conf,
+            "relevance": retrieval_quality,  # Add relevance (retrieval quality) to response
             "fallback_triggered": fb,
             "latency_ms": int((time.time() - t0) * 1000),
         }
@@ -351,6 +380,11 @@ class RAGOrchestrator:
                 "num_unique_docs": metrics.num_unique_docs,
                 "language": metrics.language,
             }
+
+            # Add detailed confidence breakdown if available
+            if retrieval_quality is not None and answer_confidence is not None:
+                response["metrics"]["retrieval_quality"] = retrieval_quality
+                response["metrics"]["answer_confidence"] = answer_confidence
 
             rag_metrics_logger.info(
                 "RAG request completed",

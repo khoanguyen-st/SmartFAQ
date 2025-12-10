@@ -3,6 +3,7 @@ import { RefreshCw } from 'lucide-react'
 import KPIGrid from '../components/dashboard/KPIGrid'
 import TrendsChart from '../components/dashboard/TrendsChart'
 import UnansweredPanel from '../components/dashboard/UnansweredPanel'
+import FAQPanel from '../components/dashboard/FAQPanel'
 
 const DashboardPage = () => {
   const [autoRefresh, setAutoRefresh] = useState(false)
@@ -43,6 +44,10 @@ const DashboardPage = () => {
 
       <KPIGrid autoRefresh={autoRefresh} refreshKey={refreshKey} />
       <TrendsChart refreshKey={refreshKey} />
+
+      {/* FAQ Panel - Popular and Trending Questions */}
+      <FAQPanel refreshKey={refreshKey} />
+
       <UnansweredPanel refreshKey={refreshKey} />
     </div>
   )

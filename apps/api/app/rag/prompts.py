@@ -95,14 +95,44 @@ def get_rewrite_question_prompt() -> str:
         "Nếu câu hỏi đã rõ ràng và độc lập thì giữ nguyên.\n"
         "Nếu câu hỏi mơ hồ hoặc phụ thuộc ngữ cảnh, và lịch sử chat liên quan đến Đại học Greenwich Việt Nam thì mặc định rằng người dùng hỏi về trường.\n"
         "Nếu ngữ cảnh không rõ, giữ nguyên ý nghĩa gốc và không gán sang trường khác.\n"
-        "Không giải thích. Chỉ trả về duy nhất một JSON object với trường:\n"
-        "QUY TẮC QUAN TRỌNG VỀ NGÔN NGỮ:\n"
-        "1. Input là Tiếng Anh -> Output PHẢI là Tiếng Anh.\n"
-        "2. Input là Tiếng Việt -> Output là Tiếng Việt.\n"
-        "Ví dụ:\n"
-        "Input: 'tuition' -> Output: 'What is the tuition fee of Greenwich Vietnam?'\n"
-        "Input: 'học phí' -> Output: 'Học phí của đại học Greenwich Việt Nam là bao nhiêu?'\n"
-        '  "standalone_question"\n'
+        "\n"
+        "⚠️ QUY TẮC QUAN TRỌNG VỀ NGÔN NGỮ (BẮT BUỘC):\n"
+        "1. PHẢI giữ NGUYÊN ngôn ngữ của Follow-up Question.\n"
+        "2. Follow-up Question là Tiếng Việt → Output PHẢI là Tiếng Việt.\n"
+        "3. Follow-up Question là Tiếng Anh → Output PHẢI là Tiếng Anh.\n"
+        "4. KHÔNG dịch sang ngôn ngữ khác dù lịch sử chat là ngôn ngữ nào.\n"
+        "\n"
+        "VÍ DỤ:\n"
+        "\n"
+        "Example 1:\n"
+        "Chat History:\n"
+        "user: programs\n"
+        "assistant: Greenwich offers IT, Business...\n"
+        "Follow-up Question: tuition\n"
+        'Output: {{"standalone_question": "What is the tuition fee of Greenwich Vietnam?"}}\n'
+        "\n"
+        "Example 2:\n"
+        "Chat History:\n"
+        "user: ngành học\n"
+        "assistant: Greenwich có các ngành CNTT, Kinh doanh...\n"
+        "Follow-up Question: học phí\n"
+        'Output: {{"standalone_question": "Học phí của Đại học Greenwich Việt Nam là bao nhiêu?"}}\n'
+        "\n"
+        "Example 3:\n"
+        "Chat History:\n"
+        "user: ngành CNTT\n"
+        "assistant: Ngành Công nghệ Thông tin...\n"
+        "Follow-up Question: chương trình 3+0\n"
+        'Output: {{"standalone_question": "Chương trình 3+0 của Greenwich Việt Nam là gì?"}}\n'
+        "\n"
+        "Example 4:\n"
+        "Chat History:\n"
+        "user: IT programs\n"
+        "assistant: The IT program includes...\n"
+        "Follow-up Question: 3+0 program\n"
+        'Output: {{"standalone_question": "What is the 3+0 program at Greenwich Vietnam?"}}\n'
+        "\n"
+        'Trả về ĐÚNG JSON format với trường "standalone_question" - KHÔNG giải thích thêm.\n'
     )
 
 
@@ -136,15 +166,22 @@ RULES:
 
 2. SCOPE & RELEVANCY:
    - Only support questions related to Greenwich University Vietnam.
-   - Block questions about OTHER universities (RMIT, FPT, Duy Tan, Bach Khoa, etc.)
+   - Block questions about OTHER universities (RMIT, FPT University, Duy Tan, Bach Khoa, etc.)
      -> reason: "competitor"
+     ⚠️ IMPORTANT: "FPT Pay", "VNPay", "Momo", "ZaloPay" are PAYMENT METHODS (allowed if asking about tuition/fees)
    - Block irrelevant topics (coding help, weather, math, cooking, politics, etc.)
      -> reason: "irrelevant"
-   - Allow general questions implicitly about Greenwich (e.g., "Tuition fee?", "Major info?").
+   - Allow general questions implicitly about Greenwich (e.g., "Tuition fee?", "Major info?", "How to pay via FPT Pay?").
 
 3. LANGUAGE:
    - Allow only Vietnamese & English.
    - Block Chinese/Korean/other languages -> reason: "wrong_language"
+
+EXAMPLES OF ALLOWED QUESTIONS:
+- "Làm thế nào để thanh toán học phí qua FPT Pay?" → allowed (payment method)
+- "So sánh Greenwich với FPT University?" → blocked (competitor)
+- "Học phí tại FPT?" → blocked (asking about competitor's tuition)
+- "VNPay có được dùng để trả học phí không?" → allowed (payment method)
 
 OUTPUT JSON ONLY:
 {{

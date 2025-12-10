@@ -193,18 +193,21 @@ class Retriever:
 
         return self._retrieve_vector_only(query, top_k=top_k, where=where)
 
-    def calculate_confidence(
+    def calculate_retrieval_quality(
         self, contexts: List[Dict[str, Any]], num_sub_queries: int = 1
     ) -> float:
         """
-        Calculate confidence score with diversity and coverage considerations.
+        Calculate retrieval quality score based on relevance, diversity and coverage.
+
+        This score measures how well the retrieval system found relevant documents,
+        NOT the confidence of the final answer.
 
         Args:
             contexts: Retrieved document chunks with scores
             num_sub_queries: Number of sub-queries used for retrieval
 
         Returns:
-            Confidence score between 0.0 and 1.0
+            Retrieval quality score between 0.0 and 1.0
         """
         if not contexts:
             return 0.0
@@ -214,7 +217,7 @@ class Retriever:
         diversity_target = settings.CONFIDENCE_DIVERSITY_TARGET
         diversity_bonus = min(1.0, unique_docs / diversity_target)
 
-        # Calculate base confidence from top scores with decay
+        # Calculate base relevance from top scores with decay
         top_n = min(3, len(contexts))
         scores = [ctx.get("score") for ctx in contexts[:top_n] if ctx.get("score") is not None]
         if not scores:
@@ -223,21 +226,21 @@ class Retriever:
         decay = settings.CONFIDENCE_DECAY
         weighted_sum = sum(s * (decay**i) for i, s in enumerate(scores))
         total_weight = sum(decay**i for i in range(len(scores)))
-        base_confidence = weighted_sum / total_weight if total_weight > 0 else 0.0
+        base_relevance = weighted_sum / total_weight if total_weight > 0 else 0.0
 
         # Coverage penalty: if many sub-queries but few results
         expected_results = num_sub_queries * 3  # Expect ~3 results per sub-query
         coverage_ratio = min(1.0, len(contexts) / max(expected_results, 1))
 
-        # Combined confidence score
-        final_confidence = base_confidence * diversity_bonus * coverage_ratio
+        # Combined retrieval quality score
+        retrieval_quality = base_relevance * diversity_bonus * coverage_ratio
 
         logger.debug(
-            f"Confidence: base={base_confidence:.3f}, diversity={diversity_bonus:.3f}, "
-            f"coverage={coverage_ratio:.3f}, final={final_confidence:.3f}"
+            f"Retrieval Quality: relevance={base_relevance:.3f}, diversity={diversity_bonus:.3f}, "
+            f"coverage={coverage_ratio:.3f}, final={retrieval_quality:.3f}"
         )
 
-        return final_confidence
+        return retrieval_quality
 
     def get_langchain_retriever(
         self,

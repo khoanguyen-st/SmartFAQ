@@ -165,12 +165,12 @@ async def process_requests_once() -> None:
 
 async def start_periodic_task() -> None:
     interval = int(getattr(settings, "CRON_INTERVAL_SECONDS", 30))
-    # logger.info("Starting document processing cron with interval %s seconds", interval)
+    logger.info("Starting document processing cron with interval %s seconds", interval)
     try:
         while True:
             # logger.info("Starting a new processing cycle.")
             await process_requests_once()
-            # logger.info("Processing cycle completed. Sleeping for %s seconds.", interval)
+            logger.info("Processing cycle completed. Sleeping for %s seconds.", interval)
             await asyncio.sleep(interval)
     except asyncio.CancelledError:
         logger.info("Document processing cron cancelled")

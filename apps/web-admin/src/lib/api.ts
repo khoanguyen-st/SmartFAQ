@@ -152,6 +152,7 @@ export interface QueryLogItem {
   question: string
   answer?: string
   confidence?: number
+  relevance?: number
   fallback: boolean
   lang: string
   channel?: string
