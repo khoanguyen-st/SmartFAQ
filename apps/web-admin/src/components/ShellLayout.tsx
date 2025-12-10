@@ -1,14 +1,14 @@
-import React, { useEffect, useState, useCallback, useMemo } from 'react'
 import { NavLink, useNavigate, Outlet } from 'react-router-dom'
+import React, { useEffect, useState, useCallback, useMemo } from 'react'
 import { Menu, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { logout } from '@/lib/api'
 import { getCurrentUserInfo, type CurrentUserInfo } from '@/services/auth.services'
+import avatarDefaultUrl from '@/assets/icons/user-avatar.svg'
 import educationUrl from '@/assets/icons/education.svg'
-import userUrl from '@/assets/icons/user.svg'
 import chevronDownUrl from '@/assets/icons/chevron-down.svg'
 
-const ROLES = {
+export const ROLES = {
   ADMIN: 'admin',
   STAFF: 'staff'
 }
@@ -17,32 +17,38 @@ const NAV_CONFIG = [
   {
     path: 'dashboard',
     label: 'Dashboard',
-    allowedRoles: [ROLES.ADMIN, ROLES.STAFF]
+    allowedRoles: [ROLES.ADMIN, ROLES.STAFF],
+    noPadding: false
   },
   {
     path: 'departments',
     label: 'Departments',
-    allowedRoles: [ROLES.ADMIN]
+    allowedRoles: [ROLES.ADMIN],
+    noPadding: false
   },
   {
     path: 'users',
     label: 'Users',
-    allowedRoles: [ROLES.ADMIN]
+    allowedRoles: [ROLES.ADMIN],
+    noPadding: false
   },
   {
     path: 'logs',
     label: 'System Logs',
-    allowedRoles: [ROLES.ADMIN, ROLES.STAFF]
+    allowedRoles: [ROLES.ADMIN, ROLES.STAFF],
+    noPadding: false
   },
   {
     path: 'settings',
     label: 'System Settings',
-    allowedRoles: [ROLES.ADMIN, ROLES.STAFF]
+    allowedRoles: [ROLES.ADMIN, ROLES.STAFF],
+    noPadding: false
   },
   {
     path: 'view-chat',
     label: 'View Chat',
-    allowedRoles: [ROLES.ADMIN, ROLES.STAFF]
+    allowedRoles: [ROLES.ADMIN, ROLES.STAFF],
+    noPadding: true
   }
 ]
 
@@ -50,7 +56,6 @@ const NAV_CONFIG = [
 
 type ImgCompProps = React.ImgHTMLAttributes<HTMLImageElement>
 const EducationIcon: React.FC<ImgCompProps> = props => <img src={educationUrl} alt="edu" {...props} />
-const UserIcon: React.FC<ImgCompProps> = props => <img src={userUrl} alt="user" {...props} />
 
 // --- 3. HELPER FUNCTIONS ---
 
@@ -67,6 +72,7 @@ const ShellLayout = () => {
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false)
   const [userInfo, setUserInfo] = useState<CurrentUserInfo | null>(null)
   const [selectedDepartment, setSelectedDepartment] = useState<number | null>(null)
+  const [seletectedNavItem, setSelectedNavItem] = useState<number>(0)
 
   const navigate = useNavigate()
 
@@ -78,33 +84,44 @@ const ShellLayout = () => {
     }
   }, [navigate])
 
-  // Lấy thông tin user và departments
-  useEffect(() => {
-    const fetchUserInfo = async () => {
-      try {
-        const token = localStorage.getItem('access_token')
-        if (!token) return
+  // Fetch user info and departments
+  const fetchUserInfo = useCallback(async () => {
+    try {
+      const token = localStorage.getItem('access_token')
+      if (!token) return
 
-        const data = await getCurrentUserInfo()
-        setUserInfo(data)
+      // Fetch current user info from API
+      const data = await getCurrentUserInfo()
+      setUserInfo(data)
 
-        // Logic chọn department mặc định
-        const savedDeptId = localStorage.getItem('selected_department_id')
-        if (savedDeptId) {
-          setSelectedDepartment(parseInt(savedDeptId))
-        } else if (data.departments && data.departments.length > 0) {
-          setSelectedDepartment(data.departments[0].id)
-          localStorage.setItem('selected_department_id', data.departments[0].id.toString())
-        }
-      } catch {
-        // FIX 1: Bỏ biến 'error' trong catch để tránh warning 'unused var'
-        localStorage.removeItem('access_token')
-        navigate('/login')
+      // Set default department from localStorage or first department
+      const savedDeptId = localStorage.getItem('selected_department_id')
+      if (savedDeptId) {
+        setSelectedDepartment(parseInt(savedDeptId))
+      } else if (data.departments.length > 0) {
+        setSelectedDepartment(data.departments[0].id)
+        localStorage.setItem('selected_department_id', data.departments[0].id.toString())
       }
+    } catch (error) {
+      console.error('Failed to fetch user info:', error)
+    }
+  }, [])
+
+  useEffect(() => {
+    fetchUserInfo()
+  }, [fetchUserInfo])
+
+  // Listen for avatar update events from Profile page
+  useEffect(() => {
+    const handleAvatarUpdate = () => {
+      fetchUserInfo()
     }
 
-    fetchUserInfo()
-  }, [navigate]) // FIX 2: Thêm 'navigate' vào dependency array
+    window.addEventListener('userAvatarUpdated', handleAvatarUpdate)
+    return () => {
+      window.removeEventListener('userAvatarUpdated', handleAvatarUpdate)
+    }
+  }, [fetchUserInfo])
 
   const handleDepartmentChange = useCallback((departmentId: number) => {
     setSelectedDepartment(departmentId)
@@ -114,11 +131,15 @@ const ShellLayout = () => {
 
   const toggleSidebar = useCallback(() => setIsSidebarOpen(prev => !prev), [])
 
-  const handleNavigation = useCallback(() => {
-    if (isSidebarOpen) {
-      setIsSidebarOpen(false)
-    }
-  }, [isSidebarOpen])
+  const handleNavigation = useCallback(
+    (index: number) => {
+      setSelectedNavItem(index)
+      if (isSidebarOpen) {
+        setIsSidebarOpen(false)
+      }
+    },
+    [isSidebarOpen]
+  )
 
   const handleLogout = useCallback(async () => {
     try {
@@ -142,15 +163,16 @@ const ShellLayout = () => {
       <aside
         className={cn(
           'z-50 flex w-60 flex-col bg-slate-900 px-4 py-6 text-slate-50 transition-transform duration-300',
-          'fixed inset-y-0 left-0 shadow-2xl',
-          isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
+          'lg:fixed lg:inset-y-0 lg:left-0 lg:translate-x-0',
+          'fixed inset-y-0 left-0 shadow-2xl lg:shadow-none',
+          isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
         )}
       >
         <div className="mb-6 flex items-center justify-between">
           <div className="text-lg font-semibold">SmartFAQ Admin</div>
           <button
             onClick={toggleSidebar}
-            className="rounded-full p-1 text-slate-300 transition-colors hover:bg-slate-700 hover:text-white"
+            className="rounded-full p-1 text-slate-300 transition-colors hover:bg-slate-700 hover:text-white lg:hidden"
             aria-label="Close Sidebar"
           >
             <X className="h-6 w-6" />
@@ -158,11 +180,11 @@ const ShellLayout = () => {
         </div>
 
         <nav className="flex flex-col gap-2">
-          {filteredNavItems.map(item => (
+          {filteredNavItems.map((item, index) => (
             <NavLink
               key={item.path}
               to={item.path}
-              onClick={handleNavigation}
+              onClick={() => handleNavigation(index)}
               className={({ isActive }) =>
                 cn(
                   'rounded-lg px-3.5 py-2 text-sm transition-colors duration-200',
@@ -188,22 +210,20 @@ const ShellLayout = () => {
 
   return (
     <div className="flex min-h-screen bg-[#eff3fb] text-slate-900">
-      {/* Overlay cho Mobile */}
-      {isSidebarOpen && <div className="fixed inset-0 z-40 bg-black/50" onClick={toggleSidebar} />}
-
+      {isSidebarOpen && <div className="fixed inset-0 z-40 bg-black/50 lg:hidden" onClick={toggleSidebar} />}
       {Sidebar}
 
-      <main className="w-full flex-1 overflow-y-auto">
+      <main className="w-full flex-1 overflow-y-auto lg:ml-60">
         <header className="sticky top-0 z-20 border-b border-gray-200 bg-white px-6 py-4">
           <div className="flex items-center justify-between">
             {/* Left Header Section */}
             <div className="flex items-center gap-3">
               <button
                 onClick={toggleSidebar}
-                className="p-1 text-gray-600 transition-colors hover:text-gray-800"
+                className="p-1 text-gray-600 transition-colors hover:text-gray-800 lg:hidden"
                 aria-label={isSidebarOpen ? 'Close menu' : 'Open menu'}
               >
-                {isSidebarOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+                <Menu className="h-6 w-6" />
               </button>
               <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#003087]">
                 <EducationIcon />
@@ -221,8 +241,8 @@ const ShellLayout = () => {
                 onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
                 className="flex items-center gap-2 rounded-lg px-3 py-2 text-gray-700 transition-colors hover:bg-gray-100"
               >
-                <UserIcon />
-                <span className="text-sm font-medium">{userInfo?.username || 'User'}</span>
+                <img src={userInfo?.image || avatarDefaultUrl} alt="user" className="h-8 w-8 rounded-full bg-center" />
+                <span className="text-sm font-medium">{userInfo?.username || 'BO User'}</span>
                 <img
                   src={chevronDownUrl}
                   alt="menu"
@@ -245,7 +265,11 @@ const ShellLayout = () => {
                       }}
                       className="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-gray-700 transition-colors hover:bg-gray-50"
                     >
-                      <UserIcon className="h-5 w-5" />
+                      <img
+                        src={userInfo?.image || avatarDefaultUrl}
+                        alt="user"
+                        className="h-8 w-8 rounded-full bg-center"
+                      />
                       <span>Profile</span>
                     </button>
 
@@ -307,8 +331,7 @@ const ShellLayout = () => {
             </div>
           </div>
         </header>
-
-        <div className="flex flex-col gap-6 p-6">
+        <div className={cn('flex flex-col gap-6', !filteredNavItems[seletectedNavItem]?.noPadding && 'p-6')}>
           <Outlet />
         </div>
       </main>

@@ -21,6 +21,15 @@ const getAuthHeaders = () => {
     Authorization: `Bearer ${token}`
   }
 }
+const getImageUrl = (fileKey: string | null): string | null => {
+  if (!fileKey) return null
+  // If it's already a full URL, return as is
+  if (fileKey.startsWith('http://') || fileKey.startsWith('https://')) {
+    return fileKey
+  }
+  // Otherwise, build URL using the /api/user/files endpoint
+  return `${API_BASE_URL}/api/user/files/${fileKey}`
+}
 
 /**
  * Get current user info with departments
@@ -37,5 +46,10 @@ export async function getCurrentUserInfo(): Promise<CurrentUserInfo> {
     throw new Error('Failed to fetch current user info')
   }
 
-  return res.json()
+  const data = await res.json()
+  return {
+    ...data,
+    image: getImageUrl(data.image)
+  }
 }
+

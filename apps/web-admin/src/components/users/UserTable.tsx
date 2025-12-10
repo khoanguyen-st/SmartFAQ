@@ -64,12 +64,10 @@ export const UserTable: React.FC<UserTableProps> = ({ users, loading, onEdit, on
               <td className="px-6 py-3 text-center whitespace-nowrap">{user.phone || '-'}</td>
               <td className="px-6 py-3 text-center whitespace-nowrap capitalize">{user.role}</td>
               <td className="px-6 py-3 text-center whitespace-nowrap">{user.campus}</td>
-              
+
               {/* --- PHẦN HIỂN THỊ DEPARTMENT --- */}
               <td className="px-6 py-3 text-center whitespace-nowrap">
-                {user.departments && user.departments.length > 0 
-                  ? user.departments.map(d => d.name).join(', ') 
-                  : '-'}
+                {user.departments && user.departments.length > 0 ? user.departments.map(d => d.name).join(', ') : '-'}
               </td>
               {/* -------------------------------- */}
 

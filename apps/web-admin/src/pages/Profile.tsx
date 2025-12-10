@@ -67,6 +67,8 @@ const ProfilePage = () => {
         // 3. Cập nhật lại URL chính thức từ server trả về (nếu có)
         if (res.image) {
           setProfile(prev => (prev ? { ...prev, avatar_url: res.image } : null))
+          // Emit custom event to notify ShellLayout to refresh user info
+          window.dispatchEvent(new CustomEvent('userAvatarUpdated'))
         }
       } catch (err) {
         console.error('Upload failed:', err)
@@ -90,6 +92,8 @@ const ProfilePage = () => {
       await deleteAvatar(userId)
       setProfile(prev => (prev ? { ...prev, avatar_url: null } : null))
       setIsDeleteModalOpen(false)
+      // Emit custom event to notify ShellLayout to refresh user info
+      window.dispatchEvent(new CustomEvent('userAvatarUpdated'))
     } catch (err) {
       console.error('Delete avatar failed:', err)
       alert('Failed to delete avatar.')

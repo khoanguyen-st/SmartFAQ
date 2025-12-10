@@ -12,7 +12,7 @@ import ViewChatPage from './pages/ViewChat'
 import DepartmentPage from './pages/Departments'
 import ProfilePage from './pages/Profile'
 import UploadedPage from './pages/UploadedDocuments'
-import ShellLayout from './components/ShellLayout'
+import ShellLayout, { ROLES } from './components/ShellLayout'
 // Import RoleGuard
 import RoleGuard from './components/RoleGuard'
 
@@ -38,7 +38,7 @@ const App = () => (
       <Route
         path="users"
         element={
-          <RoleGuard allowedRoles={['admin']}>
+          <RoleGuard allowedRoles={[ROLES.ADMIN]}>
             <UsersPage />
           </RoleGuard>
         }
@@ -46,7 +46,7 @@ const App = () => (
       <Route
         path="departments"
         element={
-          <RoleGuard allowedRoles={['admin']}>
+          <RoleGuard allowedRoles={[ROLES.ADMIN]}>
             <DepartmentPage />
           </RoleGuard>
         }
@@ -56,7 +56,7 @@ const App = () => (
       <Route
         path="view-chat"
         element={
-          <RoleGuard allowedRoles={['staff']}>
+          <RoleGuard allowedRoles={[ROLES.ADMIN, ROLES.STAFF]}>
             <ViewChatPage />
           </RoleGuard>
         }
