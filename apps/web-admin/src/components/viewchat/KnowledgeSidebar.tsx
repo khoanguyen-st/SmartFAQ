@@ -53,8 +53,8 @@ const KnowledgeSidebar: React.FC<KnowledgeSidebarProps> = ({
     >
       <div
         className={cn(
-          'flex shrink-0 items-center border-b border-[#F3F4F6] transition-all duration-300',
-          isSidebarOpen ? 'h-[92px] justify-between p-4 sm:p-6' : 'h-[92px] justify-center'
+          'flex shrink-0 items-center transition-all duration-300',
+          isSidebarOpen ? 'h-[91px] justify-between p-4 sm:p-6' : 'h-[92px] justify-center'
         )}
       >
         {isSidebarOpen && (

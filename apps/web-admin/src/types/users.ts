@@ -1,7 +1,8 @@
 export interface Department {
   id: number
   name: string
-}export interface User {
+}
+export interface User {
   id: number
   username: string
   email: string
@@ -14,7 +15,7 @@ export interface Department {
   locked_until?: string | null
   is_locked: boolean
   created_at: string
-  departments?: Department[] 
+  departments?: Department[]
 }
 
 export interface UserQuery {
@@ -35,5 +36,5 @@ export type CreateUserRequest = {
   address?: string
   image?: string
   // Field này dùng để gửi ID lên khi tạo mới (đã có sẵn)
-  department_ids?: number[] 
+  department_ids?: number[]
 }

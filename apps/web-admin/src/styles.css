@@ -51,14 +51,14 @@
 
 .message--receiver {
   align-self: flex-end;
-  border-radius: 8px 0 8px 8px;
+  border-radius: 24px 0 24px 24px;
   background: var(--color-blue);
   color: var(--color-white);
 }
 
 .message--sender {
   align-self: flex-start;
-  border-radius: 0 8px 8px 8px;
+  border-radius: 0 24px 24px 24px;
   background: #f3f4f6;
   color: #1f2937;
   font-weight: 400;
@@ -93,10 +93,29 @@
   border-top: 1px solid var(--color-gray-3);
 }
 
-.chat__input:focus,
-.chat__submit:focus {
-  border: 2px solid var(--color-blue);
+.chat__input {
+  background: white;
+  display: flex;
+  align-items: center;
+  text-align: start;
   outline: none;
+  color: var(--color-dark);
+  border: 2px solid #b0c1da;
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+  padding: 14px 48px 10px 20px;
+  margin: 0;
+  margin-top: 2px;
+  margin-bottom: 8px;
+  transition-duration: 0.15s;
+}
+
+.chat__input:focus,
+.chat__input:hover {
+  outline: none;
+  border: 2px solid #1677ff;
+  box-shadow: 0px 0px 3px #1677ff;
+  transition-duration: 0.15s;
 }
 
 @layer base {

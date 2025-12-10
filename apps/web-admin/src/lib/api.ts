@@ -29,7 +29,7 @@ async function apiCall(endpoint: string, options: RequestInit = {}) {
     return res.json()
   } catch (error) {
     if (error instanceof TypeError && error.message === 'Failed to fetch') {
-      throw new Error(`Cannot connect to API server at ${API_BASE_URL}. Please check if the backend is running.`)
+      throw new Error(`Cannot connect to API server at ${API_BASE_URL}.\nPlease check if the backend is running.`)
     }
     throw error
   }
