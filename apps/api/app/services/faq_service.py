@@ -9,6 +9,7 @@ from typing import Any, List, Optional
 
 from motor.motor_asyncio import AsyncIOMotorCollection
 
+from ..core.cache import get_cache_service
 from ..rag.guardrail import GuardrailService
 from ..rag.language import detect_language
 from ..rag.llm import LLMWrapper
@@ -135,6 +136,16 @@ Câu hỏi đã hoàn thiện:"""
             List of FAQ items with question, frequency, category
         """
         try:
+            # Check cache first
+            cache_service = get_cache_service()
+            cache_key = f"faq:frequent:{language}:{limit}:{min_frequency}:{days}"
+            cached = await cache_service.get(cache_key)
+            if cached is not None:
+                logger.info(f"Cache HIT for frequent FAQs (language={language})")
+                return cached
+
+            logger.info(f"Cache MISS for frequent FAQs (language={language})")
+
             # Calculate date threshold
             since_date = datetime.utcnow() - timedelta(days=days)
 
@@ -238,6 +249,10 @@ Câu hỏi đã hoàn thiện:"""
                 )
 
             logger.info(f"Generated {len(faqs)} FAQs for language '{language}'")
+
+            # Cache for 5 minutes (300 seconds)
+            await cache_service.set(cache_key, faqs, ttl=300)
+
             return faqs
 
         except Exception as e:
@@ -261,6 +276,16 @@ Câu hỏi đã hoàn thiện:"""
         Returns:
             List of trending questions
         """
+        # Check cache first
+        cache_key = f"faq:trending:{language}:{limit}:{hours}"
+        cache_service = get_cache_service()
+        cached = await cache_service.get(cache_key)
+        if cached is not None:
+            logger.info(
+                f"Returning cached trending questions for language '{language}' (cache hit)"
+            )
+            return cached
+
         try:
             since_date = datetime.utcnow() - timedelta(hours=hours)
 
@@ -300,6 +325,9 @@ Câu hỏi đã hoàn thiện:"""
                             "category": "trending",
                         }
                     )
+
+            # Cache for 3 minutes (180 seconds) - shorter TTL for trending
+            await cache_service.set(cache_key, trending, ttl=180)
 
             return trending
 
