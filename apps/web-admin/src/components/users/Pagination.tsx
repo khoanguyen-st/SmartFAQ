@@ -153,7 +153,7 @@ const Pagination: React.FC<PaginationProps> = ({
             onClick={() => setIsOpen(!isOpen)}
             disabled={!onPageSizeChange}
             style={{
-              width: '124px',
+              width: '70px',
               height: '36px',
               borderRadius: '8px',
               border: '1px solid #E5E7EB',
@@ -171,7 +171,7 @@ const Pagination: React.FC<PaginationProps> = ({
             }}
             className="hover:bg-gray-50 focus:outline-none"
           >
-            <span>{pageSize} / pages</span>
+            <span>{pageSize}</span>
             <ChevronDown
               size={16}
               strokeWidth={2}
