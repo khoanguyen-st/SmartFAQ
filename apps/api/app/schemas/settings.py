@@ -1,5 +1,7 @@
 """Settings schemas."""
 
+from __future__ import annotations
+
 from pydantic import BaseModel, Field
 
 
@@ -7,6 +9,7 @@ class SystemSettings(BaseModel):
     """System settings response/update schema."""
 
     # LLM Settings
+    google_api_key: str = Field(..., description="Google Gemini API Key")
     llm_model: str = Field(..., description="Language model name")
     google_api_key: str = Field("", description="Google API Key for Gemini")
     llm_temperature: float = Field(..., ge=0.0, le=2.0, description="Model creativity (0-2)")

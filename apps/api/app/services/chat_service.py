@@ -29,6 +29,8 @@ from ..schemas.chat import (
     ChatQuery,
     ChatQueryResponse,
     ChatSourcesResponse,
+    FAQItem,
+    FAQsResponse,
     FeedbackRequest,
     FeedbackResponse,
     NewSessionRequest,
@@ -41,6 +43,7 @@ from ..utils.chat_response_utils import (
     persistable_sources,
     safe_int,
 )
+from .faq_service import FAQService
 
 logger = logging.getLogger(__name__)
 
@@ -58,6 +61,14 @@ class ChatService:
         self.orchestrator = orchestrator
         self.sessions_coll = get_chat_sessions_collection()
         self.messages_coll = get_chat_messages_collection()
+
+        # Initialize FAQ Service with semantic grouping and question refinement
+        self.faq_service = FAQService(
+            self.messages_coll,
+            use_semantic_grouping=True,  # Enable semantic similarity
+            similarity_threshold=0.85,  # 85% similarity threshold
+            refine_questions=True,  # Enable LLM-based question refinement
+        )
 
     @staticmethod
     def _now() -> datetime:
@@ -177,6 +188,7 @@ class ChatService:
 
         answer = rag_response.get("answer", "")
         confidence_raw = rag_response.get("confidence", 0.0)
+        relevance_raw = rag_response.get("relevance", 0.0)  # Get relevance (retrieval quality)
         fallback_triggered = bool(rag_response.get("fallback_triggered", False))
         sources: list[dict[str, Any]] = rag_response.get("sources", []) or []
         query_log = {
@@ -208,6 +220,7 @@ class ChatService:
             "role": ChatRole.ASSISTANT.value,
             "text": answer,
             "confidence": float(confidence_raw) if confidence_raw is not None else None,
+            "relevance": float(relevance_raw) if relevance_raw is not None else None,
             "sources": persistable_sources(sources),
             "queryLog": query_log,
             "fallback": fallback_triggered,
@@ -234,6 +247,7 @@ class ChatService:
             answer=answer,
             sources=format_sources(cast(list[dict[str, Any]], sources)),
             confidence=confidence_to_percent(confidence_raw),
+            relevance=confidence_to_percent(relevance_raw),
             language=session.language,
             fallback=fallback_triggered,
             chatId=response_id,
@@ -259,6 +273,8 @@ class ChatService:
             confidence = (
                 confidence_to_percent(confidence_raw) if confidence_raw is not None else None
             )
+            relevance_raw = message.get("relevance")
+            relevance = confidence_to_percent(relevance_raw) if relevance_raw is not None else None
             fallback_flag = None
             if message.get("role") == ChatRole.ASSISTANT.value:
                 fallback_flag = message.get("fallback")
@@ -272,6 +288,7 @@ class ChatService:
                     message.get("_id") if message.get("role") == ChatRole.ASSISTANT.value else None
                 ),
                 confidence=confidence,
+                relevance=relevance,
                 fallback=fallback_flag if fallback_flag is not None else None,
             )
             messages.append(entry)
@@ -341,9 +358,55 @@ class ChatService:
         return ChatConfidenceResponse(
             chatId=chat_id,
             confidence=confidence_to_percent(message.get("confidence")),
+            relevance=confidence_to_percent(message.get("relevance")),
             threshold=confidence_to_percent(settings.CONFIDENCE_THRESHOLD),
             fallbackTriggered=bool(fallback_flag),
         )
+
+    async def get_faqs(
+        self,
+        language: str = "vi",
+        limit: int = 6,
+    ) -> FAQsResponse:
+        """
+        Get FAQ suggestions from actual user queries (dynamic generation).
+
+        Uses semantic similarity grouping to merge similar questions and
+        returns the most frequently asked questions from the last 30 days.
+
+        Args:
+            language: Language code ('vi' or 'en')
+            limit: Number of FAQs to return
+
+        Returns:
+            FAQsResponse with dynamically generated FAQ items
+        """
+        try:
+            # Get frequent questions from last 30 days
+            faqs = await self.faq_service.get_frequent_questions(
+                language=language,
+                limit=limit,
+                days=30,
+                min_frequency=3,
+            )
+
+            # Convert to response format
+            faq_items = [
+                FAQItem(
+                    id=faq["id"],
+                    question=faq["question"],
+                    category=faq["category"],
+                    count=faq["count"],
+                )
+                for faq in faqs
+            ]
+
+            return FAQsResponse(language=language, faqs=faq_items)
+
+        except Exception:
+            logger.exception("Failed to generate dynamic FAQs")
+            # Return empty list if no data available
+            return FAQsResponse(language=language, faqs=[])
 
 
 __all__ = ["ChatService", "ChatServiceError"]

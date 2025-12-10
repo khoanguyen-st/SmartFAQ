@@ -17,6 +17,7 @@ from ..core.config import settings
 from ..core.database import AsyncSessionLocal
 from ..models.document import Document
 from ..models.document_version import DocumentVersion
+from ..models.user import User
 from ..rag.vector_store import delete_by_document_id
 
 minio_client = Minio(
@@ -124,19 +125,34 @@ async def generate_unique_title(db: AsyncSession, original_title: str) -> str:
     return f"{base} ({max_num + 1}){ext}"
 
 
+async def get_user_department_id(user_id: int, db: AsyncSession) -> int:
+    """Fetch the department ID of a user by their ID."""
+    stmt = select(User).where(User.id == user_id).options(selectinload(User.departments))
+    result = await db.execute(stmt)
+    user = result.scalar_one_or_none()
+    if not user or not user.departments:
+        raise UserNotFound(f"User with ID {user_id} not found or has no department.")
+
+    return user.departments[0].id
+
+
 async def create_document_record(
     db: AsyncSession,
     title: str,
+    user_id: int,
     file_path: str | None = None,
     file_size: int | None = None,
     format: str | None = None,
 ) -> int:
     current_title = await generate_unique_title(db, title)
 
+    department_id = await get_user_department_id(user_id, db)
+
     doc = Document(
         title=current_title,
         language="vi",
         status="REQUEST",
+        department_id=department_id,
     )
     db.add(doc)
     await db.flush()
@@ -169,7 +185,7 @@ async def async_session_scope():
             raise
 
 
-async def enqueue_single_document(file: UploadFile) -> dict:
+async def enqueue_single_document(file: UploadFile, user_id: int) -> dict:
     orig_name = file.filename or "upload.bin"
     _, ext = os.path.splitext(orig_name)
 
@@ -207,6 +223,7 @@ async def enqueue_single_document(file: UploadFile) -> dict:
             doc_id = await create_document_record(
                 db,
                 title=orig_name,
+                user_id=user_id,
                 file_path=object_name,
                 file_size=size,
                 format=fmt,
@@ -244,14 +261,15 @@ async def enqueue_single_document(file: UploadFile) -> dict:
         )
 
 
-async def enqueue_multiple_documents(files: list[UploadFile]) -> list[dict]:
+async def enqueue_multiple_documents(files: list[UploadFile], user_id: int) -> list[dict]:
     results = []
     errors = []
     for file in files:
         try:
-            r = await enqueue_single_document(file)
+            r = await enqueue_single_document(file, user_id=user_id)
             results.append(r)
         except Exception as exc:
+            logger.error(f"Failed to process file {file.filename}: {str(exc)}")
             errors.append({"filename": file.filename, "error": str(exc)})
     if errors:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail={"errors": errors})

@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom'
 import logo from '../assets/icons/logo.svg'
-import successGif from '../assets/icons/success.gif'
+import successGif from '../assets/icons/success-once.gif'
 
 const ResetPasswordSuccess = () => {
   const navigate = useNavigate()

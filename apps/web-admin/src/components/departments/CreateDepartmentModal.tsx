@@ -48,7 +48,6 @@ const CreateDepartmentModal = ({
       await onSubmit({ name: trimmedName, user_ids: selectedUserIds })
       onClose()
     } catch (err) {
-      // Hiển thị lỗi từ backend (vd: "Department name already exists")
       if (err instanceof Error) {
         setError(err.message)
       } else {
@@ -67,13 +66,11 @@ const CreateDepartmentModal = ({
         onClick={e => e.stopPropagation()}
       >
         <form onSubmit={handleSubmit} className="flex flex-col">
-          {/* Header */}
           <div className="px-8 pt-8 pb-4">
             <h2 className="font-sans text-3xl font-bold text-gray-900">Create Department</h2>
             <p className="mt-2 font-sans text-lg text-gray-500">Create a new department for user management.</p>
           </div>
 
-          {/* Body */}
           <div className="px-8 py-4">
             <div className="flex flex-col gap-2">
               <label className="text-base font-medium text-gray-900">
@@ -84,7 +81,7 @@ const CreateDepartmentModal = ({
                 value={name}
                 onChange={e => {
                   setName(e.target.value)
-                  if (error) setError(null) // Xóa lỗi khi nhập lại
+                  if (error) setError(null)
                 }}
                 placeholder="Enter department name..."
                 className={`h-12 w-full rounded-lg border bg-white px-4 text-base transition-all outline-none placeholder:text-gray-400 focus:ring-2 ${
@@ -94,7 +91,6 @@ const CreateDepartmentModal = ({
                 }`}
                 autoFocus
               />
-              {/* Error Notification */}
               {error && (
                 <div className="mt-2 flex items-center gap-2 rounded-md bg-red-50 p-3 text-sm text-red-600">
                   <svg
@@ -153,7 +149,6 @@ const CreateDepartmentModal = ({
             </div>
           </div>
 
-          {/* Footer Actions */}
           <div className="mt-4 flex items-center justify-end gap-3 bg-gray-50 px-8 py-6">
             <button
               type="button"

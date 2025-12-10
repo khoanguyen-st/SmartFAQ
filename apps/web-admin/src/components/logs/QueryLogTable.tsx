@@ -135,6 +135,7 @@ const QueryLogTable = () => {
               <th className="border-b border-slate-200 px-3 py-3 text-left">Timestamp</th>
               <th className="border-b border-slate-200 px-3 py-3 text-left">Question</th>
               <th className="border-b border-slate-200 px-3 py-3 text-left">Confidence</th>
+              <th className="border-b border-slate-200 px-3 py-3 text-left">Relevance</th>
               <th className="border-b border-slate-200 px-3 py-3 text-left">Fallback</th>
               <th className="border-b border-slate-200 px-3 py-3 text-left">Language</th>
               <th className="border-b border-slate-200 px-3 py-3 text-left">Channel</th>
@@ -145,21 +146,21 @@ const QueryLogTable = () => {
           <tbody>
             {loading && (
               <tr>
-                <td colSpan={8} className="py-6 text-center text-slate-400">
+                <td colSpan={9} className="py-6 text-center text-slate-400">
                   Loading...
                 </td>
               </tr>
             )}
             {!loading && error && (
               <tr>
-                <td colSpan={8} className="py-6 text-center text-red-400">
+                <td colSpan={9} className="py-6 text-center text-red-400">
                   {error}
                 </td>
               </tr>
             )}
             {!loading && !error && logs.length === 0 && (
               <tr>
-                <td colSpan={8} className="py-6 text-center text-slate-400">
+                <td colSpan={9} className="py-6 text-center text-slate-400">
                   No log entries found.
                 </td>
               </tr>
@@ -176,6 +177,15 @@ const QueryLogTable = () => {
                     {log.confidence ? (
                       <span className={log.confidence >= 0.7 ? 'font-semibold text-green-600' : 'text-orange-600'}>
                         {(log.confidence * 100).toFixed(1)}%
+                      </span>
+                    ) : (
+                      'N/A'
+                    )}
+                  </td>
+                  <td className="px-3 py-3">
+                    {log.relevance ? (
+                      <span className={log.relevance >= 0.7 ? 'font-semibold text-blue-600' : 'text-amber-600'}>
+                        {(log.relevance * 100).toFixed(1)}%
                       </span>
                     ) : (
                       'N/A'
@@ -279,6 +289,18 @@ const QueryLogTable = () => {
                     {selectedLog.confidence ? (
                       <span className={selectedLog.confidence >= 0.7 ? 'text-green-600' : 'text-orange-600'}>
                         {(selectedLog.confidence * 100).toFixed(1)}%
+                      </span>
+                    ) : (
+                      'N/A'
+                    )}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs font-semibold text-slate-500 uppercase">Relevance</p>
+                  <p className="mt-1 text-sm font-semibold text-slate-900">
+                    {selectedLog.relevance ? (
+                      <span className={selectedLog.relevance >= 0.7 ? 'text-blue-600' : 'text-amber-600'}>
+                        {(selectedLog.relevance * 100).toFixed(1)}%
                       </span>
                     ) : (
                       'N/A'
