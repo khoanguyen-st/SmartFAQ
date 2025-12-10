@@ -6,15 +6,15 @@ metadata:
     acme.cert-manager.io/http01-edit-in-place: "true"
     cert-manager.io/cluster-issuer: letsencrypt-prod
     nginx.org/client-max-body-size: "50m"
-    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
 spec:
   ingressClassName: nginx
   tls:
     - hosts:
-        - api.smartfaq.devplus.edu.vn
+        - api.smartfaq.dev.devplus.edu.vn
       secretName: smartfaq-dev-tls
   rules:
-    - host: api.smartfaq.devplus.edu.vn
+    - host: api.smartfaq.dev.devplus.edu.vn
       http:
         paths:
           - backend:

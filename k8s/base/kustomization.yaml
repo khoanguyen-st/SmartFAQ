@@ -8,4 +8,6 @@ resources:
   - ingress.yaml
   - network-policy.yaml
   - resource-quota.yaml
+  - chroma.yaml
+  - minio.yaml
   # - celery-worker.yaml  # TODO: Enable when Celery is implemented

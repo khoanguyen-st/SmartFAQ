@@ -3,12 +3,12 @@ namespace: smartfaq-dev
 resources:
   - ../base
 
-# secretGenerator:
-#   - name: smartfaq-api-env
-#     envs:
-#       - .env.dev
-#     options:
-#       disableNameSuffixHash: true
+secretGenerator:
+  - name: smartfaq-api-env
+    envs:
+      - .env.dev
+    options:
+      disableNameSuffixHash: true
 
 images:
   - name: asia-southeast1-docker.pkg.dev/enspara/smartfaq/smartfaq-api

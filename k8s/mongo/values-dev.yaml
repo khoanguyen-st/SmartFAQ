@@ -1,0 +1,31 @@
+mongodb:
+  # Authentication
+  auth:
+    enabled: true
+    rootUser: smartfaq
+    rootPassword: "smartfaq_dev_mongo_pass_2024"
+    database: smartfaq_dev
+
+  # Architecture
+  architecture: standalone
+  replicaCount: 1
+
+  # Persistence
+  persistence:
+    enabled: true
+    size: 5Gi
+    storageClass: "standard-rwo"
+
+  # Resources (smaller for dev)
+  resources:
+    requests:
+      memory: 256Mi
+      cpu: 100m
+    limits:
+      memory: 1Gi
+      cpu: 500m
+
+  # Service
+  service:
+    type: ClusterIP
+    port: 27017
