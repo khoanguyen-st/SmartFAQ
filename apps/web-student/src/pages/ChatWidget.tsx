@@ -13,6 +13,10 @@ const ChatWidget = () => {
   const { sessionId, messages, isLoading, sendMessage, clearChat } = useChat()
   const [showConfirm, setShowConfirm] = useState(false)
 
+  const handleFAQClick = (question: string) => {
+    sendMessage(question)
+  }
+
   const handleExpand = () => {
     if (sessionId) {
       // localhost:5173
@@ -48,6 +52,7 @@ const ChatWidget = () => {
           isLoading={isLoading}
           onSend={sendMessage}
           sessionId={sessionId}
+          onQuestionClick={handleFAQClick}
           headerAction={
             <button
               onClick={handleExpand}

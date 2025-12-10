@@ -78,7 +78,10 @@ def get_vectorstore() -> Chroma:
 
 
 def build_documents(chunks: Iterable[Dict[str, Any]]) -> List[Document]:
-    return [Document(page_content=c["text"], metadata=c.get("meta", {})) for c in chunks]
+    return [
+        Document(page_content=c["text"], metadata=c.get("meta" or c.get("metadata") or {}))
+        for c in chunks
+    ]
 
 
 def _hash_id(text: str, meta: Optional[Dict[str, Any]] = None, model: Optional[str] = None) -> str:

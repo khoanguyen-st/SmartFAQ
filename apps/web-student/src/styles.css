@@ -88,11 +88,11 @@
 }
 
 .chat__footer {
-  position: absolute;
-  bottom: 0;
+  position: relative;
   width: 100%;
   background: transparent;
   backdrop-filter: blur(2px);
+  flex-shrink: 0;
 }
 
 .chat__footer-form {
