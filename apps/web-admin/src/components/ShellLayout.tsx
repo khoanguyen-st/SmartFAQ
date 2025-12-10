@@ -20,13 +20,13 @@ const NAV_CONFIG = [
     allowedRoles: [ROLES.ADMIN, ROLES.STAFF]
   },
   {
-    path: 'users',
-    label: 'Users',
+    path: 'departments',
+    label: 'Departments',
     allowedRoles: [ROLES.ADMIN]
   },
   {
-    path: 'departments',
-    label: 'Departments',
+    path: 'users',
+    label: 'Users',
     allowedRoles: [ROLES.ADMIN]
   },
   {
@@ -42,7 +42,7 @@ const NAV_CONFIG = [
   {
     path: 'view-chat',
     label: 'View Chat',
-    allowedRoles: [ROLES.STAFF]
+    allowedRoles: [ROLES.ADMIN, ROLES.STAFF]
   }
 ]
 

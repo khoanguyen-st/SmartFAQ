@@ -180,7 +180,10 @@ export const CreateUserDialog: React.FC<CreateUserDialogProps> = ({
             {formData.role === 'staff' && (
               <div>
                 <label className="mb-1.5 block text-sm font-medium text-slate-700">
-                  Departments * <span className="text-xs font-normal text-slate-500">(Select at least one)</span>
+                  Departments *{' '}
+                  <span className="text-xs font-normal text-slate-500">
+                    (Select at least one. If no departments exist, please create one!)
+                  </span>
                 </label>
                 <div className="max-h-56 overflow-y-auto rounded-xl border border-slate-200 bg-white p-1">
                   {departments.map(dept => (
