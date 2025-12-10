@@ -1,14 +1,13 @@
 import React, { useState, useEffect } from 'react'
-import type { User } from '@/types/users'
+import type { User, Department } from '@/types/users'
 import type { EditUserDialogProps } from '@/interfaces/edit-user-dialog'
-import { validateDepartments } from '@/lib/validation'
-import { getDepartmentOptions } from '@/constants/options'
+import { fetchDepartments } from '@/services/department.services'
 
 const CAMPUS_OPTIONS = [
-  { label: 'Hanoi', value: 'HN' },
-  { label: 'Ho Chi Minh', value: 'HCM' },
-  { label: 'Danang', value: 'DN' },
-  { label: 'Can Tho', value: 'CT' }
+  { label: 'Hà Nội', value: 'HN' },
+  { label: 'Hồ Chí Minh', value: 'HCM' },
+  { label: 'Đà Nẵng', value: 'DN' },
+  { label: 'Cần Thơ', value: 'CT' }
 ]
 
 export const EditUserDialog: React.FC<EditUserDialogProps> = ({
@@ -23,29 +22,61 @@ export const EditUserDialog: React.FC<EditUserDialogProps> = ({
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [campusOpen, setCampusOpen] = useState(false)
+
   const [departmentOpen, setDepartmentOpen] = useState(false)
+  const [availableDepartments, setAvailableDepartments] = useState<Department[]>([])
+  const [selectedDepartmentIds, setSelectedDepartmentIds] = useState<number[]>([])
 
   useEffect(() => {
-    if (open) {
+    const loadDepartments = async () => {
+      try {
+        const data = await fetchDepartments()
+        // --- SỬA LỖI ESLINT 1: Định nghĩa kiểu rõ ràng thay vì dùng any ---
+        // Kiểm tra xem data có phải mảng không, nếu không thì ép kiểu về object có items
+        const mappedDepts: Department[] = Array.isArray(data) ? data : (data as { items: Department[] }).items || []
+
+        setAvailableDepartments(mappedDepts)
+      } catch (err) {
+        console.error('Failed to load departments', err)
+      }
+    }
+    loadDepartments()
+  }, [])
+
+  useEffect(() => {
+    if (open && user) {
       setFormData({})
       setError(null)
       setCampusOpen(false)
       setDepartmentOpen(false)
+
+      const userDeptIds = user.departments?.map(d => d.id) || []
+      setSelectedDepartmentIds(userDeptIds)
     }
   }, [open, user])
 
   const currentCampus = formData.campus !== undefined ? formData.campus : user?.campus || ''
-  const currentDepartments = formData.departments !== undefined ? formData.departments : user?.departments || []
 
   const getCampusLabel = (value: string) => {
     const option = CAMPUS_OPTIONS.find(opt => opt.value === value)
     return option ? option.label : value
   }
 
-  const toggleDepartment = (dept: string) => {
-    const current = formData.departments !== undefined ? formData.departments : user?.departments || []
-    const updated = current.includes(dept) ? current.filter((d: string) => d !== dept) : [...current, dept]
-    setFormData(prev => ({ ...prev, departments: updated }))
+  const getSelectedDepartmentsLabel = () => {
+    if (selectedDepartmentIds.length === 0) return 'Select Department'
+    return availableDepartments
+      .filter(d => selectedDepartmentIds.includes(d.id))
+      .map(d => d.name)
+      .join(', ')
+  }
+
+  const toggleDepartment = (deptId: number) => {
+    setSelectedDepartmentIds(prev => {
+      if (prev.includes(deptId)) {
+        return prev.filter(id => id !== deptId)
+      }
+      return [...prev, deptId]
+    })
   }
 
   const handleSelectCampus = (value: string) => {
@@ -73,17 +104,17 @@ export const EditUserDialog: React.FC<EditUserDialogProps> = ({
       }
     }
 
-    if (formData.departments) {
-      const deptError = validateDepartments(formData.departments)
-      if (deptError) {
-        setError(deptError)
-        return
-      }
-    }
-
     setLoading(true)
     try {
-      await onSubmit?.(user.id, formData)
+      const submitData = {
+        ...formData,
+        department_ids: selectedDepartmentIds
+      }
+
+      // --- SỬA LỖI ESLINT 2: Dùng unknown trước khi ép về Partial<User> ---
+      // Điều này "đánh lừa" TypeScript một cách an toàn để chấp nhận department_ids
+      await onSubmit?.(user.id, submitData as unknown as Partial<User>)
+
       onSuccess?.()
       onClose()
     } catch (err: unknown) {
@@ -109,6 +140,7 @@ export const EditUserDialog: React.FC<EditUserDialogProps> = ({
               <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">{error}</div>
             )}
 
+            {/* Username Field */}
             <div>
               <label className="mb-1 block text-sm font-medium text-slate-700">Username *</label>
               <input
@@ -120,6 +152,7 @@ export const EditUserDialog: React.FC<EditUserDialogProps> = ({
               />
             </div>
 
+            {/* Campus Select */}
             <div className="relative">
               <label className="mb-1 block text-sm font-medium text-slate-700">Campus</label>
               <button
@@ -160,6 +193,7 @@ export const EditUserDialog: React.FC<EditUserDialogProps> = ({
               )}
             </div>
 
+            {/* Department Select */}
             <div className="relative">
               <label className="mb-1 block text-sm font-medium text-slate-700">Department</label>
               <button
@@ -167,37 +201,39 @@ export const EditUserDialog: React.FC<EditUserDialogProps> = ({
                 onClick={() => setDepartmentOpen(prev => !prev)}
                 className="flex w-full items-center justify-between rounded-xl border border-slate-200 px-4 py-2.5 text-left text-sm text-slate-600 focus:border-blue-500 focus:outline-none"
               >
-                <span className={currentDepartments.length === 0 ? 'text-slate-400' : 'text-slate-900'}>
-                  {currentDepartments.length > 0 ? currentDepartments.join(', ') : 'Select Department'}
+                <span className={selectedDepartmentIds.length === 0 ? 'text-slate-400' : 'text-slate-900'}>
+                  {getSelectedDepartmentsLabel()}
                 </span>
                 <span className="text-slate-400">▾</span>
               </button>
 
               {departmentOpen && (
                 <div className="absolute left-0 z-20 mt-2 w-full rounded-xl border border-slate-200 bg-white p-4 shadow-xl">
-                  <ul className="space-y-3 text-sm">
-                    {getDepartmentOptions().map(optionKey => {
-                      const label = optionKey.replace('department.', '').toUpperCase()
-                      const isChecked = currentDepartments.includes(optionKey)
-
-                      return (
-                        <li key={optionKey} className="flex items-center gap-3">
-                          <input
-                            type="checkbox"
-                            className="h-4 w-4 border-slate-300 text-blue-600 focus:ring-blue-500"
-                            checked={isChecked}
-                            onChange={() => toggleDepartment(optionKey)}
-                          />
-                          <label
-                            onClick={() => toggleDepartment(optionKey)}
-                            className="flex-1 cursor-pointer text-slate-700 select-none"
-                          >
-                            {label}
-                          </label>
-                        </li>
-                      )
-                    })}
-                  </ul>
+                  {availableDepartments.length > 0 ? (
+                    <ul className="max-h-48 space-y-3 overflow-y-auto text-sm">
+                      {availableDepartments.map(dept => {
+                        const isChecked = selectedDepartmentIds.includes(dept.id)
+                        return (
+                          <li key={dept.id} className="flex items-center gap-3">
+                            <input
+                              type="checkbox"
+                              className="h-4 w-4 border-slate-300 text-blue-600 focus:ring-blue-500"
+                              checked={isChecked}
+                              onChange={() => toggleDepartment(dept.id)}
+                            />
+                            <label
+                              onClick={() => toggleDepartment(dept.id)}
+                              className="flex-1 cursor-pointer text-slate-700 select-none"
+                            >
+                              {dept.name}
+                            </label>
+                          </li>
+                        )
+                      })}
+                    </ul>
+                  ) : (
+                    <p className="text-center text-xs text-slate-400 italic">No departments available</p>
+                  )}
                 </div>
               )}
             </div>

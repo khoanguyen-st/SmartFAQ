@@ -1,7 +1,7 @@
 import React from 'react'
 import { Filter, Search } from 'lucide-react'
 import type { FilterDropdownProps, SearchBarProps } from '@/interfaces/search-and-filter'
-import { getDepartmentOptions } from '@/constants/options'
+// XÓA hoặc COMMENT dòng này: import { getDepartmentOptions } from '@/constants/options'
 
 const STATUS_MAPPING: Record<string, string> = {
   Active: 'Active',
@@ -14,27 +14,33 @@ export const FilterDropdown: React.FC<FilterDropdownProps> = ({
   selectedStatuses,
   onToggleDepartment,
   onToggleStatus,
-  onClearFilters
+  onClearFilters,
+  departments = [] // <-- QUAN TRỌNG: Nhận props này
 }) => {
   return (
     <div className="absolute top-full right-0 z-20 mt-3 w-64 rounded-xl border border-slate-200 bg-white p-4 text-sm shadow-2xl">
       <p className="mb-2 text-xs font-semibold text-slate-500 uppercase">DEPARTMENT</p>
-      <div className="space-y-2">
-        {getDepartmentOptions().map(option => {
-          const label = option.replace('department.', '').toUpperCase()
-          return (
-            <label key={option} className="flex items-center gap-2 text-slate-600">
+      
+      {/* --- SỬA ĐOẠN NÀY --- */}
+      <div className="space-y-2 max-h-48 overflow-y-auto">
+        {departments && departments.length > 0 ? (
+          departments.map(dept => (
+            <label key={dept.id} className="flex items-center gap-2 text-slate-600">
               <input
                 type="checkbox"
                 className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
-                checked={selectedDepartments.includes(option)}
-                onChange={() => onToggleDepartment(option)}
+                // Dùng ID làm value để khớp với logic lọc
+                checked={selectedDepartments.includes(dept.id.toString())}
+                onChange={() => onToggleDepartment(dept.id.toString())}
               />
-              {label}
+              {dept.name}
             </label>
-          )
-        })}
+          ))
+        ) : (
+          <p className="text-xs text-slate-400 italic">No departments available</p>
+        )}
       </div>
+      {/* ------------------- */}
 
       <p className="mt-4 mb-2 text-xs font-semibold text-slate-500 uppercase">STATUS</p>
       <div className="space-y-2">
@@ -51,13 +57,14 @@ export const FilterDropdown: React.FC<FilterDropdownProps> = ({
         ))}
       </div>
 
-      <button type="button" onClick={onClearFilters} className="mt-4 text-sm font-semibold text-blue-600">
+      <button type="button" onClick={onClearFilters} className="mt-4 text-sm font-semibold text-blue-600 hover:text-blue-800">
         Clear Filters
       </button>
     </div>
   )
 }
 
+// Component SearchBar giữ nguyên
 export const SearchBar: React.FC<SearchBarProps> = ({
   searchQuery,
   onSearchChange,
