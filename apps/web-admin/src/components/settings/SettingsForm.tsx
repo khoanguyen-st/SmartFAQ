@@ -2,6 +2,16 @@ import { fetchSystemSettings, SettingsUpdateRequest, SystemSettings, updateSyste
 import { AlertCircle, CheckCircle2, Eye, EyeOff, Info, Loader2, Save } from 'lucide-react'
 import { FormEvent, useEffect, useState } from 'react'
 
+const GEMINI_MODELS = [
+  { value: 'gemma-3-27b-it', label: 'Gemma 2 27B' },
+  { value: 'gemma-3-9b-it', label: 'Gemma 2 9B' },
+  { value: 'gemini-2.0-flash-exp', label: 'Gemini 2.0 Flash' },
+  { value: 'gemini-1.5-flash', label: 'Gemini 1.5 Flash' },
+  { value: 'gemini-1.5-flash-8b', label: 'Gemini 1.5 Flash 8B' },
+  { value: 'gemini-1.5-pro', label: 'Gemini 1.5 Pro' },
+  { value: 'gemini-2.5-flash', label: 'Gemini 2.5 Flash' }
+]
+
 interface SettingField {
   key: keyof SystemSettings
   label: string
@@ -16,14 +26,6 @@ interface SettingField {
 
 const SETTING_FIELDS: SettingField[] = [
   // LLM Settings
-  {
-    key: 'google_api_key',
-    label: 'Google API Key',
-    type: 'password',
-    description: 'API key for Google Gemini',
-    helpText: 'Your Google API key for accessing Gemini AI models. Get one from https://aistudio.google.com/app/apikey',
-    category: 'llm'
-  },
   {
     key: 'llm_temperature',
     label: 'AI Creativity',
@@ -236,21 +238,21 @@ const SettingsForm = () => {
       )}
 
       {/* AI Model Selection */}
-      <div className="rounded-2xl border border-indigo-100 bg-gradient-to-br from-indigo-50 to-purple-50 p-6 shadow-sm">
+      <div className="rounded-2xl border border-indigo-100 bg-linear-to-br from-indigo-50 to-purple-50 p-6 shadow-sm">
         <div className="flex items-start gap-3">
           <Info className="mt-0.5 h-5 w-5 shrink-0 text-indigo-600" />
           <div className="flex-1">
             <h3 className="mb-2 font-semibold text-slate-900">AI Model Selection</h3>
             <p className="mb-4 text-xs text-slate-600">
-              Choose between Google Gemini (cloud-based) or Local AI (self-hosted) model
+              Choose between Google AI (Gemini/Gemma via API) or Local AI (self-hosted model)
             </p>
 
             <div className="flex gap-3">
               <button
                 type="button"
-                onClick={() => updateSetting('llm_model', 'gemini-2.5-flash')}
+                onClick={() => updateSetting('llm_model', GEMINI_MODELS[0].value)}
                 className={`flex-1 rounded-lg border-2 p-4 text-left transition-all ${
-                  settings.llm_model.includes('gemini')
+                  settings.llm_model.includes('gemini') || settings.llm_model.includes('gemma')
                     ? 'border-indigo-600 bg-white shadow-md'
                     : 'border-indigo-200 bg-white/50 hover:border-indigo-400'
                 }`}
@@ -258,13 +260,17 @@ const SettingsForm = () => {
                 <div className="mb-1 flex items-center gap-2">
                   <div
                     className={`h-3 w-3 rounded-full ${
-                      settings.llm_model.includes('gemini') ? 'bg-indigo-600' : 'bg-slate-300'
+                      settings.llm_model.includes('gemini') || settings.llm_model.includes('gemma')
+                        ? 'bg-indigo-600'
+                        : 'bg-slate-300'
                     }`}
                   />
-                  <span className="font-semibold text-slate-900">Google Gemini</span>
+                  <span className="font-semibold text-slate-900">Google AI</span>
                 </div>
-                <p className="text-xs text-slate-600">Cloud-based AI model</p>
-                <p className="mt-1 font-mono text-xs text-slate-500">gemini-2.5-flash</p>
+                <p className="text-xs text-slate-600">Gemini & Gemma models</p>
+                <p className="mt-1 font-mono text-xs text-slate-500">
+                  {GEMINI_MODELS.find(m => m.value === settings.llm_model)?.label || 'Select model'}
+                </p>
               </button>
 
               <button
@@ -291,8 +297,33 @@ const SettingsForm = () => {
               </button>
             </div>
 
-            {/* Google API Key Input - Only shown when Gemini is selected */}
-            {settings.llm_model.includes('gemini') && (
+            {/* Model Selector - Only shown when Google AI is selected */}
+            {(settings.llm_model.includes('gemini') || settings.llm_model.includes('gemma')) && (
+              <div className="mt-4 rounded-lg border-2 border-indigo-200 bg-white p-4">
+                <label className="mb-2 block text-sm font-medium text-slate-900">
+                  Select Model
+                  <span className="ml-1 text-red-500">*</span>
+                </label>
+                <select
+                  value={settings.llm_model}
+                  onChange={e => updateSetting('llm_model', e.target.value)}
+                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-indigo-600 focus:ring-2 focus:ring-indigo-600/20 focus:outline-none"
+                >
+                  {GEMINI_MODELS.map(model => (
+                    <option key={model.value} value={model.value}>
+                      {model.label}
+                    </option>
+                  ))}
+                </select>
+                <p className="mt-2 text-xs text-slate-600">
+                  <strong>Tip:</strong> Gemini 1.5 Flash is recommended for most use cases. Pro models are more capable
+                  but slower and more expensive.
+                </p>
+              </div>
+            )}
+
+            {/* Google API Key Input - Only shown when Gemini/Gemma is selected */}
+            {(settings.llm_model.includes('gemini') || settings.llm_model.includes('gemma')) && (
               <div className="mt-4 rounded-lg border-2 border-indigo-200 bg-white p-4">
                 <label className="mb-2 block text-sm font-medium text-slate-900">
                   Google API Key
