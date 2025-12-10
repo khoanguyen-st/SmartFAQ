@@ -304,6 +304,7 @@ async def get_query_logs(
                     question=question_text,
                     answer=msg.get("text", ""),
                     confidence=msg.get("confidence"),
+                    relevance=msg.get("relevance"),
                     fallback=msg.get("fallback", False),
                     lang=query_log.get("lang", "en"),
                     channel=query_log.get("channel"),

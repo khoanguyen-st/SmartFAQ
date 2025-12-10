@@ -40,6 +40,7 @@ class ChatQueryResponse(BaseModel):
     answer: str
     sources: list[ChatSource]
     confidence: int
+    relevance: int | None = None
     language: str
     fallback: bool
     chat_id: str = Field(alias="chatId")
@@ -89,6 +90,7 @@ class ChatHistoryMessage(BaseModel):
     timestamp: datetime
     chat_id: str | None = Field(default=None, alias="chatId")
     confidence: int | None = None
+    relevance: int | None = None
     fallback: bool | None = None
 
     model_config = ConfigDict(populate_by_name=True)
@@ -109,8 +111,29 @@ class ChatSourcesResponse(BaseModel):
 class ChatConfidenceResponse(BaseModel):
     chat_id: str = Field(alias="chatId")
     confidence: int
+    relevance: int | None = None
     threshold: int
     fallback_triggered: bool = Field(alias="fallbackTriggered")
+
+    model_config = ConfigDict(populate_by_name=True)
+
+
+class FAQItem(BaseModel):
+    """Single FAQ item."""
+
+    id: str
+    question: str
+    category: str
+    count: int
+
+    model_config = ConfigDict(populate_by_name=True)
+
+
+class FAQsResponse(BaseModel):
+    """Response for FAQ suggestions."""
+
+    language: str
+    faqs: list[FAQItem]
 
     model_config = ConfigDict(populate_by_name=True)
 
@@ -128,4 +151,6 @@ __all__ = [
     "ChatHistoryResponse",
     "ChatSourcesResponse",
     "ChatConfidenceResponse",
+    "FAQItem",
+    "FAQsResponse",
 ]

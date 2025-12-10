@@ -15,6 +15,7 @@ class QueryLogItem(BaseModel):
     question: str
     answer: str | None = None
     confidence: float | None = None
+    relevance: float | None = None
     fallback: bool = False
     lang: str = "en"
     channel: str | None = None
