@@ -34,6 +34,7 @@ class DocumentOut(BaseModel):
     tags: Optional[str] = None
     language: str
     status: str
+    version_no: Optional[int] = None
     current_version_id: Optional[int] = None
     current_file_size: Optional[int] = None
     current_format: Optional[str] = None
