@@ -11,12 +11,19 @@
     <script type="module" src="/src/main.tsx"></script>
 
     <!-- SmartFAQ Chat Widget -->
-    <!-- Widget is automatically served from web-student dev server at port 5173 -->
-    <script src="http://localhost:5173/chat-widget.js"></script>
+    <!-- Widget served from web-student dev server -->
     <script>
-      // Wait for widget to load
-      window.addEventListener('load', function () {
-        if (window.ChatWidget) {
+      console.log('[Embed] Loading widget script from web-student...')
+
+      // Load widget script dynamically
+      const script = document.createElement('script')
+      script.src = 'http://localhost:5173/chat-widget.js'
+      script.onload = function () {
+        console.log('[Embed] Widget script loaded successfully')
+        console.log('[Embed] window.ChatWidget:', window.ChatWidget)
+
+        if (window.ChatWidget && typeof window.ChatWidget.init === 'function') {
+          console.log('[Embed] Initializing widget...')
           window.ChatWidget.init({
             apiBaseUrl: 'http://localhost:8000',
             position: {
@@ -25,8 +32,14 @@
             },
             zIndex: 9999
           })
+        } else {
+          console.error('[Embed] ChatWidget.init not found!', window.ChatWidget)
         }
-      })
+      }
+      script.onerror = function (e) {
+        console.error('[Embed] Failed to load widget script:', e)
+      }
+      document.head.appendChild(script)
     </script>
   </body>
 </html>
