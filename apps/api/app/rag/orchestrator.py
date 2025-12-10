@@ -7,6 +7,7 @@ from typing import Dict, List, Optional
 
 from google.api_core import exceptions as google_exceptions
 
+from app.constants.departments import get_all_contacts_footer, get_department_contact_info
 from app.core.config import settings
 from app.rag.guardrail import GuardrailService
 from app.rag.llm import LLMWrapper
@@ -23,7 +24,6 @@ from app.utils.logging_config import setup_rag_metrics_logger
 
 logger = logging.getLogger(__name__)
 
-# Setup dedicated RAG metrics logger with JSON formatting
 rag_metrics_logger = setup_rag_metrics_logger("logs/rag_metrics.json")
 
 
@@ -44,7 +44,6 @@ class RAGOrchestrator:
         history: Optional[List[Dict]] = None,
         language: Optional[str] = None,
     ) -> Dict:
-        # Initialize metrics tracking
         request_id = str(uuid.uuid4())[:8]
         metrics = RAGMetrics(request_id=request_id, question=question)
 
@@ -59,12 +58,10 @@ class RAGOrchestrator:
             metrics.error_type = ErrorType.UNKNOWN
             metrics.error_message = "Empty question"
             metrics.finalize()
-            logger.warning(f"{metrics}")
             return self._response("Please input a valid question.", [], 0, t0, True, metrics)
 
         final_search_query = raw_q
 
-        # Contextualization stage
         if history and self._should_contextualize(raw_q, history):
             try:
                 metrics.start_stage("contextualize")
@@ -91,7 +88,6 @@ class RAGOrchestrator:
                 logger.error(f"[{request_id}] Contextualization error: {e}")
                 final_search_query = raw_q
 
-        # Normalization stage
         metrics.start_stage("normalize")
         try:
             norm_result = await self.normalizer.understand(final_search_query)
@@ -110,12 +106,8 @@ class RAGOrchestrator:
             detected_lang = "en"
             metrics.language = detected_lang
 
-        if detected_lang in ["vi", "en"]:
-            target_lang = detected_lang
-        else:
-            target_lang = language or "en"
+        target_lang = detected_lang if detected_lang in ["vi", "en"] else (language or "en")
 
-        # Master analysis stage
         metrics.start_stage("analyze")
         try:
             analysis_dict = await self.llm.invoke_json(get_master_analyzer_prompt(), refined_q)
@@ -130,27 +122,19 @@ class RAGOrchestrator:
             logger.warning(f"[{request_id}] Master Analysis Failed: {e}. Using fallback.")
             analysis = MasterAnalysis(status="valid", sub_questions=[refined_q])
 
-        logger.info(
-            f"[{request_id}] Analysis: {analysis.status} | Sub-questions: {len(analysis.sub_questions or [])}"
-        )
-
         if analysis.status == "blocked":
             msg = self._get_blocked_msg(analysis.reason, target_lang)
             metrics.finalize()
-            logger.info(f"{metrics}")
             return self._response(msg, [], 1.0, t0, False, metrics)
 
         if analysis.status == "greeting":
             msg = self._get_greeting_msg(target_lang)
             metrics.finalize()
-            logger.info(f"{metrics}")
             return self._response(msg, [], 1.0, t0, False, metrics)
 
-        # Retrieval stage with query expansion
         sub_qs = analysis.sub_questions or [refined_q]
         sub_qs = sub_qs[: settings.MAX_SUB_QUERIES]
 
-        # Expand queries for better coverage (especially for short queries)
         expanded_queries = []
         if settings.QUERY_EXPANSION_ENABLED:
             for sq in sub_qs:
@@ -158,11 +142,9 @@ class RAGOrchestrator:
                     sq, max_expansions=settings.QUERY_EXPANSION_MAX
                 )
                 expanded_queries.extend(expansions)
-                logger.debug(f"[{request_id}] Query '{sq}' expanded to: {expansions}")
         else:
             expanded_queries = sub_qs
 
-        # Deduplicate
         seen = set()
         unique_queries = []
         for q in expanded_queries:
@@ -177,7 +159,6 @@ class RAGOrchestrator:
         all_docs = []
         for sq in unique_queries:
             try:
-                # Use configurable top_k for each query
                 docs = self.retriever.retrieve(sq, top_k=settings.TOP_K_PER_QUERY)
                 all_docs.extend(docs)
             except Exception as e:
@@ -192,14 +173,12 @@ class RAGOrchestrator:
             set(d.get("document_id") for d in unique_docs if d.get("document_id"))
         )
 
-        # Calculate retrieval quality metrics
         if unique_docs:
             scores = [d.get("score", 0.0) for d in unique_docs if d.get("score") is not None]
             if scores:
                 metrics.avg_retrieval_score = sum(scores) / len(scores)
                 metrics.max_retrieval_score = max(scores)
                 metrics.min_retrieval_score = min(scores)
-                # Calculate variance
                 mean = metrics.avg_retrieval_score
                 metrics.score_variance = sum((s - mean) ** 2 for s in scores) / len(scores)
             metrics.diversity_score = (
@@ -207,8 +186,7 @@ class RAGOrchestrator:
             )
 
         logger.info(
-            f"[{request_id}] Retrieved {metrics.num_contexts} contexts from {metrics.num_unique_docs} docs "
-            f"(avg_score={metrics.avg_retrieval_score:.3f}, diversity={metrics.diversity_score:.3f})"
+            f"[{request_id}] Retrieved {metrics.num_contexts} contexts from {metrics.num_unique_docs} docs"
         )
 
         if not unique_docs:
@@ -217,13 +195,13 @@ class RAGOrchestrator:
                 if target_lang == "vi"
                 else "I could not find information in the documents."
             )
+            contacts_footer = get_all_contacts_footer(target_lang)
+            fb = f"{fb}{contacts_footer}"
             metrics.error_type = ErrorType.RETRIEVAL_EMPTY
             metrics.fallback_triggered = True
             metrics.finalize()
-            logger.warning(f"{metrics}")
             return self._response(fb, [], 0, t0, True, metrics)
 
-        # Generation stage
         metrics.start_stage("generate")
         try:
             logger.info(f"[{request_id}] Generating answer in '{target_lang}'...")
@@ -232,15 +210,80 @@ class RAGOrchestrator:
             )
             metrics.generation_ms = metrics.end_stage("generate")
 
-            # Calculate confidence with num_sub_queries context
-            conf = self.retriever.calculate_confidence(
+            # Calculate retrieval quality (how good the retrieved documents are)
+            retrieval_quality = self.retriever.calculate_retrieval_quality(
                 unique_docs, num_sub_queries=metrics.num_sub_queries
             )
-            metrics.confidence = conf
+            logger.info(f"[{request_id}] Retrieval Quality: {retrieval_quality:.3f}")
+
+            # Evaluate answer confidence (how confident the LLM is about the answer)
+            answer_confidence = await self.llm.evaluate_answer_confidence(
+                refined_q, ans, unique_docs
+            )
+            logger.info(f"[{request_id}] Answer Confidence: {answer_confidence:.3f}")
+
+            # Combined confidence: average of both metrics
+            final_confidence = (retrieval_quality + answer_confidence) / 2
+            metrics.confidence = final_confidence
+
+            logger.info(
+                f"[{request_id}] Final Confidence: {final_confidence:.3f} "
+                f"(retrieval={retrieval_quality:.3f}, answer={answer_confidence:.3f})"
+            )
+
+            if final_confidence < settings.CONFIDENCE_THRESHOLD:
+                logger.info(
+                    f"[{metrics.request_id}] CONF < THRESHOLD ({final_confidence:.3f} < {settings.CONFIDENCE_THRESHOLD}) → FALLBACK"
+                )
+                metrics.fallback_triggered = True
+
+                dept_counts: Dict[int, int] = {}
+                for d in unique_docs:
+                    dept_id = d.get("department_id")
+                    if dept_id is None:
+                        continue
+                    try:
+                        d_id = int(dept_id)
+                        dept_counts[d_id] = dept_counts.get(d_id, 0) + 1
+                    except (TypeError, ValueError):
+                        continue
+
+                dominant_dept_id: Optional[int] = None
+                if dept_counts:
+                    dominant_dept_id = max(dept_counts.items(), key=lambda x: x[1])[0]
+
+                # Get primary contact info based on dominant department
+                primary_contact = get_department_contact_info(dominant_dept_id, target_lang)
+
+                # Get footer with all contacts
+                contacts_footer = get_all_contacts_footer(target_lang)
+
+                if target_lang == "vi":
+                    warning = (
+                        f"⚠️ LƯU Ý: Câu trả lời dưới đây có độ tin cậy thấp ({final_confidence:.0%}).\n"
+                        f"Để được hỗ trợ chính xác nhất, vui lòng liên hệ: {primary_contact}\n"
+                        f"{'-'*50}\n\n"
+                    )
+                    ans = f"{warning}{ans}{contacts_footer}"
+                else:
+                    warning = (
+                        f"⚠️ WARNING: The answer below has low confidence ({final_confidence:.0%}).\n"
+                        f"For accurate assistance, please contact: {primary_contact}\n"
+                        f"{'-'*50}\n\n"
+                    )
+                    ans = f"{warning}{ans}{contacts_footer}"
 
             metrics.finalize()
-            logger.info(f"{metrics}")
-            return self._response(ans, self._fmt_sources(unique_docs), conf, t0, False, metrics)
+            return self._response(
+                ans,
+                self._fmt_sources(unique_docs),
+                final_confidence,
+                t0,
+                metrics.fallback_triggered,
+                metrics,
+                retrieval_quality=retrieval_quality,
+                answer_confidence=answer_confidence,
+            )
 
         except google_exceptions.ResourceExhausted as e:
             metrics.generation_ms = metrics.end_stage("generate")
@@ -248,8 +291,6 @@ class RAGOrchestrator:
             metrics.error_message = "API quota exceeded"
             metrics.fallback_triggered = True
             metrics.finalize()
-
-            logger.error(f"{metrics}")
             logger.error(f"[{request_id}] Gemini API quota exceeded: {e}")
 
             fallback_msg = (
@@ -257,6 +298,8 @@ class RAGOrchestrator:
                 if target_lang == "vi"
                 else "The system is currently overloaded. Please try again in a few minutes."
             )
+            contacts_footer = get_all_contacts_footer(target_lang)
+            fallback_msg = f"{fallback_msg}{contacts_footer}"
             return self._response(fallback_msg, [], 0, t0, True, metrics)
 
         except Exception as e:
@@ -265,8 +308,6 @@ class RAGOrchestrator:
             metrics.error_message = str(e)
             metrics.fallback_triggered = True
             metrics.finalize()
-
-            logger.error(f"{metrics}")
             logger.exception(f"[{request_id}] Error during answer generation")
 
             error_msg = (
@@ -274,13 +315,11 @@ class RAGOrchestrator:
                 if target_lang == "vi"
                 else "A system error occurred. Please try again."
             )
+            contacts_footer = get_all_contacts_footer(target_lang)
+            error_msg = f"{error_msg}{contacts_footer}"
             return self._response(error_msg, [], 0, t0, True, metrics)
 
     def _should_contextualize(self, question: str, history: Optional[List[Dict]]) -> bool:
-        """
-        Detect follow-up questions using natural-language heuristics.
-        No prefix lists. Clean & minimal.
-        """
         if not history:
             return False
 
@@ -289,7 +328,6 @@ class RAGOrchestrator:
             return False
 
         words = q.split()
-
         if len(words) <= 3:
             return True
 
@@ -314,16 +352,26 @@ class RAGOrchestrator:
 
         return False
 
-    def _response(self, ans, srcs, conf, t0, fb, metrics: Optional[RAGMetrics] = None):
+    def _response(
+        self,
+        ans,
+        srcs,
+        conf,
+        t0,
+        fb,
+        metrics: Optional[RAGMetrics] = None,
+        retrieval_quality: Optional[float] = None,
+        answer_confidence: Optional[float] = None,
+    ):
         response = {
             "answer": ans,
             "sources": srcs,
             "confidence": conf,
+            "relevance": retrieval_quality,  # Add relevance (retrieval quality) to response
             "fallback_triggered": fb,
             "latency_ms": int((time.time() - t0) * 1000),
         }
 
-        # Include metrics for debugging/monitoring if available
         if metrics:
             response["request_id"] = metrics.request_id
             response["metrics"] = {
@@ -333,7 +381,11 @@ class RAGOrchestrator:
                 "language": metrics.language,
             }
 
-            # Log metrics to dedicated JSON logger for monitoring
+            # Add detailed confidence breakdown if available
+            if retrieval_quality is not None and answer_confidence is not None:
+                response["metrics"]["retrieval_quality"] = retrieval_quality
+                response["metrics"]["answer_confidence"] = answer_confidence
+
             rag_metrics_logger.info(
                 "RAG request completed",
                 extra={
@@ -345,27 +397,20 @@ class RAGOrchestrator:
         return response
 
     def _deduplicate(self, docs):
-        """
-        Deduplicate documents while preserving diversity.
-        Keeps best score for each unique chunk.
-        """
         seen = {}
         for d in docs:
             chunk_id = d.get("chunk_id")
             if chunk_id:
-                # If we've seen this chunk, keep the one with higher score
                 if chunk_id in seen:
                     if d.get("score", 0) > seen[chunk_id].get("score", 0):
                         seen[chunk_id] = d
                 else:
                     seen[chunk_id] = d
             else:
-                # No chunk_id, use text preview as fallback
                 text_key = d.get("text", "")[:100]
                 if text_key not in seen:
                     seen[text_key] = d
 
-        # Sort by score (highest first) and return
         result = list(seen.values())
         result.sort(key=lambda x: x.get("score", 0), reverse=True)
         return result

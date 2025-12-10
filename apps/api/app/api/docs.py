@@ -18,7 +18,7 @@ router = APIRouter()
 logger = logging.getLogger(__name__)
 
 
-@router.get("/")
+@router.get("/", dependencies=[Depends(get_current_user)])
 async def list_docs(db: AsyncSession = Depends(get_db)):
     try:
         items = await dms.list_documents(db)

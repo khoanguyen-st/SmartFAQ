@@ -70,7 +70,14 @@ async def _process_single_document(db: AsyncSession, doc_id: int) -> None:
 
         processor = DocumentProcessor()
         split_docs = processor.process_document(
-            file_stream, ext, str(doc.id), metadata={"title": doc.title, "source": object_name}
+            file_stream,
+            ext,
+            str(doc.id),
+            metadata={
+                "title": doc.title,
+                "source": object_name,
+                "department_id": doc.department_id,
+            },
         )
 
         await asyncio.to_thread(upsert_documents, split_docs)
@@ -118,7 +125,7 @@ async def process_requests_once() -> None:
             result = await db.execute(stmt)
             docs = result.scalars().all()
 
-            logger.info("Found %d documents to process.", len(docs))
+            # logger.info("Found %d documents to process.", len(docs))
 
             if not docs:
                 return
@@ -147,7 +154,7 @@ async def start_periodic_task() -> None:
     logger.info("Starting document processing cron with interval %s seconds", interval)
     try:
         while True:
-            logger.info("Starting a new processing cycle.")
+            # logger.info("Starting a new processing cycle.")
             await process_requests_once()
             logger.info("Processing cycle completed. Sleeping for %s seconds.", interval)
             await asyncio.sleep(interval)

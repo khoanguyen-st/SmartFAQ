@@ -29,10 +29,6 @@ REFUSAL_MESSAGES = {
         "vi": "Hệ thống đang bận, vui lòng thử lại sau.",
         "en": "The system is busy, please try again later.",
     },
-    "default": {
-        "vi": "Tôi không thể trả lời câu hỏi này.",
-        "en": "I cannot answer this question.",
-    },
 }
 
 
@@ -65,6 +61,14 @@ class GuardrailService:
         if code in ["profanity", "insult", "hate_speech", "harassment"]:
             code = "toxic"
 
-        msgs = REFUSAL_MESSAGES.get(code, REFUSAL_MESSAGES["default"])
+        msgs = REFUSAL_MESSAGES.get(code, REFUSAL_MESSAGES["irrelevant"])
 
         return {"status": "blocked", "vi": msgs["vi"], "en": msgs["en"]}
+
+    async def is_question_appropriate(self, question: str) -> bool:
+        """
+        Quick check if question is appropriate for FAQ suggestions.
+        Returns True if allowed, False if blocked.
+        """
+        result = await self.check_safety(question)
+        return result.get("status") == "allowed"

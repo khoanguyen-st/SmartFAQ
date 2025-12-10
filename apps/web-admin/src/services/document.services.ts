@@ -118,6 +118,7 @@ export const uploadKnowledgeFiles = async (files: File[]): Promise<IUploadedFile
   })
 
   try {
+    const accessToken = localStorage.getItem('access_token')
     const response = await fetch(`${DOCS_BASE_URL}/`, {
       method: 'POST',
       headers: getAuthHeaders(),
@@ -221,6 +222,7 @@ export const deleteKnowledgeFile = async (fileId: string): Promise<{ id: string 
       return { id: fileId }
     }
 
+    const accessToken = localStorage.getItem('access_token')
     const response = await fetch(`${DOCS_BASE_URL}/${fileId}`, {
       method: 'DELETE',
       headers: getAuthHeaders()

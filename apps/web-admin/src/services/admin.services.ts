@@ -35,8 +35,12 @@ export async function createUser(
   return res.item
 }
 
-export async function updateUser(userId: number, data: Partial<User> & { password?: string }): Promise<boolean> {
-  const res = await apiClient<{ status: string }>(`/api/admin/user/${userId}`, {
+export async function updateUser(
+  userId: number,
+  data: Partial<User> & { password?: string; department_ids?: number[] }
+): Promise<boolean> {
+  // SỬA DÒNG NÀY: Thay đổi URL để khớp với admin.py ("/admin/{user_id}" mounted tại "/api/user")
+  const res = await apiClient<{ status: string }>(`/api/user/admin/${userId}`, {
     method: 'PUT',
     body: JSON.stringify(data)
   })

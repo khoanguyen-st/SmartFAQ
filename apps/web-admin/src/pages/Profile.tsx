@@ -1,6 +1,5 @@
 import checkUrl from '@/assets/icons/checkmark.svg'
 import closeUrl from '@/assets/icons/close.svg'
-import eyeUrl from '@/assets/icons/eye.svg'
 import avatarDefaultUrl from '@/assets/icons/user-avatar.svg'
 import warningUrl from '@/assets/icons/warning.svg'
 import ChangePasswordModal from '@/components/profile/ChangePasswordModal'
@@ -125,11 +124,6 @@ const ProfilePage = () => {
     }
   }
 
-  const handleSeeDocuments = () => {
-    //   // Logic điều hướng hoặc mở modal documents
-    //   console.log("View documents clicked")
-  }
-
   if (loading) return <div className="p-10 text-center text-gray-500">Loading profile...</div>
   if (error || !profile) return <div className="p-10 text-center text-red-500">{error || 'Profile not found'}</div>
 
@@ -144,14 +138,6 @@ const ProfilePage = () => {
               Summary of personal information
             </p>
           </div>
-
-          <button
-            onClick={handleSeeDocuments}
-            className="flex h-10 w-[228px] items-center justify-center gap-2 rounded-lg bg-[#003087] text-[16px] font-medium text-white transition-colors hover:bg-[#00205a]"
-          >
-            <img src={eyeUrl} alt="view" className="h-6 w-6 brightness-0 invert" />
-            See Your Documents
-          </button>
         </div>
 
         {/* Main Card */}

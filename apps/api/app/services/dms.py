@@ -247,6 +247,7 @@ async def enqueue_multiple_documents(
             r = await enqueue_single_document(file, creator_id, department_id)
             results.append(r)
         except Exception as exc:
+            logger.error(f"Failed to process file {file.filename}: {str(exc)}")
             errors.append({"filename": file.filename, "error": str(exc)})
     if errors:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail={"errors": errors})
