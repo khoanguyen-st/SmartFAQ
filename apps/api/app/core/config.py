@@ -30,6 +30,7 @@ class Settings(BaseSettings):
     LLM_MODEL: str = Field("gemini-2.5-flash", alias="LLM_MODEL")
     LLM_TEMPERATURE: float = Field(0.3, alias="LLM_TEMPERATURE")
     LLM_MAX_TOKENS: int = Field(2048, alias="LLM_MAX_TOKENS")
+    LOCAL_LLM_BASE_URL: str = Field("http://localhost:11434/v1", alias="LOCAL_LLM_BASE_URL")
 
     EMBED_MODEL: str = Field("intfloat/multilingual-e5-base", alias="EMBED_MODEL")
     EMBED_DEVICE: str = Field("cpu", alias="EMBED_DEVICE")
