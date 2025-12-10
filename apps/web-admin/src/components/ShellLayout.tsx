@@ -1,37 +1,83 @@
-import { useEffect } from 'react'
-import { NavLink, useNavigate, Outlet, useLocation } from 'react-router-dom'
+import { NavLink, useNavigate, Outlet } from 'react-router-dom'
+import React, { useEffect, useState, useCallback, useMemo } from 'react'
+import { Menu, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { logout } from '@/lib/api'
-import { useState, useCallback, useMemo } from 'react'
+import { getCurrentUserInfo, type CurrentUserInfo } from '@/services/auth.services'
+import avatarDefaultUrl from '@/assets/icons/user-avatar.svg'
 import educationUrl from '@/assets/icons/education.svg'
 import chevronDownUrl from '@/assets/icons/chevron-down.svg'
-import avatarDefaultUrl from '@/assets/icons/user-avatar.svg'
-import { Menu, X } from 'lucide-react'
-import { getCurrentUserInfo, type CurrentUserInfo } from '@/services/auth.services'
+
+export const ROLES = {
+  ADMIN: 'admin',
+  STAFF: 'staff'
+}
+
+const NAV_CONFIG = [
+  {
+    path: 'dashboard',
+    label: 'Dashboard',
+    allowedRoles: [ROLES.ADMIN, ROLES.STAFF],
+    noPadding: false
+  },
+  {
+    path: 'departments',
+    label: 'Departments',
+    allowedRoles: [ROLES.ADMIN],
+    noPadding: false
+  },
+  {
+    path: 'users',
+    label: 'Users',
+    allowedRoles: [ROLES.ADMIN],
+    noPadding: false
+  },
+  {
+    path: 'logs',
+    label: 'System Logs',
+    allowedRoles: [ROLES.ADMIN, ROLES.STAFF],
+    noPadding: false
+  },
+  {
+    path: 'settings',
+    label: 'System Settings',
+    allowedRoles: [ROLES.ADMIN, ROLES.STAFF],
+    noPadding: false
+  },
+  {
+    path: 'view-chat',
+    label: 'View Chat',
+    allowedRoles: [ROLES.ADMIN, ROLES.STAFF],
+    noPadding: true
+  }
+]
+
+// --- 2. COMPONENTS CON ---
 
 type ImgCompProps = React.ImgHTMLAttributes<HTMLImageElement>
 const EducationIcon: React.FC<ImgCompProps> = props => <img src={educationUrl} alt="edu" {...props} />
-const navItems = [
-  { path: 'dashboard', label: 'Dashboard' },
-  { path: 'users', label: 'Users' },
-  { path: 'logs', label: 'Logs' },
-  { path: 'settings', label: 'Settings' },
-  { path: 'view-chat', label: 'View Chat', noPadding: true },
-  { path: 'departments', label: 'Departments' }
-]
+
+// --- 3. HELPER FUNCTIONS ---
+
+const checkPermission = (userRole: string | undefined, allowedRoles: string[]) => {
+  if (!userRole) return false
+  const normalizedUserRole = userRole.trim().toLowerCase()
+  return allowedRoles.some(r => r.toLowerCase() === normalizedUserRole)
+}
+
+// --- 4. MAIN COMPONENT ---
 
 const ShellLayout = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false)
   const [userInfo, setUserInfo] = useState<CurrentUserInfo | null>(null)
   const [selectedDepartment, setSelectedDepartment] = useState<number | null>(null)
-  const location = useLocation()
-  const currentNavItem = useMemo(() => navItems.find(item => location.pathname.includes(item.path)), [location])
+  const [seletectedNavItem, setSelectedNavItem] = useState<number>(0)
 
   const navigate = useNavigate()
 
+  // Kiểm tra token khi mount
   useEffect(() => {
-    // Check if user is authenticated
     const token = localStorage.getItem('access_token')
     if (!token) {
       navigate('/login')
@@ -84,11 +130,16 @@ const ShellLayout = () => {
   }, [])
 
   const toggleSidebar = useCallback(() => setIsSidebarOpen(prev => !prev), [])
-  const handleNavigation = useCallback(() => {
-    if (isSidebarOpen) {
-      setIsSidebarOpen(false)
-    }
-  }, [isSidebarOpen])
+
+  const handleNavigation = useCallback(
+    (index: number) => {
+      setSelectedNavItem(index)
+      if (isSidebarOpen) {
+        setIsSidebarOpen(false)
+      }
+    },
+    [isSidebarOpen]
+  )
 
   const handleLogout = useCallback(async () => {
     try {
@@ -99,6 +150,13 @@ const ShellLayout = () => {
       navigate('/login')
     }
   }, [navigate])
+
+  // Lọc menu dựa trên Role
+  const filteredNavItems = useMemo(() => {
+    if (!userInfo?.role) return []
+
+    return NAV_CONFIG.filter(item => checkPermission(userInfo.role, item.allowedRoles))
+  }, [userInfo])
 
   const Sidebar = useMemo(
     () => (
@@ -115,18 +173,18 @@ const ShellLayout = () => {
           <button
             onClick={toggleSidebar}
             className="rounded-full p-1 text-slate-300 transition-colors hover:bg-slate-700 hover:text-white lg:hidden"
-            aria-label="Đóng Sidebar"
+            aria-label="Close Sidebar"
           >
             <X className="h-6 w-6" />
           </button>
         </div>
 
         <nav className="flex flex-col gap-2">
-          {navItems.map(item => (
+          {filteredNavItems.map((item, index) => (
             <NavLink
               key={item.path}
               to={item.path}
-              onClick={handleNavigation}
+              onClick={() => handleNavigation(index)}
               className={({ isActive }) =>
                 cn(
                   'rounded-lg px-3.5 py-2 text-sm transition-colors duration-200',
@@ -138,6 +196,7 @@ const ShellLayout = () => {
             </NavLink>
           ))}
         </nav>
+
         <button
           onClick={handleLogout}
           className="mt-auto rounded-lg bg-transparent px-3.5 py-2 text-sm text-red-400 transition-colors duration-200 hover:bg-red-600/20 hover:text-red-300"
@@ -146,7 +205,7 @@ const ShellLayout = () => {
         </button>
       </aside>
     ),
-    [isSidebarOpen, toggleSidebar, handleNavigation, handleLogout]
+    [isSidebarOpen, toggleSidebar, handleNavigation, handleLogout, filteredNavItems]
   )
 
   return (
@@ -157,11 +216,12 @@ const ShellLayout = () => {
       <main className="w-full flex-1 overflow-y-auto lg:ml-60">
         <header className="sticky top-0 z-20 border-b border-gray-200 bg-white px-6 py-4">
           <div className="flex items-center justify-between">
+            {/* Left Header Section */}
             <div className="flex items-center gap-3">
               <button
                 onClick={toggleSidebar}
                 className="p-1 text-gray-600 transition-colors hover:text-gray-800 lg:hidden"
-                aria-label={isSidebarOpen ? 'Đóng menu' : 'Mở menu'}
+                aria-label={isSidebarOpen ? 'Close menu' : 'Open menu'}
               >
                 <Menu className="h-6 w-6" />
               </button>
@@ -174,7 +234,7 @@ const ShellLayout = () => {
               </div>
             </div>
 
-            {/* User Menu Dropdown */}
+            {/* Right Header Section (User Menu) */}
             <div className="relative">
               <button
                 onMouseEnter={() => setIsUserMenuOpen(true)}
@@ -190,7 +250,7 @@ const ShellLayout = () => {
                 />
               </button>
 
-              {/* Dropdown Menu */}
+              {/* Dropdown Content */}
               {isUserMenuOpen && (
                 <div
                   onMouseLeave={() => setIsUserMenuOpen(false)}
@@ -205,12 +265,16 @@ const ShellLayout = () => {
                       }}
                       className="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-gray-700 transition-colors hover:bg-gray-50"
                     >
-                      <img src={userInfo?.image || avatarDefaultUrl} alt="user" className="h-8 w-8 rounded-full bg-center" />
+                      <img
+                        src={userInfo?.image || avatarDefaultUrl}
+                        alt="user"
+                        className="h-8 w-8 rounded-full bg-center"
+                      />
                       <span>Profile</span>
                     </button>
 
-                    {/* Department Selector - Only show if user has multiple departments */}
-                    {userInfo && userInfo.departments.length > 1 && (
+                    {/* Department Selector */}
+                    {userInfo && userInfo.departments && userInfo.departments.length > 1 && (
                       <>
                         <div className="my-2 border-t border-gray-200" />
                         <div className="px-4 py-2">
@@ -267,7 +331,7 @@ const ShellLayout = () => {
             </div>
           </div>
         </header>
-        <div className={cn('flex flex-col gap-6', !currentNavItem?.noPadding && 'p-6')}>
+        <div className={cn('flex flex-col gap-6', !filteredNavItems[seletectedNavItem]?.noPadding && 'p-6')}>
           <Outlet />
         </div>
       </main>

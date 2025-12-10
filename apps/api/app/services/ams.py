@@ -8,6 +8,7 @@ from fastapi import HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from ..models.department import Department
 from ..models.user import User
@@ -25,7 +26,11 @@ def hash_password(password: str) -> str:
 
 async def list_users(db: AsyncSession, role: Optional[str] = None) -> List[User]:
     """List only internal users (staff & admin)."""
-    stmt = select(User).where(User.role.in_(["staff", "admin"]))
+    stmt = (
+        select(User)
+        .options(selectinload(User.departments))
+        .where(User.role.in_(["staff", "admin"]))
+    )
 
     if role:
         stmt = stmt.where(User.role == role)
@@ -35,7 +40,9 @@ async def list_users(db: AsyncSession, role: Optional[str] = None) -> List[User]
 
 
 async def get_user(user_id: int, db: AsyncSession):
-    result = await db.execute(select(User).where(User.id == user_id))
+    result = await db.execute(
+        select(User).options(selectinload(User.departments)).where(User.id == user_id)
+    )
     return result.scalar_one_or_none()
 
 
@@ -47,7 +54,6 @@ async def create_user(data: dict, db: AsyncSession):
             detail="Invalid role. Must be 'staff' or 'admin'.",
         )
 
-    # Validate staff must have departments
     department_ids = data.pop("department_ids", [])
     if role == "staff" and not department_ids:
         raise HTTPException(
@@ -73,11 +79,10 @@ async def create_user(data: dict, db: AsyncSession):
     db.add(new_user)
     await db.flush()
 
-    # Assign departments if provided
     if department_ids:
-        # Verify all departments exist
         dept_result = await db.execute(select(Department).where(Department.id.in_(department_ids)))
         departments = dept_result.scalars().all()
+
         if len(departments) != len(department_ids):
             await db.rollback()
             raise HTTPException(
@@ -85,15 +90,16 @@ async def create_user(data: dict, db: AsyncSession):
                 detail="One or more department IDs are invalid.",
             )
 
-        # Create user-department associations
         for dept_id in department_ids:
             user_dept = UserDepartment(user_id=new_user.id, department_id=dept_id)
             db.add(user_dept)
 
     try:
         await db.commit()
-        await db.refresh(new_user)
-        return new_user
+        stmt = select(User).options(selectinload(User.departments)).where(User.id == new_user.id)
+        result = await db.execute(stmt)
+        return result.scalar_one()
+
     except IntegrityError:
         await db.rollback()
         raise HTTPException(
@@ -103,9 +109,13 @@ async def create_user(data: dict, db: AsyncSession):
 
 
 async def update_user(user_id: int, data: dict, db: AsyncSession) -> bool:
+    """Update user information including departments."""
+    # 1. Lấy user kèm theo departments hiện tại
     user = await get_user(user_id, db)
     if not user:
         return False
+
+    department_ids = data.pop("department_ids", None)
 
     if "role" in data and data["role"] not in ["staff", "admin"]:
         raise HTTPException(
@@ -119,6 +129,18 @@ async def update_user(user_id: int, data: dict, db: AsyncSession) -> bool:
     for key, value in data.items():
         if hasattr(user, key):
             setattr(user, key, value)
+
+    if department_ids is not None:
+        current_role = data.get("role", user.role)
+        if current_role == "staff" and not department_ids:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Staff users must be assigned to at least one department.",
+            )
+        stmt = select(Department).where(Department.id.in_(department_ids))
+        result = await db.execute(stmt)
+        new_departments = result.scalars().all()
+        user.departments = new_departments
 
     try:
         await db.commit()

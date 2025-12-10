@@ -42,7 +42,7 @@ async def login(payload: UserLogin, db: AsyncSession = Depends(get_db)) -> Token
         raise HTTPException(
             status_code=423,
             detail={
-                "error": "Account locked due to multiple failed login attempts. Please contact Administrator."
+                "error": "Account locked due to some reasons or multiple failed login attempts. Please contact Administrator."
             },
         )
     except InactiveAccountError:
