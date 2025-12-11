@@ -1,0 +1,70 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: acme-solver
+  namespace: smartfaq-dev
+  labels:
+    acme.cert-manager.io/http01-solver: "true"
+spec:
+  containers:
+    - name: solver
+      image: nginx:alpine
+      ports:
+        - containerPort: 8089
+          name: http
+      volumeMounts:
+        - name: challenge
+          mountPath: /usr/share/nginx/html/.well-known/acme-challenge
+      resources:
+        requests:
+          memory: "64Mi"
+          cpu: "100m"
+        limits:
+          memory: "128Mi"
+          cpu: "200m"
+  volumes:
+    - name: challenge
+      configMap:
+        name: acme-challenge
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: acme-challenge
+  namespace: smartfaq-dev
+data:
+  WzxdcukGArnMW8bVroZU3kqfLRFyXxWUDv5I28sE6jM: "WzxdcukGArnMW8bVroZU3kqfLRFyXxWUDv5I28sE6jM.8icoBRaJa8yrah-92HHAw0i4-zhLV1_PacwDdQeybFg"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: acme-solver
+  namespace: smartfaq-dev
+spec:
+  selector:
+    acme.cert-manager.io/http01-solver: "true"
+  ports:
+    - port: 8089
+      targetPort: 8089
+      protocol: TCP
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: acme-solver
+  namespace: smartfaq-dev
+  annotations:
+    nginx.org/client-max-body-size: "1m"
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: api.smartfaq.dev.devplus.edu.vn
+      http:
+        paths:
+          - path: /.well-known/acme-challenge
+            pathType: Prefix
+            backend:
+              service:
+                name: acme-solver
+                port:
+                  number: 8089
