@@ -31,8 +31,6 @@ export const EditUserDialog: React.FC<EditUserDialogProps> = ({
     const loadDepartments = async () => {
       try {
         const data = await fetchDepartments()
-        // --- SỬA LỖI ESLINT 1: Định nghĩa kiểu rõ ràng thay vì dùng any ---
-        // Kiểm tra xem data có phải mảng không, nếu không thì ép kiểu về object có items
         const mappedDepts: Department[] = Array.isArray(data) ? data : (data as { items: Department[] }).items || []
 
         setAvailableDepartments(mappedDepts)
@@ -43,6 +41,7 @@ export const EditUserDialog: React.FC<EditUserDialogProps> = ({
     loadDepartments()
   }, [])
 
+  // --- THAY ĐỔI 1: Khi mở Dialog, luôn reset danh sách chọn về Rỗng ---
   useEffect(() => {
     if (open && user) {
       setFormData({})
@@ -50,8 +49,9 @@ export const EditUserDialog: React.FC<EditUserDialogProps> = ({
       setCampusOpen(false)
       setDepartmentOpen(false)
 
-      const userDeptIds = user.departments?.map(d => d.id) || []
-      setSelectedDepartmentIds(userDeptIds)
+      // KHÔNG load department cũ vào state nữa
+      // Để mảng rỗng để UI hiện "Choose Department"
+      setSelectedDepartmentIds([])
     }
   }, [open, user])
 
@@ -63,7 +63,8 @@ export const EditUserDialog: React.FC<EditUserDialogProps> = ({
   }
 
   const getSelectedDepartmentsLabel = () => {
-    if (selectedDepartmentIds.length === 0) return 'Select Department'
+    // Vì khởi tạo là [], nên nó sẽ luôn hiện dòng này lúc đầu
+    if (selectedDepartmentIds.length === 0) return 'Choose Department'
     return availableDepartments
       .filter(d => selectedDepartmentIds.includes(d.id))
       .map(d => d.name)
@@ -106,13 +107,17 @@ export const EditUserDialog: React.FC<EditUserDialogProps> = ({
 
     setLoading(true)
     try {
-      const submitData = {
-        ...formData,
-        department_ids: selectedDepartmentIds
+      const submitData: Partial<User> & { department_ids?: number[] } = {
+        ...formData
       }
 
-      // --- SỬA LỖI ESLINT 2: Dùng unknown trước khi ép về Partial<User> ---
-      // Điều này "đánh lừa" TypeScript một cách an toàn để chấp nhận department_ids
+      // --- THAY ĐỔI 2: Logic xử lý khi Submit ---
+      // Nếu user CÓ chọn department mới (length > 0) -> Gửi danh sách đó lên để cập nhật.
+      // Nếu user KHÔNG chọn gì (length == 0) -> KHÔNG gửi field department_ids -> Backend giữ nguyên cái cũ.
+      if (selectedDepartmentIds.length > 0) {
+        submitData.department_ids = selectedDepartmentIds
+      }
+
       await onSubmit?.(user.id, submitData as unknown as Partial<User>)
 
       onSuccess?.()
