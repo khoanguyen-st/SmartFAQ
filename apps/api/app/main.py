@@ -23,26 +23,7 @@ def create_app() -> FastAPI:
         redoc_url="/docs/redoc",
     )
 
-    # Add middleware to log all requests
-    @app.middleware("http")
-    async def log_requests(request: Request, call_next):
-        origin = request.headers.get("origin", "no-origin")
-        method = request.method
-        path = request.url.path
-        logger.info(f"Request: {method} {path} from origin: {origin}")
-
-        response = await call_next(request)
-
-        # Log response headers for OPTIONS requests
-        if method == "OPTIONS":
-            cors_header = response.headers.get("access-control-allow-origin", "MISSING")
-            logger.info(
-                f"OPTIONS response for {path}: status={response.status_code}, allow-origin={cors_header}"
-            )
-
-        return response
-
-    # Configure CORS
+    # Configure CORS - MUST be added FIRST so it executes LAST (wraps all other middleware)
     app.add_middleware(
         CORSMiddleware,
         allow_origins=[
@@ -61,6 +42,25 @@ def create_app() -> FastAPI:
         allow_headers=["*"],
         max_age=600,
     )
+
+    # Add middleware to log all requests (added after CORS so it executes before)
+    @app.middleware("http")
+    async def log_requests(request: Request, call_next):
+        origin = request.headers.get("origin", "no-origin")
+        method = request.method
+        path = request.url.path
+        logger.info(f"Request: {method} {path} from origin: {origin}")
+
+        response = await call_next(request)
+
+        # Log response headers for OPTIONS requests
+        if method == "OPTIONS":
+            cors_header = response.headers.get("access-control-allow-origin", "MISSING")
+            logger.info(
+                f"OPTIONS response for {path}: status={response.status_code}, allow-origin={cors_header}"
+            )
+
+        return response
 
     app.include_router(auth.router, prefix="/api/auth", tags=["auth"])
     app.include_router(docs.router, prefix="/api/docs", tags=["documents"])
