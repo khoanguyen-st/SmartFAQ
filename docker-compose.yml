@@ -4,8 +4,11 @@ services:
       context: ./apps/api
       dockerfile: Dockerfile
     env_file: ./.env.docker
+    environment:
+      - SETTINGS_ENV_FILE=/app/.env.docker
     volumes:
       - ./apps/api/app:/app/app
+      - ./.env.docker:/app/.env.docker
     ports:
       - "${API_PORT_EXTERNAL:-8000}:8000"
     depends_on:

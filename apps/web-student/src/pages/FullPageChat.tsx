@@ -15,6 +15,11 @@ const FullPageChat = () => {
   const { messages, isLoading, sendMessage, clearChat } = useChat(sessionIdFromUrl)
 
   const [showConfirm, setShowConfirm] = useState(false)
+
+  const handleFAQClick = (question: string) => {
+    sendMessage(question)
+  }
+
   const handleClearClick = () => {
     setShowConfirm(true)
   }
@@ -33,6 +38,7 @@ const FullPageChat = () => {
           messages={messages}
           isLoading={isLoading}
           onSend={sendMessage}
+          onQuestionClick={handleFAQClick}
           headerAction={
             <button
               onClick={() => window.close()}

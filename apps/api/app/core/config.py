@@ -1,14 +1,17 @@
 """Application configuration."""
 
+import os
 from functools import lru_cache
 
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+ENV_FILE = os.getenv("SETTINGS_ENV_FILE", ".env")
+
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
-        env_file=".env", env_file_encoding="utf-8", case_sensitive=False, extra="ignore"
+        env_file=ENV_FILE, env_file_encoding="utf-8", case_sensitive=False, extra="ignore"
     )
 
     env: str = Field("development", alias="APP_ENV")
@@ -96,6 +99,19 @@ class Settings(BaseSettings):
 @lru_cache(maxsize=1)
 def get_settings() -> Settings:
     return Settings()
+
+
+def reload_settings() -> Settings:
+    """Clear cache and reload settings from environment/file."""
+    from dotenv import load_dotenv
+
+    # Reload .env file to update os.environ
+    env_file_path = os.getenv("SETTINGS_ENV_FILE", ".env")
+    load_dotenv(env_file_path, override=True)
+
+    # Clear cache and create new settings instance
+    get_settings.cache_clear()
+    return get_settings()
 
 
 settings = get_settings()

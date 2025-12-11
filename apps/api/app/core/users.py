@@ -30,7 +30,6 @@ async def get_current_user(
 
     try:
         payload = jwt.decode(token, settings.jwt_secret, algorithms=["HS256"])
-        logger.info(f"Token decoded successfully. User ID: {payload.get('user_id')}")
     except jwt.ExpiredSignatureError:
         logger.warning("Token expired")
         raise HTTPException(
