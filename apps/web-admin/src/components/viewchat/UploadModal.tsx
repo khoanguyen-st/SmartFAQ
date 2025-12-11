@@ -205,7 +205,7 @@ const UploadModal = ({ isOpen, onClose, onFilesUploaded }: UploadModalProps) => 
       onClick={handleBackdropClick}
     >
       <div className="w-full max-w-2xl overflow-hidden rounded-xl bg-white shadow-2xl sm:w-11/12 md:max-w-xl lg:max-w-2xl">
-        <div className="flex items-start justify-between border-b border-gray-100 p-4 sm:p-6">
+        <div className="flex items-start justify-between border-b border-gray-200 p-4 sm:p-6">
           <div>
             <h2 className="text-lg font-semibold text-gray-800 sm:text-xl">Upload Documents</h2>
             <p className="mt-1 text-xs text-gray-500 sm:text-sm">
@@ -323,7 +323,7 @@ const UploadModal = ({ isOpen, onClose, onFilesUploaded }: UploadModalProps) => 
           </div>
         </div>
 
-        <div className="flex flex-col items-center justify-between gap-3 border-t border-gray-100 p-4 sm:flex-row sm:gap-4 sm:p-6">
+        <div className="flex flex-col items-center justify-between gap-3 border-t border-gray-200 p-4 sm:flex-row sm:gap-4 sm:p-6">
           <div className="w-full flex-1 sm:w-auto">
             <p className="flex items-start space-x-1 text-xs text-indigo-700">
               <InfoIcon className="mt-1 h-[14px] w-[14px] shrink-0" />

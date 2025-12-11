@@ -1,5 +1,5 @@
-import eyeOffUrl from '@/assets/icons/eye-off.svg'
-import eyeUrl from '@/assets/icons/eye.svg'
+import eyeOff from '@/assets/icons/eye-off.svg'
+import eye from '@/assets/icons/eye.svg'
 import { ChangePasswordRequest, changePassword } from '@/services/user.services'
 import React, { useState } from 'react'
 
@@ -47,30 +47,70 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({ isOpen, onClo
     setShowPass(prev => ({ ...prev, [field]: !prev[field] }))
   }
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target
-    setFormData(prev => ({ ...prev, [name]: value }))
-
-    if (errors[name as keyof ErrorState] || errors.general) {
-      setErrors(prev => ({ ...prev, [name]: undefined, general: undefined }))
-    }
-  }
-
   const validatePassword = (pass: string) => {
     const regex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/
     return regex.test(pass)
   }
 
+  // --- LOGIC REAL-TIME HANDLER ---
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target
+
+    setFormData(prev => {
+      // Tính toán state tiếp theo để validate chính xác
+      const nextState = { ...prev, [name]: value }
+
+      const newErrors: ErrorState = { ...errors }
+      delete newErrors.general
+
+      // 1. Validate New Password khi đang gõ
+      if (name === 'new_password') {
+        // Kiểm tra Regex
+        if (value && !validatePassword(value)) {
+          // Chỉ hiện lỗi khi đã nhập gì đó
+          newErrors.new_password = 'Password must be 8+ chars, with upper, lower, number & special char.'
+        } else {
+          delete newErrors.new_password
+        }
+
+        // Kiểm tra đối chiếu với Confirm Password
+        if (nextState.confirm_password) {
+          if (nextState.confirm_password !== value) {
+            newErrors.confirm_password = 'Passwords do not match'
+          } else {
+            delete newErrors.confirm_password
+          }
+        }
+      }
+
+      // 2. Validate Confirm Password khi đang gõ
+      if (name === 'confirm_password') {
+        if (value && value !== nextState.new_password) {
+          newErrors.confirm_password = 'Passwords do not match'
+        } else {
+          delete newErrors.confirm_password
+        }
+      }
+
+      if (name === 'current_password') {
+        delete newErrors.current_password
+      }
+
+      setErrors(newErrors)
+      return nextState
+    })
+  }
+  // ------------------------------
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setErrors({})
-
-    let hasError = false
+    // Vẫn giữ validate lúc submit để chặn trường hợp user bypass client script
+    // hoặc chưa nhập gì mà bấm submit
     const newErrors: ErrorState = {}
+    let hasError = false
 
     if (formData.new_password !== formData.confirm_password) {
       newErrors.confirm_password = 'Passwords do not match'
-      newErrors.new_password = 'Passwords do not match'
       hasError = true
     }
 
@@ -96,12 +136,8 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({ isOpen, onClo
       handleCancel()
     } catch (err: unknown) {
       let msg = 'Failed to change password'
-
-      if (err instanceof Error) {
-        msg = err.message
-      } else if (typeof err === 'string') {
-        msg = err
-      }
+      if (err instanceof Error) msg = err.message
+      else if (typeof err === 'string') msg = err
 
       if (msg.toLowerCase().includes('current password')) {
         setErrors({ current_password: msg })
@@ -128,7 +164,7 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({ isOpen, onClo
     return (
       <div className={`flex flex-col gap-2.5 ${marginTopClass}`}>
         <label className="text-[16px] leading-6 font-medium text-[#111928]">
-          {label} <span className="ml-1 text-[#E02424]">*</span>
+          {label} <span className="ml-1 text-red-500">*</span>
         </label>
 
         <div className="relative w-[574px]">
@@ -138,9 +174,9 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({ isOpen, onClo
             value={formData[name]}
             onChange={handleChange}
             placeholder={placeholderText}
-            className={`h-[46px] w-full rounded-md border bg-white pr-10 pl-5 text-[16px] transition-colors outline-none ${
+            className={`h-[46px] w-full rounded-xl border bg-white pr-10 pl-5 text-[16px] transition-colors outline-none ${
               fieldError
-                ? 'border-[#E02424] text-[#E02424] placeholder-red-300 focus:border-[#E02424] focus:ring-1 focus:ring-[#E02424]'
+                ? 'border-red-500 text-red-500 placeholder-red-300 focus:border-red-500 focus:ring-1 focus:ring-red-500'
                 : 'border-[#6B7280] text-[#111928] placeholder-[#9CA3AF] focus:border-[#003087] focus:ring-1 focus:ring-[#003087]'
             } `}
           />
@@ -148,34 +184,40 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({ isOpen, onClo
           <button
             type="button"
             onClick={() => toggleShow(toggleField)}
-            className={`absolute top-1/2 right-4 flex -translate-y-1/2 items-center justify-center ${fieldError ? 'text-[#E02424]' : 'text-[#111928]'}`}
+            className={`absolute top-1/2 right-4 flex -translate-y-1/2 items-center justify-center ${fieldError ? 'text-red-500' : 'text-[#111928]'}`}
           >
             <img
-              src={isShow ? eyeUrl : eyeOffUrl}
+              src={isShow ? eye : eyeOff}
               alt="toggle visibility"
               className={`h-6 w-6 brightness-0 ${fieldError ? 'brightness-50 hue-rotate-340 saturate-5000 sepia' : ''}`}
             />
           </button>
         </div>
 
-        {fieldError && <p className="text-sm text-[#E02424]">{fieldError}</p>}
+        {/* --- Transition cho Error Message --- */}
+        <div
+          className={`grid transition-all duration-300 ease-in-out ${
+            fieldError ? 'mt-1 grid-rows-[1fr] opacity-100' : 'mt-0 grid-rows-[0fr] opacity-0'
+          }`}
+        >
+          <div className="overflow-hidden">
+            <p className="text-sm text-red-500">{fieldError}</p>
+          </div>
+        </div>
       </div>
     )
   }
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-      <div className="relative h-auto min-h-[629px] w-[698px] rounded-[20px] bg-white pb-8 shadow-[0px_4px_4px_rgba(0,0,0,0.25)]">
+      <div className="relative h-auto min-h-[629px] w-[698px] rounded-2xl bg-white">
         <div className="pt-[45px] pl-[68px]">
-          <h2 className="text-[30px] leading-[38px] font-bold text-black">Change Password</h2>
-
-          <p className="mt-6 text-[18px] leading-[26px] font-medium text-[#637381]">
-            Secure your account with a new password.
-          </p>
+          <h2 className="mb-2 text-3xl font-bold text-slate-900">Change Password</h2>
+          <p className="text-base text-slate-600">Secure your account with a new password.</p>
 
           <form onSubmit={handleSubmit}>
             {errors.general && (
-              <div className="mt-4 w-[574px] rounded-lg bg-red-50 p-3 text-sm text-[#E02424]">{errors.general}</div>
+              <div className="mt-4 w-[574px] rounded-lg bg-red-50 p-3 text-sm text-red-500">{errors.general}</div>
             )}
 
             {renderInputRow(
@@ -198,11 +240,11 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({ isOpen, onClo
               'mt-[20px]'
             )}
 
-            <div className="mt-[49px] flex w-[574px] justify-end gap-[21px]">
+            <div className="flex w-full justify-end gap-6 p-12 pr-[56px]">
               <button
                 type="button"
                 onClick={handleCancel}
-                className="flex h-[64.45px] w-[120px] items-center justify-center rounded-[50px] border-2 border-[#F3F4F6] bg-white text-[16px] font-medium text-black transition hover:bg-gray-50"
+                className="flex h-15 w-30 items-center justify-center rounded-2xl border-2 border-[#F3F4F6] bg-white text-[16px] font-medium text-black shadow-lg transition hover:bg-gray-50"
               >
                 Cancel
               </button>
@@ -210,7 +252,7 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({ isOpen, onClo
               <button
                 type="submit"
                 disabled={isLoading}
-                className="flex h-[64.45px] w-[124px] items-center justify-center rounded-[50px] bg-[#003087] text-[16px] font-medium text-white transition hover:bg-[#00205a] disabled:opacity-70"
+                className="flex h-15 w-30 items-center justify-center rounded-2xl bg-[#003087] text-[16px] font-medium text-white shadow-lg transition hover:bg-[#00205a] disabled:opacity-70"
               >
                 {isLoading ? '...' : 'Update'}
               </button>

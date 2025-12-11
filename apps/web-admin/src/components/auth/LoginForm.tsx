@@ -1,10 +1,10 @@
 import React, { useState } from 'react'
 import { Link } from 'react-router-dom'
 
-import eyeIcon from '../../assets/icons/eye.svg'
-import userIcon from '../../assets/icons/email.svg'
-import eyeOffIcon from '../../assets/icons/eye-off.svg'
-import ChevronDown from '../../assets/icons/chevron-down.svg'
+import eyeIcon from '@/assets/icons/eye.svg'
+import userIcon from '@/assets/icons/email.svg'
+import eyeOffIcon from '@/assets/icons/eye-off.svg'
+import ChevronDown from '@/assets/icons/chevron-down.svg'
 
 interface LoginFormProps {
   onSubmit: (email: string, password: string, campus_id: 'DN' | 'HCM' | 'HN' | 'CT') => Promise<void>

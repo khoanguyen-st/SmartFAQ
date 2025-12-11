@@ -1,10 +1,10 @@
 import { fetchSystemSettings, SettingsUpdateRequest, SystemSettings, updateSystemSettings } from '@/lib/api'
-import { AlertCircle, CheckCircle2, Eye, EyeOff, Info, Loader2, Save } from 'lucide-react'
+import { AlertCircle, CheckCircle2, ChevronDown, Eye, EyeOff, Info, Loader2, Save } from 'lucide-react'
 import { FormEvent, useEffect, useState } from 'react'
 
 const GEMINI_MODELS = [
-  { value: 'gemma-3-27b-it', label: 'Gemma 2 27B' },
-  { value: 'gemma-3-9b-it', label: 'Gemma 2 9B' },
+  { value: 'gemma-3-27b-it', label: 'Gemma 3 27B' },
+  { value: 'gemma-3-9b-it', label: 'Gemma 3 9B' },
   { value: 'gemini-2.0-flash-exp', label: 'Gemini 2.0 Flash' },
   { value: 'gemini-1.5-flash', label: 'Gemini 1.5 Flash' },
   { value: 'gemini-1.5-flash-8b', label: 'Gemini 1.5 Flash 8B' },
@@ -173,7 +173,6 @@ const SettingsForm = () => {
       setSettings(response.updated_settings)
       setSuccess(response.message)
 
-      // Auto-hide success message after 5 seconds
       setTimeout(() => setSuccess(null), 5000)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to save settings')
@@ -198,7 +197,7 @@ const SettingsForm = () => {
   if (loading) {
     return (
       <div className="flex items-center justify-center rounded-2xl bg-white p-12 shadow-lg">
-        <Loader2 className="h-8 w-8 animate-spin text-indigo-600" />
+        <Loader2 className="h-8 w-8 animate-spin text-[#003087]" />
       </div>
     )
   }
@@ -220,49 +219,55 @@ const SettingsForm = () => {
     hybrid: { title: 'Advanced Search' }
   }
 
+  // Helper check for Google AI
+  const isGoogleAI = settings.llm_model.includes('gemini') || settings.llm_model.includes('gemma')
+
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       {/* Status Messages */}
       {error && (
-        <div className="flex items-center gap-3 rounded-lg border border-red-200 bg-red-50 p-4">
+        <div className="flex items-center gap-3 rounded-xl border border-red-200 bg-red-50 p-4">
           <AlertCircle className="h-5 w-5 shrink-0 text-red-600" />
           <p className="text-sm text-red-800">{error}</p>
         </div>
       )}
 
       {success && (
-        <div className="flex items-center gap-3 rounded-lg border border-green-200 bg-green-50 p-4">
+        <div className="flex items-center gap-3 rounded-xl border border-green-200 bg-green-50 p-4">
           <CheckCircle2 className="h-5 w-5 shrink-0 text-green-600" />
           <p className="text-sm text-green-800">{success}</p>
         </div>
       )}
 
-      {/* AI Model Selection */}
-      <div className="rounded-2xl border border-indigo-100 bg-linear-to-br from-indigo-50 to-purple-50 p-6 shadow-sm">
+      {/* AI Model Selection Section */}
+      <div className="rounded-2xl border border-blue-100 bg-linear-to-r from-[#3575f9] to-[#003087] p-6 shadow-sm transition-all duration-200 hover:shadow-md">
         <div className="flex items-start gap-3">
-          <Info className="mt-0.5 h-5 w-5 shrink-0 text-indigo-600" />
           <div className="flex-1">
-            <h3 className="mb-2 font-semibold text-slate-900">AI Model Selection</h3>
-            <p className="mb-4 text-xs text-slate-600">
-              Choose between Google AI (Gemini/Gemma via API) or Local AI (self-hosted model)
-            </p>
+            <div className="flex flex-col">
+              <div className="flex items-center gap-2">
+                <Info className="h-5 w-5 shrink-0 text-slate-100" />
+                <h3 className="text-lg font-semibold text-slate-100">AI Model Selection</h3>
+              </div>
+              <p className="mt-1 mb-4 text-base text-slate-200">
+                Choose between Google AI (Gemini/Gemma via API) or Local AI (self-hosted model)
+              </p>
+            </div>
 
             <div className="flex gap-3">
+              {/* Google AI Button */}
               <button
                 type="button"
                 onClick={() => updateSetting('llm_model', GEMINI_MODELS[0].value)}
-                className={`flex-1 rounded-lg border-2 p-4 text-left transition-all ${
-                  settings.llm_model.includes('gemini') || settings.llm_model.includes('gemma')
-                    ? 'border-indigo-600 bg-white shadow-md'
-                    : 'border-indigo-200 bg-white/50 hover:border-indigo-400'
+                className={`flex-1 rounded-xl border-2 p-4 text-left transition-all duration-200 ease-in-out hover:scale-[1.02] active:scale-[0.98] ${
+                  isGoogleAI
+                    ? 'border-blue-600 bg-white shadow-md ring-1 ring-blue-600/20'
+                    : 'border-blue-400 bg-white/50 hover:border-blue-400'
                 }`}
               >
                 <div className="mb-1 flex items-center gap-2">
                   <div
-                    className={`h-3 w-3 rounded-full ${
-                      settings.llm_model.includes('gemini') || settings.llm_model.includes('gemma')
-                        ? 'bg-indigo-600'
-                        : 'bg-slate-300'
+                    className={`h-3 w-3 rounded-full transition-colors duration-300 ${
+                      isGoogleAI ? 'bg-emerald-600 shadow-[0_0_8px_#2563eb]' : 'bg-slate-300'
                     }`}
                   />
                   <span className="font-semibold text-slate-900">Google AI</span>
@@ -273,21 +278,20 @@ const SettingsForm = () => {
                 </p>
               </button>
 
+              {/* Local AI Button */}
               <button
                 type="button"
                 onClick={() => updateSetting('llm_model', 'llama-3.2-3b-instruct')}
-                className={`flex-1 rounded-lg border-2 p-4 text-left transition-all ${
-                  settings.llm_model.includes('llama') || settings.llm_model.includes('local')
-                    ? 'border-indigo-600 bg-white shadow-md'
-                    : 'border-indigo-200 bg-white/50 hover:border-indigo-400'
+                className={`flex-1 rounded-xl border-2 p-4 text-left transition-all duration-200 ease-in-out hover:scale-[1.02] active:scale-[0.98] ${
+                  !isGoogleAI
+                    ? 'border-blue-600 bg-white shadow-md ring-1 ring-blue-600/20'
+                    : 'border-blue-200 bg-white/50 hover:border-blue-400'
                 }`}
               >
                 <div className="mb-1 flex items-center gap-2">
                   <div
-                    className={`h-3 w-3 rounded-full ${
-                      settings.llm_model.includes('llama') || settings.llm_model.includes('local')
-                        ? 'bg-indigo-600'
-                        : 'bg-slate-300'
+                    className={`h-3 w-3 rounded-full transition-colors duration-300 ${
+                      !isGoogleAI ? 'bg-emerald-600 shadow-[0_0_8px_#2563eb]' : 'bg-slate-300'
                     }`}
                   />
                   <span className="font-semibold text-slate-900">Local AI</span>
@@ -297,161 +301,188 @@ const SettingsForm = () => {
               </button>
             </div>
 
-            {/* Model Selector - Only shown when Google AI is selected */}
-            {(settings.llm_model.includes('gemini') || settings.llm_model.includes('gemma')) && (
-              <div className="mt-4 rounded-lg border-2 border-indigo-200 bg-white p-4">
-                <label className="mb-2 block text-sm font-medium text-slate-900">
-                  Select Model
-                  <span className="ml-1 text-red-500">*</span>
-                </label>
-                <select
-                  value={settings.llm_model}
-                  onChange={e => updateSetting('llm_model', e.target.value)}
-                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-indigo-600 focus:ring-2 focus:ring-indigo-600/20 focus:outline-none"
+            {/* Transition Wrapper for Google AI Settings */}
+            <div
+              className={`grid transition-[grid-template-rows] duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] ${
+                isGoogleAI ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'
+              }`}
+            >
+              <div className="overflow-hidden">
+                <div
+                  className={`flex flex-col gap-4 transition-all duration-500 ease-in-out ${
+                    isGoogleAI ? 'translate-y-0 pt-4 opacity-100' : '-translate-y-4 pt-0 opacity-0'
+                  }`}
                 >
-                  {GEMINI_MODELS.map(model => (
-                    <option key={model.value} value={model.value}>
-                      {model.label}
-                    </option>
-                  ))}
-                </select>
-                <p className="mt-2 text-xs text-slate-600">
-                  <strong>Tip:</strong> Gemini 1.5 Flash is recommended for most use cases. Pro models are more capable
-                  but slower and more expensive.
-                </p>
-              </div>
-            )}
+                  {/* Select Model */}
+                  <div className="rounded-xl border-2 border-blue-400 bg-white p-4 shadow-xs">
+                    <label className="mb-2 block text-sm font-medium text-slate-900">
+                      Select Model <span className="ml-1 text-red-500">*</span>
+                    </label>
+                    <div className="relative">
+                      <select
+                        value={settings.llm_model}
+                        onChange={e => updateSetting('llm_model', e.target.value)}
+                        className="my-2 w-full appearance-none rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 transition-colors focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20 focus:outline-none"
+                      >
+                        {GEMINI_MODELS.map(model => (
+                          <option key={model.value} value={model.value}>
+                            {model.label}
+                          </option>
+                        ))}
+                      </select>
+                      {/* Custom Arrow Icon */}
+                      <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-slate-500">
+                        <ChevronDown className="h-4 w-4" />
+                      </div>
+                    </div>
+                    <p className="mt-2 text-xs text-slate-600">
+                      <strong>Tip:</strong> Gemini 1.5 Flash is recommended for most use cases.
+                    </p>
+                  </div>
 
-            {/* Google API Key Input - Only shown when Gemini/Gemma is selected */}
-            {(settings.llm_model.includes('gemini') || settings.llm_model.includes('gemma')) && (
-              <div className="mt-4 rounded-lg border-2 border-indigo-200 bg-white p-4">
-                <label className="mb-2 block text-sm font-medium text-slate-900">
-                  Google API Key
-                  <span className="ml-1 text-red-500">*</span>
-                </label>
-                <input
-                  type="password"
-                  value={settings.google_api_key}
-                  placeholder="Enter your Google API Key (AIza...)"
-                  className="w-full rounded-lg border border-slate-300 px-3 py-2 font-mono text-sm focus:border-indigo-600 focus:ring-2 focus:ring-indigo-600/20 focus:outline-none"
-                  onChange={e => updateSetting('google_api_key', e.target.value)}
-                />
-                <p className="mt-2 text-xs text-slate-600">
-                  <strong>Note:</strong> Your API key is required to use Google Gemini. Get your key from{' '}
-                  <a
-                    href="https://makersuite.google.com/app/apikey"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-indigo-600 underline hover:text-indigo-700"
-                  >
-                    Google AI Studio
-                  </a>
-                </p>
+                  {/* API Key Input */}
+                  <div className="rounded-xl border-2 border-blue-400 bg-white p-4 shadow-xs">
+                    <label className="mb-2 block text-sm font-medium text-slate-900">
+                      Google API Key <span className="ml-1 text-red-500">*</span>
+                    </label>
+                    <input
+                      type="password"
+                      value={settings.google_api_key}
+                      placeholder="Enter your Google API Key (AIza...)"
+                      className="my-2 w-full rounded-lg border border-slate-300 px-3 py-2 font-mono text-sm transition-all focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20 focus:outline-none"
+                      onChange={e => updateSetting('google_api_key', e.target.value)}
+                    />
+                    <p className="mt-2 text-xs text-slate-600">
+                      <strong>Note:</strong> Get your key from{' '}
+                      <a
+                        href="https://makersuite.google.com/app/apikey"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="font-medium text-blue-600 underline decoration-blue-600/30 underline-offset-2 transition-colors hover:text-blue-700 hover:decoration-blue-700"
+                      >
+                        Google AI Studio
+                      </a>
+                    </p>
+                  </div>
+                </div>
               </div>
-            )}
+            </div>
 
-            <div className="mt-3 rounded-lg border border-blue-100 bg-blue-50 p-3">
-              <p className="text-xs text-blue-800">
-                <strong>Current:</strong> <span className="font-mono">{settings.llm_model}</span>
+            <div className="mt-4 rounded-xl border border-blue-100 bg-white p-4 transition-colors duration-300">
+              <p className="flex items-center gap-2 text-xs text-blue-900">
+                <strong>Current:</strong>
+                <span className="rounded bg-blue-100 px-1.5 py-0.5 font-mono text-blue-900">{settings.llm_model}</span>
               </p>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Settings by Category */}
+      {/* Settings by Category (Giữ nguyên logic grid-rows đã tốt của bạn) */}
       {Object.entries(categories).map(([categoryKey, categoryInfo]) => {
         const categoryFields = SETTING_FIELDS.filter(f => f.category === categoryKey)
         const isExpanded = expandedCategory === categoryKey
 
         return (
-          <div key={categoryKey} className="overflow-hidden rounded-2xl bg-white shadow-lg shadow-slate-900/10">
+          <div
+            key={categoryKey}
+            className="overflow-hidden rounded-2xl border-t border-slate-100 bg-white shadow-lg shadow-slate-900/10 transition-all duration-200 ease-in-out"
+          >
             <button
               type="button"
               onClick={() => setExpandedCategory(isExpanded ? null : categoryKey)}
-              className="flex w-full items-center justify-between p-6 transition-colors hover:bg-slate-50"
+              className="flex w-full items-center justify-between bg-white p-6 transition-colors hover:bg-slate-100"
             >
               <h3 className="text-lg font-semibold text-slate-900">{categoryInfo.title}</h3>
-              <span className="text-slate-400">{isExpanded ? '−' : '+'}</span>
+              {/* Thêm transition rotate cho icon */}
+              <span className={`text-slate-400 transition-transform duration-300 ${isExpanded ? 'rotate-180' : ''}`}>
+                <ChevronDown className="h-5 w-5" />
+              </span>
             </button>
 
-            {isExpanded && (
-              <div className="space-y-6 border-t border-slate-100 p-6">
-                {categoryFields.map(field => (
-                  <div key={field.key} className="space-y-2">
-                    <label className="flex items-center gap-2 text-sm font-medium text-slate-700">
-                      {field.label}
-                      <span className="text-xs font-normal text-slate-500">({field.description})</span>
-                    </label>
+            <div
+              className={`grid transition-[grid-template-rows] duration-300 ease-in-out ${
+                isExpanded ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
+              }`}
+            >
+              <div className="overflow-hidden">
+                <div className="space-y-6 border-t border-slate-100 p-6">
+                  {categoryFields.map(field => (
+                    <div key={field.key} className="space-y-2">
+                      <label className="flex items-center gap-2 text-sm font-medium text-slate-700">
+                        {field.label}
+                        <span className="text-xs font-normal text-slate-500">({field.description})</span>
+                      </label>
 
-                    <div className="flex items-start gap-3">
-                      {field.type === 'boolean' ? (
-                        <label className="relative inline-flex cursor-pointer items-center">
-                          <input
-                            type="checkbox"
-                            checked={settings[field.key] as boolean}
-                            onChange={e => updateSetting(field.key, e.target.checked)}
-                            className="peer sr-only"
-                          />
-                          <div className="peer h-6 w-11 rounded-full bg-gray-200 peer-checked:bg-indigo-600 peer-focus:ring-4 peer-focus:ring-indigo-300 peer-focus:outline-none after:absolute after:start-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:after:translate-x-full peer-checked:after:border-white rtl:peer-checked:after:-translate-x-full"></div>
-                          <span className="ms-3 text-sm font-medium text-gray-900">
-                            {settings[field.key] ? 'Enabled' : 'Disabled'}
-                          </span>
-                        </label>
-                      ) : field.type === 'password' ? (
-                        <div className="flex flex-1 items-center gap-2">
-                          <input
-                            type={showApiKey ? 'text' : 'password'}
-                            value={settings[field.key] as string}
-                            onChange={e => updateSetting(field.key, e.target.value)}
-                            placeholder="Enter your Google API key"
-                            className="flex-1 rounded-lg border border-indigo-200 px-3 py-2 font-mono text-sm focus:border-indigo-600 focus:ring-2 focus:ring-indigo-600/20 focus:outline-none"
-                          />
-                          <button
-                            type="button"
-                            onClick={() => setShowApiKey(!showApiKey)}
-                            className="rounded-lg border border-slate-300 bg-white p-2 hover:bg-slate-50"
-                            title={showApiKey ? 'Hide API key' : 'Show API key'}
-                          >
-                            {showApiKey ? (
-                              <EyeOff className="h-4 w-4 text-slate-600" />
-                            ) : (
-                              <Eye className="h-4 w-4 text-slate-600" />
-                            )}
-                          </button>
-                        </div>
-                      ) : (
-                        <div className="flex flex-1 items-center gap-3">
-                          <input
-                            type="range"
-                            min={field.min}
-                            max={field.max}
-                            step={field.step}
-                            value={settings[field.key] as number}
-                            onChange={e => updateSetting(field.key, parseFloat(e.target.value))}
-                            className="h-2 flex-1 cursor-pointer appearance-none rounded-lg bg-gray-200 accent-indigo-600"
-                          />
-                          <input
-                            type="number"
-                            min={field.min}
-                            max={field.max}
-                            step={field.step}
-                            value={settings[field.key] as number}
-                            onChange={e => updateSetting(field.key, parseFloat(e.target.value))}
-                            className="w-24 rounded-lg border border-indigo-200 px-3 py-2 text-sm focus:border-indigo-600 focus:ring-2 focus:ring-indigo-600/20 focus:outline-none"
-                          />
-                        </div>
-                      )}
-                    </div>
+                      <div className="flex items-start gap-3">
+                        {field.type === 'boolean' ? (
+                          <label className="relative inline-flex cursor-pointer items-center">
+                            <input
+                              type="checkbox"
+                              checked={settings[field.key] as boolean}
+                              onChange={e => updateSetting(field.key, e.target.checked)}
+                              className="peer sr-only"
+                            />
+                            <div className="peer h-6 w-11 rounded-full bg-gray-200 peer-checked:bg-[#003087] peer-focus:ring-2 peer-focus:ring-[#004ddb] peer-focus:outline-none after:absolute after:start-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:after:translate-x-full peer-checked:after:border-white rtl:peer-checked:after:-translate-x-full"></div>
+                            <span className="ms-3 text-sm font-medium text-gray-900">
+                              {settings[field.key] ? 'Enabled' : 'Disabled'}
+                            </span>
+                          </label>
+                        ) : field.type === 'password' ? (
+                          <div className="flex flex-1 items-center gap-2">
+                            <input
+                              type={showApiKey ? 'text' : 'password'}
+                              value={settings[field.key] as string}
+                              onChange={e => updateSetting(field.key, e.target.value)}
+                              placeholder="Enter value"
+                              className="flex-1 rounded-xl border border-blue-400 px-3 py-2 font-mono text-sm focus:border-[#003087] focus:ring-2 focus:ring-[#003087]/20 focus:outline-none"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => setShowApiKey(!showApiKey)}
+                              className="rounded-xl border border-slate-300 bg-white p-2 hover:bg-slate-50"
+                              title={showApiKey ? 'Hide' : 'Show'}
+                            >
+                              {showApiKey ? (
+                                <Eye className="h-4 w-4 text-slate-600" />
+                              ) : (
+                                <EyeOff className="h-4 w-4 text-slate-600" />
+                              )}
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="flex flex-1 items-center gap-3">
+                            <input
+                              type="range"
+                              min={field.min}
+                              max={field.max}
+                              step={field.step}
+                              value={settings[field.key] as number}
+                              onChange={e => updateSetting(field.key, parseFloat(e.target.value))}
+                              className="h-2 flex-1 cursor-pointer appearance-none rounded-xl bg-gray-200 accent-[#003087]"
+                            />
+                            <input
+                              type="number"
+                              min={field.min}
+                              max={field.max}
+                              step={field.step}
+                              value={settings[field.key] as number}
+                              onChange={e => updateSetting(field.key, parseFloat(e.target.value))}
+                              className="w-24 rounded-xl border border-blue-400 px-3 py-2 text-sm focus:border-[#004ad4] focus:ring-1 focus:ring-[#003087]/20 focus:outline-none"
+                            />
+                          </div>
+                        )}
+                      </div>
 
-                    <div className="flex items-start gap-2 rounded-lg bg-slate-50 p-3 text-xs text-slate-600">
-                      <Info className="mt-0.5 h-3.5 w-3.5 shrink-0 text-slate-400" />
-                      <p>{field.helpText}</p>
+                      <div className="flex items-start gap-2 rounded-xl bg-slate-50 p-3 text-xs text-slate-600">
+                        <Info className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                        <p>{field.helpText}</p>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
-            )}
+            </div>
           </div>
         )
       })}
@@ -462,14 +493,14 @@ const SettingsForm = () => {
           type="button"
           onClick={handleReset}
           disabled={saving}
-          className="rounded-lg border border-slate-300 bg-white px-5 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+          className="rounded-xl border border-slate-300 bg-white px-5 py-2.5 text-sm font-semibold text-slate-700 transition-all duration-150 ease-in-out hover:scale-102 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
         >
           Reset
         </button>
         <button
           type="submit"
           disabled={saving}
-          className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-6 py-2.5 text-sm font-semibold text-white hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-50"
+          className="inline-flex items-center gap-2 rounded-xl bg-[#003087] px-6 py-2.5 text-sm font-semibold text-white transition-all duration-150 ease-in-out hover:scale-102 hover:bg-[#00369b] disabled:cursor-not-allowed disabled:opacity-50"
         >
           {saving ? (
             <>

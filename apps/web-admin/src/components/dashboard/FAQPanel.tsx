@@ -60,7 +60,7 @@ const FAQPanel = ({ refreshKey = 0 }: FAQPanelProps) => {
   const displayFaqs = activeTab === 'popular' ? faqs : trending
 
   return (
-    <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+    <div className="rounded-2xl border border-slate-100 bg-white p-6 shadow-lg shadow-slate-900/10">
       {/* Header */}
       <div className="mb-4 flex items-center justify-between">
         <div>
@@ -96,7 +96,7 @@ const FAQPanel = ({ refreshKey = 0 }: FAQPanelProps) => {
       {/* Content */}
       {loading ? (
         <div className="flex items-center justify-center py-12">
-          <Loader2 className="h-8 w-8 animate-spin text-indigo-600" />
+          <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
         </div>
       ) : error ? (
         <div className="flex flex-col items-center justify-center gap-2 py-12">
@@ -117,14 +117,14 @@ const FAQPanel = ({ refreshKey = 0 }: FAQPanelProps) => {
           {displayFaqs.map((faq, index) => (
             <div
               key={faq.id}
-              className="group rounded-lg border border-slate-200 bg-slate-50 p-4 transition-all hover:border-indigo-300 hover:bg-indigo-50"
+              className="group rounded-lg border border-slate-200 bg-slate-50 p-4 transition-all hover:border-blue-300 hover:bg-blue-50"
             >
               <div className="flex items-start gap-3">
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-indigo-100 text-sm font-semibold text-indigo-700">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-blue-100 text-sm font-semibold text-blue-700">
                   {index + 1}
                 </div>
                 <div className="flex-1">
-                  <p className="font-medium text-slate-900 group-hover:text-indigo-900">{faq.question}</p>
+                  <p className="font-medium text-slate-900 group-hover:text-blue-900">{faq.question}</p>
                   <div className="mt-2 flex items-center gap-2">
                     <span
                       className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${getCategoryColor(faq.category)}`}

@@ -5,6 +5,7 @@ export interface ChatSource {
   chunkId?: string | null
   relevance?: number | null
   summary?: string | null // Thêm field summary
+  content?: string | null // Field content for popup
 }
 
 export interface NewSessionResponse {

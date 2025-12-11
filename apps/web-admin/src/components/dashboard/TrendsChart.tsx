@@ -26,12 +26,12 @@ const TrendsChart = ({ refreshKey = 0 }: TrendsChartProps) => {
 
   return (
     <>
-      <section className="rounded-2xl bg-white p-6 shadow-lg shadow-slate-900/10">
+      <section className="rounded-2xl border border-slate-100 bg-white p-6 shadow-lg shadow-slate-900/10">
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-xl font-semibold text-slate-900">Weekly Activity</h2>
         </div>
 
-        <hr className="mb-4 border-gray-100" />
+        <hr className="mb-4 border-gray-200" />
 
         <div className="h-64">
           {loading ? (

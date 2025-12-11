@@ -434,7 +434,22 @@ class RAGOrchestrator:
 
     def _fmt_sources(self, docs):
         return [
-            {"source": d.get("source"), "page": d.get("page"), "score": d.get("score")}
+            {
+                "source": d.get(
+                    "source"
+                ),  # This maps to title in frontend if using ChatQueryResponse? No, Frontend uses ChatSource interface.
+                # Wait, backend Pydantic model ChatQueryResponse expects `sources: list[ChatSource]`.
+                # Pydantic will try to cast this dict to ChatSource.
+                # ChatSource has `title`. `source` key here might need to be `title` to match Pydantic model?
+                # Let's check ChatSource again. Yes, `title`.
+                # If d.get("source") is the filename, we should map it to "title".
+                "title": d.get("source"),
+                "chunkId": d.get("chunk_id"),  # Alias chunkId
+                "page": d.get("page"),
+                "score": d.get("score"),
+                "relevance": d.get("score"),
+                "content": d.get("text"),  # Populating content
+            }
             for d in docs
         ]
 

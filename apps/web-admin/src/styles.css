@@ -15,6 +15,15 @@
   --color-gray-3: #e5e7eb;
 }
 
+input[type="password"]::-ms-reveal {
+  display: none;
+}
+
+input[type="password"] {
+  -ms-reveal: none;
+  -ms-clear: none;
+}
+
 .chat {
   position: relative;
   border-left: 1px solid var(--color-gray-3);
@@ -118,6 +127,15 @@
   transition-duration: 0.15s;
 }
 
+.settings__container {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-dark-2) var(--color-white);
+}
+
+tr:nth-child(even) {
+  background: var(--color-gray-1);
+}
+
 @layer base {
   :root {
     color-scheme: light;
@@ -158,22 +176,21 @@
 }
 
 .dept-header-section {
-  @apply flex shrink-0 flex-col gap-4 md:flex-row md:items-center md:justify-between;
-  margin-bottom: 50px;
+  @apply flex shrink-0 flex-col md:flex-row md:items-center md:justify-between;
 }
 
 .dept-search-section {
-  @apply shrink-0 rounded-lg bg-white shadow-sm;
-  margin-bottom: 45px;
+  @apply shrink-0 bg-white shadow-lg rounded-xl border border-gray-200;
+  margin-bottom: 30px;
 }
 
 .dept-table-wrapper {
-  @apply flex flex-col overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm;
+  @apply flex flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-lg;
 }
 
 .dept-table-row {
   @apply border-b border-[#EEEEEE] transition-colors last:border-b-0 hover:bg-gray-50;
-  height: 73px; 
+  height: 60px; 
 }
 
 .dept-pagination-section {

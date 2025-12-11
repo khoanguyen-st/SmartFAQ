@@ -78,39 +78,37 @@ export const SearchBar: React.FC<SearchBarProps> = ({
   renderFilterDropdown
 }) => {
   return (
-    <div className="rounded-lg border border-slate-200 bg-white shadow-sm">
-      <div className="relative flex h-[52px] items-center">
-        <input
-          type="text"
-          placeholder="Search by name or email..."
-          value={searchQuery}
-          onChange={e => onSearchChange(e.target.value)}
-          className="h-full flex-1 border-none bg-transparent px-4 py-3 text-sm text-slate-600 outline-none placeholder:text-slate-400 md:px-6"
-        />
+    <div className="relative mb-7 flex items-center rounded-xl border border-gray-200 bg-white shadow-lg">
+      <input
+        type="text"
+        placeholder="Search by name or email..."
+        value={searchQuery}
+        onChange={e => onSearchChange(e.target.value)}
+        className="h-15 w-full rounded-xl bg-white pr-10 pl-6 text-sm text-[#111827] transition-colors outline-none placeholder:text-[#637381] focus:border-[#003087] focus:ring-1 focus:ring-[#003087] md:pr-14"
+      />
 
-        <div className="absolute right-4 flex items-center">
+      <div className="absolute right-4 flex items-center">
+        <button
+          type="button"
+          aria-label="Search"
+          className="flex h-10 w-10 items-center justify-center rounded-full text-[#637381] transition-colors hover:bg-slate-50 hover:text-slate-700"
+        >
+          <Search className="h-6 w-6" strokeWidth={2.5} />
+        </button>
+        <div className="mx-2 h-6 w-px bg-slate-300" aria-hidden="true" />
+        <div className="relative" ref={filterRef}>
           <button
             type="button"
-            aria-label="Search"
-            className="flex h-10 w-10 items-center justify-center rounded-full text-[#637381] transition-colors hover:bg-slate-50 hover:text-slate-700"
+            onClick={onToggleFilter}
+            className={`flex h-10 w-10 items-center justify-center rounded-full transition-colors ${
+              filterOpen ? 'bg-blue-50 text-blue-600' : 'text-[#637381] hover:bg-slate-50 hover:text-slate-700'
+            }`}
+            aria-haspopup="true"
+            aria-expanded={filterOpen}
           >
-            <Search className="h-6 w-6" strokeWidth={2.5} />
+            <Filter className="h-6 w-6" strokeWidth={2.5} />
           </button>
-          <div className="mx-2 h-6 w-[1px] bg-slate-300" aria-hidden="true" />
-          <div className="relative" ref={filterRef}>
-            <button
-              type="button"
-              onClick={onToggleFilter}
-              className={`flex h-10 w-10 items-center justify-center rounded-full transition-colors ${
-                filterOpen ? 'bg-blue-50 text-blue-600' : 'text-[#637381] hover:bg-slate-50 hover:text-slate-700'
-              }`}
-              aria-haspopup="true"
-              aria-expanded={filterOpen}
-            >
-              <Filter className="h-6 w-6" strokeWidth={2.5} />
-            </button>
-            {filterOpen && renderFilterDropdown()}
-          </div>
+          {filterOpen && renderFilterDropdown()}
         </div>
       </div>
     </div>

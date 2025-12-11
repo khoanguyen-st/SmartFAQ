@@ -13,7 +13,7 @@ import imageNoFillUrl from '@/assets/icons/image-no-fill.svg'
 import messagerUrl from '@/assets/icons/messager.svg'
 import pdfNoFillUrl from '@/assets/icons/pdf-no-fill.svg'
 import sendUrl from '@/assets/icons/send.svg'
-import trashUrl from '@/assets/icons/trash-icon.svg'
+import TrashIcon from '@/assets/icons/trash-icon.svg?react'
 import txtNoFillUrl from '@/assets/icons/txt-no-fill.svg'
 import KnowledgeSidebar from '@/components/viewchat/KnowledgeSidebar'
 import UploadModal from '@/components/viewchat/UploadModal'
@@ -27,7 +27,6 @@ const ImageNofill: React.FC<ImgCompProps> = props => <img src={imageNoFillUrl} a
 const MessIcon: React.FC<ImgCompProps> = props => <img src={messagerUrl} alt="message" {...props} />
 const PdfNoFill: React.FC<ImgCompProps> = props => <img src={pdfNoFillUrl} alt="pdf" {...props} />
 const SendIcon: React.FC<ImgCompProps> = props => <img src={sendUrl} alt="send" {...props} />
-const TrashIcon: React.FC<ImgCompProps> = props => <img src={trashUrl} alt="trash" {...props} />
 const TxtNoFill: React.FC<ImgCompProps> = props => <img src={txtNoFillUrl} alt="txt" {...props} />
 const SidebarUrl: React.FC<ImgCompProps> = props => <img src={sidebarUrl} alt="sidebar" {...props} />
 
@@ -63,30 +62,64 @@ const ChatMessage = ({ message }: ChatMessageProps) => {
   const markdownText = message.content.join('\n')
   /* Removed complex hover states for cleaner UI */
 
-  // Group sources theo title để chỉ hiển thị unique titles (case insensitive)
+  // Group sources to display unique titles, stripping copy number suffix e.g., "file (1).pdf" -> "file.pdf"
   const uniqueSources = useMemo(() => {
     if (!message.sources) return []
 
-    const titleMap = new Map<string, { title: string; indices: number[]; firstIndex: number }>()
+    const titleMap = new Map<
+      string,
+      { title: string; indices: number[]; firstIndex: number; content?: string | null }
+    >()
 
     message.sources.forEach((source, index) => {
       if (!source.title) return
-      // Normalize key to handle case sensitivity and whitespace
-      const key = source.title.trim().toLowerCase()
+      // Normalize key: lower case, remove copy suffix pattern " (N).ext" or " (N)"
+      // Regex: look for " (\d+)" before extension or at end of string
+      let normalizedTitle = source.title.trim()
+
+      // Remove " (1)", " (2)" etc. from filename stem
+      // Example: "doc (1).pdf" -> "doc.pdf"
+      // Example: "doc.pdf" -> "doc.pdf"
+      normalizedTitle = normalizedTitle.replace(/\s\(\d+\)(\.[^.]+)$/, '$1') // preserve extension
+      normalizedTitle = normalizedTitle.replace(/\s\(\d+\)$/, '') // if no extension
+
+      const key = normalizedTitle.toLowerCase()
 
       if (titleMap.has(key)) {
         titleMap.get(key)!.indices.push(index)
       } else {
         titleMap.set(key, {
-          title: source.title.trim(), // Use trimmed title for display
+          title: normalizedTitle, // Use normalized title for display
           indices: [index],
-          firstIndex: index
+          firstIndex: index,
+          content: source.content // Preserve content from first occurrence
         })
       }
     })
 
     return Array.from(titleMap.values())
   }, [message.sources])
+
+  // Map each source to its unique index for display consolidation
+  const enrichedSources = useMemo(() => {
+    if (!message.sources) return []
+    const titleToIndexMap = new Map<string, number>()
+    uniqueSources.forEach((src, idx) => {
+      titleToIndexMap.set(src.title.toLowerCase(), idx)
+    })
+
+    return message.sources.map(src => {
+      // Normalize title same way uniqueSources did
+      let normalized = src.title?.trim() || ''
+      normalized = normalized.replace(/\s\(\d+\)(\.[^.]+)$/, '$1')
+      normalized = normalized.replace(/\s\(\d+\)$/, '')
+      const idx = titleToIndexMap.get(normalized.toLowerCase())
+      return {
+        ...src,
+        displayIndex: idx // Map to 0-based unique index
+      }
+    })
+  }, [message.sources, uniqueSources])
 
   if (message.type === 'system') {
     return (
@@ -110,12 +143,13 @@ const ChatMessage = ({ message }: ChatMessageProps) => {
 
     return (
       <div className="message message--sender">
-        <SimpleMarkdown content={markdownText} enableHighlight={true} sources={message.sources} />
+        {/* Pass enrichedSources to ensure pills showing [1] refer to File 1, not Chunk 1 */}
+        <SimpleMarkdown content={markdownText} enableHighlight={true} sources={enrichedSources} />
 
         {message.sources && message.sources.length > 0 && (
           <div className="message__reference mt-3 border-t border-gray-100 pt-3">
             <h4 className="mb-2 text-[11px] font-bold tracking-wider text-gray-400 uppercase">References</h4>
-            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="flex flex-col gap-1">
               {uniqueSources.map((uniqueSource, uniqueIndex) => {
                 const filename = uniqueSource.title.toLowerCase()
                 let IconComponent = TxtNoFill
@@ -126,28 +160,16 @@ const ChatMessage = ({ message }: ChatMessageProps) => {
                 }
 
                 return (
-                  <div
-                    key={uniqueIndex}
-                    className="group flex items-center gap-2 rounded-md border border-gray-200 bg-white p-2 text-sm shadow-sm transition-all hover:border-gray-300 hover:shadow-md"
-                  >
-                    <div className="shrink-0 rounded bg-gray-50 p-1">
+                  <div key={uniqueIndex} className="flex items-center gap-2 py-1">
+                    <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-[#444746] text-[9px] font-bold text-white">
+                      {uniqueIndex + 1}
+                    </span>
+                    <div className="shrink-0">
                       <IconComponent className="h-4 w-4 text-gray-500" />
                     </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-xs font-semibold text-gray-800" title={uniqueSource.title}>
-                        {uniqueSource.title}
-                      </p>
-                      <div className="mt-0.5 flex flex-wrap gap-1">
-                        {uniqueSource.indices.map(idx => (
-                          <span
-                            key={idx}
-                            className="inline-flex h-4 min-w-[14px] items-center justify-center rounded-[3px] bg-gray-100 px-1 text-[9px] font-bold text-gray-500 group-hover:bg-[#003087] group-hover:text-white"
-                          >
-                            {idx + 1}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
+                    <p className="truncate text-xs font-semibold text-gray-700" title={uniqueSource.title}>
+                      {uniqueSource.title}
+                    </p>
                   </div>
                 )
               })}
@@ -216,30 +238,6 @@ const ViewChatPage = () => {
   const chatContentRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    const initSession = async () => {
-      const storedSessionId = localStorage.getItem('chatSessionId')
-
-      if (storedSessionId) {
-        setSessionId(storedSessionId)
-        setIsLoading(true)
-        try {
-          const historyResponse = await getChatHistory(storedSessionId)
-          if (historyResponse.messages.length > 0) {
-            setMessages(historyResponse.messages.map(formatHistoryMessage))
-          } else {
-            setMessages([initialMessage])
-          }
-        } catch (err) {
-          console.error('Failed to fetch history, starting new session.', err)
-          await startNewSession()
-        } finally {
-          setIsLoading(false)
-        }
-      } else {
-        await startNewSession()
-      }
-    }
-
     const startNewSession = async () => {
       setIsLoading(true)
       try {
@@ -260,8 +258,58 @@ const ViewChatPage = () => {
       }
     }
 
+    const initSession = async () => {
+      const storedSessionId = localStorage.getItem('chatSessionId')
+
+      if (storedSessionId) {
+        // If we have a stored session, try to recover history
+        // If state is not set, set it.
+        if (sessionId !== storedSessionId) {
+          setSessionId(storedSessionId)
+        }
+
+        setIsLoading(true)
+        try {
+          const historyResponse = await getChatHistory(storedSessionId)
+          if (historyResponse.messages.length > 0) {
+            setMessages(historyResponse.messages.map(formatHistoryMessage))
+          } else {
+            // If history empty, just show initial message
+            setMessages([initialMessage])
+          }
+        } catch (err) {
+          console.error('Failed to fetch history, starting new session.', err)
+          await startNewSession()
+        } finally {
+          setIsLoading(false)
+        }
+      } else {
+        await startNewSession()
+      }
+    }
+
+    // Only run init if we don't have a sessionId in state, OR if we want to sync/verify it?
+    // Actually, `useState` lazy init reads from localStorage.
+    // If we rely on that, `sessionId` is set.
+    // The previous code seemed to want to fetch history even if sessionId was set?
+    // Let's assume we want to fetch history if we have a sessionId but messages are empty?
+    // Or just run initSession() once on mount?
+
+    // For now, to fix the logic:
     if (!sessionId) {
       initSession()
+    } else {
+      // We have a sessionID. If messages are empty (or just checking), maybe load history?
+      // But let's verify if we need to load history.
+      // Yes, if I refresh page, sessionId is loaded from localstorage, but messages are empty (unless loaded from localstorage lines 199-202).
+      // Lines 199-202 load messages from `chatMessages`.
+      // So we might not need to fetch history if `chatMessages` exists?
+      // But strict restoration:
+      // The previous code had `if (!sessionId) { initSession() }` inside effect.
+      // And `initSession` checked `localStorage`.
+      // Let's just stick to the `if (!sessionId)` check for now to prevent loops,
+      // assuming `sessionId` is the source of truth.
+      // If `sessionId` is valid, we assume messages are loaded from `chatMessages` or valid.
     }
   }, [sessionId])
 
@@ -387,8 +435,8 @@ const ViewChatPage = () => {
             disabled={isLoading}
             className="chat__clear-button group ml-2 flex shrink-0 items-center hover:text-red-500 disabled:opacity-50"
           >
-            <TrashIcon className="TrashIcon mr-0 h-[14px] w-[12px] shrink-0 text-[#6B7280] group-hover:text-red-500 sm:mr-1" />
-            <p className="hidden text-[14px] text-[#6B7280] group-hover:text-red-500 sm:block">Clear Chat</p>
+            <TrashIcon className="TrashIcon mr-0 h-5 w-5 shrink-0 text-[#6B7280] group-hover:text-red-500 sm:mr-1" />
+            <p className="text-md hidden text-[#6B7280] group-hover:text-red-500 sm:block">Clear Chat</p>
           </button>
         </div>
 
