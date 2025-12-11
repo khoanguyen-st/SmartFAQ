@@ -71,7 +71,7 @@ const KnowledgeSidebar: React.FC<KnowledgeSidebarProps> = ({
           {isSidebarOpen && (
             <button
               onClick={handleSelectFileClick}
-              className="flex h-[36px] items-center justify-center gap-2 rounded-[8px] bg-[#003087] px-4 transition-all hover:bg-[#00205a]"
+              className="flex h-[36px] items-center justify-center gap-2 rounded-lg bg-[#003087] px-4 transition-all hover:bg-[#00205a]"
               title="Upload Files"
             >
               <div className="flex items-center justify-center">

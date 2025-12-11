@@ -13,7 +13,7 @@ import imageNoFillUrl from '@/assets/icons/image-no-fill.svg'
 import messagerUrl from '@/assets/icons/messager.svg'
 import pdfNoFillUrl from '@/assets/icons/pdf-no-fill.svg'
 import sendUrl from '@/assets/icons/send.svg'
-import trashUrl from '@/assets/icons/trash-icon.svg'
+import TrashIcon from '@/assets/icons/trash-icon.svg?react'
 import txtNoFillUrl from '@/assets/icons/txt-no-fill.svg'
 import KnowledgeSidebar from '@/components/viewchat/KnowledgeSidebar'
 import UploadModal from '@/components/viewchat/UploadModal'
@@ -27,7 +27,6 @@ const ImageNofill: React.FC<ImgCompProps> = props => <img src={imageNoFillUrl} a
 const MessIcon: React.FC<ImgCompProps> = props => <img src={messagerUrl} alt="message" {...props} />
 const PdfNoFill: React.FC<ImgCompProps> = props => <img src={pdfNoFillUrl} alt="pdf" {...props} />
 const SendIcon: React.FC<ImgCompProps> = props => <img src={sendUrl} alt="send" {...props} />
-const TrashIcon: React.FC<ImgCompProps> = props => <img src={trashUrl} alt="trash" {...props} />
 const TxtNoFill: React.FC<ImgCompProps> = props => <img src={txtNoFillUrl} alt="txt" {...props} />
 const SidebarUrl: React.FC<ImgCompProps> = props => <img src={sidebarUrl} alt="sidebar" {...props} />
 
@@ -594,7 +593,7 @@ const ViewChatPage = () => {
                 disabled={!sessionId || isLoading || userText.trim().length === 0}
                 className="chat__submit absolute right-2 bottom-4 flex h-10 w-10 cursor-pointer items-center justify-center rounded-full bg-[#003087] disabled:opacity-60"
               >
-                <SendIcon className="h-5 w-5 shrink-0" />
+                <SendIcon className="h-5 w-5 shrink-0"/>
               </button>
             </div>
           </form>

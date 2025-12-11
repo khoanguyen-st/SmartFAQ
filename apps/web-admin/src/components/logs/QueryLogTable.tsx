@@ -55,7 +55,7 @@ const QueryLogTable = () => {
   }
 
   return (
-    <div className="flex flex-col gap-5 rounded-2xl bg-white p-6 shadow-lg shadow-slate-900/10">
+    <div className="flex flex-col gap-5 border border-slate-100 rounded-2xl bg-white p-6 shadow-lg shadow-slate-900/10">
       {/* Search and Filters */}
       <div className="flex flex-col gap-3">
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
@@ -66,7 +66,7 @@ const QueryLogTable = () => {
               setCurrentPage(1)
             }}
             placeholder="Search in answers..."
-            className="focus:border-primary-600 focus:ring-primary-600/20 rounded-lg border border-indigo-200 px-3.5 py-2.5 text-base focus:ring-2 focus:outline-none"
+            className="focus:border-primary-600 focus:ring-primary-600/20 rounded-lg border border-blue-200 px-3.5 py-2.5 text-base focus:ring-2 focus:outline-none"
           />
           <div className="flex gap-3"></div>
         </div>
@@ -81,7 +81,7 @@ const QueryLogTable = () => {
                 setShowFallbackOnly(e.target.checked)
                 setCurrentPage(1)
               }}
-              className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+              className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
             />
             <span className="text-slate-700">Fallback only</span>
           </label>
@@ -92,7 +92,7 @@ const QueryLogTable = () => {
               setSelectedLang(e.target.value)
               setCurrentPage(1)
             }}
-            className="focus:border-primary-600 focus:ring-primary-600/20 rounded-lg border border-indigo-200 px-3 py-1.5 text-sm focus:ring-2 focus:outline-none"
+            className="focus:border-primary-600 focus:ring-primary-600/20 rounded-lg border border-blue-200 px-3 py-1.5 text-sm focus:ring-2 focus:outline-none"
           >
             <option value="">All Languages</option>
             <option value="en">English</option>
@@ -105,7 +105,7 @@ const QueryLogTable = () => {
               setSelectedChannel(e.target.value)
               setCurrentPage(1)
             }}
-            className="focus:border-primary-600 focus:ring-primary-600/20 rounded-lg border border-indigo-200 px-3 py-1.5 text-sm focus:ring-2 focus:outline-none"
+            className="focus:border-primary-600 focus:ring-primary-600/20 rounded-lg border border-blue-200 px-3 py-1.5 text-sm focus:ring-2 focus:outline-none"
           >
             <option value="">All Channels</option>
             <option value="widget">Widget</option>
@@ -117,7 +117,7 @@ const QueryLogTable = () => {
             <button
               type="button"
               onClick={handleClearFilters}
-              className="text-sm font-semibold text-indigo-600 hover:text-indigo-700"
+              className="text-sm font-semibold text-blue-600 hover:text-blue-700"
             >
               Clear Filters
             </button>
@@ -130,7 +130,7 @@ const QueryLogTable = () => {
       {/* Table */}
       <div className="overflow-x-auto">
         <table className="w-full border-collapse text-sm">
-          <thead className="bg-indigo-50 text-xs tracking-wider text-slate-700 uppercase">
+          <thead className="bg-blue-50 text-xs tracking-wider text-slate-700 uppercase">
             <tr>
               <th className="border-b border-slate-200 px-3 py-3 text-left">Timestamp</th>
               <th className="border-b border-slate-200 px-3 py-3 text-left">Question</th>
@@ -209,7 +209,7 @@ const QueryLogTable = () => {
                     <button
                       type="button"
                       onClick={() => setSelectedLog(log)}
-                      className="inline-flex items-center gap-1 rounded-lg bg-indigo-50 px-3 py-1.5 text-xs font-semibold text-indigo-700 hover:bg-indigo-100"
+                      className="inline-flex items-center gap-1 rounded-lg bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-700 hover:bg-blue-100"
                       title="View details"
                     >
                       <Eye className="h-3.5 w-3.5" />

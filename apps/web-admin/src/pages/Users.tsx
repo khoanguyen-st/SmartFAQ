@@ -177,18 +177,18 @@ const Users: React.FC = () => {
   }
 
   return (
-    <div className="space-y-4 md:space-y-6">
+    <div className="flex flex-col gap-6 p-6 h-[calc(100vh-81px)] bg-white overflow-auto ">
       <header className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <div>
-          <h1 className="text-xl font-semibold text-slate-900 md:text-2xl lg:text-3xl">User Management</h1>
-          <p className="text-xs text-slate-500 md:text-sm">Manage user accounts and system access</p>
+        <div className="pl-2">
+          <h1 className="font-bold mb-2 text-slate-900 text-3xl">User Management</h1>
+          <p className="text-base text-slate-500">Manage user accounts and system access</p>
         </div>
         <div className="flex gap-3">
           <button
             onClick={() => setCreateDialogOpen(true)}
-            className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-[#003087] px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-[#002060] md:w-auto"
+            className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#003087] px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-[#002060] md:w-auto"
           >
-            <Plus className="mt-0.5 h-4 w-4" />
+            <Plus className="h-5 w-5" />
             Create New Account
           </button>
         </div>
@@ -212,7 +212,7 @@ const Users: React.FC = () => {
         )}
       />
 
-      <div className="rounded-xl border border-slate-200 bg-white shadow-sm">
+      <div className="rounded-xl shadow-lg shadow-slate-900/10 border border-slate-100">
         <UserTable
           users={paginatedUsers}
           loading={loading}

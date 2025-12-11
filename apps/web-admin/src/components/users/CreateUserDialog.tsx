@@ -1,7 +1,6 @@
 import React, { useMemo, useState, useEffect } from 'react'
 import type { CreateUserDialogProps, CreateUserDialogPayload } from '@/interfaces/create-user-dialog'
 import { fetchDepartments, type IDepartment } from '@/services/department.services'
-
 import ChevronDown from '@/assets/icons/chevron-down.svg'
 
 export const CreateUserDialog: React.FC<CreateUserDialogProps> = ({
@@ -107,7 +106,7 @@ export const CreateUserDialog: React.FC<CreateUserDialogProps> = ({
 
             <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
               <div className="col-span-1 sm:col-span-2">
-                <label className="mb-1.5 block text-sm font-medium text-slate-700">Email *</label>
+                <label className="mb-1.5 block text-sm font-medium text-slate-700">Email <span className="text-red-500">*</span></label>
                 <input
                   required
                   type="email"
@@ -119,7 +118,7 @@ export const CreateUserDialog: React.FC<CreateUserDialogProps> = ({
               </div>
 
               <div>
-                <label className="mb-1.5 block text-sm font-medium text-slate-700">Username *</label>
+                <label className="mb-1.5 block text-sm font-medium text-slate-700">Username <span className="text-red-500">*</span></label>
                 <input
                   required
                   value={formData.username}
@@ -130,7 +129,7 @@ export const CreateUserDialog: React.FC<CreateUserDialogProps> = ({
               </div>
 
               <div>
-                <label className="mb-1.5 block text-sm font-medium text-slate-700">Password *</label>
+                <label className="mb-1.5 block text-sm font-medium text-slate-700">Password <span className="text-red-500">*</span></label>
                 <input
                   required
                   type="password"
@@ -144,13 +143,13 @@ export const CreateUserDialog: React.FC<CreateUserDialogProps> = ({
             </div>
 
             <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-              <div>
-                <label className="mb-1.5 block text-sm font-medium text-slate-700">Role *</label>
+              <div className="relative w-full">
+                <label className="mb-1 block text-sm font-medium text-slate-700">Role <span className="text-red-500">*</span></label>
                 <select
                   required
                   value={formData.role}
                   onChange={e => setFormData({ ...formData, role: e.target.value })}
-                  className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm focus:border-blue-500 focus:outline-none"
+                  className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm focus:border-blue-500 focus:outline-none appearance-none"
                 >
                   <option value="" disabled>
                     Select Role
@@ -158,26 +157,29 @@ export const CreateUserDialog: React.FC<CreateUserDialogProps> = ({
                   <option value="admin">Admin</option>
                   <option value="staff">Staff</option>
                 </select>
+                <span className="pointer-events-none h-10 w-10 absolute inset-y-0 top-6.25 right-0 flex items-center justify-center">
+                  <img src={ChevronDown} alt="chevron-down" className="h-5 w-5"/>
+                </span>
               </div>
 
               <div className="relative w-full">
-                <label className="mb-1 block text-sm font-medium text-slate-700">Campus *</label>
+                <label className="mb-1 block text-sm font-medium text-slate-700">Campus <span className="text-red-500">*</span></label>
                 <select
                   required
                   value={formData.campus}
                   onChange={e => setFormData({ ...formData, campus: e.target.value })}
-                  className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm focus:border-blue-500 focus:outline-none"
+                  className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm focus:border-blue-500 focus:outline-none appearance-none"
                 >
                   <option value="" disabled>
                     Select Campus
                   </option>
-                  <option value="HN">Hanoi</option>
+                  <option value="HN">Ha Noi</option>
                   <option value="HCM">Ho Chi Minh</option>
-                  <option value="DN">Danang</option>
+                  <option value="DN">Da Nang</option>
                   <option value="CT">Can Tho</option>
                 </select>
-                <span className="pointer-events-none absolute inset-y-0 top-1/2 right-3 flex items-center">
-                  <img src={ChevronDown} alt="chevron-down" className="h-5 w-5" />
+                <span className="pointer-events-none h-10 w-10 absolute inset-y-0 top-6.25 right-0 flex items-center justify-center">
+                  <img src={ChevronDown} alt="chevron-down" className="h-5 w-5"/>
                 </span>
               </div>
             </div>
@@ -185,7 +187,7 @@ export const CreateUserDialog: React.FC<CreateUserDialogProps> = ({
             {formData.role === 'staff' && (
               <div>
                 <label className="mb-1.5 block text-sm font-medium text-slate-700">
-                  Departments *{' '}
+                  Departments <span className="text-red-500">*</span>{' '}
                   <span className="text-xs font-normal text-slate-500">
                     (Select at least one. If no departments exist, please create one!)
                   </span>
@@ -209,18 +211,11 @@ export const CreateUserDialog: React.FC<CreateUserDialogProps> = ({
                 </div>
               </div>
             )}
-
-            {/* THAY ĐỔI QUAN TRỌNG:
-               pb-32: Thêm khoảng trống lớn (padding bottom) ở cuối form.
-               Điều này đảm bảo khi mở dropdown Campus hoặc cuộn xuống cuối,
-               giao diện không bị sát đáy, có chỗ chứa cho các option hiển thị thoáng hơn.
-            */}
-            <div className="pb-32"></div>
           </form>
         </div>
 
         {/* Footer cố định */}
-        <div className="flex-none border-t border-slate-100 bg-gray-50 px-8 py-4">
+        <div className="border-t border-slate-100 px-8 py-4">
           <div className="flex items-center justify-end gap-3">
             <button
               onClick={onClose}

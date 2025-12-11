@@ -23,7 +23,7 @@ const UnansweredPanel = ({ refreshKey = 0 }: UnansweredPanelProps) => {
   }, [loadUnanswered, refreshKey])
 
   return (
-    <section className="rounded-2xl bg-white p-6 shadow-lg shadow-slate-900/10">
+    <section className="rounded-2xl bg-white p-6 shadow-lg shadow-slate-900/10 border border-slate-100">
       <div className="mb-4 flex items-center justify-between gap-4">
         <h2 className="text-xl font-semibold text-slate-900">Unanswered Questions</h2>
       </div>

@@ -195,7 +195,7 @@ const SettingsForm = () => {
   if (loading) {
     return (
       <div className="flex items-center justify-center rounded-2xl bg-white p-12 shadow-lg">
-        <Loader2 className="h-8 w-8 animate-spin text-indigo-600" />
+        <Loader2 className="h-8 w-8 animate-spin text-[#003087]" />
       </div>
     )
   }
@@ -235,9 +235,9 @@ const SettingsForm = () => {
       )}
 
       {/* Read-only Model Info */}
-      <div className="rounded-2xl border border-indigo-100 bg-linear-to-br from-indigo-50 to-purple-50 p-6 shadow-sm">
+      <div className="via-fushia-100 rounded-2xl border border-indigo-100 bg-linear-to-r from-violet-100 to-[#003087] p-6 shadow-sm">
         <div className="flex items-start gap-3">
-          <Info className="mt-0.5 h-5 w-5 shrink-0 text-indigo-600" />
+          <Info className="mt-0.5 h-5 w-5 shrink-0 text-indigo-900" />
           <div>
             <h3 className="mb-1 font-semibold text-slate-900">Current AI Model</h3>
             <p className="mb-2 text-sm text-slate-700">
@@ -259,93 +259,102 @@ const SettingsForm = () => {
         const isExpanded = expandedCategory === categoryKey
 
         return (
-          <div key={categoryKey} className="overflow-hidden rounded-2xl bg-white shadow-lg shadow-slate-900/10">
+          <div
+            key={categoryKey}
+            className="overflow-hidden rounded-2xl border-t border-slate-100 bg-white shadow-lg shadow-slate-900/10 transition-all duration-200 ease-in-out"
+          >
             <button
               type="button"
               onClick={() => setExpandedCategory(isExpanded ? null : categoryKey)}
-              className="flex w-full items-center justify-between p-6 transition-colors hover:bg-slate-50"
+              className="flex w-full items-center justify-between bg-white p-6 transition-colors hover:bg-slate-100"
             >
               <h3 className="text-lg font-semibold text-slate-900">{categoryInfo.title}</h3>
               <span className="text-slate-400">{isExpanded ? '−' : '+'}</span>
             </button>
 
-            {isExpanded && (
-              <div className="space-y-6 border-t border-slate-100 p-6">
-                {categoryFields.map(field => (
-                  <div key={field.key} className="space-y-2">
-                    <label className="flex items-center gap-2 text-sm font-medium text-slate-700">
-                      {field.label}
-                      <span className="text-xs font-normal text-slate-500">({field.description})</span>
-                    </label>
+            <div
+              className={`grid transition-[grid-template-rows] duration-300 ease-in-out ${
+                isExpanded ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
+              }`}
+            >
+              <div className="overflow-hidden">
+                <div className="space-y-6 border-t border-slate-100 p-6">
+                  {categoryFields.map(field => (
+                    <div key={field.key} className="space-y-2">
+                      <label className="flex items-center gap-2 text-sm font-medium text-slate-700">
+                        {field.label}
+                        <span className="text-xs font-normal text-slate-500">({field.description})</span>
+                      </label>
 
-                    <div className="flex items-start gap-3">
-                      {field.type === 'boolean' ? (
-                        <label className="relative inline-flex cursor-pointer items-center">
-                          <input
-                            type="checkbox"
-                            checked={settings[field.key] as boolean}
-                            onChange={e => updateSetting(field.key, e.target.checked)}
-                            className="peer sr-only"
-                          />
-                          <div className="peer h-6 w-11 rounded-full bg-gray-200 peer-checked:bg-indigo-600 peer-focus:ring-4 peer-focus:ring-indigo-300 peer-focus:outline-none after:absolute after:start-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:after:translate-x-full peer-checked:after:border-white rtl:peer-checked:after:-translate-x-full"></div>
-                          <span className="ms-3 text-sm font-medium text-gray-900">
-                            {settings[field.key] ? 'Enabled' : 'Disabled'}
-                          </span>
-                        </label>
-                      ) : field.type === 'password' ? (
-                        <div className="flex flex-1 items-center gap-2">
-                          <input
-                            type={showApiKey ? 'text' : 'password'}
-                            value={settings[field.key] as string}
-                            onChange={e => updateSetting(field.key, e.target.value)}
-                            placeholder="Enter your Google API key"
-                            className="flex-1 rounded-lg border border-indigo-200 px-3 py-2 font-mono text-sm focus:border-indigo-600 focus:ring-2 focus:ring-indigo-600/20 focus:outline-none"
-                          />
-                          <button
-                            type="button"
-                            onClick={() => setShowApiKey(!showApiKey)}
-                            className="rounded-lg border border-slate-300 bg-white p-2 hover:bg-slate-50"
-                            title={showApiKey ? 'Hide API key' : 'Show API key'}
-                          >
-                            {showApiKey ? (
-                              <EyeOff className="h-4 w-4 text-slate-600" />
-                            ) : (
-                              <Eye className="h-4 w-4 text-slate-600" />
-                            )}
-                          </button>
-                        </div>
-                      ) : (
-                        <div className="flex flex-1 items-center gap-3">
-                          <input
-                            type="range"
-                            min={field.min}
-                            max={field.max}
-                            step={field.step}
-                            value={settings[field.key] as number}
-                            onChange={e => updateSetting(field.key, parseFloat(e.target.value))}
-                            className="h-2 flex-1 cursor-pointer appearance-none rounded-lg bg-gray-200 accent-indigo-600"
-                          />
-                          <input
-                            type="number"
-                            min={field.min}
-                            max={field.max}
-                            step={field.step}
-                            value={settings[field.key] as number}
-                            onChange={e => updateSetting(field.key, parseFloat(e.target.value))}
-                            className="w-24 rounded-lg border border-indigo-200 px-3 py-2 text-sm focus:border-indigo-600 focus:ring-2 focus:ring-indigo-600/20 focus:outline-none"
-                          />
-                        </div>
-                      )}
-                    </div>
+                      <div className="flex items-start gap-3">
+                        {field.type === 'boolean' ? (
+                          <label className="relative inline-flex cursor-pointer items-center">
+                            <input
+                              type="checkbox"
+                              checked={settings[field.key] as boolean}
+                              onChange={e => updateSetting(field.key, e.target.checked)}
+                              className="peer sr-only"
+                            />
+                            <div className="peer h-6 w-11 rounded-full bg-gray-200 peer-checked:bg-[#003087] peer-focus:ring-2 peer-focus:ring-[#004ddb] peer-focus:outline-none after:absolute after:start-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:after:translate-x-full peer-checked:after:border-white rtl:peer-checked:after:-translate-x-full"></div>
+                            <span className="ms-3 text-sm font-medium text-gray-900">
+                              {settings[field.key] ? 'Enabled' : 'Disabled'}
+                            </span>
+                          </label>
+                        ) : field.type === 'password' ? (
+                          <div className="flex flex-1 items-center gap-2">
+                            <input
+                              type={showApiKey ? 'text' : 'password'}
+                              value={settings[field.key] as string}
+                              onChange={e => updateSetting(field.key, e.target.value)}
+                              placeholder="Enter your Google API key"
+                              className="flex-1 rounded-lg border border-indigo-200 px-3 py-2 font-mono text-sm focus:border-[#003087] focus:ring-2 focus:ring-[#003087]/20 focus:outline-none"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => setShowApiKey(!showApiKey)}
+                              className="rounded-lg border border-slate-300 bg-white p-2 hover:bg-slate-50"
+                              title={showApiKey ? 'Hide API key' : 'Show API key'}
+                            >
+                              {showApiKey ? (
+                                <Eye className="h-4 w-4 text-slate-600" />
+                              ) : (
+                                <EyeOff className="h-4 w-4 text-slate-600" />
+                              )}
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="flex flex-1 items-center gap-3">
+                            <input
+                              type="range"
+                              min={field.min}
+                              max={field.max}
+                              step={field.step}
+                              value={settings[field.key] as number}
+                              onChange={e => updateSetting(field.key, parseFloat(e.target.value))}
+                              className="h-2 flex-1 cursor-pointer appearance-none rounded-lg bg-gray-200 accent-[#003087]"
+                            />
+                            <input
+                              type="number"
+                              min={field.min}
+                              max={field.max}
+                              step={field.step}
+                              value={settings[field.key] as number}
+                              onChange={e => updateSetting(field.key, parseFloat(e.target.value))}
+                              className="w-24 rounded-lg border border-blue-200 px-3 py-2 text-sm focus:border-[#004ad4] focus:ring-1 focus:ring-[#003087]/20 focus:outline-none"
+                            />
+                          </div>
+                        )}
+                      </div>
 
-                    <div className="flex items-start gap-2 rounded-lg bg-slate-50 p-3 text-xs text-slate-600">
-                      <Info className="mt-0.5 h-3.5 w-3.5 shrink-0 text-slate-400" />
-                      <p>{field.helpText}</p>
+                      <div className="flex items-start gap-2 rounded-lg bg-slate-50 p-3 text-xs text-slate-600">
+                        <Info className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                        <p>{field.helpText}</p>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
-            )}
+            </div>
           </div>
         )
       })}
@@ -356,14 +365,14 @@ const SettingsForm = () => {
           type="button"
           onClick={handleReset}
           disabled={saving}
-          className="rounded-lg border border-slate-300 bg-white px-5 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+          className="rounded-xl border border-slate-300 bg-white px-5 py-2.5 text-sm font-semibold text-slate-700 transition-all duration-150 ease-in-out hover:scale-102 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
         >
           Reset
         </button>
         <button
           type="submit"
           disabled={saving}
-          className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-6 py-2.5 text-sm font-semibold text-white hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-50"
+          className="inline-flex items-center gap-2 rounded-xl bg-[#003087] px-6 py-2.5 text-sm font-semibold text-white transition-all duration-150 ease-in-out hover:scale-102 hover:bg-[#00369b] disabled:cursor-not-allowed disabled:opacity-50"
         >
           {saving ? (
             <>

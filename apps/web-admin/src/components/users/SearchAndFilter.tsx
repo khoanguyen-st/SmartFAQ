@@ -78,7 +78,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
   renderFilterDropdown
 }) => {
   return (
-    <div className="rounded-lg border border-slate-200 bg-white shadow-sm">
+    <div className="rounded-xl border border-slate-200 bg-white shadow-sm">
       <div className="relative flex h-[52px] items-center">
         <input
           type="text"

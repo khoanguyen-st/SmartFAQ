@@ -212,14 +212,14 @@ const Pagination: React.FC<PaginationProps> = ({
           <button
             onClick={() => onPageChange(currentPage - 1)}
             disabled={currentPage === 1}
-            className="rounded border px-3 py-1 text-sm disabled:opacity-50"
+            className="rounded-lg border px-3 py-1 text-sm disabled:opacity-50"
           >
             Prev
           </button>
           <button
             onClick={() => onPageChange(currentPage + 1)}
             disabled={currentPage === totalPages}
-            className="rounded border px-3 py-1 text-sm disabled:opacity-50"
+            className="rounded-lg border px-3 py-1 text-sm disabled:opacity-50"
           >
             Next
           </button>

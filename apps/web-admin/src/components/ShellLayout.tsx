@@ -4,6 +4,8 @@ import { Menu, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { logout } from '@/lib/api'
 import { getCurrentUserInfo, type CurrentUserInfo } from '@/services/auth.services'
+import LogoutIcon from '@/assets/icons/exit-logout.svg?react'
+import SettingIcon from '@/assets/icons/setting.svg?react'
 import avatarDefaultUrl from '@/assets/icons/user-avatar.svg'
 import educationUrl from '@/assets/icons/education.svg'
 import chevronDownUrl from '@/assets/icons/chevron-down.svg'
@@ -17,38 +19,32 @@ const NAV_CONFIG = [
   {
     path: 'dashboard',
     label: 'Dashboard',
-    allowedRoles: [ROLES.ADMIN, ROLES.STAFF],
-    noPadding: false
+    allowedRoles: [ROLES.ADMIN, ROLES.STAFF]
   },
   {
     path: 'departments',
     label: 'Departments',
-    allowedRoles: [ROLES.ADMIN],
-    noPadding: false
+    allowedRoles: [ROLES.ADMIN]
   },
   {
     path: 'users',
     label: 'Users',
-    allowedRoles: [ROLES.ADMIN],
-    noPadding: false
+    allowedRoles: [ROLES.ADMIN]
   },
   {
     path: 'logs',
     label: 'System Logs',
-    allowedRoles: [ROLES.ADMIN, ROLES.STAFF],
-    noPadding: false
+    allowedRoles: [ROLES.ADMIN, ROLES.STAFF]
   },
   {
     path: 'settings',
     label: 'System Settings',
-    allowedRoles: [ROLES.ADMIN, ROLES.STAFF],
-    noPadding: false
+    allowedRoles: [ROLES.ADMIN, ROLES.STAFF]
   },
   {
     path: 'view-chat',
     label: 'View Chat',
-    allowedRoles: [ROLES.ADMIN, ROLES.STAFF],
-    noPadding: true
+    allowedRoles: [ROLES.ADMIN, ROLES.STAFF]
   }
 ]
 
@@ -256,7 +252,7 @@ const ShellLayout = () => {
                   onMouseLeave={() => setIsUserMenuOpen(false)}
                   className="absolute top-full right-0 mt-2 w-64 rounded-lg border border-gray-200 bg-white shadow-lg"
                 >
-                  <div className="py-2">
+                  <div className="p-2">
                     {/* Profile Link */}
                     <button
                       onClick={() => {
@@ -265,12 +261,8 @@ const ShellLayout = () => {
                       }}
                       className="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-gray-700 transition-colors hover:bg-gray-50"
                     >
-                      <img
-                        src={userInfo?.image || avatarDefaultUrl}
-                        alt="user"
-                        className="h-8 w-8 rounded-full bg-center"
-                      />
-                      <span>Profile</span>
+                      <SettingIcon className="h-5 w-5" />
+                      <span className="text-base font-semibold">Profile</span>
                     </button>
 
                     {/* Department Selector */}
@@ -307,23 +299,16 @@ const ShellLayout = () => {
                     )}
 
                     {/* Logout */}
-                    <div className="mt-2 border-t border-gray-200" />
+                  <div className="border-t border-gray-200" />
                     <button
                       onClick={() => {
                         handleLogout()
                         setIsUserMenuOpen(false)
                       }}
-                      className="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-red-600 transition-colors hover:bg-red-50"
+                      className="flex w-full items-center gap-2 px-4 py-2.5 text-left text-sm text-red-600 transition-colors hover:bg-red-50"
                     >
-                      <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
-                        />
-                      </svg>
-                      <span>Logout</span>
+                      <LogoutIcon className="text-red h-5 w-5" />
+                      <span className="text-base font-semibold">Logout</span>
                     </button>
                   </div>
                 </div>
@@ -331,7 +316,7 @@ const ShellLayout = () => {
             </div>
           </div>
         </header>
-        <div className={cn('flex flex-col gap-6', !filteredNavItems[seletectedNavItem]?.noPadding && 'p-6')}>
+        <div className={cn('flex flex-col gap-6', filteredNavItems[seletectedNavItem])}>
           <Outlet />
         </div>
       </main>

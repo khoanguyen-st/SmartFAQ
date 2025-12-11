@@ -132,96 +132,91 @@ const ProfilePage = () => {
   if (error || !profile) return <div className="p-10 text-center text-red-500">{error || 'Profile not found'}</div>
 
   return (
-    <div className="flex h-[calc(100vh-81px)] w-full flex-col overflow-y-auto bg-[#F9FAFB]">
-      <div className="mx-auto flex min-h-full w-full max-w-[1535px] flex-col px-8 xl:px-[100px]">
-        {/* Header */}
-        <div className="flex shrink-0 items-end justify-between py-10">
-          <div>
-            <h2 className="text-[32px] font-bold text-[#111827] lg:text-[40px] lg:leading-12">My Profile</h2>
-            <p className="mt-1 text-[16px] font-medium text-[#637381] lg:text-[18px] lg:leading-[26px]">
-              Summary of personal information
-            </p>
+    <div className="flex h-[calc(100vh-81px)] flex-col gap-6 overflow-auto bg-white p-6">
+      {/* Header */}
+
+      <div className="pl-2">
+        <h2 className="mb-2 text-3xl font-bold text-slate-900">My Profile</h2>
+        <p className="text-base text-slate-600">Summary of personal information</p>
+      </div>
+
+      {/* Main Card */}
+      <div className="flex w-full shrink-0 flex-col items-center rounded-xl border border-slate-100 bg-white shadow-lg xl:flex-row xl:items-start xl:gap-[120px] xl:p-[100px]">
+        {/* Avatar Section */}
+        <div className="flex shrink-0 flex-col items-center rounded-2xl m-5">
+          <div className="h-50 w-50 overflow-hidden rounded-full shadow-slate-100 sm:h-[303px] sm:w-[303px]">
+            <img src={profile.avatar_url || avatarDefaultUrl} alt="Profile" className="h-full w-full object-cover" />
+          </div>
+
+          <div className="mt-8 flex w-full max-w-75 justify-between gap-4 lg:mt-11">
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              className="h-10 flex-1 rounded-2xl bg-blue-900 text-[12px] font-bold text-white transition hover:bg-blue-700"
+            >
+              Edit Image
+            </button>
+            <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleImageUpload} />
+
+            <button
+              onClick={handleDeleteImage}
+              disabled={!profile.avatar_url}
+              className={`h-10 flex-1 rounded-2xl bg-red-800 text-[12px] font-bold text-white transition ${!profile.avatar_url ? 'cursor-not-allowed opacity-50' : 'hover:bg-red-600'}`}
+            >
+              Delete Image
+            </button>
           </div>
         </div>
 
-        {/* Main Card */}
-        <div className="mb-[130px] flex w-full shrink-0 flex-col items-center gap-10 rounded-[20px] border border-[#E5E7EB] bg-white p-8 shadow-sm lg:flex-row lg:items-start lg:gap-[120px] lg:p-[100px]">
-          {/* Avatar Section */}
-          <div className="flex shrink-0 flex-col items-center">
-            <div className="h-[200px] w-[200px] overflow-hidden rounded-full shadow-[0px_4px_10px_rgba(0,0,0,0.15)] xl:h-[303px] xl:w-[303px]">
-              <img src={profile.avatar_url || avatarDefaultUrl} alt="Profile" className="h-full w-full object-cover" />
-            </div>
+        {/* Form Section */}
+        <div className="flex w-full flex-1 flex-col justify-center">
+          <div className="flex flex-col gap-6 lg:gap-[60px] mx-5">
+            {formFields.map(({ label, key, disabled }) => {
+              const isEditing = editingField === key
 
-            <div className="mt-8 flex w-full max-w-[303px] justify-between gap-4 lg:mt-11">
-              <button
-                onClick={() => fileInputRef.current?.click()}
-                className="h-10 flex-1 rounded-[50px] border border-[#003087] text-[12px] font-bold text-[#003087] transition hover:bg-blue-50"
-              >
-                Edit Image
-              </button>
-              <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleImageUpload} />
+              return (
+                <div key={key} className="flex flex-col gap-2 lg:flex-row lg:items-center lg:gap-0">
+                  <label className="shrink-0 text-[16px] font-semibold text-[#111928] lg:w-[200px] lg:text-[18px]">
+                    {label}
+                  </label>
 
-              <button
-                onClick={handleDeleteImage}
-                disabled={!profile.avatar_url}
-                className={`h-10 flex-1 rounded-[50px] border border-[#E10E0E] text-[12px] font-bold text-[#E10E0E] transition ${!profile.avatar_url ? 'cursor-not-allowed opacity-50' : 'hover:bg-red-50'}`}
-              >
-                Delete Image
-              </button>
-            </div>
-          </div>
+                  <div className="relative flex w-full items-center">
+                    <input
+                      type="text"
+                      disabled={disabled}
+                      value={isEditing ? tempValue : String(profile[key] || '')}
+                      onChange={e => setTempValue(e.target.value)}
+                      onFocus={() => !disabled && startEdit(key)}
+                      className={`h-[46px] w-full rounded-md border px-5 text-[16px] transition-all duration-200 outline-none ${isEditing ? 'border-[#1677FF] shadow-[0px_0px_4px_#1677FF]' : 'border-[#6B7280]'} ${disabled ? 'cursor-not-allowed bg-white text-[#9CA3AF]' : 'bg-white text-[#111928]'}`}
+                    />
 
-          {/* Form Section */}
-          <div className="flex w-full flex-1 flex-col justify-center">
-            <div className="flex flex-col gap-6 lg:gap-[60px]">
-              {formFields.map(({ label, key, disabled }) => {
-                const isEditing = editingField === key
-
-                return (
-                  <div key={key} className="flex flex-col gap-2 lg:flex-row lg:items-center lg:gap-0">
-                    <label className="shrink-0 text-[16px] font-semibold text-[#111928] lg:w-[250px] lg:text-[18px]">
-                      {label}
-                    </label>
-
-                    <div className="relative flex w-full items-center">
-                      <input
-                        type="text"
-                        disabled={disabled}
-                        value={isEditing ? tempValue : String(profile[key] || '')}
-                        onChange={e => setTempValue(e.target.value)}
-                        onFocus={() => !disabled && startEdit(key)}
-                        className={`h-[46px] w-full rounded-md border px-5 text-[16px] transition-all duration-200 outline-none ${isEditing ? 'border-[#1677FF] shadow-[0px_0px_4px_#1677FF]' : 'border-[#6B7280]'} ${disabled ? 'cursor-not-allowed bg-white text-[#9CA3AF]' : 'bg-white text-[#111928]'}`}
-                      />
-
-                      {isEditing && !disabled && (
-                        <div className="absolute top-full right-0 z-10 mt-1 flex items-center gap-2 rounded-md bg-white p-2 shadow-lg lg:relative lg:top-auto lg:mt-0 lg:ml-4 lg:bg-transparent lg:p-0 lg:shadow-none">
-                          <button
-                            onClick={saveEdit}
-                            className="flex h-10 w-10 items-center justify-center rounded-lg border border-[#A6A6A6] bg-white hover:bg-green-50"
-                          >
-                            <img src={checkUrl} alt="Save" className="h-5 w-5" />
-                          </button>
-                          <button
-                            onClick={cancelEdit}
-                            className="flex h-10 w-10 items-center justify-center rounded-lg border border-[#A6A6A6] bg-white hover:bg-red-50"
-                          >
-                            <img src={closeUrl} alt="Cancel" className="h-4 w-4" />
-                          </button>
-                        </div>
-                      )}
-                    </div>
+                    {isEditing && !disabled && (
+                      <div className="absolute top-full right-0 z-10 mt-1 flex items-center gap-2 rounded-md bg-white p-2 shadow-lg lg:relative lg:top-auto lg:mt-0 lg:ml-4 lg:bg-transparent lg:p-0 lg:shadow-none">
+                        <button
+                          onClick={saveEdit}
+                          className="flex h-10 w-10 items-center justify-center rounded-lg border border-[#A6A6A6] bg-white hover:bg-green-50"
+                        >
+                          <img src={checkUrl} alt="Save" className="h-5 w-5" />
+                        </button>
+                        <button
+                          onClick={cancelEdit}
+                          className="flex h-10 w-10 items-center justify-center rounded-lg border border-[#A6A6A6] bg-white hover:bg-red-50"
+                        >
+                          <img src={closeUrl} alt="Cancel" className="h-4 w-4" />
+                        </button>
+                      </div>
+                    )}
                   </div>
-                )
-              })}
+                </div>
+              )
+            })}
 
-              <div className="flex w-full justify-end pt-4">
-                <button
-                  onClick={() => setIsChangePassModalOpen(true)}
-                  className="h-10 w-full rounded-lg bg-[#003087] text-[16px] font-medium text-white transition hover:bg-[#00205a] sm:w-[177px]"
-                >
-                  Change Password
-                </button>
-              </div>
+            <div className="flex w-full justify-end pt-4">
+              <button
+                onClick={() => setIsChangePassModalOpen(true)}
+                className="h-10 w-full rounded-lg bg-[#003087] text-[16px] font-medium text-white transition hover:bg-[#00205a] sm:w-[177px]"
+              >
+                Change Password
+              </button>
             </div>
           </div>
         </div>
