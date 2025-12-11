@@ -10,6 +10,7 @@ interface ChatContainerProps {
   headerAction?: React.ReactNode
   headerAdditionalActions?: React.ReactNode
   sessionId?: string | null
+  onQuestionClick?: (question: string) => void
 }
 
 export const ChatContainer = ({
@@ -18,12 +19,18 @@ export const ChatContainer = ({
   onSend,
   headerAction,
   headerAdditionalActions,
-  sessionId
+  sessionId,
+  onQuestionClick
 }: ChatContainerProps) => {
   return (
     <div className="flex h-full w-full flex-col bg-white">
       <ChatHeader actionNode={headerAction} additionalActions={headerAdditionalActions} />
-      <ChatMessageList messages={messages} isLoading={isLoading} sessionId={sessionId || null} />
+      <ChatMessageList
+        messages={messages}
+        isLoading={isLoading}
+        sessionId={sessionId || null}
+        onQuestionClick={onQuestionClick}
+      />
       <ChatInput onSend={onSend} isLoading={isLoading} />
     </div>
   )

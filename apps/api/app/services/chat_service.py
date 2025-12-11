@@ -11,8 +11,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..constants.chat import FEEDBACK_MESSAGES
 from ..core.config import settings
+from ..core.input_validation import UnsafeInputError, ensure_safe_text
 from ..core.mongo import get_chat_messages_collection, get_chat_sessions_collection
-from ..models.chat import ChatRole, ChatSession
+from ..models.chat import Channel, ChatRole, ChatSession
+from ..rag.guardrail import REFUSAL_MESSAGES
 from ..rag.language import detect_language
 from ..rag.orchestrator import RAGOrchestrator
 from ..repositories.chat_messages_repo import (
@@ -122,6 +124,24 @@ class ChatService:
         return NewSessionResponse(sessionId=session_id, message="New chat session started.")
 
     async def query_chat(self, payload: ChatQuery) -> ChatQueryResponse:
+        # 1. Check for unsafe input (XSS/Injection)
+        try:
+            ensure_safe_text(payload.question)
+        except UnsafeInputError:
+            logger.warning(f"Unsafe input detected: {payload.question}")
+            lang = payload.language or "vi"
+            msg = REFUSAL_MESSAGES.get("toxic", {}).get(lang, "Vui lòng sử dụng ngôn ngữ lịch sự.")
+
+            return ChatQueryResponse(
+                answer=msg,
+                sources=[],
+                confidence=0,
+                relevance=0,
+                language=lang,
+                fallback=True,
+                chatId=str(uuid4()),
+            )
+
         if not payload.session_id:
             raise ChatServiceError(400, "sessionId is required. Call /chat/new-session first.")
 
@@ -165,11 +185,17 @@ class ChatService:
             t0 = time.perf_counter()
             history_response = await self.get_history(session.id, limit=5)
             history = [{"role": msg.role, "text": msg.text} for msg in history_response.messages]
+            # Enable citations only for STAFF/ADMIN channel
+            include_citations = (
+                session.channel == Channel.CHATSTAFF or session.channel == Channel.MANAGEMENT
+            )
+
             rag_response = await self.orchestrator.query(
                 question=payload.question,
                 top_k=5,
                 history=history,
                 language=session.language,
+                include_citations=include_citations,
             )
             latency_ms = int((time.perf_counter() - t0) * 1000)
         except Exception as exc:

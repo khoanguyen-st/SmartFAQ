@@ -241,7 +241,7 @@ class LLMWrapper:
             "   - Định nghĩa/Giới thiệu\n"
             "   - Thông tin chi tiết (điều kiện, quy định, số liệu)\n"
             "   - Liên hệ/Tham khảo (nếu có)\n"
-            "4. TRÍCH DẪN: Luôn cite nguồn với format (Nguồn X - tên file)\n"
+            "{citation_rule}\n"
             "5. CHỈ từ chối khi Context HOÀN TOÀN không liên quan\n\n"
             "⚠️ FORMAT BẮT BUỘC (MARKDOWN):\n"
             "• Dùng markdown list syntax: `- ` (dấu gạch ngang + khoảng trắng) cho bullet points\n"
@@ -305,7 +305,6 @@ class LLMWrapper:
             "- LUÔN structure câu trả lời rõ ràng, dễ đọc\n"
         )
 
-        # ✅ Unified prompt templates
         self.prompt = ChatPromptTemplate.from_messages(
             [
                 ("system", self.system_prompt),
@@ -411,6 +410,7 @@ class LLMWrapper:
         contexts: Sequence[Union[Document, Dict[str, Any]]],
         *,
         target_language: str | None = None,
+        include_citations: bool = True,
     ) -> str:
         lang = self._resolve_language(target_language)
         if not contexts:
@@ -420,12 +420,19 @@ class LLMWrapper:
         if not context_text.strip():
             return self._fallback_no_context(lang)
 
+        # Determine citation rule based on flag
+        if include_citations:
+            citation_rule = "4. TRÍCH DẪN: Luôn cite nguồn với format (Nguồn X - tên file)"
+        else:
+            citation_rule = "4. TRÍCH DẪN: KHÔNG ĐƯỢC include inline citations (ví dụ: (Nguồn X)) trong câu trả lời."
+
         try:
             answer = await self.chain.ainvoke(
                 {
                     "context": context_text,
                     "question": question.strip(),
                     "target_language": lang,
+                    "citation_rule": citation_rule,
                 }
             )
 
