@@ -171,10 +171,10 @@ export const CreateUserDialog: React.FC<CreateUserDialogProps> = ({
                   <option value="" disabled>
                     Select Campus
                   </option>
-                  <option value="HN">Hanoi</option>
-                  <option value="HCM">Ho Chi Minh</option>
-                  <option value="DN">Danang</option>
-                  <option value="CT">Can Tho</option>
+                  <option value="HN">Hà Nội</option>
+                  <option value="HCM">Hồ Chí Minh</option>
+                  <option value="DN">Đà Nẵng</option>
+                  <option value="CT">Cần Thơ</option>
                 </select>
                 <span className="pointer-events-none absolute inset-y-0 top-1/2 right-3 flex items-center">
                   <img src={ChevronDown} alt="chevron-down" className="h-5 w-5" />
