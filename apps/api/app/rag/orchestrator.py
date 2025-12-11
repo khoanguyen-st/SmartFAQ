@@ -442,12 +442,14 @@ class RAGOrchestrator:
         msgs = {
             "vi": {
                 "toxic": "Vui lòng sử dụng ngôn ngữ lịch sự.",
+                "system_management": "Xin lỗi, tôi chỉ hỗ trợ trả lời câu hỏi về nội dung tài liệu của Greenwich Việt Nam (học phí, quy định, chương trình học...). Để quản lý tài liệu hoặc các chức năng hệ thống, vui lòng liên hệ bộ phận IT hoặc sử dụng trang quản trị.",
                 "competitor": "Tôi chỉ hỗ trợ thông tin về Đại học Greenwich Việt Nam.",
                 "irrelevant": "Câu hỏi nằm ngoài phạm vi hỗ trợ.",
                 "wrong_language": "Xin lỗi, tôi chỉ hỗ trợ Tiếng Việt và Tiếng Anh.",
             },
             "en": {
                 "toxic": "Please use polite language.",
+                "system_management": "Sorry, I only answer questions about Greenwich Vietnam's document content (tuition, regulations, programs...). For document management or system functions, please contact IT department or use the admin portal.",
                 "competitor": "I only support inquiries related to Greenwich University Vietnam.",
                 "irrelevant": "This question is outside my scope.",
                 "wrong_language": "Sorry, I only support Vietnamese and English.",
