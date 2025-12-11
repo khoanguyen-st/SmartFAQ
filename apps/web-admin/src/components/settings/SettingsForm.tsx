@@ -3,8 +3,8 @@ import { AlertCircle, CheckCircle2, ChevronDown, Eye, EyeOff, Info, Loader2, Sav
 import { FormEvent, useEffect, useState } from 'react'
 
 const GEMINI_MODELS = [
-  { value: 'gemma-3-27b-it', label: 'Gemma 2 27B' },
-  { value: 'gemma-3-9b-it', label: 'Gemma 2 9B' },
+  { value: 'gemma-3-27b-it', label: 'Gemma 3 27B' },
+  { value: 'gemma-3-9b-it', label: 'Gemma 3 9B' },
   { value: 'gemini-2.0-flash-exp', label: 'Gemini 2.0 Flash' },
   { value: 'gemini-1.5-flash', label: 'Gemini 1.5 Flash' },
   { value: 'gemini-1.5-flash-8b', label: 'Gemini 1.5 Flash 8B' },
@@ -248,7 +248,7 @@ const SettingsForm = () => {
                 <Info className="h-5 w-5 shrink-0 text-slate-100" />
                 <h3 className="text-lg font-semibold text-slate-100">AI Model Selection</h3>
               </div>
-              <p className="mb-4 mt-1 text-base text-slate-200">
+              <p className="mt-1 mb-4 text-base text-slate-200">
                 Choose between Google AI (Gemini/Gemma via API) or Local AI (self-hosted model)
               </p>
             </div>
@@ -310,7 +310,7 @@ const SettingsForm = () => {
               <div className="overflow-hidden">
                 <div
                   className={`flex flex-col gap-4 transition-all duration-500 ease-in-out ${
-                    isGoogleAI ? 'translate-y-0 opacity-100 pt-4' : '-translate-y-4 opacity-0 pt-0'
+                    isGoogleAI ? 'translate-y-0 pt-4 opacity-100' : '-translate-y-4 pt-0 opacity-0'
                   }`}
                 >
                   {/* Select Model */}
@@ -322,7 +322,7 @@ const SettingsForm = () => {
                       <select
                         value={settings.llm_model}
                         onChange={e => updateSetting('llm_model', e.target.value)}
-                        className="w-full my-2 appearance-none rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 transition-colors focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20 focus:outline-none"
+                        className="my-2 w-full appearance-none rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 transition-colors focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20 focus:outline-none"
                       >
                         {GEMINI_MODELS.map(model => (
                           <option key={model.value} value={model.value}>
@@ -349,7 +349,7 @@ const SettingsForm = () => {
                       type="password"
                       value={settings.google_api_key}
                       placeholder="Enter your Google API Key (AIza...)"
-                      className="w-full my-2 rounded-lg border border-slate-300 px-3 py-2 font-mono text-sm transition-all focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20 focus:outline-none"
+                      className="my-2 w-full rounded-lg border border-slate-300 px-3 py-2 font-mono text-sm transition-all focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20 focus:outline-none"
                       onChange={e => updateSetting('google_api_key', e.target.value)}
                     />
                     <p className="mt-2 text-xs text-slate-600">
@@ -371,9 +371,7 @@ const SettingsForm = () => {
             <div className="mt-4 rounded-xl border border-blue-100 bg-white p-4 transition-colors duration-300">
               <p className="flex items-center gap-2 text-xs text-blue-900">
                 <strong>Current:</strong>
-                <span className="rounded bg-blue-100 px-1.5 py-0.5 font-mono text-blue-900">
-                  {settings.llm_model}
-                </span>
+                <span className="rounded bg-blue-100 px-1.5 py-0.5 font-mono text-blue-900">{settings.llm_model}</span>
               </p>
             </div>
           </div>
@@ -397,9 +395,7 @@ const SettingsForm = () => {
             >
               <h3 className="text-lg font-semibold text-slate-900">{categoryInfo.title}</h3>
               {/* Thêm transition rotate cho icon */}
-              <span
-                className={`text-slate-400 transition-transform duration-300 ${isExpanded ? 'rotate-180' : ''}`}
-              >
+              <span className={`text-slate-400 transition-transform duration-300 ${isExpanded ? 'rotate-180' : ''}`}>
                 <ChevronDown className="h-5 w-5" />
               </span>
             </button>

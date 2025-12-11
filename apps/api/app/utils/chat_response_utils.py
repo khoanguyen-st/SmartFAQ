@@ -40,6 +40,7 @@ def format_sources(sources: list[dict[str, Any]] | None) -> list[ChatSource]:
                 title=title,
                 chunkId=chunk_id,
                 relevance=float(relevance_raw) if relevance_raw is not None else None,
+                content=src.get("content"),
             )
         )
     return formatted
@@ -65,6 +66,7 @@ def persistable_sources(sources: list[dict[str, Any]] | None) -> list[dict[str, 
                 "docTitle": title,
                 "chunkId": src.get("chunkId") or src.get("chunk_id"),
                 "relevance": float(relevance_raw) if relevance_raw is not None else None,
+                "content": src.get("content"),
             }
         )
     return persisted

@@ -28,6 +28,7 @@ class ChatSource(BaseModel):
     title: str
     chunk_id: str | None = Field(default=None, alias="chunkId")
     relevance: float | None = None
+    content: str | None = None
 
     model_config = ConfigDict(populate_by_name=True)
 

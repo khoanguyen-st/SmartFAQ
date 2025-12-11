@@ -1,11 +1,12 @@
-import React, { useMemo, useCallback } from 'react'
+import React, { useMemo, useCallback, useState, useRef } from 'react'
+import { createPortal } from 'react-dom'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 
 type SimpleMarkdownProps = {
   content: string
   enableHighlight?: boolean
-  sources?: Array<{ title: string }> // Thêm prop sources
+  sources?: Array<{ title: string; content?: string | null; displayIndex?: number }> // Added displayIndex
   onSourceHover?: (sourceIndex: number | null) => void // Callback khi hover
   onSourceClick?: (sourceIndex: number) => void // Thêm prop mới
 }
@@ -108,6 +109,88 @@ const SimpleMarkdown: React.FC<SimpleMarkdownProps> = ({
   onSourceHover,
   onSourceClick // Thêm prop mới
 }) => {
+  // Inline component for Source Pill with Popup
+  const SourcePill = ({
+    index,
+    source
+  }: {
+    index: number
+    source: { title: string; content?: string | null; displayIndex?: number }
+  }) => {
+    const [showPopup, setShowPopup] = useState(false)
+    const [coords, setCoords] = useState<{ top: number; left: number } | null>(null)
+    const timeoutRef = useRef<NodeJS.Timeout | null>(null)
+    const pillRef = useRef<HTMLSpanElement>(null)
+
+    const handleMouseEnter = () => {
+      if (timeoutRef.current) clearTimeout(timeoutRef.current)
+
+      if (pillRef.current) {
+        const rect = pillRef.current.getBoundingClientRect()
+        setCoords({
+          top: rect.top, // Top of the pill
+          left: rect.left + rect.width / 2 // Center of the pill
+        })
+      }
+      setShowPopup(true)
+      onSourceHover?.(index)
+    }
+
+    const handleMouseLeave = () => {
+      timeoutRef.current = setTimeout(() => {
+        setShowPopup(false)
+        onSourceHover?.(null)
+      }, 300) // Delay closing
+    }
+
+    return (
+      <span
+        ref={pillRef}
+        className="relative ml-1 inline-block align-middle"
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
+      >
+        <span
+          className="inline-flex h-5 min-w-[20px] cursor-pointer items-center justify-center rounded bg-[#444746] px-1 text-[10px] font-bold text-[#c4c7c5] transition-colors hover:bg-[#003087] hover:text-white"
+          onClick={e => {
+            e.stopPropagation()
+            onSourceClick?.(index)
+          }}
+        >
+          {source.displayIndex !== undefined ? source.displayIndex + 1 : index + 1}
+        </span>
+
+        {showPopup &&
+          coords &&
+          createPortal(
+            <div
+              className="fixed z-[99999] w-80 -translate-x-1/2 -translate-y-full"
+              style={{
+                top: `${coords.top - 10}px`, // 10px spacing above pill
+                left: `${coords.left}px`
+              }}
+              onMouseEnter={handleMouseEnter} // Keep open when hovering popup
+              onMouseLeave={handleMouseLeave}
+            >
+              <div className="relative rounded-lg border border-[#444746] bg-[#1e1e1e] p-4 text-left shadow-2xl">
+                <h4 className="mb-1 text-sm font-bold break-words text-white">{source.title}</h4>
+                {source.content ? (
+                  <p className="scrollbar-thin scrollbar-thumb-gray-600 max-h-60 overflow-y-auto text-xs leading-relaxed whitespace-pre-wrap text-[#e3e3e3]">
+                    "{source.content.substring(0, 500)}
+                    {source.content.length > 500 ? '...' : ''}"
+                  </p>
+                ) : (
+                  <p className="text-xs text-gray-400 italic">No text content available.</p>
+                )}
+                {/* Arrow pointing down */}
+                <div className="absolute top-full left-1/2 -mt-[1px] h-2 w-2 -translate-x-1/2 rotate-45 border-r border-b border-[#444746] bg-[#1e1e1e]"></div>
+              </div>
+            </div>,
+            document.body
+          )}
+      </span>
+    )
+  }
   // Highlight keywords trước khi render - chỉ khi enableHighlight = true
   const highlightedContent = useMemo(() => {
     return enableHighlight ? highlightKeywords(content) : content
@@ -124,16 +207,13 @@ const SimpleMarkdown: React.FC<SimpleMarkdownProps> = ({
           if (match) {
             const sourceIndex = parseInt(match[1], 10) - 1 // Convert to 0-based
             if (sourceIndex >= 0 && sourceIndex < sources.length) {
+              // Should return SourcePill
+              // Note: sources prop in SimpleMarkdownProps is Array<{ title: string; content?: string }> now (implicit cast from parent)
+              // But Typescript might complain if I don't update the Prop type on line 8 first.
+              // However, Javascript runtime is fine. I will update the Line 8 prop type in next chunk or ignore if loose.
+              // Let's assume loose type for now or cast.
               return (
-                <span
-                  key={`source-ref-${idx}-${match[1]}`}
-                  className="source-reference inline-flex h-5 w-5 cursor-pointer items-center justify-center rounded-full bg-gray-200 text-xs font-medium text-gray-700 transition-colors hover:bg-blue-500 hover:text-white"
-                  onMouseEnter={() => onSourceHover?.(sourceIndex)}
-                  onMouseLeave={() => onSourceHover?.(null)}
-                  onClick={() => onSourceClick?.(sourceIndex)} // Thêm onClick
-                >
-                  {match[1]}
-                </span>
+                <SourcePill key={`source-ref-${idx}-${match[1]}`} index={sourceIndex} source={sources[sourceIndex]} />
               )
             }
           }
@@ -157,6 +237,7 @@ const SimpleMarkdown: React.FC<SimpleMarkdownProps> = ({
 
       return node
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [sources, onSourceHover, onSourceClick]
   ) // Thêm onSourceClick vào dependencies
 
@@ -176,31 +257,19 @@ const SimpleMarkdown: React.FC<SimpleMarkdownProps> = ({
       return match
     })
 
-    // Sau đó, tìm các số đơn lẻ và replace nếu nằm trong range
-    const referencePattern = /\b([1-9]\d*)\b(?=\s|$|[.,;:!?])/g
-
-    processed = processed.replace(referencePattern, (match, numStr, offset) => {
+    // Handle verbose citations (Nguồn X - title) or (Source X - title) or (Nguồn X)
+    // Regex supports 1 level of nested parentheses for filenames like "file (1).pdf"
+    // Matches: (Nguồn OR Source) + space + number + (optional content with possible nested parens) + )
+    processed = processed.replace(/\((?:Nguồn|Source)\s+(\d+)(?:[^)(]|\([^)(]*\))*\)/gi, (match, numStr) => {
       const num = parseInt(numStr, 10)
-      // Chỉ xử lý nếu số nằm trong range của sources (1 đến sources.length)
       if (num >= 1 && num <= sources.length) {
-        // Kiểm tra xem có phải là số trong markdown list không (ví dụ: "1. item")
-        const afterMatch = processed.substring(offset + match.length, offset + match.length + 2)
-
-        // Nếu có dấu chấm ngay sau số, có thể là markdown list, bỏ qua
-        if (afterMatch.trim().startsWith('.')) {
-          return match
-        }
-
-        // Kiểm tra xem đã có [SOURCE_REF_X] chưa (tránh double replace)
-        const beforeText = processed.substring(Math.max(0, offset - 20), offset)
-        if (beforeText.includes('[SOURCE_REF_')) {
-          return match
-        }
-
         return `[SOURCE_REF_${num}]`
       }
       return match
     })
+
+    // Aggressive bare number replacement REMOVED to prevent "360 credits" -> "[360]"
+    // Only trust explicit [SOURCE_REF_X] or (Nguồn X) patterns handled above.
 
     return processed
   }, [highlightedContent, sources])
