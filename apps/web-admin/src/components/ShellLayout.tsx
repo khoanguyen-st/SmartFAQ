@@ -43,7 +43,7 @@ const NAV_CONFIG = [
   },
   {
     path: 'view-chat',
-    label: 'View Chat',
+    label: 'Knowledge Base',
     allowedRoles: [ROLES.ADMIN, ROLES.STAFF]
   }
 ]
