@@ -1,3 +1,4 @@
+# user.py
 """User model."""
 
 from datetime import datetime
@@ -11,7 +12,6 @@ from .config import Base
 if TYPE_CHECKING:
     from .department import Department
     from .document import Document
-    from .document_version import DocumentVersion
 
 
 class User(Base):
@@ -37,7 +37,3 @@ class User(Base):
     )
 
     documents: Mapped[list["Document"]] = relationship("Document", back_populates="creator")
-
-    document_version: Mapped["DocumentVersion | None"] = relationship(
-        "DocumentVersion", back_populates="uploader", uselist=False
-    )

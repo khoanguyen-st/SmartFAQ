@@ -1,0 +1,35 @@
+mongodb:
+  # Authentication
+  auth:
+    enabled: true
+    rootUser: smartfaq
+    rootPassword: "smartfaq_prod_mongo_pass_2024_CHANGE_ME"
+    database: smartfaq
+
+  # Architecture
+  architecture: standalone
+  replicaCount: 1
+
+  # Persistence
+  persistence:
+    enabled: true
+    size: 8Gi
+    storageClass: "standard-rwo"
+
+  # Resources
+  resources:
+    requests:
+      memory: 512Mi
+      cpu: 250m
+    limits:
+      memory: 2Gi
+      cpu: 1
+
+  # Service
+  service:
+    type: ClusterIP
+    port: 27017
+
+  # Metrics
+  metrics:
+    enabled: false

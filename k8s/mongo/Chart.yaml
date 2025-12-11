@@ -1,0 +1,11 @@
+apiVersion: v2
+name: mongo-smartfaq
+description: MongoDB Helm Chart for SmartFAQ - Chat Persistence
+type: application
+version: 1.0.0
+appVersion: "7.0"
+
+dependencies:
+  - name: mongodb
+    version: 16.3.1
+    repository: https://charts.bitnami.com/bitnami

@@ -52,4 +52,3 @@ export async function getCurrentUserInfo(): Promise<CurrentUserInfo> {
     image: getImageUrl(data.image)
   }
 }
-

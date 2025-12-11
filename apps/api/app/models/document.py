@@ -1,5 +1,4 @@
-"""Document metadata model."""
-
+# document.py
 from __future__ import annotations
 
 from datetime import datetime
@@ -13,7 +12,6 @@ from .config import Base
 
 if TYPE_CHECKING:
     from .department import Department
-    from .document_version import DocumentVersion
     from .user import User
 
 
@@ -22,45 +20,24 @@ class Document(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
     title: Mapped[str] = mapped_column(String(255), nullable=False)
+    version_no: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
     category: Mapped[str | None] = mapped_column(String(120), nullable=True)
     tags: Mapped[str | None] = mapped_column(String(255), nullable=True)
     language: Mapped[str] = mapped_column(String(10), nullable=False, default="vi")
-    # Status enum: REQUEST, PROCESSING, ACTIVE, FAIL
     status: Mapped[str] = mapped_column(
         SAEnum("REQUEST", "PROCESSING", "ACTIVE", "FAIL", name="documentstatus"),
         nullable=False,
         default="REQUEST",
     )
 
-    current_version_id: Mapped[int | None] = mapped_column(
-        ForeignKey("document_versions.id"), nullable=True
-    )
-
-    department_id: Mapped[int | None] = mapped_column(ForeignKey("departments.id"), nullable=True)
+    file_path: Mapped[str] = mapped_column(String(255), nullable=False)
+    file_size: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    format: Mapped[str] = mapped_column(String(50), nullable=False)
 
     creator_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True)
-
+    department_id: Mapped[int | None] = mapped_column(ForeignKey("departments.id"), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    is_deleted: Mapped[bool] = mapped_column(default=False)
 
-    versions: Mapped[list["DocumentVersion"]] = relationship(
-        "DocumentVersion",
-        back_populates="document",
-        cascade="all, delete-orphan",
-        primaryjoin="Document.id == DocumentVersion.document_id",
-        foreign_keys="DocumentVersion.document_id",
-    )
-
-    current_version: Mapped["DocumentVersion | None"] = relationship(
-        "DocumentVersion",
-        uselist=False,
-        foreign_keys=[current_version_id],
-        post_update=True,
-    )
-
-    department: Mapped["Department | None"] = relationship(
-        "Department", back_populates="documents", foreign_keys=[department_id]
-    )
-
-    creator: Mapped["User | None"] = relationship(
-        "User", back_populates="documents", foreign_keys=[creator_id]
-    )
+    creator: Mapped["User | None"] = relationship("User", back_populates="documents")
+    department: Mapped["Department | None"] = relationship("Department", back_populates="documents")

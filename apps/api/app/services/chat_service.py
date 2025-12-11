@@ -125,6 +125,15 @@ class ChatService:
         if not payload.session_id:
             raise ChatServiceError(400, "sessionId is required. Call /chat/new-session first.")
 
+        # Check if Google API key is configured when using Gemini model
+        current_model = settings.LLM_MODEL.lower()
+        if "gemini" in current_model:
+            if not settings.GOOGLE_API_KEY or settings.GOOGLE_API_KEY.strip() == "":
+                raise ChatServiceError(
+                    503,
+                    "The Google API key is not configured. Please contact your administrator to update the API key in your system settings.",
+                )
+
         session = await get_session(self.db, payload.session_id)
         if not session:
             raise ChatServiceError(404, "Session not found.")
