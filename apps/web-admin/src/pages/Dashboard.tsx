@@ -14,11 +14,11 @@ const DashboardPage = () => {
   }
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-6 p-6 bg-white">
       {/* Header with controls */}
       <header className="flex items-center justify-between">
-        <div>
-          <h2 className="mb-1 text-2xl font-bold text-slate-900">Dashboard</h2>
+        <div className="pl-2">
+          <h2 className="text-3xl mb-2 font-bold text-slate-900">Dashboard</h2>
           <p className="text-base text-slate-600">Monitor system performance and user activity</p>
         </div>
         <div className="flex items-center gap-3">
@@ -27,14 +27,14 @@ const DashboardPage = () => {
               type="checkbox"
               checked={autoRefresh}
               onChange={e => setAutoRefresh(e.target.checked)}
-              className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+              className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
             />
             Auto-refresh (30s)
           </label>
           <button
             type="button"
             onClick={handleManualRefresh}
-            className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700"
+            className="inline-flex items-center gap-2 rounded-lg bg-blue-800 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
           >
             <RefreshCw className="h-4 w-4" />
             Refresh

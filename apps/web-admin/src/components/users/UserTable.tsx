@@ -92,10 +92,10 @@ export const UserTable: React.FC<UserTableProps> = ({ users, loading, onEdit, on
   }
 
   return (
-    <div className="hidden max-h-[360px] overflow-auto rounded-xl border border-slate-200 bg-white shadow-sm md:block">
+    <div className="hidden max-h-[360px] overflow-auto md:block rounded-2xl bg-white ">
       <table className="w-full border-collapse">
         <thead className="sticky top-0 z-10 bg-white text-xs text-black uppercase shadow-sm">
-          <tr style={{ height: '60px' }}>
+          <tr className="h-15">
             <th className="px-6 py-3 text-center font-bold whitespace-nowrap">ID</th>
             <th className="px-6 py-3 text-center font-bold whitespace-nowrap">Username</th>
             <th className="px-6 py-3 text-center font-bold whitespace-nowrap">Email</th>

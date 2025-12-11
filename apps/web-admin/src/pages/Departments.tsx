@@ -121,16 +121,16 @@ const DepartmentsPage = () => {
   }
 
   return (
-    <div className="dept-page-wrapper">
+    <div className="flex flex-col gap-6 p-6 h-[calc(100vh-81px)] bg-white overflow-auto">
       <div className="dept-header-section">
-        <div>
-          <h3 className="text-2xl leading-tight font-bold text-[#111827] md:text-[40px]">List of Department</h3>
-          <p className="text-sm leading-6 font-normal text-[#637381] md:text-base md:leading-8">Manage departments</p>
+        <div className="pl-2">
+          <h3 className="text-3xl mb-2 leading-tight font-bold text-[#111827]">List of Department</h3>
+          <p className="text-base text-[#637381]">Manage departments</p>
         </div>
 
         <button
           onClick={() => setIsAddOpen(true)}
-          className="flex w-full items-center justify-center gap-2 rounded-lg bg-[#003087] px-3.5 py-2.5 text-sm font-normal text-white shadow-sm transition-colors hover:bg-[#002569] md:w-auto"
+          className="flex w-full rounded-xl items-center justify-center gap-2  bg-[#003087] px-3.5 py-2.5 text-sm font-normal text-white shadow-sm transition-colors hover:bg-[#002569] md:w-auto"
         >
           <img src={Plus} alt="plus" className="h-[11px] w-[11px]" />
           <span>Create New Department</span>
@@ -144,11 +144,11 @@ const DepartmentsPage = () => {
             placeholder="Enter to Search..."
             value={searchTerm}
             onChange={e => setSearchTerm(e.target.value)}
-            className="h-[50px] w-full rounded-lg border border-gray-100 bg-white pr-10 pl-4 text-sm text-[#111827] transition-colors outline-none placeholder:text-[#637381] focus:border-[#003087] focus:ring-1 focus:ring-[#003087] md:h-[70px] md:pr-14 md:pl-8"
+            className="h-15 w-full rounded-xl bg-white pr-10 pl-6 text-sm text-[#111827] transition-colors outline-none placeholder:text-[#637381] focus:border-[#003087] focus:ring-1 focus:ring-[#003087] md:pr-14 "
           />
 
-          <div className="absolute top-1/2 right-4 -translate-y-1/2 transform md:right-[35px]">
-            <img src={Search} alt="search" className="h-5 w-5 text-gray-400 md:h-6 md:w-6" />
+          <div className="absolute top-1/2 -translate-y-1/2 transform right-5">
+            <img src={Search} alt="search" className="h-5 w-5 text-gray-400 " />
           </div>
         </div>
       </div>
@@ -158,13 +158,13 @@ const DepartmentsPage = () => {
           <table className="w-full min-w-full table-fixed border-collapse">
             <thead>
               <tr className="text-left">
-                <th className="w-[15%] py-4 text-center text-sm font-semibold text-[#111827] md:w-[10%] md:py-6 md:text-lg">
+                <th className="w-[15%] py-4 text-center text-sm font-semibold text-[#111827] md:w-[10%] md:text-lg">
                   ID
                 </th>
-                <th className="w-[60%] py-4 text-center text-sm font-semibold text-[#111827] md:w-[70%] md:py-6 md:text-lg">
+                <th className="w-[60%] py-4 text-center text-sm font-semibold text-[#111827] md:w-[70%] md:text-lg">
                   Name
                 </th>
-                <th className="w-[25%] py-4 text-center text-sm font-semibold text-[#111827] md:w-[20%] md:py-6 md:text-lg">
+                <th className="w-[25%] py-4 text-center text-sm font-semibold text-[#111827] md:w-[20%] md:text-lg">
                   Action
                 </th>
               </tr>

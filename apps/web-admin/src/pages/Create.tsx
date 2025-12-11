@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import CreateNewPasswordForm from '../components/auth/CreatenewpasswordForm'
-import logo from '../assets/icons/logo.svg'
-import Creategif from '../assets/icons/create-once.gif'
-import { resetPassword, verifyResetToken } from '../lib/api'
+import CreateNewPasswordForm from '@/components/auth/CreatenewpasswordForm'
+import logo from '@/assets/icons/logo.svg'
+import Creategif from '@/assets/icons/create-once.gif'
+import { resetPassword, verifyResetToken } from '@/lib/api'
 
 const CreateNewPassword = () => {
   const navigate = useNavigate()

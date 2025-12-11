@@ -7,8 +7,14 @@ RULES (in priority order):
 1. TOXICITY: Block profanity/insults/hate speech
    → status: "blocked", reason: "toxic"
 
-2. COMPETITOR: Block mentions of other universities (RMIT, FPT, Duy Tan, etc.)
+2. COMPETITOR: Block mentions of other universities (RMIT, FPT University, Duy Tan, etc.)
    → status: "blocked", reason: "competitor"
+   ⚠️ CONTEXT-AWARE FPT DETECTION:
+   * In PAYMENT context (with "thanh toán", "học phí", "trả góp", "payment", "tuition"):
+     - "FPT", "fpt", "FPT Pay" → ALLOWED (payment method)
+   * In COMPARISON context (with "so sánh", "compare", "tốt hơn", "hay hơn"):
+     - "FPT", "FPT University" → BLOCKED (competitor)
+   * Other payment methods: "VNPay", "Momo", "ZaloPay" are ALWAYS payment methods
 
 3. GREETING: Detect greetings (hi, hello, chào, alo)
    → status: "greeting"
@@ -60,6 +66,16 @@ Output: {{
   ]
 }}
 
+Input: "thanh toán học phí"
+Output: {{
+  "status": "valid",
+  "sub_questions": [
+    "Các hình thức thanh toán học phí được chấp nhận",
+    "Thủ tục thanh toán định danh và trả góp học phí",
+    "Thời hạn và chính sách thanh toán học phí"
+  ]
+}}
+
 For specific questions (4+ words), generate 1 focused sub-question:
 
 Input: "Làm thế nào để tôi được nhận thưởng"
@@ -67,6 +83,14 @@ Output: {{
   "status": "valid",
   "sub_questions": [
     "Điều kiện, mức thưởng và thủ tục xét khen thưởng cho sinh viên"
+  ]
+}}
+
+Input: "Làm thế nào để thanh toán định danh tài khoản và trả góp"
+Output: {{
+  "status": "valid",
+  "sub_questions": [
+    "Quy trình thanh toán định danh tài khoản và các hình thức trả góp học phí tại Greenwich"
   ]
 }}
 
@@ -166,22 +190,40 @@ RULES:
 
 2. SCOPE & RELEVANCY:
    - Only support questions related to Greenwich University Vietnam.
-   - Block questions about OTHER universities (RMIT, FPT University, Duy Tan, Bach Khoa, etc.)
+   - Block questions about OTHER universities (RMIT, Duy Tan, Bach Khoa, etc.)
      -> reason: "competitor"
-     ⚠️ IMPORTANT: "FPT Pay", "VNPay", "Momo", "ZaloPay" are PAYMENT METHODS (allowed if asking about tuition/fees)
+   - ⚠️ CONTEXT-AWARE BLOCKING (CRITICAL):
+     * PAYMENT CONTEXT (ALLOWED):
+       When query contains payment indicators: "thanh toán", "học phí", "trả góp", "payment", "tuition", "installment"
+       → Allow: "FPT", "fpt", "FPT Pay", "VNPay", "Momo", "ZaloPay", "banking", "chuyển khoản", "định danh", "tài khoản"
+       → Example: "thanh toán qua FPT" (FPT = FPT Pay, ALLOWED)
+     
+     * COMPARISON CONTEXT (BLOCKED):
+       When query contains comparison indicators: "so sánh", "compare", "tốt hơn", "hay hơn", "khác với"
+       → Block: "FPT", "FPT University", "RMIT", "Duy Tan"
+       → Example: "So sánh Greenwich với FPT" (FPT = FPT University, BLOCKED)
+     
+     * DEFAULT RULE: If "FPT" appears WITHOUT payment context, assume FPT University → BLOCKED
+   
    - Block irrelevant topics (coding help, weather, math, cooking, politics, etc.)
      -> reason: "irrelevant"
-   - Allow general questions implicitly about Greenwich (e.g., "Tuition fee?", "Major info?", "How to pay via FPT Pay?").
+   - Allow general questions implicitly about Greenwich (e.g., "Tuition fee?", "Major info?", "Payment methods?").
 
 3. LANGUAGE:
    - Allow only Vietnamese & English.
    - Block Chinese/Korean/other languages -> reason: "wrong_language"
 
 EXAMPLES OF ALLOWED QUESTIONS:
-- "Làm thế nào để thanh toán học phí qua FPT Pay?" → allowed (payment method)
-- "So sánh Greenwich với FPT University?" → blocked (competitor)
-- "Học phí tại FPT?" → blocked (asking about competitor's tuition)
+- "Làm thế nào để thanh toán học phí qua FPT Pay?" → allowed (payment context)
+- "Làm thế nào để thanh toán qua FPT?" → allowed (FPT in payment context = FPT Pay)
+- "Làm thế nào để thanh toán định danh tài khoản và trả góp?" → allowed (tuition payment)
 - "VNPay có được dùng để trả học phí không?" → allowed (payment method)
+- "Trả góp học phí như thế nào?" → allowed (tuition installment)
+
+EXAMPLES OF BLOCKED QUESTIONS:
+- "So sánh Greenwich với FPT University?" → blocked (competitor comparison)
+- "FPT có tốt không?" → blocked (FPT without payment context = FPT University)
+- "Greenwich hay FPT?" → blocked (competitor comparison)
 
 OUTPUT JSON ONLY:
 {{

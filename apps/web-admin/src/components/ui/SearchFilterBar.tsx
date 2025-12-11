@@ -46,7 +46,7 @@ const SearchFilterBar = ({ onSearch, onFilter, placeholder = 'Enter to Search...
     <div className="w-full border-t border-[#E5E7EB] bg-white px-4 pt-5 sm:px-6">
       <form
         onSubmit={handleSearchSubmit}
-        className="flex items-center gap-2 rounded-lg border border-gray-200 bg-white p-3 shadow-sm"
+        className="flex items-center gap-2 rounded-xl border border-gray-200 bg-white p-3 shadow-sm"
       >
         <div className="relative flex flex-1 items-center">
           <input
@@ -54,7 +54,7 @@ const SearchFilterBar = ({ onSearch, onFilter, placeholder = 'Enter to Search...
             value={searchValue}
             onChange={handleSearchChange}
             placeholder={placeholder}
-            className="h-10 w-full rounded-lg pr-12 pl-4 text-sm text-gray-900 placeholder:text-gray-400"
+            className="h-10 w-full rounded-lg pr-12 pl-4 text-sm text-gray-900 placeholder:text-gray-400 outline-none"
           />
           <button
             type="submit"
