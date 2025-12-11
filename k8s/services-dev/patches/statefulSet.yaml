@@ -48,7 +48,7 @@ spec:
               print(result.stdout)
               if result.stderr:
                   print(result.stderr)
-              
+
               # Check if error is about duplicate tables (schema already exists)
               if result.returncode != 0:
                   if 'DuplicateTable' in result.stderr or 'already exists' in result.stderr:

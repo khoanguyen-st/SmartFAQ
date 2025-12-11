@@ -35,6 +35,7 @@ pnpm-lock.yaml
 .idea/
 
 apps/api/venv
+apps/api/logs
 
 Storage-document.json
 

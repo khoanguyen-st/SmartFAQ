@@ -23,16 +23,34 @@ class CacheService:
         """Get or create Redis connection."""
         if self._redis is None:
             settings = get_settings()
-            # Extract host and port from CELERY_BROKER_URL
-            # Format: redis://host:port/db
+            # Extract host, port, and password from CELERY_BROKER_URL
+            # Format: redis://:password@host:port/db or redis://host:port/db
             broker_url = settings.CELERY_BROKER_URL
+            password = None
+
             if broker_url.startswith("redis://"):
-                broker_url = broker_url.replace("redis://", "")
-                if "/" in broker_url:
-                    broker_url = broker_url.split("/")[0]
-                parts = broker_url.split(":")
-                host = parts[0] if parts else "localhost"
-                port = int(parts[1]) if len(parts) > 1 else 6379
+                # Remove protocol
+                url_parts = broker_url.replace("redis://", "")
+
+                # Extract password if exists (:password@)
+                if "@" in url_parts:
+                    auth_part, host_part = url_parts.split("@", 1)
+                    if ":" in auth_part:
+                        password = auth_part.split(":", 1)[1]
+                else:
+                    host_part = url_parts
+
+                # Remove database number
+                if "/" in host_part:
+                    host_part = host_part.split("/")[0]
+
+                # Extract host and port
+                if ":" in host_part:
+                    host, port_str = host_part.rsplit(":", 1)
+                    port = int(port_str)
+                else:
+                    host = host_part
+                    port = 6379
             else:
                 host = "localhost"
                 port = 6379
@@ -40,6 +58,7 @@ class CacheService:
             self._redis = await redis.Redis(
                 host=host,
                 port=port,
+                password=password,
                 db=1,  # Use DB 1 for cache (DB 0 for Celery)
                 decode_responses=True,
                 socket_connect_timeout=5,

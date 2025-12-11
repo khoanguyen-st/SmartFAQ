@@ -1,7 +1,7 @@
 import asyncio
 import logging
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 
 from .api import admin, auth, chat, dashboard, departments, docs, fallback, staff
@@ -23,6 +23,25 @@ def create_app() -> FastAPI:
         redoc_url="/docs/redoc",
     )
 
+    # Add middleware to log all requests
+    @app.middleware("http")
+    async def log_requests(request: Request, call_next):
+        origin = request.headers.get("origin", "no-origin")
+        method = request.method
+        path = request.url.path
+        logger.info(f"Request: {method} {path} from origin: {origin}")
+
+        response = await call_next(request)
+
+        # Log response headers for OPTIONS requests
+        if method == "OPTIONS":
+            cors_header = response.headers.get("access-control-allow-origin", "MISSING")
+            logger.info(
+                f"OPTIONS response for {path}: status={response.status_code}, allow-origin={cors_header}"
+            )
+
+        return response
+
     # Configure CORS
     app.add_middleware(
         CORSMiddleware,
@@ -40,6 +59,7 @@ def create_app() -> FastAPI:
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
+        max_age=600,
     )
 
     app.include_router(auth.router, prefix="/api/auth", tags=["auth"])

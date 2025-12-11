@@ -20,13 +20,19 @@ ENV_FILE = os.getenv("SETTINGS_ENV_FILE", ".env")
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/settings", tags=["settings"])
 
+MASKED_KEY = "****************"
+
 
 @router.get("", response_model=SystemSettings)
 async def get_settings() -> SystemSettings:
     """Get current system settings."""
+    google_key = settings.GOOGLE_API_KEY
+    if google_key and len(google_key) > 4:
+        google_key = MASKED_KEY
+
     return SystemSettings(
         llm_model=settings.LLM_MODEL,
-        google_api_key=settings.GOOGLE_API_KEY,
+        google_api_key=google_key,
         llm_temperature=settings.LLM_TEMPERATURE,
         llm_max_tokens=settings.LLM_MAX_TOKENS,
         confidence_threshold=settings.CONFIDENCE_THRESHOLD,
@@ -62,7 +68,7 @@ async def update_settings(payload: SettingsUpdateRequest) -> SettingsUpdateRespo
         settings.LLM_MODEL = payload.llm_model
         updated_fields.append("llm_model")
 
-    if payload.google_api_key is not None:
+    if payload.google_api_key is not None and payload.google_api_key != MASKED_KEY:
         settings.GOOGLE_API_KEY = payload.google_api_key
         updated_fields.append("google_api_key")
 
