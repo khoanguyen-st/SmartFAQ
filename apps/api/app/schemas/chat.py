@@ -5,7 +5,6 @@ from datetime import datetime
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from ..constants.chat import FeedbackStatus
-from ..core.input_validation import UnsafeInputError, ensure_safe_text
 from ..utils.chat_input_utils import validate_channel_input
 
 
@@ -22,10 +21,7 @@ class ChatQuery(BaseModel):
         stripped = value.strip()
         if not stripped:
             raise ValueError("question must not be empty")
-        try:
-            return ensure_safe_text(stripped, field_name="question", max_length=1024)
-        except UnsafeInputError as exc:
-            raise ValueError(str(exc)) from exc
+        return stripped
 
 
 class ChatSource(BaseModel):

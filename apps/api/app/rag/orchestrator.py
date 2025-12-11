@@ -7,7 +7,8 @@ from typing import Dict, List, Optional
 
 from google.api_core import exceptions as google_exceptions
 
-from app.constants.departments import get_all_contacts_footer, get_department_contact_info
+from app.constants.chat import MISSING_INFO_PHRASES
+from app.constants.departments import get_all_contacts_footer
 from app.core.config import settings
 from app.rag.guardrail import GuardrailService
 from app.rag.llm import LLMWrapper
@@ -43,6 +44,7 @@ class RAGOrchestrator:
         top_k: int = 5,
         history: Optional[List[Dict]] = None,
         language: Optional[str] = None,
+        include_citations: bool = False,
     ) -> Dict:
         request_id = str(uuid.uuid4())[:8]
         metrics = RAGMetrics(request_id=request_id, question=question)
@@ -51,14 +53,16 @@ class RAGOrchestrator:
         raw_q = (question or "").strip()
 
         logger.info(
-            f"[{request_id}] Query Start: '{raw_q[:100]}' | History: {len(history) if history else 0}"
+            f"[{request_id}] Query Start: '{raw_q[:100]}' | History: {len(history) if history else 0} | Citations: {include_citations}"
         )
 
         if not raw_q:
             metrics.error_type = ErrorType.UNKNOWN
             metrics.error_message = "Empty question"
             metrics.finalize()
-            return self._response("Please input a valid question.", [], 0, t0, True, metrics)
+            return self._response(
+                "Please input a valid question.", [], 0, t0, True, metrics, query_fail=True
+            )
 
         final_search_query = raw_q
 
@@ -125,12 +129,12 @@ class RAGOrchestrator:
         if analysis.status == "blocked":
             msg = self._get_blocked_msg(analysis.reason, target_lang)
             metrics.finalize()
-            return self._response(msg, [], 1.0, t0, False, metrics)
+            return self._response(msg, [], 1.0, t0, False, metrics, query_fail=True)
 
         if analysis.status == "greeting":
             msg = self._get_greeting_msg(target_lang)
             metrics.finalize()
-            return self._response(msg, [], 1.0, t0, False, metrics)
+            return self._response(msg, [], 1.0, t0, False, metrics, query_fail=False)
 
         sub_qs = analysis.sub_questions or [refined_q]
         sub_qs = sub_qs[: settings.MAX_SUB_QUERIES]
@@ -195,19 +199,35 @@ class RAGOrchestrator:
                 if target_lang == "vi"
                 else "I could not find information in the documents."
             )
-            contacts_footer = get_all_contacts_footer(target_lang)
-            fb = f"{fb}{contacts_footer}"
             metrics.error_type = ErrorType.RETRIEVAL_EMPTY
             metrics.fallback_triggered = True
             metrics.finalize()
-            return self._response(fb, [], 0, t0, True, metrics)
+            return self._response(
+                fb, [], 0, t0, True, metrics, query_fail=True, language=target_lang
+            )
 
         metrics.start_stage("generate")
         try:
             logger.info(f"[{request_id}] Generating answer in '{target_lang}'...")
             ans = await self.llm.generate_answer_async(
-                refined_q, unique_docs, target_language=target_lang
+                refined_q,
+                unique_docs,
+                target_language=target_lang,
+                include_citations=include_citations,
             )
+
+            # FORCE remove citations if disabled (Double safety net)
+            if not include_citations:
+                import re
+
+                # Regex to match (Nguồn X - filename) or (Source X - filename) or (Nguồn X)
+                # Patterns:
+                # (Nguồn \d+.*?)
+                # (Source \d+.*?)
+                ans = re.sub(r"\((?:Nguồn|Source)\s+\d+.*?\)", "", ans, flags=re.IGNORECASE)
+                # Cleanup double spaces (leftover from removal)
+                ans = re.sub(r"\s{2,}", " ", ans)
+
             metrics.generation_ms = metrics.end_stage("generate")
 
             # Calculate retrieval quality (how good the retrieved documents are)
@@ -231,9 +251,13 @@ class RAGOrchestrator:
                 f"(retrieval={retrieval_quality:.3f}, answer={answer_confidence:.3f})"
             )
 
-            if final_confidence < settings.CONFIDENCE_THRESHOLD:
+            # Force fallback footer if answer indicates missing info
+            lower_ans = ans.lower()
+            missing_info_triggered = any(p in lower_ans for p in MISSING_INFO_PHRASES)
+
+            if final_confidence < settings.CONFIDENCE_THRESHOLD or missing_info_triggered:
                 logger.info(
-                    f"[{metrics.request_id}] CONF < THRESHOLD ({final_confidence:.3f} < {settings.CONFIDENCE_THRESHOLD}) → FALLBACK"
+                    f"[{metrics.request_id}] CONF < THRESHOLD ({final_confidence:.3f} < {settings.CONFIDENCE_THRESHOLD}) OR MISSING INFO DETECTED → FALLBACK"
                 )
                 metrics.fallback_triggered = True
 
@@ -248,30 +272,20 @@ class RAGOrchestrator:
                     except (TypeError, ValueError):
                         continue
 
-                dominant_dept_id: Optional[int] = None
-                if dept_counts:
-                    dominant_dept_id = max(dept_counts.items(), key=lambda x: x[1])[0]
+                # dominant_dept_id: Optional[int] = None
+                # if dept_counts:
+                #     dominant_dept_id = max(dept_counts.items(), key=lambda x: x[1])[0]
 
                 # Get primary contact info based on dominant department
-                primary_contact = get_department_contact_info(dominant_dept_id, target_lang)
+                # primary_contact = get_department_contact_info(dominant_dept_id, target_lang)
 
                 # Get footer with all contacts
                 contacts_footer = get_all_contacts_footer(target_lang)
 
                 if target_lang == "vi":
-                    warning = (
-                        f"⚠️ LƯU Ý: Câu trả lời dưới đây có độ tin cậy thấp ({final_confidence:.0%}).\n"
-                        f"Để được hỗ trợ chính xác nhất, vui lòng liên hệ: {primary_contact}\n"
-                        f"{'-'*50}\n\n"
-                    )
-                    ans = f"{warning}{ans}{contacts_footer}"
+                    ans = f"{ans}{contacts_footer}"
                 else:
-                    warning = (
-                        f"⚠️ WARNING: The answer below has low confidence ({final_confidence:.0%}).\n"
-                        f"For accurate assistance, please contact: {primary_contact}\n"
-                        f"{'-'*50}\n\n"
-                    )
-                    ans = f"{warning}{ans}{contacts_footer}"
+                    ans = f"{ans}{contacts_footer}"
 
             metrics.finalize()
             return self._response(
@@ -283,6 +297,7 @@ class RAGOrchestrator:
                 metrics,
                 retrieval_quality=retrieval_quality,
                 answer_confidence=answer_confidence,
+                language=target_lang,
             )
 
         except google_exceptions.ResourceExhausted as e:
@@ -362,6 +377,8 @@ class RAGOrchestrator:
         metrics: Optional[RAGMetrics] = None,
         retrieval_quality: Optional[float] = None,
         answer_confidence: Optional[float] = None,
+        query_fail: bool = False,
+        language: str = "en",
     ):
         response = {
             "answer": ans,

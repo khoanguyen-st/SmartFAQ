@@ -3,10 +3,8 @@ kind: Ingress
 metadata:
   name: smartfaq-api
   annotations:
-    acme.cert-manager.io/http01-edit-in-place: "true"
-    cert-manager.io/cluster-issuer: letsencrypt-prod
     nginx.org/client-max-body-size: "50m"
-    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+    nginx.org/ssl-protocols: "TLSv1.2 TLSv1.3"
 spec:
   ingressClassName: nginx
   tls:

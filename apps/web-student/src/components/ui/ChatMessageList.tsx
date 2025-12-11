@@ -2,18 +2,24 @@ import { useEffect, useRef } from 'react'
 import AssistantMessage from './AssistantMessage'
 import { ChatHistoryMessage } from '@/services/chat.services'
 
+import FAQSuggestions from './FAQSuggestions'
+
 interface ChatMessageListProps {
   messages: ChatHistoryMessage[]
   isLoading: boolean
   sessionId: string | null
+  onQuestionClick?: (question: string) => void
 }
 
-const ChatMessageList = ({ messages, isLoading, sessionId }: ChatMessageListProps) => {
+const ChatMessageList = ({ messages, isLoading, sessionId, onQuestionClick }: ChatMessageListProps) => {
   const bottomRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages, isLoading])
+
+  // Show suggestions only if there is just the Welcome message (or no messages)
+  const showSuggestions = messages.length <= 1 && !!onQuestionClick
 
   return (
     <div className="chat__content relative z-0 flex flex-1 flex-col overflow-y-auto scroll-smooth py-4">
@@ -38,6 +44,8 @@ const ChatMessageList = ({ messages, isLoading, sessionId }: ChatMessageListProp
 
         return <AssistantMessage key={index} message={msg} sessionId={sessionId} />
       })}
+
+      {showSuggestions && onQuestionClick && <FAQSuggestions onQuestionClick={onQuestionClick} language="vi" />}
 
       {isLoading && (
         <div className="message message--sender">

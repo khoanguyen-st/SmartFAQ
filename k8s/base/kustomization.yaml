@@ -6,6 +6,7 @@ resources:
   - statefulSet.yaml
   - service.yaml
   - ingress.yaml
+  - certificate.yaml
   - network-policy.yaml
   - resource-quota.yaml
   - chroma.yaml
