@@ -144,7 +144,7 @@ const DepartmentsPage = () => {
             placeholder="Enter to Search..."
             value={searchTerm}
             onChange={e => setSearchTerm(e.target.value)}
-            className="h-[50px] w-full rounded-xl bg-white pr-10 pl-4 text-sm text-[#111827] transition-colors outline-none placeholder:text-[#637381] focus:border-[#003087] focus:ring-1 focus:ring-[#003087] md:pr-14 "
+            className="h-15 w-full rounded-xl bg-white pr-10 pl-6 text-sm text-[#111827] transition-colors outline-none placeholder:text-[#637381] focus:border-[#003087] focus:ring-1 focus:ring-[#003087] md:pr-14 "
           />
 
           <div className="absolute top-1/2 -translate-y-1/2 transform right-5">

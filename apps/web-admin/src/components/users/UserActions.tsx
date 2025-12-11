@@ -3,6 +3,7 @@ import type { UserActionsProps } from '@/interfaces/user-actions'
 import KeyIcon from '@/assets/keyIcon.svg'
 import EditIcon from '@/assets/icons/lucide_edit.svg'
 import LockIcon from '@/assets/icons/lockicon.svg'
+import UnLockIcon from '@/assets/icons/unlockicon.svg'
 
 export const UserActions: React.FC<UserActionsProps> = ({
   user,
@@ -30,17 +31,18 @@ export const UserActions: React.FC<UserActionsProps> = ({
           className="rounded-full p-2 transition-colors hover:bg-slate-100"
           title="Unlock User"
         >
-          <img src={LockIcon} alt="Unlock" className="h-5 w-5 opacity-50" />
+          <img src={LockIcon} alt="Unlock" className="h-6 w-6" />
         </button>
       )
     }
+
     return (
       <button
         onClick={() => onLock?.(user.id)}
         className="rounded-full p-2 transition-colors hover:bg-slate-100"
         title="Lock User"
       >
-        <img src={LockIcon} alt="Lock" className="h-5 w-5" />
+        <img src={UnLockIcon} alt="Lock" className="h-6 w-6" />
       </button>
     )
   }

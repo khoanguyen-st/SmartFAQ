@@ -4,7 +4,7 @@ import { Menu, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { logout } from '@/lib/api'
 import { getCurrentUserInfo, type CurrentUserInfo } from '@/services/auth.services'
-import LogoutIcon from '@/assets/icons/exit-logout.svg?react'
+import LogoutIcon from '@/assets/icons/logout.svg?react'
 import SettingIcon from '@/assets/icons/setting.svg?react'
 import avatarDefaultUrl from '@/assets/icons/user-avatar.svg'
 import educationUrl from '@/assets/icons/education.svg'
@@ -109,13 +109,17 @@ const ShellLayout = () => {
 
   // Listen for avatar update events from Profile page
   useEffect(() => {
-    const handleAvatarUpdate = () => {
+    const handleRefreshUser = () => {
       fetchUserInfo()
     }
 
-    window.addEventListener('userAvatarUpdated', handleAvatarUpdate)
+    // Lắng nghe cả 2 sự kiện: Avatar thay đổi & Info (username) thay đổi
+    window.addEventListener('userAvatarUpdated', handleRefreshUser)
+    window.addEventListener('userInfoUpdated', handleRefreshUser) 
+
     return () => {
-      window.removeEventListener('userAvatarUpdated', handleAvatarUpdate)
+      window.removeEventListener('userAvatarUpdated', handleRefreshUser)
+      window.removeEventListener('userInfoUpdated', handleRefreshUser)
     }
   }, [fetchUserInfo])
 
@@ -165,7 +169,7 @@ const ShellLayout = () => {
         )}
       >
         <div className="mb-6 flex items-center justify-between">
-          <div className="text-lg font-semibold">SmartFAQ Admin</div>
+          <div className="ml-4 text-lg font-semibold">SmartFAQ Admin</div>
           <button
             onClick={toggleSidebar}
             className="rounded-full p-1 text-slate-300 transition-colors hover:bg-slate-700 hover:text-white lg:hidden"
@@ -193,12 +197,13 @@ const ShellLayout = () => {
           ))}
         </nav>
 
-        <button
-          onClick={handleLogout}
-          className="mt-auto rounded-lg bg-transparent px-3.5 py-2 text-sm text-red-400 transition-colors duration-200 hover:bg-red-600/20 hover:text-red-300"
-        >
-          Logout
-        </button>
+        <div className="mt-auto flex items-center justify-center bg-red-600 hover:bg-red-700 rounded-lg ">
+
+          <LogoutIcon className="h-5 w-5 text-white" />
+          <button onClick={handleLogout} className="p-2.5 text-sm flex ">
+            Logout
+          </button>
+        </div>
       </aside>
     ),
     [isSidebarOpen, toggleSidebar, handleNavigation, handleLogout, filteredNavItems]
@@ -242,7 +247,7 @@ const ShellLayout = () => {
                 <img
                   src={chevronDownUrl}
                   alt="menu"
-                  className={cn('h-4 w-4 transition-transform duration-200', isUserMenuOpen && 'rotate-180')}
+                  className={cn('h-4 w-4 transition-transform duration-200 ml-1', isUserMenuOpen && 'rotate-180')}
                 />
               </button>
 
@@ -299,7 +304,7 @@ const ShellLayout = () => {
                     )}
 
                     {/* Logout */}
-                  <div className="border-t border-gray-200" />
+                    <div className="border-t border-gray-200" />
                     <button
                       onClick={() => {
                         handleLogout()
@@ -307,7 +312,7 @@ const ShellLayout = () => {
                       }}
                       className="flex w-full items-center gap-2 px-4 py-2.5 text-left text-sm text-red-600 transition-colors hover:bg-red-50"
                     >
-                      <LogoutIcon className="text-red h-5 w-5" />
+                      <LogoutIcon className="h-5 w-5" />
                       <span className="text-base font-semibold">Logout</span>
                     </button>
                   </div>

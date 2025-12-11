@@ -546,8 +546,8 @@ const ViewChatPage = () => {
             disabled={isLoading}
             className="chat__clear-button group ml-2 flex shrink-0 items-center hover:text-red-500 disabled:opacity-50"
           >
-            <TrashIcon className="TrashIcon mr-0 h-[14px] w-[12px] shrink-0 text-[#6B7280] group-hover:text-red-500 sm:mr-1" />
-            <p className="hidden text-[14px] text-[#6B7280] group-hover:text-red-500 sm:block">Clear Chat</p>
+            <TrashIcon className="TrashIcon mr-0 h-5 w-5 shrink-0 text-[#6B7280] group-hover:text-red-500 sm:mr-1" />
+            <p className="hidden text-md text-[#6B7280] group-hover:text-red-500 sm:block">Clear Chat</p>
           </button>
         </div>
 

@@ -66,7 +66,7 @@ const QueryLogTable = () => {
               setCurrentPage(1)
             }}
             placeholder="Search in answers..."
-            className="focus:border-primary-600 focus:ring-primary-600/20 rounded-lg border border-blue-200 px-3.5 py-2.5 text-base focus:ring-2 focus:outline-none"
+            className=" focus:ring-blue-800 rounded-lg border border-slate-200 px-3.5 py-2.5 text-base focus:ring-1 focus:outline-none"
           />
           <div className="flex gap-3"></div>
         </div>
@@ -92,7 +92,7 @@ const QueryLogTable = () => {
               setSelectedLang(e.target.value)
               setCurrentPage(1)
             }}
-            className="focus:border-primary-600 focus:ring-primary-600/20 rounded-lg border border-blue-200 px-3 py-1.5 text-sm focus:ring-2 focus:outline-none"
+            className=" focus:ring-blue-800 rounded-lg border border-blue-200 px-3 py-1.5 text-sm focus:ring-1 focus:outline-none"
           >
             <option value="">All Languages</option>
             <option value="en">English</option>
@@ -105,7 +105,7 @@ const QueryLogTable = () => {
               setSelectedChannel(e.target.value)
               setCurrentPage(1)
             }}
-            className="focus:border-primary-600 focus:ring-primary-600/20 rounded-lg border border-blue-200 px-3 py-1.5 text-sm focus:ring-2 focus:outline-none"
+            className=" focus:ring-blue-800 rounded-lg border border-blue-200 px-3 py-1.5 text-sm focus:ring-1 focus:outline-none"
           >
             <option value="">All Channels</option>
             <option value="widget">Widget</option>
@@ -117,30 +117,30 @@ const QueryLogTable = () => {
             <button
               type="button"
               onClick={handleClearFilters}
-              className="text-sm font-semibold text-blue-600 hover:text-blue-700"
+              className="text-sm font-semibold text-blue-600 hover:text-blue-700 cursor-pointer rounded-lg border border-blue-200 px-3 py-1.5"
             >
               Clear Filters
             </button>
           )}
 
-          <div className="ml-auto text-sm text-slate-600">Total: {total} logs</div>
+          <div className="ml-auto mr-2 text-sm text-slate-600">Total: {total} logs</div>
         </div>
       </div>
 
       {/* Table */}
-      <div className="overflow-x-auto">
-        <table className="w-full border-collapse text-sm">
-          <thead className="bg-blue-50 text-xs tracking-wider text-slate-700 uppercase">
-            <tr>
-              <th className="border-b border-slate-200 px-3 py-3 text-left">Timestamp</th>
-              <th className="border-b border-slate-200 px-3 py-3 text-left">Question</th>
-              <th className="border-b border-slate-200 px-3 py-3 text-left">Confidence</th>
-              <th className="border-b border-slate-200 px-3 py-3 text-left">Relevance</th>
-              <th className="border-b border-slate-200 px-3 py-3 text-left">Fallback</th>
-              <th className="border-b border-slate-200 px-3 py-3 text-left">Language</th>
-              <th className="border-b border-slate-200 px-3 py-3 text-left">Channel</th>
-              <th className="border-b border-slate-200 px-3 py-3 text-left">Response Time</th>
-              <th className="border-b border-slate-200 px-3 py-3 text-center">Actions</th>
+      <div className="overflow-x-auto border border-gray-200 bg-white rounded-xl">
+        <table className="w-full">
+          <thead className="bg-white text-xs tracking-wider text-slate-700 uppercase ">
+            <tr className='border-b border-slate-200 '>
+              <th className=" px-3 py-4 text-left">Timestamp</th>
+              <th className=" px-3 py-4 text-left">Question</th>
+              <th className=" px-3 py-4 text-left">Confidence</th>
+              <th className=" px-3 py-4 text-left">Relevance</th>
+              <th className=" px-3 py-4 text-left">Fallback</th>
+              <th className=" px-3 py-4 text-left">Language</th>
+              <th className=" px-3 py-4 text-left">Channel</th>
+              <th className=" px-3 py-4 text-left">Response Time</th>
+              <th className=" px-3 py-4 text-center">Actions</th>
             </tr>
           </thead>
           <tbody>

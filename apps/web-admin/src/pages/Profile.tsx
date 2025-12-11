@@ -121,6 +121,11 @@ const ProfilePage = () => {
         // Cập nhật state local nếu thành công
         setProfile(prev => (prev ? { ...prev, [editingField]: tempValue } : null))
         setEditingField(null)
+        
+        if (editingField === 'username') {
+          // Bắn event để Header/Sidebar lắng nghe và fetch lại thông tin user mới
+          window.dispatchEvent(new CustomEvent('userInfoUpdated')) 
+        }
       } catch (err) {
         console.error('Update failed:', err)
         alert('Failed to update profile.')

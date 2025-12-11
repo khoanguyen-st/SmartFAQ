@@ -2,6 +2,8 @@ import React, { useMemo, useState, useEffect } from 'react'
 import type { CreateUserDialogProps, CreateUserDialogPayload } from '@/interfaces/create-user-dialog'
 import { fetchDepartments, type IDepartment } from '@/services/department.services'
 import ChevronDown from '@/assets/icons/chevron-down.svg'
+import eyeIcon from '@/assets/icons/eye.svg'
+import eyeOffIcon from '@/assets/icons/eye-off.svg'
 
 export const CreateUserDialog: React.FC<CreateUserDialogProps> = ({
   open,
@@ -30,12 +32,17 @@ export const CreateUserDialog: React.FC<CreateUserDialogProps> = ({
     }
   }, [open])
 
+  const [showPassword, setShowPassword] = useState(false)
+
   const isSubmitDisabled = useMemo(() => {
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/
+    const isPasswordValid = passwordRegex.test(formData.password)
+
     const baseValidation =
       !formData.email ||
       !formData.username ||
       !formData.password ||
-      formData.password.length < 8 ||
+      !isPasswordValid ||
       !formData.role ||
       !formData.campus
 
@@ -104,9 +111,11 @@ export const CreateUserDialog: React.FC<CreateUserDialogProps> = ({
               <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">{error}</div>
             )}
 
-            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-              <div className="col-span-1 sm:col-span-2">
-                <label className="mb-1.5 block text-sm font-medium text-slate-700">Email <span className="text-red-500">*</span></label>
+            <div className="flex flex-col gap-6">
+              <div className="w-full mb-4">
+                <label className="mb-1.5 block text-sm font-medium text-slate-700">
+                  Email <span className="text-red-500">*</span>
+                </label>
                 <input
                   required
                   type="email"
@@ -117,39 +126,75 @@ export const CreateUserDialog: React.FC<CreateUserDialogProps> = ({
                 />
               </div>
 
-              <div>
-                <label className="mb-1.5 block text-sm font-medium text-slate-700">Username <span className="text-red-500">*</span></label>
-                <input
-                  required
-                  value={formData.username}
-                  onChange={e => setFormData({ ...formData, username: e.target.value })}
-                  className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:border-blue-500 focus:outline-none"
-                  placeholder="username"
-                />
-              </div>
+              <div className="flex flex-col gap-6">
+                <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+                  <div>
+                    <label className="mb-1.5 block text-sm font-medium text-slate-700">
+                      Username <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      required
+                      value={formData.username}
+                      onChange={e => setFormData({ ...formData, username: e.target.value })}
+                      className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:border-blue-500 focus:outline-none"
+                      placeholder="username"
+                    />
+                  </div>
 
-              <div>
-                <label className="mb-1.5 block text-sm font-medium text-slate-700">Password <span className="text-red-500">*</span></label>
-                <input
-                  required
-                  type="password"
-                  value={formData.password}
-                  minLength={8}
-                  onChange={e => setFormData({ ...formData, password: e.target.value })}
-                  className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:border-blue-500 focus:outline-none"
-                  placeholder="••••••••"
-                />
+                  <div className="relative flex flex-col">
+                    <label className="mb-1.5 block text-sm font-medium text-slate-700">
+                      Password <span className="text-red-500">*</span>
+                    </label>
+                    <div className="relative">
+                      <input
+                        required
+                        type={showPassword ? 'text' : 'password'}
+                        value={formData.password}
+                        onChange={e => setFormData({ ...formData, password: e.target.value })}
+                        className={`w-full rounded-xl border px-4 py-3 text-sm focus:outline-none ${
+                          formData.password && !/^(?=.*[A-Z])(?=.*\d).{8,}$/.test(formData.password)
+                            ? 'border-red-500 focus:border-red-500 focus:ring-1 focus:ring-red-500/20'
+                            : 'border-slate-200 focus:border-blue-500'
+                        }`}
+                        placeholder="••••••••"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute inset-y-0 right-3 flex items-center justify-center text-gray-400 hover:text-gray-700"
+                      >
+                        <img src={showPassword ? eyeIcon : eyeOffIcon} alt="Toggle" className="h-5 w-5" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <div
+                  className={`grid transition-all duration-300 ease-in-out ${
+                    formData.password && !/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/.test(formData.password)
+                      ? '-mt-2 grid-rows-[1fr] opacity-100'
+                      : 'mt-0 grid-rows-[0fr] opacity-0'
+                  } origin-bottom`}
+                >
+                  <div className="overflow-hidden">
+                    <p className="text-xs text-red-500 text-center">
+                      The password must be at least 8 characters long, including at least one uppercase letter and one number, and one special character.
+                    </p>
+                  </div>
+                </div>
               </div>
             </div>
 
             <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
               <div className="relative w-full">
-                <label className="mb-1 block text-sm font-medium text-slate-700">Role <span className="text-red-500">*</span></label>
+                <label className="mb-1 block text-sm font-medium text-slate-700">
+                  Role <span className="text-red-500">*</span>
+                </label>
                 <select
                   required
                   value={formData.role}
                   onChange={e => setFormData({ ...formData, role: e.target.value })}
-                  className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm focus:border-blue-500 focus:outline-none appearance-none"
+                  className="w-full appearance-none rounded-xl border border-slate-200 px-4 py-2.5 text-sm focus:border-blue-500 focus:outline-none"
                 >
                   <option value="" disabled>
                     Select Role
@@ -157,18 +202,20 @@ export const CreateUserDialog: React.FC<CreateUserDialogProps> = ({
                   <option value="admin">Admin</option>
                   <option value="staff">Staff</option>
                 </select>
-                <span className="pointer-events-none h-10 w-10 absolute inset-y-0 top-6.25 right-0 flex items-center justify-center">
-                  <img src={ChevronDown} alt="chevron-down" className="h-5 w-5"/>
+                <span className="pointer-events-none absolute inset-y-0 top-6.25 right-0 flex h-10 w-10 items-center justify-center">
+                  <img src={ChevronDown} alt="chevron-down" className="h-5 w-5" />
                 </span>
               </div>
 
               <div className="relative w-full">
-                <label className="mb-1 block text-sm font-medium text-slate-700">Campus <span className="text-red-500">*</span></label>
+                <label className="mb-1 block text-sm font-medium text-slate-700">
+                  Campus <span className="text-red-500">*</span>
+                </label>
                 <select
                   required
                   value={formData.campus}
                   onChange={e => setFormData({ ...formData, campus: e.target.value })}
-                  className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm focus:border-blue-500 focus:outline-none appearance-none"
+                  className="w-full appearance-none rounded-xl border border-slate-200 px-4 py-2.5 text-sm focus:border-blue-500 focus:outline-none"
                 >
                   <option value="" disabled>
                     Select Campus
@@ -178,8 +225,8 @@ export const CreateUserDialog: React.FC<CreateUserDialogProps> = ({
                   <option value="DN">Da Nang</option>
                   <option value="CT">Can Tho</option>
                 </select>
-                <span className="pointer-events-none h-10 w-10 absolute inset-y-0 top-6.25 right-0 flex items-center justify-center">
-                  <img src={ChevronDown} alt="chevron-down" className="h-5 w-5"/>
+                <span className="pointer-events-none absolute inset-y-0 top-6.25 right-0 flex h-10 w-10 items-center justify-center">
+                  <img src={ChevronDown} alt="chevron-down" className="h-5 w-5" />
                 </span>
               </div>
             </div>

@@ -183,6 +183,7 @@ const Users: React.FC = () => {
           <h1 className="font-bold mb-2 text-slate-900 text-3xl">User Management</h1>
           <p className="text-base text-slate-500">Manage user accounts and system access</p>
         </div>
+        
         <div className="flex gap-3">
           <button
             onClick={() => setCreateDialogOpen(true)}
@@ -212,7 +213,7 @@ const Users: React.FC = () => {
         )}
       />
 
-      <div className="rounded-xl shadow-lg shadow-slate-900/10 border border-slate-100">
+      <div className="rounded-2xl border border-gray-200 bg-white shadow-lg">      
         <UserTable
           users={paginatedUsers}
           loading={loading}

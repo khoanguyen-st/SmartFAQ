@@ -31,7 +31,7 @@ const TrendsChart = ({ refreshKey = 0 }: TrendsChartProps) => {
           <h2 className="text-xl font-semibold text-slate-900">Weekly Activity</h2>
         </div>
 
-        <hr className="mb-4 border-gray-100" />
+        <hr className="mb-4 border-gray-200" />
 
         <div className="h-64">
           {loading ? (
