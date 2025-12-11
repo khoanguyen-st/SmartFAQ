@@ -84,29 +84,29 @@ const ChatWidget = () => {
       >
         <ConfirmModal isOpen={showConfirm} onClose={() => setShowConfirm(false)} onConfirm={handleConfirmDelete} />
 
-          <ChatContainer
-            messages={messages}
-            isLoading={isLoading}
-            onSend={sendMessage}
-            sessionId={sessionId}
-            onQuestionClick={handleFAQClick}
-            headerAction={
-              <button
-                onClick={handleExpand}
+        <ChatContainer
+          messages={messages}
+          isLoading={isLoading}
+          onSend={sendMessage}
+          sessionId={sessionId}
+          onQuestionClick={handleFAQClick}
+          headerAction={
+            <button
+              onClick={handleExpand}
               className="flex cursor-pointer items-center rounded-lg p-1 font-medium text-[#003087] duration-150 hover:bg-[#e2e2fc] hover:text-[#0047ca]"
-              >
-                <ExpandIcon className="h-6 w-6" />
-              </button>
-            }
-            headerAdditionalActions={
-              <button
-                onClick={handleClearClick}
+            >
+              <ExpandIcon className="h-6 w-6" />
+            </button>
+          }
+          headerAdditionalActions={
+            <button
+              onClick={handleClearClick}
               className="flex cursor-pointer items-center rounded-md p-1 font-medium text-[#d31e1e] duration-150 hover:bg-[#fce2e2] hover:text-[#d30f0f]"
-              >
-                <TrashIcon className="h-6 w-6" />
-              </button>
-            }
-          />
+            >
+              <TrashIcon className="h-6 w-6" />
+            </button>
+          }
+        />
       </div>
 
       <div
