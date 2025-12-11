@@ -210,7 +210,7 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({ isOpen, onClo
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-      <div className="relative h-auto min-h-[629px] w-[698px] rounded-2xl bg-white">
+      <div className="relative h-auto min-h-150 w-[698px] rounded-2xl bg-white">
         <div className="pt-[45px] pl-[68px]">
           <h2 className="mb-2 text-3xl font-bold text-slate-900">Change Password</h2>
           <p className="text-base text-slate-600">Secure your account with a new password.</p>
@@ -240,11 +240,11 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({ isOpen, onClo
               'mt-[20px]'
             )}
 
-            <div className="flex w-full justify-end p-12 gap-6 pr-[56px]">
+            <div className="flex w-full justify-end p-6 gap-6 pr-[56px]">
               <button
                 type="button"
                 onClick={handleCancel}
-                className="flex h-15 w-30 items-center justify-center rounded-2xl border-2 border-[#F3F4F6] bg-white text-[16px] font-medium text-black transition hover:bg-gray-50 shadow-lg"
+                className="flex h-12 w-30 items-center justify-center rounded-2xl border-2 border-[#F3F4F6] bg-white text-[16px] font-medium text-black transition-all duration-200 ease-in-out hover:bg-gray-50 shadow-lg hover:scale-102"
               >
                 Cancel
               </button>
@@ -252,7 +252,7 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({ isOpen, onClo
               <button
                 type="submit"
                 disabled={isLoading}
-                className="flex h-15 w-30 items-center justify-center rounded-2xl bg-[#003087] text-[16px] font-medium text-white transition hover:bg-[#00205a] disabled:opacity-70 shadow-lg"
+                className="flex h-12 w-30 items-center justify-center rounded-2xl bg-[#003087] text-[16px] font-medium text-white transition-all duration-200 ease-in-out hover:bg-[#00205a] disabled:opacity-70 shadow-lg hover:scale-102"
               >
                 {isLoading ? '...' : 'Update'}
               </button>

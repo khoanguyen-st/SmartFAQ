@@ -1,9 +1,9 @@
 import React, { useState } from 'react'
 import { Link } from 'react-router-dom'
 
-import eyeIcon from '@/assets/icons/eye.svg'
+import eye from '@/assets/icons/eye.svg'
+import eyeOff from '@/assets/icons/eye-off.svg'
 import userIcon from '@/assets/icons/email.svg'
-import eyeOffIcon from '@/assets/icons/eye-off.svg'
 import ChevronDown from '@/assets/icons/chevron-down.svg'
 
 interface LoginFormProps {
@@ -97,9 +97,9 @@ const LoginForm = ({ onSubmit, error }: LoginFormProps) => {
           <button
             type="button"
             onClick={() => setShowPassword(!showPassword)}
-            className="absolute inset-y-0 right-3 flex items-center justify-center text-gray-400 hover:text-gray-700"
+            className="absolute inset-y-0 right-3 flex items-center justify-center text-slate-800"
           >
-            <img src={showPassword ? eyeIcon : eyeOffIcon} alt="Toggle password" className="h-5 w-5" />
+            <img src={showPassword ? eye : eyeOff} alt="Toggle password" className="h-5 w-5" />
           </button>
         </div>
 

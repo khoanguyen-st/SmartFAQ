@@ -197,10 +197,9 @@ const ShellLayout = () => {
           ))}
         </nav>
 
-        <div className="mt-auto flex items-center justify-center bg-red-600 hover:bg-red-700 rounded-lg ">
-
-          <LogoutIcon className="h-5 w-5 text-white" />
-          <button onClick={handleLogout} className="p-2.5 text-sm flex ">
+        <div className="mt-auto flex items-center justify-center text-rose-600 hover:text-rose-700">
+          <LogoutIcon className="h-5 w-5"/>
+          <button onClick={handleLogout} className="p-2.5 text-md flex ">
             Logout
           </button>
         </div>

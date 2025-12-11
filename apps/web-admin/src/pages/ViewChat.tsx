@@ -446,7 +446,11 @@ const ViewChatPage = () => {
           ))}
           {isLoading && (
             <div className="message message--sender">
-              <p className="animate-pulse">Typing...</p>
+              <div className="flex gap-1">
+                <span className="h-2 w-2 animate-bounce rounded-full bg-gray-400"></span>
+                <span className="h-2 w-2 animate-bounce rounded-full bg-gray-400 delay-150"></span>
+                <span className="h-2 w-2 animate-bounce rounded-full bg-gray-400 delay-300"></span>
+              </div>
             </div>
           )}
           {errorState && !messages.some(m => m.type === 'error') && (

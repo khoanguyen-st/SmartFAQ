@@ -1,6 +1,6 @@
 import { useState, FC } from 'react'
-import eyeIcon from '../../assets/icons/eye.svg'
-import eyeOffIcon from '../../assets/icons/eye-off.svg'
+import eyeIcon from '@/assets/icons/eye.svg'
+import eyeOffIcon from '@/assets/icons/eye-off.svg'
 
 interface CreateNewPasswordFormProps {
   onSubmit: (password: string, confirmPassword: string) => Promise<void>

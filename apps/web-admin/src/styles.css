@@ -133,7 +133,7 @@ input[type="password"] {
 }
 
 tr:nth-child(even) {
-  background: var(--color-gray-1);
+  @apply bg-sky-50;
 }
 
 @layer base {
