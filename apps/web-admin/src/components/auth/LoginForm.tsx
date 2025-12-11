@@ -99,7 +99,7 @@ const LoginForm = ({ onSubmit, error }: LoginFormProps) => {
             onClick={() => setShowPassword(!showPassword)}
             className="absolute inset-y-0 right-3 flex items-center justify-center text-gray-400 hover:text-gray-700"
           >
-            <img src={showPassword ? eyeOffIcon : eyeIcon} alt="Toggle password" className="h-5 w-5" />
+            <img src={showPassword ? eyeIcon : eyeOffIcon} alt="Toggle password" className="h-5 w-5" />
           </button>
         </div>
 

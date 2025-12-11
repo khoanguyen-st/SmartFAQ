@@ -1,7 +1,7 @@
 // apps/web-admin/src/services/user.services.ts
 import { API_BASE_URL } from '@/lib/api'
 // Import thêm Department interface từ types
-import type { Department } from '@/types/users' 
+import type { Department } from '@/types/users'
 
 export interface UserProfile {
   id: number
@@ -54,7 +54,7 @@ export async function getUserProfile(userId: number): Promise<UserProfile> {
     address: data.address || '',
     avatar_url: getImageUrl(data.image),
     // Map dữ liệu department từ backend (nếu có)
-    departments: data.departments || [] 
+    departments: data.departments || []
   }
 }
 

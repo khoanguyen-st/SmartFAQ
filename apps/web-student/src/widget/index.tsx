@@ -5,6 +5,14 @@ import { MemoryRouter } from 'react-router-dom'
 
 import styleText from '../styles.css?inline'
 
+declare global {
+  interface Window {
+    ChatWidget: {
+      init: (config?: ChatWidgetConfig) => void
+    }
+  }
+}
+
 const WIDGET_ID = 'my-chat-widget-root'
 
 export interface ChatWidgetConfig {
@@ -83,11 +91,15 @@ export const initWidget = (config?: ChatWidgetConfig) => {
   )
 }
 
-// Expose ra window
+// Export for Vite library mode
+export const init = initWidget
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 ;(window as any).ChatWidget = {
   init: initWidget
 }
 
-// Gọi luôn để test
-initWidget()
+// Auto-init only in standalone mode (not when embedded)
+if (import.meta.env.DEV && !document.getElementById(WIDGET_ID)) {
+  initWidget()
+}

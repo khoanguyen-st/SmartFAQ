@@ -11,13 +11,10 @@ from minio import Minio
 from minio.error import S3Error
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import selectinload
 
 from ..core.config import settings
 from ..core.database import AsyncSessionLocal
 from ..models.document import Document
-from ..models.document_version import DocumentVersion
-from ..models.user import User
 from ..rag.vector_store import delete_by_document_id
 
 minio_client = Minio(
@@ -125,51 +122,30 @@ async def generate_unique_title(db: AsyncSession, original_title: str) -> str:
     return f"{base} ({max_num + 1}){ext}"
 
 
-async def get_user_department_id(user_id: int, db: AsyncSession) -> int:
-    """Fetch the department ID of a user by their ID."""
-    stmt = select(User).where(User.id == user_id).options(selectinload(User.departments))
-    result = await db.execute(stmt)
-    user = result.scalar_one_or_none()
-    if not user or not user.departments:
-        raise UserNotFound(f"User with ID {user_id} not found or has no department.")
-
-    return user.departments[0].id
-
-
 async def create_document_record(
     db: AsyncSession,
     title: str,
-    user_id: int,
     file_path: str | None = None,
     file_size: int | None = None,
     format: str | None = None,
+    creator_id: int | None = None,
+    department_id: int | None = None,
 ) -> int:
     current_title = await generate_unique_title(db, title)
-
-    department_id = await get_user_department_id(user_id, db)
 
     doc = Document(
         title=current_title,
         language="vi",
         status="REQUEST",
+        version_no=1,
+        file_path=file_path or "",
+        file_size=file_size,
+        format=format or "bin",
+        creator_id=creator_id,
         department_id=department_id,
     )
     db.add(doc)
     await db.flush()
-
-    if file_path:
-        dv = DocumentVersion(
-            document_id=doc.id,
-            version_no=1,
-            file_path=file_path,
-            file_size=file_size,
-            format=format or "bin",
-        )
-        db.add(dv)
-        await db.flush()
-
-        doc.current_version_id = dv.id
-        db.add(doc)
 
     return doc.id
 
@@ -185,14 +161,15 @@ async def async_session_scope():
             raise
 
 
-async def enqueue_single_document(file: UploadFile, user_id: int) -> dict:
+async def enqueue_single_document(
+    file: UploadFile, creator_id: int | None = None, department_id: int | None = None
+) -> dict:
     orig_name = file.filename or "upload.bin"
     _, ext = os.path.splitext(orig_name)
 
-    # Validate file size before reading entire content
-    file.file.seek(0, 2)  # Seek to end
+    file.file.seek(0, 2)
     size = file.file.tell()
-    file.file.seek(0)  # Reset to beginning
+    file.file.seek(0)
 
     max_bytes = int(settings.UPLOAD_MAX_MB) * 1024 * 1024
     if size > max_bytes:
@@ -201,8 +178,7 @@ async def enqueue_single_document(file: UploadFile, user_id: int) -> dict:
             detail=f"File size exceeds maximum allowed size of {settings.UPLOAD_MAX_MB} MB",
         )
 
-    # Read file in chunks to avoid memory issues
-    chunk_size = 8 * 1024 * 1024  # 8MB chunks
+    chunk_size = 8 * 1024 * 1024
     content = bytearray()
     while True:
         chunk = await file.read(chunk_size)
@@ -223,14 +199,14 @@ async def enqueue_single_document(file: UploadFile, user_id: int) -> dict:
             doc_id = await create_document_record(
                 db,
                 title=orig_name,
-                user_id=user_id,
                 file_path=object_name,
                 file_size=size,
                 format=fmt,
+                creator_id=creator_id,
+                department_id=department_id,
             )
         logger.info("Created document record in database with ID: %s", doc_id)
 
-        # Do not process immediately here. Processing is handled by the periodic cron worker.
         return {"document_id": doc_id, "object_name": object_name}
 
     except Exception as exc:
@@ -261,12 +237,14 @@ async def enqueue_single_document(file: UploadFile, user_id: int) -> dict:
         )
 
 
-async def enqueue_multiple_documents(files: list[UploadFile], user_id: int) -> list[dict]:
+async def enqueue_multiple_documents(
+    files: list[UploadFile], creator_id: int | None = None, department_id: int | None = None
+) -> list[dict]:
     results = []
     errors = []
     for file in files:
         try:
-            r = await enqueue_single_document(file, user_id=user_id)
+            r = await enqueue_single_document(file, creator_id, department_id)
             results.append(r)
         except Exception as exc:
             logger.error(f"Failed to process file {file.filename}: {str(exc)}")
@@ -277,7 +255,6 @@ async def enqueue_multiple_documents(files: list[UploadFile], user_id: int) -> l
 
 
 async def create_metadata_document(data: dict[str, Any], db: AsyncSession) -> dict:
-    # Ensure status is set by the system (REQUEST) and not taken from user input
     data.pop("status", None)
     data.setdefault("language", "vi")
     data["status"] = "REQUEST"
@@ -290,9 +267,7 @@ async def create_metadata_document(data: dict[str, Any], db: AsyncSession) -> di
 
 async def list_documents(db: AsyncSession) -> list[dict[str, Any]]:
     stmt = (
-        select(Document)
-        .options(selectinload(Document.current_version))
-        .order_by(Document.created_at.desc())
+        select(Document).where(Document.is_deleted.is_(False)).order_by(Document.created_at.desc())
     )
     result = await db.execute(stmt)
     rows = result.scalars().all()
@@ -305,35 +280,32 @@ async def list_documents(db: AsyncSession) -> list[dict[str, Any]]:
             "tags": d.tags,
             "language": d.language,
             "status": d.status,
-            "current_version_id": d.current_version_id,
+            "version_no": d.version_no,
             "created_at": d.created_at.isoformat() if d.created_at else None,
-            "current_file_size": d.current_version.file_size if d.current_version else None,
-            "current_format": d.current_version.format if d.current_version else None,
+            "current_file_size": d.file_size,
+            "current_format": d.format,
         }
         for d in rows
     ]
 
 
 async def get_document(doc_id: int, db: AsyncSession):
-    stmt = select(Document).where(Document.id == doc_id)
+    stmt = select(Document).where(Document.id == doc_id, Document.is_deleted.is_(False))
     result = await db.execute(stmt)
     d = result.scalar_one_or_none()
 
     if not d:
         return None
 
-    await db.refresh(d, ["versions", "current_version"])
-
     versions = [
         {
-            "id": v.id,
-            "version_no": v.version_no,
-            "file_path": v.file_path,
-            "file_size": v.file_size,
-            "format": v.format,
-            "created_at": v.created_at.isoformat() if v.created_at else None,
+            "id": d.id,
+            "version_no": d.version_no,
+            "file_path": d.file_path,
+            "file_size": d.file_size,
+            "format": d.format,
+            "created_at": d.created_at.isoformat() if d.created_at else None,
         }
-        for v in d.versions
     ]
 
     return {
@@ -343,9 +315,9 @@ async def get_document(doc_id: int, db: AsyncSession):
         "tags": d.tags,
         "language": d.language,
         "status": d.status,
-        "current_version_id": d.current_version_id,
-        "current_file_size": d.current_version.file_size if d.current_version else None,
-        "current_format": d.current_version.format if d.current_version else None,
+        "current_version_id": d.id,
+        "current_file_size": d.file_size,
+        "current_format": d.format,
         "versions": versions,
     }
 
@@ -358,78 +330,127 @@ async def update_document(
     category: str | None = None,
     tags: str | None = None,
     language: str | None = None,
+    department_id: int | None = None,
+    current_user_id: int | None = None,
 ) -> dict[str, Any] | None:
-    stmt = select(Document).options(selectinload(Document.versions)).where(Document.id == doc_id)
+    stmt = select(Document).where(Document.id == doc_id, Document.is_deleted.is_(False))
     result = await db.execute(stmt)
-    doc = result.scalar_one_or_none()
+    old_doc = result.scalar_one_or_none()
 
-    if not doc:
+    if not old_doc:
         return None
 
-    object_name = None
+    new_object_name = None
+    new_doc_id = None
+
     try:
         if file:
             content = await file.read()
-            orig_name = file.filename or "upload.bin"
+            orig_name = file.filename or title or old_doc.title
             _, ext = os.path.splitext(orig_name)
 
-            object_name, size, fmt = await asyncio.to_thread(upload_to_minio, content, orig_name)
-            logger.info("Uploaded new file to MinIO with object name: %s", object_name)
+            new_object_name, size, fmt = await asyncio.to_thread(
+                upload_to_minio, content, orig_name
+            )
+            logger.info("Uploaded new file to MinIO with object name: %s", new_object_name)
 
-            # Save new file details and set status to REQUEST
-            next_version = max((v.version_no for v in doc.versions), default=0) + 1
+            try:
+                await asyncio.to_thread(delete_by_document_id, str(old_doc.id))
+                logger.info("Deleted vector data for old document ID %s", old_doc.id)
+            except Exception as vec_exc:
+                logger.warning("Failed to delete vector data for old document: %s", vec_exc)
 
-            dv = DocumentVersion(
-                document_id=doc.id,
-                version_no=next_version,
-                file_path=object_name,
+            old_doc.is_deleted = True
+            db.add(old_doc)
+            await db.flush()
+            logger.info("Soft deleted old document ID %s", old_doc.id)
+
+            new_doc = Document(
+                title=title.strip() if title and title.strip() else old_doc.title,
+                language=language.strip() if language and language.strip() else old_doc.language,
+                category=category.strip() if category and category.strip() else old_doc.category,
+                tags=tags.strip() if tags and tags.strip() else old_doc.tags,
+                status="REQUEST",
+                version_no=old_doc.version_no + 1,
+                file_path=new_object_name,
                 file_size=size,
                 format=fmt,
+                creator_id=current_user_id or old_doc.creator_id,
+                department_id=department_id if department_id is not None else old_doc.department_id,
             )
-            db.add(dv)
-            await db.flush()
+            db.add(new_doc)
+            await db.commit()
+            await db.refresh(new_doc)
+            new_doc_id = new_doc.id
+            logger.info(
+                "Created new document ID %s with version %s", new_doc_id, new_doc.version_no
+            )
 
-            doc.current_version_id = dv.id
-            doc.status = "REQUEST"
+            return {
+                "id": new_doc.id,
+                "title": new_doc.title,
+                "category": new_doc.category,
+                "tags": new_doc.tags,
+                "language": new_doc.language,
+                "status": new_doc.status,
+                "version_no": new_doc.version_no,
+                "current_file_size": new_doc.file_size,
+                "current_format": new_doc.format,
+            }
 
-        if title and title.strip():
-            unique_title = await generate_unique_title(db, title)
-            doc.title = unique_title
+        # If only metadata update (no file)
+        else:
+            if title and title.strip():
+                old_doc.title = title.strip()
 
-        if category and category.strip():
-            doc.category = category
+            if category and category.strip():
+                old_doc.category = category.strip()
 
-        if tags and tags.strip():
-            doc.tags = tags
+            if tags and tags.strip():
+                old_doc.tags = tags.strip()
 
-        if language and language.strip():
-            doc.language = language
+            if language and language.strip():
+                old_doc.language = language.strip()
 
-        db.add(doc)
-        await db.commit()
-        await db.refresh(doc, ["current_version"])
+            if department_id is not None:
+                old_doc.department_id = department_id
 
-        return {
-            "id": doc.id,
-            "title": doc.title,
-            "category": doc.category,
-            "tags": doc.tags,
-            "language": doc.language,
-            "status": doc.status,
-            "current_version_id": doc.current_version_id,
-            "current_file_size": doc.current_version.file_size if doc.current_version else None,
-            "current_format": doc.current_version.format if doc.current_version else None,
-        }
+            db.add(old_doc)
+            await db.commit()
+            await db.refresh(old_doc)
 
-    except Exception:
-        logger.exception("Failed to update document %s", doc_id)
+            return {
+                "id": old_doc.id,
+                "title": old_doc.title,
+                "category": old_doc.category,
+                "tags": old_doc.tags,
+                "language": old_doc.language,
+                "status": old_doc.status,
+                "version_no": old_doc.version_no,
+                "current_file_size": old_doc.file_size,
+                "current_format": old_doc.format,
+            }
 
-        if object_name:
+    except Exception as exc:
+        logger.exception("Failed to update document %s: %s", doc_id, exc)
+
+        if new_object_name:
             try:
-                await asyncio.to_thread(minio_client.remove_object, BUCKET_NAME, object_name)
-                logger.info("Cleaned up MinIO file after update failure: %s", object_name)
+                await asyncio.to_thread(minio_client.remove_object, BUCKET_NAME, new_object_name)
+                logger.info("Rolled back MinIO upload: %s", new_object_name)
             except Exception as cleanup_exc:
-                logger.error("Failed to delete MinIO file %s: %s", object_name, cleanup_exc)
+                logger.exception("Failed to rollback MinIO upload: %s", cleanup_exc)
+
+        if new_doc_id:
+            try:
+                stmt = select(Document).where(Document.id == new_doc_id)
+                result = await db.execute(stmt)
+                new_doc = result.scalar_one_or_none()
+                if new_doc:
+                    await db.delete(new_doc)
+                    logger.info("Rolled back new document creation: %s", new_doc_id)
+            except Exception as db_cleanup_exc:
+                logger.exception("Failed to rollback document creation: %s", db_cleanup_exc)
 
         await db.rollback()
         raise HTTPException(
@@ -438,7 +459,7 @@ async def update_document(
 
 
 async def delete_document(doc_id: int, db: AsyncSession) -> bool:
-    stmt = select(Document).options(selectinload(Document.versions)).where(Document.id == doc_id)
+    stmt = select(Document).where(Document.id == doc_id, Document.is_deleted.is_(False))
     result = await db.execute(stmt)
     doc = result.scalar_one_or_none()
 
@@ -450,19 +471,11 @@ async def delete_document(doc_id: int, db: AsyncSession) -> bool:
         await asyncio.to_thread(delete_by_document_id, str(doc.id))
         logger.info("Deleted vector data for document ID %s.", doc_id)
 
-        minio_delete_tasks = []
-        for v in doc.versions:
-            if v.file_path:
-                task = asyncio.to_thread(minio_client.remove_object, BUCKET_NAME, v.file_path)
-                minio_delete_tasks.append(task)
-
-        if minio_delete_tasks:
-            await asyncio.gather(*minio_delete_tasks)
-            logger.info("Deleted MinIO files for document ID %s.", doc_id)
-
-        await db.delete(doc)
+        # Soft delete - only mark as deleted
+        doc.is_deleted = True
+        db.add(doc)
         await db.commit()
-        logger.info("Successfully deleted document record with ID %s.", doc_id)
+        logger.info("Successfully soft deleted document ID %s (kept in MinIO and DB).", doc_id)
 
         return True
     except Exception as exc:
@@ -470,17 +483,19 @@ async def delete_document(doc_id: int, db: AsyncSession) -> bool:
         try:
             await db.rollback()
         except Exception as rb_exc:
-            logger.exception("Failed to rollback after delete failure for %s: %s", doc_id, rb_exc)
+            logger.exception("Rollback failed: %s", rb_exc)
 
-        return False
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to delete document: {str(exc)}",
+        )
 
 
 async def search_documents_by_name(name: str, db: AsyncSession) -> list[dict[str, Any]]:
     try:
         stmt = (
             select(Document)
-            .options(selectinload(Document.current_version))
-            .where(Document.title.ilike(f"%{name}%"))
+            .where(Document.title.ilike(f"%{name}%"), Document.is_deleted.is_(False))
             .order_by(Document.created_at.desc())
         )
         result = await db.execute(stmt)
@@ -494,10 +509,10 @@ async def search_documents_by_name(name: str, db: AsyncSession) -> list[dict[str
                 "tags": d.tags,
                 "language": d.language,
                 "status": d.status,
-                "current_version_id": d.current_version_id,
+                "version_no": d.version_no,
                 "created_at": d.created_at.isoformat() if d.created_at else None,
-                "current_file_size": d.current_version.file_size if d.current_version else None,
-                "current_format": d.current_version.format if d.current_version else None,
+                "current_file_size": d.file_size,
+                "current_format": d.format,
             }
             for d in rows
         ]
@@ -509,12 +524,20 @@ async def search_documents_by_name(name: str, db: AsyncSession) -> list[dict[str
         ) from exc
 
 
-async def filter_documents_by_format(format: str, db: AsyncSession) -> list[dict[str, Any]]:
+async def filter_documents_by_format(
+    formats: str | list[str], db: AsyncSession
+) -> list[dict[str, Any]]:
     try:
+        # Convert single format string to list
+        if isinstance(formats, str):
+            format_list = [f.strip() for f in formats.split(",") if f.strip()]
+        else:
+            format_list = formats
+
+        # Build query with IN clause for multiple formats
         stmt = (
             select(Document)
-            .options(selectinload(Document.current_version))
-            .where(Document.current_version.has(format=format))
+            .where(Document.format.in_(format_list), Document.is_deleted.is_(False))
             .order_by(Document.created_at.desc())
         )
         result = await db.execute(stmt)
@@ -528,10 +551,10 @@ async def filter_documents_by_format(format: str, db: AsyncSession) -> list[dict
                 "tags": d.tags,
                 "language": d.language,
                 "status": d.status,
-                "current_version_id": d.current_version_id,
+                "version_no": d.version_no,
                 "created_at": d.created_at.isoformat() if d.created_at else None,
-                "current_file_size": d.current_version.file_size if d.current_version else None,
-                "current_format": d.current_version.format if d.current_version else None,
+                "current_file_size": d.file_size,
+                "current_format": d.format,
             }
             for d in rows
         ]

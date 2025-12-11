@@ -29,7 +29,7 @@ async function apiCall(endpoint: string, options: RequestInit = {}) {
     return res.json()
   } catch (error) {
     if (error instanceof TypeError && error.message === 'Failed to fetch') {
-      throw new Error(`Cannot connect to API server at ${API_BASE_URL}. Please check if the backend is running.`)
+      throw new Error(`Cannot connect to API server at ${API_BASE_URL}.\nPlease check if the backend is running.`)
     }
     throw error
   }
@@ -195,8 +195,8 @@ export async function fetchQueryLogs(filters?: QueryLogsFilters): Promise<QueryL
 
 // Settings API functions
 export interface SystemSettings {
-  google_api_key: string
   llm_model: string
+  google_api_key: string
   llm_temperature: number
   llm_max_tokens: number
   confidence_threshold: number
@@ -208,6 +208,7 @@ export interface SystemSettings {
 }
 
 export interface SettingsUpdateRequest {
+  llm_model?: string
   google_api_key?: string
   llm_temperature?: number
   llm_max_tokens?: number

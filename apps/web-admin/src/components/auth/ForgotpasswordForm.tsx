@@ -65,18 +65,10 @@ const ForgotPasswordForm = ({ onSubmit, error, success }: ForgotPasswordFormProp
           </span>
         </div>
 
-        {error && <p className="text-sm text-red-500 md:text-base">{error}</p>}
-
-        {success && (
-          <div className="rounded-lg border border-green-200 bg-green-50 p-4">
-            <p className="text-sm text-green-800 md:text-base">{success}</p>
-          </div>
-        )}
-
-        <div className="flex justify-center">
+        <div className="my-5 flex flex-col items-center">
           <button
             type="submit"
-            className={`rounded-full bg-[#003087] px-8 py-3 font-semibold text-white transition disabled:cursor-not-allowed disabled:opacity-60 ${
+            className={`w-2/3 rounded-full bg-[#003087] px-8 py-3 font-semibold text-white transition disabled:cursor-not-allowed disabled:opacity-60 ${
               loading ? 'opacity-80' : 'hover:bg-blue-900'
             }`}
             disabled={loading}
@@ -85,6 +77,17 @@ const ForgotPasswordForm = ({ onSubmit, error, success }: ForgotPasswordFormProp
             {loading ? 'Sending...' : 'Reset Password'}
           </button>
         </div>
+        {error && (
+          <div className="rounded-lg border border-red-200 bg-red-50 p-5 text-center">
+            <p className="tex-sm whitespace-pre-wrap text-red-500 md:text-base">{error}</p>
+          </div>
+        )}
+
+        {success && (
+          <div className="rounded-lg border border-green-200 bg-green-50 p-4 text-center">
+            <p className="text-sm text-green-800 md:text-base">{success}</p>
+          </div>
+        )}
       </form>
     </div>
   )

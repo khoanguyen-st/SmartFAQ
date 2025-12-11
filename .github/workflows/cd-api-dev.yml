@@ -45,15 +45,16 @@ jobs:
 
       - name: Run linting
         run: |
-          ruff check . || echo "Linting completed with warnings"
+          ruff check .
 
       - name: Run type checking
         run: |
           echo "Type checking step - add mypy if needed"
 
       - name: Run tests
+        continue-on-error: true
         run: |
-          pytest tests/ || echo "No tests configured yet"
+          pytest tests/ -v
 
   build-and-push:
     name: Build and Push Docker Image
@@ -154,15 +155,10 @@ jobs:
 
       - name: Get GKE credentials
         run: |
-          # Try region first, if fails try zone
-          if ! gcloud container clusters get-credentials ${{ secrets.GKE_CLUSTER_NAME }} \
+          # Get cluster credentials from region
+          gcloud container clusters get-credentials ${{ secrets.GKE_CLUSTER_NAME }} \
             --region=${{ secrets.GKE_REGION }} \
-            --project=${{ env.PROJECT_ID }} 2>/dev/null; then
-            echo "Cluster not found in region, trying zone..."
-            gcloud container clusters get-credentials ${{ secrets.GKE_CLUSTER_NAME }} \
-              --zone=${{ secrets.GKE_REGION }} \
-              --project=${{ env.PROJECT_ID }}
-          fi
+            --project=${{ env.PROJECT_ID }}
 
       - name: Verify kubectl connection
         run: |
@@ -176,11 +172,23 @@ jobs:
             sudo mv kustomize /usr/local/bin/
           fi
 
-      - name: Deploy to Kubernetes
+      - name: Update kustomization with new image
         run: |
           cd k8s/services-dev
           kustomize edit set image \
             asia-southeast1-docker.pkg.dev/enspara/smartfaq/smartfaq-api=${{ needs.build-and-push.outputs.image-tag }}
+
+      - name: Commit kustomization changes
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add k8s/services-dev/kustomization.yaml
+          git diff --staged --quiet || git commit -m "chore: update image tag to ${{ needs.build-and-push.outputs.version }}"
+          git push || echo "No changes to push"
+
+      - name: Deploy to Kubernetes
+        run: |
+          cd k8s/services-dev
           kubectl apply -k .
 
       - name: Wait for rollout to complete

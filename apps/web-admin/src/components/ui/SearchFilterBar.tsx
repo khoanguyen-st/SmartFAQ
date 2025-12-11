@@ -1,5 +1,9 @@
 import searchUrl from '@/assets/icons/search.svg'
 import filterUrl from '@/assets/icons/filter.svg'
+import pdfUrl from '@/assets/icons/pdf.svg'
+import docxUrl from '@/assets/icons/doc.svg'
+import txtUrl from '@/assets/icons/txt.svg'
+import mdUrl from '@/assets/icons/md.svg'
 import { useState } from 'react'
 
 interface SearchFilterBarProps {
@@ -8,7 +12,12 @@ interface SearchFilterBarProps {
   placeholder?: string
 }
 
-const DOCUMENT_FORMATS = ['pdf', 'doc', 'docx', 'txt', 'md']
+const DOCUMENT_FORMATS = [
+  { format: 'pdf', icon: pdfUrl },
+  { format: 'docx', icon: docxUrl },
+  { format: 'txt', icon: txtUrl },
+  { format: 'md', icon: mdUrl }
+]
 
 const SearchFilterBar = ({ onSearch, onFilter, placeholder = 'Enter to Search...' }: SearchFilterBarProps) => {
   const [searchValue, setSearchValue] = useState('')
@@ -72,18 +81,18 @@ const SearchFilterBar = ({ onSearch, onFilter, placeholder = 'Enter to Search...
 
           {showFilterMenu && (
             <div className="absolute top-12 right-0 z-10 min-w-max rounded-lg border border-gray-200 bg-white shadow-lg">
-              {DOCUMENT_FORMATS.map(format => (
+              {DOCUMENT_FORMATS.map(({ format, icon }) => (
                 <button
                   key={format}
                   type="button"
                   onClick={() => handleFormatSelect(format)}
-                  className={`block w-full px-4 py-2 text-left text-sm transition-colors ${
+                  className={`flex w-full items-center gap-2 px-4 py-2 text-left text-sm transition-colors ${
                     selectedFormat === format
                       ? 'bg-indigo-100 font-medium text-[#003087]'
                       : 'text-gray-700 hover:bg-gray-100'
                   }`}
                 >
-                  .{format}
+                  <img src={icon} alt={format + ' icon'} className="h-5 w-5" />
                 </button>
               ))}
               {selectedFormat && (

@@ -52,7 +52,7 @@ ACTION=${1:-"all"}
 
 case $ACTION in
     "helm")
-        print_info "Installing Helm charts (PostgreSQL and Redis)..."
+        print_info "Installing Helm charts (PostgreSQL, Redis, and MongoDB)..."
         
         # Add Bitnami repo if not exists
         if ! helm repo list | grep -q bitnami; then
@@ -94,6 +94,22 @@ case $ACTION in
                 -n $NAMESPACE
         fi
         
+        # Install MongoDB
+        print_info "Installing MongoDB..."
+        cd ../mongo
+        helm dependency update
+        
+        if helm list -n $NAMESPACE | grep -q mongo-smartfaq; then
+            print_warning "MongoDB already installed. Upgrading..."
+            helm upgrade mongo-smartfaq . \
+                -f values-dev.yaml \
+                -n $NAMESPACE
+        else
+            helm install mongo-smartfaq . \
+                -f values-dev.yaml \
+                -n $NAMESPACE
+        fi
+        
         cd ../..
         print_info "Helm charts installed successfully!"
         ;;
@@ -104,6 +120,10 @@ case $ACTION in
         # Get script directory and navigate to project root
         SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
         PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
+        
+        # Authenticate Docker with GCP Artifact Registry
+        print_info "Authenticating Docker with GCP Artifact Registry..."
+        gcloud auth configure-docker ${REGION}-docker.pkg.dev --quiet
         
         cd "$PROJECT_ROOT/apps/api"
         
@@ -160,6 +180,10 @@ case $ACTION in
         # Get script directory and navigate to project root
         SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
         PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
+        
+        # Authenticate Docker with GCP Artifact Registry
+        print_info "Authenticating Docker with GCP Artifact Registry..."
+        gcloud auth configure-docker ${REGION}-docker.pkg.dev --quiet
         
         # Build and push new image
         print_info "Building new Docker image..."
@@ -253,6 +277,7 @@ case $ACTION in
         print_info "Uninstalling Helm charts..."
         helm uninstall redis-smartfaq -n $NAMESPACE || true
         helm uninstall postgres-smartfaq -n $NAMESPACE || true
+        helm uninstall mongo-smartfaq -n $NAMESPACE || true
         
         print_info "Deleting namespace..."
         kubectl delete namespace $NAMESPACE || true
@@ -279,6 +304,25 @@ case $ACTION in
             print_warning "Redis not ready yet, checking pod status..."
             kubectl get pods -n $NAMESPACE -l app.kubernetes.io/name=redis
             kubectl describe pod -n $NAMESPACE -l app.kubernetes.io/name=redis | tail -20
+        }
+        
+        print_info "Waiting for MongoDB to be ready..."
+        kubectl wait --for=condition=ready pod -l app.kubernetes.io/name=mongodb -n $NAMESPACE --timeout=600s || {
+            print_warning "MongoDB not ready yet, checking pod status..."
+            kubectl get pods -n $NAMESPACE -l app.kubernetes.io/name=mongodb
+            kubectl describe pod -n $NAMESPACE -l app.kubernetes.io/name=mongodb | tail -20
+        }
+        
+        print_info "Waiting for Chroma to be ready..."
+        kubectl wait --for=condition=ready pod -l app=chroma -n $NAMESPACE --timeout=300s || {
+            print_warning "Chroma not ready yet, checking pod status..."
+            kubectl get pods -n $NAMESPACE -l app=chroma
+        }
+        
+        print_info "Waiting for MinIO to be ready..."
+        kubectl wait --for=condition=ready pod -l app=minio -n $NAMESPACE --timeout=300s || {
+            print_warning "MinIO not ready yet, checking pod status..."
+            kubectl get pods -n $NAMESPACE -l app=minio
         }
         
         # Build and push image

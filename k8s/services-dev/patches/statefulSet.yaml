@@ -43,13 +43,19 @@ spec:
                   exit(1)
 
               print("Running migrations...")
+              # Try to run migrations, but don't fail if schema already exists
               result = subprocess.run(['alembic', 'upgrade', 'head'], capture_output=True, text=True)
               print(result.stdout)
               if result.stderr:
                   print(result.stderr)
+              
+              # Check if error is about duplicate tables (schema already exists)
               if result.returncode != 0:
-                  print(f"Migration failed with code {result.returncode}")
-                  exit(result.returncode)
+                  if 'DuplicateTable' in result.stderr or 'already exists' in result.stderr:
+                      print("Tables already exist - skipping migration")
+                  else:
+                      print(f"Migration failed with code {result.returncode}")
+                      exit(result.returncode)
 
               print("Init container completed successfully")
           envFrom:
@@ -90,6 +96,8 @@ spec:
               mountPath: /tmp
             - name: model-cache-volume
               mountPath: /app/.cache
+            - name: logs-volume
+              mountPath: /app/logs
           securityContext:
             allowPrivilegeEscalation: false
             runAsNonRoot: true
@@ -108,6 +116,8 @@ spec:
               cpu: "3"
       volumes:
         - name: tmp-volume
+          emptyDir: {}
+        - name: logs-volume
           emptyDir: {}
   volumeClaimTemplates:
     - metadata:

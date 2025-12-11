@@ -2,6 +2,8 @@ import React, { useMemo, useState, useEffect } from 'react'
 import type { CreateUserDialogProps, CreateUserDialogPayload } from '@/interfaces/create-user-dialog'
 import { fetchDepartments, type IDepartment } from '@/services/department.services'
 
+import ChevronDown from '@/assets/icons/chevron-down.svg'
+
 export const CreateUserDialog: React.FC<CreateUserDialogProps> = ({
   open,
   onClose,
@@ -158,29 +160,35 @@ export const CreateUserDialog: React.FC<CreateUserDialogProps> = ({
                 </select>
               </div>
 
-              <div>
-                <label className="mb-1.5 block text-sm font-medium text-slate-700">Campus *</label>
+              <div className="relative w-full">
+                <label className="mb-1 block text-sm font-medium text-slate-700">Campus *</label>
                 <select
                   required
                   value={formData.campus}
                   onChange={e => setFormData({ ...formData, campus: e.target.value })}
-                  className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm focus:border-blue-500 focus:outline-none"
+                  className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm focus:border-blue-500 focus:outline-none"
                 >
                   <option value="" disabled>
                     Select Campus
                   </option>
-                  <option value="HN">Hà Nội</option>
-                  <option value="HCM">Hồ Chí Minh</option>
-                  <option value="DN">Đà Nẵng</option>
-                  <option value="CT">Cần Thơ</option>
+                  <option value="HN">Hanoi</option>
+                  <option value="HCM">Ho Chi Minh</option>
+                  <option value="DN">Danang</option>
+                  <option value="CT">Can Tho</option>
                 </select>
+                <span className="pointer-events-none absolute inset-y-0 top-1/2 right-3 flex items-center">
+                  <img src={ChevronDown} alt="chevron-down" className="h-5 w-5" />
+                </span>
               </div>
             </div>
 
             {formData.role === 'staff' && (
               <div>
                 <label className="mb-1.5 block text-sm font-medium text-slate-700">
-                  Departments * <span className="text-xs font-normal text-slate-500">(Select at least one)</span>
+                  Departments *{' '}
+                  <span className="text-xs font-normal text-slate-500">
+                    (Select at least one. If no departments exist, please create one!)
+                  </span>
                 </label>
                 <div className="max-h-56 overflow-y-auto rounded-xl border border-slate-200 bg-white p-1">
                   {departments.map(dept => (
