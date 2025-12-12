@@ -266,9 +266,7 @@ async def create_metadata_document(data: dict[str, Any], db: AsyncSession) -> di
 
 
 async def list_documents(db: AsyncSession) -> list[dict[str, Any]]:
-    stmt = (
-        select(Document).where(Document.is_deleted.is_(False)).order_by(Document.created_at.desc())
-    )
+    stmt = select(Document).order_by(Document.created_at.desc())
     result = await db.execute(stmt)
     rows = result.scalars().all()
 
@@ -290,7 +288,7 @@ async def list_documents(db: AsyncSession) -> list[dict[str, Any]]:
 
 
 async def get_document(doc_id: int, db: AsyncSession):
-    stmt = select(Document).where(Document.id == doc_id, Document.is_deleted.is_(False))
+    stmt = select(Document).where(Document.id == doc_id)
     result = await db.execute(stmt)
     d = result.scalar_one_or_none()
 
@@ -333,7 +331,7 @@ async def update_document(
     department_id: int | None = None,
     current_user_id: int | None = None,
 ) -> dict[str, Any] | None:
-    stmt = select(Document).where(Document.id == doc_id, Document.is_deleted.is_(False))
+    stmt = select(Document).where(Document.id == doc_id)
     result = await db.execute(stmt)
     old_doc = result.scalar_one_or_none()
 
@@ -360,10 +358,10 @@ async def update_document(
             except Exception as vec_exc:
                 logger.warning("Failed to delete vector data for old document: %s", vec_exc)
 
-            old_doc.is_deleted = True
-            db.add(old_doc)
+            # Hard delete old document from database
+            await db.delete(old_doc)
             await db.flush()
-            logger.info("Soft deleted old document ID %s", old_doc.id)
+            logger.info("Deleted old document ID %s from database", old_doc.id)
 
             new_doc = Document(
                 title=title.strip() if title and title.strip() else old_doc.title,
@@ -459,7 +457,7 @@ async def update_document(
 
 
 async def delete_document(doc_id: int, db: AsyncSession) -> bool:
-    stmt = select(Document).where(Document.id == doc_id, Document.is_deleted.is_(False))
+    stmt = select(Document).where(Document.id == doc_id)
     result = await db.execute(stmt)
     doc = result.scalar_one_or_none()
 
@@ -468,14 +466,16 @@ async def delete_document(doc_id: int, db: AsyncSession) -> bool:
         return False
 
     try:
+        # Delete from vector database
         await asyncio.to_thread(delete_by_document_id, str(doc.id))
         logger.info("Deleted vector data for document ID %s.", doc_id)
 
-        # Soft delete - only mark as deleted
-        doc.is_deleted = True
-        db.add(doc)
+        # Hard delete from database (file kept in MinIO for restore)
+        await db.delete(doc)
         await db.commit()
-        logger.info("Successfully soft deleted document ID %s (kept in MinIO and DB).", doc_id)
+        logger.info(
+            "Successfully deleted document ID %s from database (file kept in MinIO).", doc_id
+        )
 
         return True
     except Exception as exc:
@@ -495,7 +495,7 @@ async def search_documents_by_name(name: str, db: AsyncSession) -> list[dict[str
     try:
         stmt = (
             select(Document)
-            .where(Document.title.ilike(f"%{name}%"), Document.is_deleted.is_(False))
+            .where(Document.title.ilike(f"%{name}%"))
             .order_by(Document.created_at.desc())
         )
         result = await db.execute(stmt)
@@ -537,7 +537,7 @@ async def filter_documents_by_format(
         # Build query with IN clause for multiple formats
         stmt = (
             select(Document)
-            .where(Document.format.in_(format_list), Document.is_deleted.is_(False))
+            .where(Document.format.in_(format_list))
             .order_by(Document.created_at.desc())
         )
         result = await db.execute(stmt)
