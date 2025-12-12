@@ -18,6 +18,7 @@ class ErrorType(Enum):
     RETRIEVAL_EMPTY = "retrieval_empty"
     NORMALIZATION_FAILED = "normalization_failed"
     ANALYSIS_FAILED = "analysis_failed"
+    BLOCKED_BY_GUARDRAIL = "blocked_by_guardrail"
     UNKNOWN = "unknown_error"
 
 

@@ -14,8 +14,8 @@ REFUSAL_MESSAGES = {
         "en": "I only support inquiries related to Greenwich University Vietnam, not other institutions.",
     },
     "system_management": {
-        "vi": "Xin lỗi, tôi chỉ hỗ trợ trả lời câu hỏi về nội dung tài liệu của Greenwich Việt Nam (học phí, quy định, chương trình học...). Để quản lý tài liệu hoặc các chức năng hệ thống, vui lòng liên hệ bộ phận IT hoặc sử dụng trang quản trị.",
-        "en": "Sorry, I only answer questions about Greenwich Vietnam's document content (tuition, regulations, programs...). For document management or system functions, please contact IT department or use the admin portal.",
+        "vi": "Xin lỗi, tôi không thể truy cập danh sách tài liệu hoặc dữ liệu hệ thống. Tôi chỉ trả lời câu hỏi dựa trên nội dung tài liệu. Để quản lý tài liệu, vui lòng liên hệ bộ phận IT.",
+        "en": "Sorry, I cannot access document lists or system data. I only answer questions based on document content. For document management, please contact IT department.",
     },
     "irrelevant": {
         "vi": "Xin lỗi, câu hỏi này nằm ngoài phạm vi hỗ trợ của tôi. Tôi chỉ trả lời những câu hỏi liên quan đến Đại học Greenwich.",
@@ -40,7 +40,34 @@ class GuardrailService:
     def __init__(self, llm_wrapper: LLMWrapper):
         self.llm = llm_wrapper
 
+    def _quick_check_system_management(self, question: str) -> bool:
+        """Quick regex-based check for system management queries before LLM call."""
+        import re
+
+        q_lower = question.lower()
+
+        # Pattern 1: show/list/view + all + document/file
+        if re.search(r"(show|list|view).*(all|tất cả).*(document|file|tài liệu)", q_lower):
+            return True
+
+        # Pattern 2: show/list + uploaded/draft
+        if re.search(r"(show|list|view).*(uploaded|draft|đã upload|bản nháp)", q_lower):
+            return True
+
+        # Pattern 3: how many documents uploaded/database
+        if re.search(
+            r"(how many|bao nhiêu).*(document|file|tài liệu).*(uploaded|database|hệ thống)", q_lower
+        ):
+            return True
+
+        return False
+
     async def check_safety(self, question: str) -> Dict[str, str]:
+        # Quick pre-check for system management
+        if self._quick_check_system_management(question):
+            logger.info(f"Quick check blocked system_management: {question[:100]}")
+            return self._create_response("system_management")
+
         try:
             prompt = get_guardrail_prompt()
             result = await self.llm.invoke_json(prompt, question)

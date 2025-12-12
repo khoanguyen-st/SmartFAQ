@@ -22,11 +22,16 @@ LANGUAGE_CANONICAL = {language.value for language in Language}
 
 MISSING_INFO_PHRASES = [
     "không được đề cập",
+    "không đề cập",
     "không có thông tin",
     "không tìm thấy thông tin",
+    "không có quy định cụ thể",
+    "tuy nhiên",
     "not mentioned",
     "not contain information",
     "could not find information",
+    "does not specify",
+    "however",
 ]
 
 __all__ = [

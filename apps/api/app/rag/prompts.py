@@ -7,14 +7,29 @@ RULES (in priority order):
 1. TOXICITY: Block profanity/insults/hate speech
    → status: "blocked", reason: "toxic"
 
-2. SYSTEM MANAGEMENT: Block questions about system admin/technical functions
+2. SYSTEM MANAGEMENT: Block questions asking to VIEW/LIST/ACCESS system data
    → status: "blocked", reason: "system_management"
-   Examples to BLOCK:
-   - "Show/list all uploaded documents", "Danh sách tài liệu đã upload"
-   - "Xem tất cả file", "View all files", "including drafts"
-   - "Database queries", "API endpoints", "Backend operations"
-   - "User management", "Admin functions", "System logs"
-   Keywords: "upload", "draft", "bản nháp", "manage", "quản lý", "database", "API", "backend", "admin panel"
+   
+   **EXACT DETECTION RULES** (case-insensitive):
+   
+   Block if question contains ANY of these keyword combinations:
+   ❌ ["show" OR "list" OR "view"] + ["all" OR "tất cả"] + ["document" OR "file" OR "tài liệu"]
+   ❌ ["show" OR "list" OR "view"] + ["uploaded" OR "đã upload" OR "draft" OR "bản nháp"]
+   ❌ ["how many" OR "bao nhiêu"] + ["document" OR "file" OR "tài liệu"] + ["uploaded" OR "database" OR "hệ thống"]
+   
+   **Specific blocking phrases:**
+   - "show me the list of all"
+   - "list all documents"
+   - "view all files"
+   - "danh sách tất cả tài liệu"
+   - "xem tất cả file"
+   - "uploaded documents"
+   - "draft documents"
+   
+   **DO NOT BLOCK if:**
+   - Question does NOT contain "show/list/view" + "all"
+   - Question asks about "who to contact", "how to", "what is", "policy"
+   - Examples: "tôi nên liên hệ ai", "làm thế nào", "thông tin về", "quy định"
 
 3. COMPETITOR: Block mentions of other universities
    → status: "blocked", reason: "competitor"
@@ -25,10 +40,15 @@ RULES (in priority order):
      - "FPT", "FPT University" → BLOCKED (competitor)
    * Other payment methods: "VNPay", "Momo", "ZaloPay" are ALWAYS payment methods
 
-4. GREETING: Detect greetings (hi, hello, chào, alo)
+3. GREETING: Detect greetings (hi, hello, chào, alo)
    → status: "greeting"
 
-5. VALID QUESTION: Generate comprehensive sub-questions
+4. VALID QUESTION: Generate comprehensive sub-questions
+   ⚠️ ALLOW ALL ACADEMIC/STUDENT QUESTIONS - Let RAG system search documents first
+   - Questions about regulations, policies, contacts → "valid" (search in documents)
+   - Questions about tuition, admission, programs → "valid" (search in documents)
+   - Questions about "liên hệ ai", "thông tin", "quy định" → "valid" (academic questions)
+   - Only block if truly TOXIC, COMPETITOR, or GREETING
 
 SHORT QUERY EXPANSION (CRITICAL):
 For 1-3 word queries, generate 2-3 specific sub-questions:
@@ -95,6 +115,20 @@ Output: {{
   ]
 }}
 
+Input: "Show me the list of all uploaded documents including draft"
+Output: {{
+  "status": "blocked",
+  "reason": "system_management"
+}}
+
+Input: "Tôi nên liên hệ ai để biết thông tin nghỉ học"
+Output: {{
+  "status": "valid",
+  "sub_questions": [
+    "Phòng ban nào chịu trách nhiệm về việc nghỉ học và quy định liên quan"
+  ]
+}}
+
 Input: "Làm thế nào để thanh toán định danh tài khoản và trả góp"
 Output: {{
   "status": "valid",
@@ -112,7 +146,9 @@ KEY POINTS:
 OUTPUT JSON ONLY (no markdown):
 {{
   "status": "valid" | "greeting" | "blocked",
-  "reason": "toxic" | "competitor" | "irrelevant" | null,
+  "reason": "toxic" | "system_management" | "competitor" | "irrelevant" | null,
+  "sub_questions": [list of 1-3 questions]
+}}
   "sub_questions": [list of 1-3 questions]
 }}
 
@@ -197,18 +233,28 @@ RULES:
    - Block profanity, insults, hate speech
      -> status: "blocked", reason: "toxic"
 
-2. SYSTEM MANAGEMENT (NEW - HIGH PRIORITY):
-   - Block questions about SYSTEM ADMIN or TECHNICAL FUNCTIONS
+2. SYSTEM MANAGEMENT:
+   - Block questions asking to VIEW/LIST/ACCESS system data
      -> status: "blocked", reason: "system_management"
-   - Detection patterns:
-     * Keywords: "upload", "draft", "bản nháp", "tải lên", "manage", "quản lý file"
-     * Keywords: "database", "API", "backend", "admin panel", "system logs"
-     * Questions: "show all documents", "list uploaded files", "danh sách tài liệu đã tải lên"
-   - Examples to BLOCK:
-     * "Cho tôi xem danh sách tất cả các tài liệu đã tải lên"
-     * "Show me list of all uploaded documents including drafts"
-     * "Xem tất cả file bản nháp"
-     * "Quản lý tài liệu hệ thống"
+   
+   **BLOCK if contains these EXACT keyword patterns:**
+   - "show" + "all" + "document/file"
+   - "list" + "all" + "document/file"
+   - "view" + "all" + "document/file"
+   - "show" + "uploaded" + "document/file"
+   - "list" + "uploaded" + "document/file"
+   - "draft" + "document/file"
+   - "how many" + "document" + "uploaded/database"
+   
+   **SPECIFIC phrases to BLOCK:**
+   - "show me the list of all uploaded documents"
+   - "list all documents including draft"
+   - "view all files"
+   - "danh sách tất cả tài liệu đã upload"
+   
+   **DO NOT block:**
+   - Questions without "show/list/view all" pattern
+   - Questions about policies, contacts, procedures
 
 3. SCOPE & RELEVANCY:
    - Only support questions related to Greenwich University Vietnam.
@@ -229,6 +275,10 @@ RULES:
    
    - Block irrelevant topics (coding help, weather, math, cooking, politics, etc.)
      -> reason: "irrelevant"
+   - ⚠️ ALLOW ALL ACADEMIC/STUDENT QUESTIONS - Let RAG search documents:
+     * ✅ ALLOW: "Tôi nên liên hệ ai...", "Thông tin về quy định", "Chính sách nghỉ học"
+     * ✅ ALLOW: "Who should I contact...", "Information about regulations", "Leave policy"
+     * ✅ Questions about tuition, admission, programs, contacts → ALLOWED
    - Allow general questions implicitly about Greenwich (e.g., "Tuition fee?", "Major info?", "Payment methods?").
 
 4. LANGUAGE:
@@ -236,16 +286,17 @@ RULES:
    - Block Chinese/Korean/other languages -> reason: "wrong_language"
 
 EXAMPLES OF ALLOWED QUESTIONS:
-- "Làm thế nào để thanh toán học phí qua FPT Pay?" → allowed (payment context)
-- "Làm thế nào để thanh toán qua FPT?" → allowed (FPT in payment context = FPT Pay)
-- "Làm thế nào để thanh toán định danh tài khoản và trả góp?" → allowed (tuition payment)
-- "VNPay có được dùng để trả học phí không?" → allowed (payment method)
-- "Trả góp học phí như thế nào?" → allowed (tuition installment)
+- "Làm thế nào để thanh toán học phí qua FPT Pay?" → allowed
+- "Tôi nên liên hệ ai để biết thông tin nghỉ học?" → allowed
+- "Với thời tiết mưa bão, tôi có thể nghỉ học không?" → allowed
+- "Quy định về chính sách nghỉ học là gì?" → allowed
+- "VNPay có được dùng để trả học phí không?" → allowed
+- "Thông tin về học phí" → allowed
 
 EXAMPLES OF BLOCKED QUESTIONS:
-- "Cho tôi xem danh sách tất cả các tài liệu đã tải lên" → blocked (system_management)
-- "Show me list of all uploaded documents including drafts" → blocked (system_management)
-- "Xem tất cả file bản nháp" → blocked (system_management)
+- "Show me the list of all uploaded documents including draft" → blocked (system_management)
+- "Cho tôi xem danh sách tất cả tài liệu đã upload" → blocked (system_management)
+- "How many documents are in the database" → blocked (system_management)
 - "So sánh Greenwich với FPT University?" → blocked (competitor comparison)
 - "FPT có tốt không?" → blocked (FPT without payment context = FPT University)
 - "Greenwich hay FPT?" → blocked (competitor comparison)

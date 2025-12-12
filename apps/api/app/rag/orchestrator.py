@@ -64,6 +64,16 @@ class RAGOrchestrator:
                 "Please input a valid question.", [], 0, t0, True, metrics, query_fail=True
             )
 
+        # Guardrail check first (includes regex pre-check)
+        guardrail_result = await self.guardrail.check_safety(raw_q)
+        if guardrail_result.get("status") == "blocked":
+            target_lang = language if language in ["vi", "en"] else "vi"
+            blocked_msg = guardrail_result.get(target_lang, guardrail_result.get("vi"))
+            logger.info(f"[{request_id}] Blocked by guardrail: {guardrail_result}")
+            metrics.error_type = ErrorType.BLOCKED_BY_GUARDRAIL
+            metrics.finalize()
+            return self._response(blocked_msg, [], 1.0, t0, False, metrics, query_fail=True)
+
         final_search_query = raw_q
 
         if history and self._should_contextualize(raw_q, history):
@@ -457,14 +467,14 @@ class RAGOrchestrator:
         msgs = {
             "vi": {
                 "toxic": "Vui lòng sử dụng ngôn ngữ lịch sự.",
-                "system_management": "Xin lỗi, tôi chỉ hỗ trợ trả lời câu hỏi về nội dung tài liệu của Greenwich Việt Nam (học phí, quy định, chương trình học...). Để quản lý tài liệu hoặc các chức năng hệ thống, vui lòng liên hệ bộ phận IT hoặc sử dụng trang quản trị.",
+                "system_management": "Xin lỗi, tôi không thể truy cập danh sách tài liệu hoặc dữ liệu hệ thống. Tôi chỉ trả lời câu hỏi dựa trên nội dung tài liệu. Để quản lý tài liệu, vui lòng liên hệ bộ phận IT.",
                 "competitor": "Tôi chỉ hỗ trợ thông tin về Đại học Greenwich Việt Nam.",
                 "irrelevant": "Câu hỏi nằm ngoài phạm vi hỗ trợ.",
                 "wrong_language": "Xin lỗi, tôi chỉ hỗ trợ Tiếng Việt và Tiếng Anh.",
             },
             "en": {
                 "toxic": "Please use polite language.",
-                "system_management": "Sorry, I only answer questions about Greenwich Vietnam's document content (tuition, regulations, programs...). For document management or system functions, please contact IT department or use the admin portal.",
+                "system_management": "Sorry, I cannot access document lists or system data. I only answer questions based on document content. For document management, please contact IT department.",
                 "competitor": "I only support inquiries related to Greenwich University Vietnam.",
                 "irrelevant": "This question is outside my scope.",
                 "wrong_language": "Sorry, I only support Vietnamese and English.",
