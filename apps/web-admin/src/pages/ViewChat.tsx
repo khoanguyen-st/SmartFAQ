@@ -435,8 +435,8 @@ const ViewChatPage = () => {
             disabled={isLoading}
             className="chat__clear-button group ml-2 flex shrink-0 items-center hover:text-red-500 disabled:opacity-50"
           >
-            <TrashIcon className="TrashIcon mr-0 h-5 w-5 shrink-0 text-[#6B7280] group-hover:text-red-500 sm:mr-1" />
-            <p className="text-md hidden text-[#6B7280] group-hover:text-red-500 sm:block">Clear Chat</p>
+            <TrashIcon className="TrashIcon mr-0 h-3.5 w-3.5 shrink-0 text-[#6B7280] group-hover:text-red-500 sm:mr-1" />
+            <p className="hidden text-sm text-[#6B7280] group-hover:text-red-500 sm:block">Clear Chat</p>
           </button>
         </div>
 
@@ -446,7 +446,11 @@ const ViewChatPage = () => {
           ))}
           {isLoading && (
             <div className="message message--sender">
-              <p className="animate-pulse">Typing...</p>
+              <div className="flex gap-1">
+                <span className="h-2 w-2 animate-bounce rounded-full bg-gray-400"></span>
+                <span className="h-2 w-2 animate-bounce rounded-full bg-gray-400 delay-150"></span>
+                <span className="h-2 w-2 animate-bounce rounded-full bg-gray-400 delay-300"></span>
+              </div>
             </div>
           )}
           {errorState && !messages.some(m => m.type === 'error') && (
