@@ -183,7 +183,8 @@ class ChatService:
 
         try:
             t0 = time.perf_counter()
-            history_response = await self.get_history(session.id, limit=5)
+            # Use configurable history limit for context window management
+            history_response = await self.get_history(session.id, limit=settings.CHAT_HISTORY_LIMIT)
             history = [{"role": msg.role, "text": msg.text} for msg in history_response.messages]
             # Enable citations only for STAFF/ADMIN channel
             include_citations = (
@@ -192,7 +193,7 @@ class ChatService:
 
             rag_response = await self.orchestrator.query(
                 question=payload.question,
-                top_k=5,
+                top_k=settings.TOP_K_RETRIEVAL,
                 history=history,
                 language=session.language,
                 include_citations=include_citations,

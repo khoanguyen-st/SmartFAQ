@@ -46,7 +46,7 @@ const KPIGrid = ({ autoRefresh = false, refreshKey = 0 }: KPIGridProps) => {
   return (
     <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
       {kpis.map(kpi => (
-        <div key={kpi.title} className="rounded-2xl bg-white p-6 shadow-lg shadow-slate-900/10 border border-slate-100">
+        <div key={kpi.title} className="rounded-2xl border border-slate-100 bg-white p-6 shadow-lg shadow-slate-900/10">
           <p className="text-sm text-slate-600">{kpi.title}</p>
           <p className="mt-2 text-3xl font-semibold text-slate-900">{loading ? '...' : kpi.value}</p>
         </div>

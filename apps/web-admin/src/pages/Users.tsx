@@ -177,13 +177,13 @@ const Users: React.FC = () => {
   }
 
   return (
-    <div className="flex flex-col gap-6 p-6 h-[calc(100vh-81px)] bg-white overflow-auto ">
+    <div className="flex h-[calc(100vh-81px)] flex-col gap-6 overflow-auto bg-white p-6">
       <header className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div className="pl-2">
-          <h1 className="font-bold mb-2 text-slate-900 text-3xl">User Management</h1>
+          <h1 className="mb-2 text-3xl font-bold text-slate-900">User Management</h1>
           <p className="text-base text-slate-500">Manage user accounts and system access</p>
         </div>
-        
+
         <div className="flex gap-3">
           <button
             onClick={() => setCreateDialogOpen(true)}
@@ -213,7 +213,7 @@ const Users: React.FC = () => {
         )}
       />
 
-      <div className="rounded-2xl border border-gray-200 bg-white shadow-lg">      
+      <div className="rounded-2xl border border-gray-200 bg-white shadow-lg">
         <UserTable
           users={paginatedUsers}
           loading={loading}

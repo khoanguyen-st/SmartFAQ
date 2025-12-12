@@ -121,10 +121,10 @@ const ProfilePage = () => {
         // Cập nhật state local nếu thành công
         setProfile(prev => (prev ? { ...prev, [editingField]: tempValue } : null))
         setEditingField(null)
-        
+
         if (editingField === 'username') {
           // Bắn event để Header/Sidebar lắng nghe và fetch lại thông tin user mới
-          window.dispatchEvent(new CustomEvent('userInfoUpdated')) 
+          window.dispatchEvent(new CustomEvent('userInfoUpdated'))
         }
       } catch (err) {
         console.error('Update failed:', err)
@@ -148,7 +148,7 @@ const ProfilePage = () => {
       {/* Main Card */}
       <div className="flex w-full shrink-0 flex-col items-center rounded-xl border border-slate-100 bg-white shadow-lg xl:flex-row xl:items-start xl:gap-[120px] xl:p-[100px]">
         {/* Avatar Section */}
-        <div className="flex shrink-0 flex-col items-center rounded-2xl m-5">
+        <div className="m-5 flex shrink-0 flex-col items-center rounded-2xl">
           <div className="h-50 w-50 overflow-hidden rounded-full shadow-slate-100 sm:h-[303px] sm:w-[303px]">
             <img src={profile.avatar_url || avatarDefaultUrl} alt="Profile" className="h-full w-full object-cover" />
           </div>
@@ -174,7 +174,7 @@ const ProfilePage = () => {
 
         {/* Form Section */}
         <div className="flex w-full flex-1 flex-col justify-center">
-          <div className="flex flex-col gap-6 lg:gap-[60px] mx-5">
+          <div className="mx-5 flex flex-col gap-6 lg:gap-[60px]">
             {formFields.map(({ label, key, disabled }) => {
               const isEditing = editingField === key
 

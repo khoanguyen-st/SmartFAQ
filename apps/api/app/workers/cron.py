@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 
 
 async def _process_single_document(db: AsyncSession, doc_id: int) -> None:
-    stmt = select(Document).where(Document.id == doc_id, Document.is_deleted.is_(False))
+    stmt = select(Document).where(Document.id == doc_id)
     result = await db.execute(stmt)
     doc = result.scalar_one_or_none()
 
@@ -119,9 +119,7 @@ async def process_requests_once() -> None:
     async with AsyncSessionLocal() as db:
         try:
             logger.info("Fetching documents with status 'REQUEST' for processing...")
-            stmt = select(Document).where(
-                Document.status == "REQUEST", Document.is_deleted.is_(False)
-            )
+            stmt = select(Document).where(Document.status == "REQUEST")
             result = await db.execute(stmt)
             docs = result.scalars().all()
 

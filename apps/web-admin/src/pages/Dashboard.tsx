@@ -14,11 +14,11 @@ const DashboardPage = () => {
   }
 
   return (
-    <div className="flex flex-col gap-6 p-6 bg-white">
+    <div className="flex flex-col gap-6 bg-white p-6">
       {/* Header with controls */}
       <header className="flex items-center justify-between">
         <div className="pl-2">
-          <h2 className="text-3xl mb-2 font-bold text-slate-900">Dashboard</h2>
+          <h2 className="mb-2 text-3xl font-bold text-slate-900">Dashboard</h2>
           <p className="text-base text-slate-600">Monitor system performance and user activity</p>
         </div>
         <div className="flex items-center gap-3">

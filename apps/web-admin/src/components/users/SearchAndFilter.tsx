@@ -78,7 +78,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
   renderFilterDropdown
 }) => {
   return (
-    <div className="relative flex items-center rounded-xl border border-gray-200 bg-white shadow-lg mb-7">
+    <div className="relative mb-7 flex items-center rounded-xl border border-gray-200 bg-white shadow-lg">
       <input
         type="text"
         placeholder="Search by name or email..."

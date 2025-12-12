@@ -55,7 +55,7 @@ const QueryLogTable = () => {
   }
 
   return (
-    <div className="flex flex-col gap-5 border border-slate-100 rounded-2xl bg-white p-6 shadow-lg shadow-slate-900/10">
+    <div className="flex flex-col gap-5 rounded-2xl border border-slate-100 bg-white p-6 shadow-lg shadow-slate-900/10">
       {/* Search and Filters */}
       <div className="flex flex-col gap-3">
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
@@ -66,7 +66,7 @@ const QueryLogTable = () => {
               setCurrentPage(1)
             }}
             placeholder="Search in answers..."
-            className=" focus:ring-blue-800 rounded-lg border border-slate-200 px-3.5 py-2.5 text-base focus:ring-1 focus:outline-none"
+            className="rounded-lg border border-slate-200 px-3.5 py-2.5 text-base focus:ring-1 focus:ring-blue-800 focus:outline-none"
           />
           <div className="flex gap-3"></div>
         </div>
@@ -92,7 +92,7 @@ const QueryLogTable = () => {
               setSelectedLang(e.target.value)
               setCurrentPage(1)
             }}
-            className=" focus:ring-blue-800 rounded-lg border border-blue-200 px-3 py-1.5 text-sm focus:ring-1 focus:outline-none"
+            className="rounded-lg border border-blue-200 px-3 py-1.5 text-sm focus:ring-1 focus:ring-blue-800 focus:outline-none"
           >
             <option value="">All Languages</option>
             <option value="en">English</option>
@@ -105,7 +105,7 @@ const QueryLogTable = () => {
               setSelectedChannel(e.target.value)
               setCurrentPage(1)
             }}
-            className=" focus:ring-blue-800 rounded-lg border border-blue-200 px-3 py-1.5 text-sm focus:ring-1 focus:outline-none"
+            className="rounded-lg border border-blue-200 px-3 py-1.5 text-sm focus:ring-1 focus:ring-blue-800 focus:outline-none"
           >
             <option value="">All Channels</option>
             <option value="widget">Widget</option>
@@ -117,30 +117,30 @@ const QueryLogTable = () => {
             <button
               type="button"
               onClick={handleClearFilters}
-              className="text-sm font-semibold text-blue-600 hover:text-blue-700 cursor-pointer rounded-lg border border-blue-200 px-3 py-1.5"
+              className="cursor-pointer rounded-lg border border-blue-200 px-3 py-1.5 text-sm font-semibold text-blue-600 hover:text-blue-700"
             >
               Clear Filters
             </button>
           )}
 
-          <div className="ml-auto mr-2 text-sm text-slate-600">Total: {total} logs</div>
+          <div className="mr-2 ml-auto text-sm text-slate-600">Total: {total} logs</div>
         </div>
       </div>
 
       {/* Table */}
-      <div className="overflow-x-auto border border-gray-200 bg-white rounded-xl">
+      <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white">
         <table className="w-full">
-          <thead className="bg-white text-xs tracking-wider text-slate-700 uppercase ">
-            <tr className='border-b border-slate-200 '>
-              <th className=" px-3 py-4 text-left">Timestamp</th>
-              <th className=" px-3 py-4 text-left">Question</th>
-              <th className=" px-3 py-4 text-left">Confidence</th>
-              <th className=" px-3 py-4 text-left">Relevance</th>
-              <th className=" px-3 py-4 text-left">Fallback</th>
-              <th className=" px-3 py-4 text-left">Language</th>
-              <th className=" px-3 py-4 text-left">Channel</th>
-              <th className=" px-3 py-4 text-left">Response Time</th>
-              <th className=" px-3 py-4 text-center">Actions</th>
+          <thead className="bg-white text-xs tracking-wider text-slate-700 uppercase">
+            <tr className="border-b border-slate-200">
+              <th className="px-3 py-4 text-left">Timestamp</th>
+              <th className="px-3 py-4 text-left">Question</th>
+              <th className="px-3 py-4 text-left">Confidence</th>
+              <th className="px-3 py-4 text-left">Relevance</th>
+              <th className="px-3 py-4 text-left">Fallback</th>
+              <th className="px-3 py-4 text-left">Language</th>
+              <th className="px-3 py-4 text-left">Channel</th>
+              <th className="px-3 py-4 text-left">Response Time</th>
+              <th className="px-3 py-4 text-center">Actions</th>
             </tr>
           </thead>
           <tbody>

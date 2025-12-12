@@ -54,7 +54,7 @@ const SearchFilterBar = ({ onSearch, onFilter, placeholder = 'Enter to Search...
             value={searchValue}
             onChange={handleSearchChange}
             placeholder={placeholder}
-            className="h-10 w-full rounded-lg pr-12 pl-4 text-sm text-gray-900 placeholder:text-gray-400 outline-none"
+            className="h-10 w-full rounded-lg pr-12 pl-4 text-sm text-gray-900 outline-none placeholder:text-gray-400"
           />
           <button
             type="submit"

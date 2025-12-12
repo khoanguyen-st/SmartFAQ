@@ -112,7 +112,7 @@ export const CreateUserDialog: React.FC<CreateUserDialogProps> = ({
             )}
 
             <div className="flex flex-col gap-6">
-              <div className="w-full mb-4">
+              <div className="mb-4 w-full">
                 <label className="mb-1.5 block text-sm font-medium text-slate-700">
                   Email <span className="text-red-500">*</span>
                 </label>
@@ -171,14 +171,16 @@ export const CreateUserDialog: React.FC<CreateUserDialogProps> = ({
 
                 <div
                   className={`grid transition-all duration-300 ease-in-out ${
-                    formData.password && !/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/.test(formData.password)
+                    formData.password &&
+                    !/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/.test(formData.password)
                       ? '-mt-2 grid-rows-[1fr] opacity-100'
                       : 'mt-0 grid-rows-[0fr] opacity-0'
                   } origin-bottom`}
                 >
                   <div className="overflow-hidden">
-                    <p className="text-xs text-red-500 text-center">
-                      The password must be at least 8 characters long, including at least one uppercase letter and one number, and one special character.
+                    <p className="text-center text-xs text-red-500">
+                      The password must be at least 8 characters long, including at least one uppercase letter and one
+                      number, and one special character.
                     </p>
                   </div>
                 </div>
