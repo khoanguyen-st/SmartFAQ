@@ -55,22 +55,22 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({ isOpen, onClo
   // --- LOGIC REAL-TIME HANDLER ---
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
-    
+
     setFormData(prev => {
       // Tính toán state tiếp theo để validate chính xác
       const nextState = { ...prev, [name]: value }
-      
+
       const newErrors: ErrorState = { ...errors }
-      delete newErrors.general 
+      delete newErrors.general
 
       // 1. Validate New Password khi đang gõ
       if (name === 'new_password') {
         // Kiểm tra Regex
         if (value && !validatePassword(value)) {
-           // Chỉ hiện lỗi khi đã nhập gì đó
-           newErrors.new_password = 'Password must be 8+ chars, with upper, lower, number & special char.'
+          // Chỉ hiện lỗi khi đã nhập gì đó
+          newErrors.new_password = 'Password must be 8+ chars, with upper, lower, number & special char.'
         } else {
-           delete newErrors.new_password
+          delete newErrors.new_password
         }
 
         // Kiểm tra đối chiếu với Confirm Password
@@ -197,7 +197,7 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({ isOpen, onClo
         {/* --- Transition cho Error Message --- */}
         <div
           className={`grid transition-all duration-300 ease-in-out ${
-            fieldError ? 'grid-rows-[1fr] opacity-100 mt-1' : 'grid-rows-[0fr] opacity-0 mt-0'
+            fieldError ? 'mt-1 grid-rows-[1fr] opacity-100' : 'mt-0 grid-rows-[0fr] opacity-0'
           }`}
         >
           <div className="overflow-hidden">

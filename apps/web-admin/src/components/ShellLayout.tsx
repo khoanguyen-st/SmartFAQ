@@ -115,7 +115,7 @@ const ShellLayout = () => {
 
     // Lắng nghe cả 2 sự kiện: Avatar thay đổi & Info (username) thay đổi
     window.addEventListener('userAvatarUpdated', handleRefreshUser)
-    window.addEventListener('userInfoUpdated', handleRefreshUser) 
+    window.addEventListener('userInfoUpdated', handleRefreshUser)
 
     return () => {
       window.removeEventListener('userAvatarUpdated', handleRefreshUser)
@@ -246,7 +246,7 @@ const ShellLayout = () => {
                 <img
                   src={chevronDownUrl}
                   alt="menu"
-                  className={cn('h-4 w-4 transition-transform duration-200 ml-1', isUserMenuOpen && 'rotate-180')}
+                  className={cn('ml-1 h-4 w-4 transition-transform duration-200', isUserMenuOpen && 'rotate-180')}
                 />
               </button>
 

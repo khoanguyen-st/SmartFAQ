@@ -201,7 +201,7 @@ const UploadModal = ({ isOpen, onClose, onFilesUploaded }: UploadModalProps) => 
 
   return (
     <div
-      className="bg-opacity-70 fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-sm"
+      className="bg-opacity-70 fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-lg"
       onClick={handleBackdropClick}
     >
       <div className="w-full max-w-2xl overflow-hidden rounded-xl bg-white shadow-2xl sm:w-11/12 md:max-w-xl lg:max-w-2xl">
@@ -212,7 +212,7 @@ const UploadModal = ({ isOpen, onClose, onFilesUploaded }: UploadModalProps) => 
               Upload reference materials to enhance chatbot responses for students.
             </p>
           </div>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600" disabled={isSaving}>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 cursor-pointer" disabled={isSaving}>
             <X className="h-5 w-5" />
           </button>
         </div>
@@ -222,15 +222,15 @@ const UploadModal = ({ isOpen, onClose, onFilesUploaded }: UploadModalProps) => 
             onDragOver={handleDragOver}
             onDrop={handleDrop}
             onClick={() => !isSaving && fileInputRef.current?.click()}
-            className={`cursor-pointer rounded-lg border-2 border-dashed border-indigo-200 bg-slate-50 p-6 text-center transition hover:border-indigo-400 sm:p-10 ${
+            className={`cursor-pointer rounded-lg border-2 border-dashed border-slate-300 bg-slate-50 p-6 text-center transition hover:border-slate-400 sm:p-10 ${
               isSaving ? 'pointer-events-none opacity-50' : ''
             }`}
           >
-            <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-indigo-100 sm:h-16 sm:w-16">
+            <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-blue-100 sm:h-16 sm:w-16">
               <UploadIcon className="h-[20px] w-[28px] sm:h-[21px] sm:w-[30px]" aria-hidden />
             </div>
             <p className="text-sm font-semibold text-gray-700 sm:text-base">
-              Drag & drop files here or <span className="text-indigo-600 hover:underline">choose files to upload.</span>
+              Drag & drop files here or <span className="text-blue-600 hover:underline">choose files to upload.</span>
             </p>
             <p className="mt-1 text-xs text-gray-500">
               Supported formats: PDF,DOC, DOCX, TXT, MD <br />
@@ -294,7 +294,7 @@ const UploadModal = ({ isOpen, onClose, onFilesUploaded }: UploadModalProps) => 
                         checked={selectedFiles.includes(file.id)}
                         onChange={() => toggleSelect(file.id)}
                         disabled={isSaving}
-                        className="h-4 w-4 shrink-0 cursor-pointer accent-indigo-600 disabled:cursor-not-allowed disabled:opacity-50"
+                        className="h-4 w-4 shrink-0 cursor-pointer accent-blue-600 disabled:cursor-not-allowed disabled:opacity-50"
                       />
                       <div
                         className={`flex h-7 w-7 items-center justify-center rounded-lg sm:h-8 sm:w-8 ${getFileBgClass(file.name)} shrink-0`}
@@ -312,7 +312,7 @@ const UploadModal = ({ isOpen, onClose, onFilesUploaded }: UploadModalProps) => 
                     <button
                       onClick={() => handleReplace(file.id)}
                       disabled={isSaving}
-                      className="ml-2 shrink-0 text-sm font-medium text-indigo-600 hover:text-indigo-800 disabled:cursor-not-allowed disabled:opacity-50"
+                      className="ml-2 shrink-0 text-sm font-medium text-blue-600 hover:text-blue-800 disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       Replace
                     </button>
@@ -324,19 +324,17 @@ const UploadModal = ({ isOpen, onClose, onFilesUploaded }: UploadModalProps) => 
         </div>
 
         <div className="flex flex-col items-center justify-between gap-3 border-t border-gray-200 p-4 sm:flex-row sm:gap-4 sm:p-6">
-          <div className="w-full flex-1 sm:w-auto">
-            <p className="flex items-start space-x-1 text-xs text-indigo-700">
-              <InfoIcon className="mt-1 h-[14px] w-[14px] shrink-0" />
-              <span className="block max-w-full sm:max-w-[360px]">
+          <div className="w-full flex flex-1 items-center sm:w-auto ">
+            <InfoIcon className="mr-2.5 h-4 w-4 shrink-0" />
+            <p className="flex items-start text-sm text-[#4B5563]">
                 Uploaded documents will be automatically processed into the chatbot knowledge base.
-              </span>
             </p>
           </div>
-          <div className="flex w-full justify-end space-x-3 sm:w-auto">
+          <div className="flex w-full justify-end sm:w-auto">
             <button
               onClick={handleSave}
               disabled={isSaving}
-              className="flex w-full items-center justify-center gap-2 rounded-lg bg-indigo-600 px-6 py-2 font-medium text-white shadow-md transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
+              className="flex w-full items-center justify-center gap-2 rounded-lg bg-[#003087] px-6 py-2 font-medium text-white shadow-md transition hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
             >
               {isSaving ? (
                 <>

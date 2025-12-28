@@ -43,7 +43,7 @@ const LoginForm = ({ onSubmit, error }: LoginFormProps) => {
             id="campus"
             value={campus_id}
             onChange={e => setCampus_id(e.target.value as 'DN' | 'HCM' | 'HN' | 'CT')}
-            className="w-full appearance-none rounded-lg border border-gray-300 px-4 py-2 pr-10 outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-600"
+            className="w-full rounded-lg border border-gray-300 px-4 py-2 pr-10 outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600"
             required
           >
             <option value="HCM">Hồ Chí Minh</option>
@@ -68,7 +68,7 @@ const LoginForm = ({ onSubmit, error }: LoginFormProps) => {
             id="email"
             type="email"
             placeholder="Enter your email"
-            className="w-full rounded-lg border border-gray-300 px-4 py-2 pr-10 outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-600"
+            className="w-full rounded-lg border border-gray-300 px-4 py-2 pr-10 outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600"
             value={email}
             onChange={e => setEmail(e.target.value)}
             required
@@ -89,7 +89,7 @@ const LoginForm = ({ onSubmit, error }: LoginFormProps) => {
             id="password"
             type={showPassword ? 'text' : 'password'}
             placeholder="••••••••"
-            className="w-full rounded-lg border border-gray-300 px-4 py-2 pr-12 outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-600"
+            className="w-full rounded-lg border border-gray-300 px-4 py-2 pr-12 outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600"
             value={password}
             onChange={e => setPassword(e.target.value)}
             required

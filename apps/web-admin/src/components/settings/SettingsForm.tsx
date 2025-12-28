@@ -368,12 +368,12 @@ const SettingsForm = () => {
               </div>
             </div>
 
-            <div className="mt-4 rounded-xl border border-blue-100 bg-white p-4 transition-colors duration-300">
+            {/* <div className="mt-4 rounded-xl border border-blue-100 bg-white p-4 transition-colors duration-300">
               <p className="flex items-center gap-2 text-xs text-blue-900">
                 <strong>Current:</strong>
                 <span className="rounded bg-blue-100 px-1.5 py-0.5 font-mono text-blue-900">{settings.llm_model}</span>
               </p>
-            </div>
+            </div> */}
           </div>
         </div>
       </div>

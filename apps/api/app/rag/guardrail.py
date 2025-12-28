@@ -13,6 +13,10 @@ REFUSAL_MESSAGES = {
         "vi": "Xin lỗi, tôi chỉ hỗ trợ thông tin về Đại học Greenwich Việt Nam, không hỗ trợ thông tin về các trường khác.",
         "en": "I only support inquiries related to Greenwich University Vietnam, not other institutions.",
     },
+    "system_management": {
+        "vi": "Xin lỗi, tôi chỉ hỗ trợ trả lời câu hỏi về nội dung tài liệu của Greenwich Việt Nam (học phí, quy định, chương trình học...). Để quản lý tài liệu hoặc các chức năng hệ thống, vui lòng liên hệ bộ phận IT hoặc sử dụng trang quản trị.",
+        "en": "Sorry, I only answer questions about Greenwich Vietnam's document content (tuition, regulations, programs...). For document management or system functions, please contact IT department or use the admin portal.",
+    },
     "irrelevant": {
         "vi": "Xin lỗi, câu hỏi này nằm ngoài phạm vi hỗ trợ của tôi. Tôi chỉ trả lời những câu hỏi liên quan đến Đại học Greenwich.",
         "en": "Sorry, this question is outside my scope. I only answer questions related to Greenwich University.",

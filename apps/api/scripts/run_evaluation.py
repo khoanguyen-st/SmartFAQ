@@ -25,9 +25,10 @@ async def main():
     test_cases_path = Path(__file__).parent.parent / "tests" / "evaluation" / "test_cases.json"
     evaluator.load_test_cases(test_cases_path)
 
-    # Run evaluation with k=5
-    logger.info("Starting RAG evaluation...")
-    results = await evaluator.run_full_evaluation(k=5)
+    # Run evaluation using configured TOP_K_RETRIEVAL
+    from app.core.config import settings
+    logger.info(f"Starting RAG evaluation with k={settings.TOP_K_RETRIEVAL}...")
+    results = await evaluator.run_full_evaluation(k=settings.TOP_K_RETRIEVAL)
 
     # Print formatted report
     evaluator.print_evaluation_report(results)

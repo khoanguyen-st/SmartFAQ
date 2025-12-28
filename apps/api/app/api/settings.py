@@ -42,6 +42,7 @@ async def get_settings() -> SystemSettings:
         max_context_chars=settings.MAX_CONTEXT_CHARS,
         max_sub_queries=settings.MAX_SUB_QUERIES,
         top_k_per_query=settings.TOP_K_PER_QUERY,
+        chat_history_limit=settings.CHAT_HISTORY_LIMIT,
         hybrid_enabled=settings.HYBRID_ENABLED,
         hybrid_k_vec=settings.HYBRID_K_VEC,
         hybrid_k_lex=settings.HYBRID_K_LEX,
@@ -132,6 +133,10 @@ async def update_settings(payload: SettingsUpdateRequest) -> SettingsUpdateRespo
         settings.TOP_K_PER_QUERY = payload.top_k_per_query
         updated_fields.append("top_k_per_query")
 
+    if payload.chat_history_limit is not None:
+        settings.CHAT_HISTORY_LIMIT = payload.chat_history_limit
+        updated_fields.append("chat_history_limit")
+
     # Update query expansion settings
     if payload.query_expansion_enabled is not None:
         settings.QUERY_EXPANSION_ENABLED = payload.query_expansion_enabled
@@ -166,6 +171,7 @@ async def update_settings(payload: SettingsUpdateRequest) -> SettingsUpdateRespo
         max_context_chars=settings.MAX_CONTEXT_CHARS,
         max_sub_queries=settings.MAX_SUB_QUERIES,
         top_k_per_query=settings.TOP_K_PER_QUERY,
+        chat_history_limit=settings.CHAT_HISTORY_LIMIT,
         hybrid_enabled=settings.HYBRID_ENABLED,
         hybrid_k_vec=settings.HYBRID_K_VEC,
         hybrid_k_lex=settings.HYBRID_K_LEX,
@@ -228,6 +234,8 @@ def _persist_to_env_file(payload: SettingsUpdateRequest) -> None:
         updates["MAX_SUB_QUERIES"] = str(payload.max_sub_queries)
     if payload.top_k_per_query is not None:
         updates["TOP_K_PER_QUERY"] = str(payload.top_k_per_query)
+    if payload.chat_history_limit is not None:
+        updates["CHAT_HISTORY_LIMIT"] = str(payload.chat_history_limit)
     if payload.query_expansion_enabled is not None:
         updates["QUERY_EXPANSION_ENABLED"] = str(payload.query_expansion_enabled).lower()
     if payload.query_expansion_max is not None:

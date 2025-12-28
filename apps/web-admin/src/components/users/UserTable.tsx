@@ -92,7 +92,7 @@ export const UserTable: React.FC<UserTableProps> = ({ users, loading, onEdit, on
   }
 
   return (
-    <div className="hidden max-h-[360px] overflow-auto md:block rounded-2xl bg-white ">
+    <div className="hidden max-h-[360px] overflow-auto rounded-2xl bg-white md:block">
       <table className="w-full border-collapse">
         <thead className="sticky top-0 z-10 bg-white text-xs text-black uppercase shadow-sm">
           <tr className="h-15">

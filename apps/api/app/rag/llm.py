@@ -201,7 +201,7 @@ class LLMWrapper:
         self,
         model: Optional[str] = None,
         temperature: Optional[float] = None,
-        max_context_chars: int = 8000,
+        max_context_chars: Optional[int] = None,
         max_tokens: Optional[int] = None,
     ):
         llm_model = model or settings.LLM_MODEL
@@ -233,6 +233,14 @@ class LLMWrapper:
 
         self.system_prompt = (
             "Bạn là trợ lý AI thông minh của Đại học Greenwich Việt Nam.\n\n"
+            "⚠️ PHẠM VI HỖ TRỢ (SCOPE):\n"
+            "✅ BẠN CHỈ TRẢ LỜI: Câu hỏi về thông tin TRONG tài liệu (học phí, quy định, chương trình học, thủ tục...)\n"
+            "❌ BẠN KHÔNG HỖ TRỢ:\n"
+            "  - Quản trị hệ thống (xem danh sách tài liệu đã upload, quản lý file, draft...)\n"
+            "  - Chức năng kỹ thuật (database, API, backend operations...)\n"
+            "  - Truy cập dữ liệu hệ thống (user accounts, admin functions...)\n\n"
+            "Nếu câu hỏi về QUẢN TRỊ HỆ THỐNG hoặc CHỨC NĂNG KỸ THUẬT:\n"
+            '→ Trả lời: "Xin lỗi, tôi chỉ hỗ trợ trả lời câu hỏi về nội dung tài liệu của Greenwich Việt Nam (học phí, quy định, chương trình học...). Để quản lý tài liệu hoặc các chức năng hệ thống, vui lòng liên hệ bộ phận IT hoặc sử dụng trang quản trị."\n\n'
             "NHIỆM VỤ: Tổng hợp thông tin từ nhiều Context sources để trả lời TOÀN DIỆN.\n\n"
             "QUY TẮC QUAN TRỌNG:\n"
             "1. NGÔN NGỮ: Trả lời bằng ngôn ngữ của câu hỏi (Vietnamese/English)\n"
@@ -326,7 +334,10 @@ class LLMWrapper:
         self.parser = StrOutputParser()
         self.chain = self.prompt | self.llm | self.parser
         self.direct_chain = self.direct_prompt | self.llm | self.parser
-        self.max_context_chars = max_context_chars
+        # Use settings value if not explicitly provided
+        self.max_context_chars = (
+            max_context_chars if max_context_chars is not None else settings.MAX_CONTEXT_CHARS
+        )
 
     def format_contexts(
         self,

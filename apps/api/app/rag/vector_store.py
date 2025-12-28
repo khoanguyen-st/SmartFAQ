@@ -132,9 +132,10 @@ def upsert_documents(docs: Iterable[Document], ids: Optional[List[str]] = None) 
 
 
 def similarity_search(
-    query: str, k: int = 5, where: Optional[Dict[str, Any]] = None
+    query: str, k: Optional[int] = None, where: Optional[Dict[str, Any]] = None
 ) -> List[Document]:
     vs = _get_vectorstore()
+    k = k if k is not None else settings.TOP_K_RETRIEVAL
     if where:
         retriever = vs.as_retriever(search_kwargs={"k": k, "filter": where})
         return retriever.invoke(query)
@@ -142,9 +143,10 @@ def similarity_search(
 
 
 def similarity_search_with_score(
-    query: str, k: int = 5, where: Optional[Dict[str, Any]] = None
+    query: str, k: Optional[int] = None, where: Optional[Dict[str, Any]] = None
 ) -> List[Tuple[Document, float]]:
     vs = _get_vectorstore()
+    k = k if k is not None else settings.TOP_K_RETRIEVAL
     if where:
         try:
             collection = vs._collection
@@ -231,12 +233,12 @@ class VectorStore:
             return True
 
     def similarity_search(
-        self, query: str, k: int = 5, where: Optional[Dict[str, Any]] = None
+        self, query: str, k: Optional[int] = None, where: Optional[Dict[str, Any]] = None
     ) -> List[Document]:
         return similarity_search(query, k, where)
 
     def similarity_search_with_score(
-        self, query: str, k: int = 5, where: Optional[Dict[str, Any]] = None
+        self, query: str, k: Optional[int] = None, where: Optional[Dict[str, Any]] = None
     ):
         return similarity_search_with_score(query, k, where)
 

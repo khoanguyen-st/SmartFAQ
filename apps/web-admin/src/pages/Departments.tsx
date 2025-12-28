@@ -121,16 +121,16 @@ const DepartmentsPage = () => {
   }
 
   return (
-    <div className="flex flex-col gap-6 p-6 h-[calc(100vh-81px)] bg-white overflow-auto">
+    <div className="flex h-[calc(100vh-81px)] flex-col gap-6 overflow-auto bg-white p-6">
       <div className="dept-header-section">
         <div className="pl-2">
-          <h3 className="text-3xl mb-2 leading-tight font-bold text-[#111827]">List of Department</h3>
+          <h3 className="mb-2 text-3xl leading-tight font-bold text-[#111827]">List of Department</h3>
           <p className="text-base text-[#637381]">Manage departments</p>
         </div>
 
         <button
           onClick={() => setIsAddOpen(true)}
-          className="flex w-full rounded-xl items-center justify-center gap-2  bg-[#003087] px-3.5 py-2.5 text-sm font-normal text-white shadow-sm transition-colors hover:bg-[#002569] md:w-auto"
+          className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#003087] px-3.5 py-2.5 text-sm font-normal text-white shadow-sm transition-colors hover:bg-[#002569] md:w-auto"
         >
           <img src={Plus} alt="plus" className="h-[11px] w-[11px]" />
           <span>Create New Department</span>
@@ -144,11 +144,11 @@ const DepartmentsPage = () => {
             placeholder="Enter to Search..."
             value={searchTerm}
             onChange={e => setSearchTerm(e.target.value)}
-            className="h-15 w-full rounded-xl bg-white pr-10 pl-6 text-sm text-[#111827] transition-colors outline-none placeholder:text-[#637381] focus:border-[#003087] focus:ring-1 focus:ring-[#003087] md:pr-14 "
+            className="h-15 w-full rounded-xl bg-white pr-10 pl-6 text-sm text-[#111827] transition-colors outline-none placeholder:text-[#637381] focus:border-[#003087] focus:ring-1 focus:ring-[#003087] md:pr-14"
           />
 
-          <div className="absolute top-1/2 -translate-y-1/2 transform right-5">
-            <img src={Search} alt="search" className="h-5 w-5 text-gray-400 " />
+          <div className="absolute top-1/2 right-5 -translate-y-1/2 transform">
+            <img src={Search} alt="search" className="h-5 w-5 text-gray-400" />
           </div>
         </div>
       </div>

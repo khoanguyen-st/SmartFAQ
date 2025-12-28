@@ -56,6 +56,7 @@ class Settings(BaseSettings):
     TOP_K_RETRIEVAL: int = Field(5, alias="TOP_K_RETRIEVAL")
     MAX_SUB_QUERIES: int = Field(3, alias="MAX_SUB_QUERIES")
     TOP_K_PER_QUERY: int = Field(5, alias="TOP_K_PER_QUERY")
+    CHAT_HISTORY_LIMIT: int = Field(5, alias="CHAT_HISTORY_LIMIT")
 
     # Query Expansion Settings
     QUERY_EXPANSION_ENABLED: bool = Field(True, alias="QUERY_EXPANSION_ENABLED")

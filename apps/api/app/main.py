@@ -112,7 +112,7 @@ def create_app() -> FastAPI:
             vs = get_vectorstore()
             # Lightweight ping to ensure collection is ready
             try:
-                vs.similarity_search("ping", k=1)
+                vs.similarity_search("ping", k=1)  # k=1 is intentional for health check
             except Exception:
                 logger.exception("Warmup: vectorstore similarity_search failed")
 

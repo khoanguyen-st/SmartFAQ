@@ -13,6 +13,8 @@ import numpy as np
 from app.rag.orchestrator import RAGOrchestrator
 from app.rag.retriever import Retriever
 
+from ..core.config import settings
+
 logger = logging.getLogger(__name__)
 
 
@@ -243,7 +245,9 @@ class RAGEvaluator:
 
         for case in self.test_cases:
             try:
-                result = await self.orchestrator.query(case.question, top_k=5)
+                result = await self.orchestrator.query(
+                    case.question, top_k=settings.TOP_K_RETRIEVAL
+                )
 
                 confidences.append(result.get("confidence", 0.0))
                 if result.get("fallback_triggered", False):
@@ -263,13 +267,14 @@ class RAGEvaluator:
             avg_num_sources=float(np.mean(num_sources_list)) if num_sources_list else 0.0,
         )
 
-    async def run_full_evaluation(self, k: int = 5) -> Dict[str, Any]:
+    async def run_full_evaluation(self, k: Optional[int] = None) -> Dict[str, Any]:
         """
         Run complete evaluation: retrieval + answer quality.
 
         Returns:
             Dictionary with all metrics
         """
+        k = k if k is not None else settings.TOP_K_RETRIEVAL
         retrieval_metrics = await self.evaluate_retrieval(k=k)
         answer_metrics = await self.evaluate_answers()
 

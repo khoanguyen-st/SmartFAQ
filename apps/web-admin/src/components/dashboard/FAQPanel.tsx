@@ -60,7 +60,7 @@ const FAQPanel = ({ refreshKey = 0 }: FAQPanelProps) => {
   const displayFaqs = activeTab === 'popular' ? faqs : trending
 
   return (
-    <div className="rounded-2xl bg-white p-6 shadow-lg shadow-slate-900/10 border border-slate-100">
+    <div className="rounded-2xl border border-slate-100 bg-white p-6 shadow-lg shadow-slate-900/10">
       {/* Header */}
       <div className="mb-4 flex items-center justify-between">
         <div>

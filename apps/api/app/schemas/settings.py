@@ -29,6 +29,9 @@ class SystemSettings(BaseModel):
     max_context_chars: int = Field(..., ge=1000, le=32000, description="Maximum context length")
     max_sub_queries: int = Field(..., ge=1, le=10, description="Maximum number of sub-queries")
     top_k_per_query: int = Field(..., ge=1, le=20, description="Top K results per sub-query")
+    chat_history_limit: int = Field(
+        ..., ge=1, le=20, description="Number of chat history messages to include"
+    )
 
     # Hybrid Search Settings
     hybrid_enabled: bool = Field(..., description="Enable hybrid search (vector + keyword)")
@@ -64,6 +67,7 @@ class SettingsUpdateRequest(BaseModel):
     max_context_chars: int | None = Field(None, ge=1000, le=32000)
     max_sub_queries: int | None = Field(None, ge=1, le=10)
     top_k_per_query: int | None = Field(None, ge=1, le=20)
+    chat_history_limit: int | None = Field(None, ge=1, le=20)
 
     # Hybrid Search Settings (optional)
     hybrid_enabled: bool | None = None
