@@ -133,7 +133,7 @@ input[type="password"] {
 }
 
 tr:nth-child(even) {
-  background: var(--color-gray-1);
+  @apply bg-sky-50;
 }
 
 @layer base {
@@ -150,6 +150,34 @@ tr:nth-child(even) {
     color: inherit;
   }
 }
+select,
+::picker(select) {
+    appearance: base-select;
+    overflow-y: auto;
+    cursor: pointer;
+}
+
+select::picker-icon {
+    display: none;
+}
+
+::picker(select){
+    border-radius: 8px;
+    border: 0;
+    margin: .4rem 0;
+    box-shadow: 0 0 5px rgba(0,0,0,.2);
+}
+
+option {
+    font-size: 14px;
+    padding: 12px;
+}
+
+option:hover{
+    background-color: #1c398e;
+    color: white;
+}
+
 
 @media (max-width: 1229px) {
   .chat__clear-button {

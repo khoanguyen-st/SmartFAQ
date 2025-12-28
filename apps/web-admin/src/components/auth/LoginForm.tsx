@@ -1,9 +1,9 @@
 import React, { useState } from 'react'
 import { Link } from 'react-router-dom'
 
-import eyeIcon from '@/assets/icons/eye.svg'
+import eye from '@/assets/icons/eye.svg'
+import eyeOff from '@/assets/icons/eye-off.svg'
 import userIcon from '@/assets/icons/email.svg'
-import eyeOffIcon from '@/assets/icons/eye-off.svg'
 import ChevronDown from '@/assets/icons/chevron-down.svg'
 
 interface LoginFormProps {
@@ -43,7 +43,7 @@ const LoginForm = ({ onSubmit, error }: LoginFormProps) => {
             id="campus"
             value={campus_id}
             onChange={e => setCampus_id(e.target.value as 'DN' | 'HCM' | 'HN' | 'CT')}
-            className="w-full appearance-none rounded-lg border border-gray-300 px-4 py-2 pr-10 outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-600"
+            className="w-full rounded-lg border border-gray-300 px-4 py-2 pr-10 outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600"
             required
           >
             <option value="HCM">Hồ Chí Minh</option>
@@ -68,7 +68,7 @@ const LoginForm = ({ onSubmit, error }: LoginFormProps) => {
             id="email"
             type="email"
             placeholder="Enter your email"
-            className="w-full rounded-lg border border-gray-300 px-4 py-2 pr-10 outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-600"
+            className="w-full rounded-lg border border-gray-300 px-4 py-2 pr-10 outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600"
             value={email}
             onChange={e => setEmail(e.target.value)}
             required
@@ -89,7 +89,7 @@ const LoginForm = ({ onSubmit, error }: LoginFormProps) => {
             id="password"
             type={showPassword ? 'text' : 'password'}
             placeholder="••••••••"
-            className="w-full rounded-lg border border-gray-300 px-4 py-2 pr-12 outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-600"
+            className="w-full rounded-lg border border-gray-300 px-4 py-2 pr-12 outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600"
             value={password}
             onChange={e => setPassword(e.target.value)}
             required
@@ -97,9 +97,9 @@ const LoginForm = ({ onSubmit, error }: LoginFormProps) => {
           <button
             type="button"
             onClick={() => setShowPassword(!showPassword)}
-            className="absolute inset-y-0 right-3 flex items-center justify-center text-gray-400 hover:text-gray-700"
+            className="absolute inset-y-0 right-3 flex items-center justify-center text-slate-800"
           >
-            <img src={showPassword ? eyeIcon : eyeOffIcon} alt="Toggle password" className="h-5 w-5" />
+            <img src={showPassword ? eye : eyeOff} alt="Toggle password" className="h-5 w-5" />
           </button>
         </div>
 

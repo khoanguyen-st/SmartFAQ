@@ -88,11 +88,14 @@
 }
 
 .chat__footer {
-  position: relative;
+  position: absolute;
+  bottom: -1px;
+  left: 0;
   width: 100%;
   background: transparent;
   backdrop-filter: blur(2px);
   flex-shrink: 0;
+  z-index: 10
 }
 
 .chat__footer-form {
@@ -123,12 +126,6 @@
   border: 2px solid #1677ff;
   box-shadow: 0px 0px 3px #1677ff;
   transition-duration: 0.15s;
-}
-
-.open-button {
-  position: fixed;
-  bottom: 40px;
-  right: 40px;
 }
 
 @layer base {

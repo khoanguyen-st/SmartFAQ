@@ -56,13 +56,13 @@ const FAQSuggestions = ({ onQuestionClick, language = 'vi' }: FAQSuggestionsProp
   }, [language])
 
   return (
-    <div className="px-4 py-3">
-      <div className="space-y-2">
+    <div className="px-10 py-3 absolute bottom-20 right-0">
+      <div className="space-y-2 flex flex-col items-end">
         {faqs.map(faq => (
           <button
             key={faq.id}
             onClick={() => onQuestionClick(faq.question)}
-            className="w-full rounded-lg border border-slate-200 bg-white px-4 py-3 text-left text-sm text-slate-700 transition-all hover:border-indigo-400 hover:bg-indigo-50 hover:text-indigo-900 active:scale-98"
+            className="w-fit rounded-2xl border border-slate-200 bg-white px-4 py-3 text-end text-sm text-slate-700 transition-all hover:border-blue-400 hover:bg-blue-50 hover:text-blue-900 active:scale-98 cursor-pointer"
           >
             {faq.question}
           </button>
